@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kursomgångar Webbapp</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Kursomgångar Administration och Presentation</h1>
+      <nav>
+        <button id="adminBtn">Admin Vy</button>
+        <button id="presentationBtn">Presentations Vy</button>
+      </nav>
+    </header>
+    <main>
+      <div id="adminView" class="view">
+        <h2>Skapa Ny Kursomgång</h2>
+        <form id="courseForm">
+          <label for="kursSelect">Kurs:</label>
+          <select id="kursSelect" required></select>
+          <button type="button" id="addKursBtn">Lägg till Ny Kurs</button><br />
+
+          <label for="gruppSelect">Studentgrupp:</label>
+          <select id="gruppSelect" required></select>
+          <button type="button" id="addGruppBtn">Lägg till Ny Grupp</button
+          ><br />
+
+          <label for="personalSelect">Personal:</label>
+          <select id="personalSelect" required></select>
+          <button type="button" id="addPersonalBtn">
+            Lägg till Ny Personal</button
+          ><br />
+
+          <label for="startDate">Startdatum:</label>
+          <input type="date" id="startDate" required /><br />
+
+          <label for="endDate">Slutdatum:</label>
+          <input type="date" id="endDate" /><br />
+
+          <button type="submit">Skapa Kursomgång</button>
+        </form>
+
+        <div id="addForms" style="display: none">
+          <div id="addKursForm">
+            <h3>Lägg till Ny Kurs</h3>
+            <input type="text" id="newKursKod" placeholder="Kurskod" required />
+            <input type="text" id="newKursNamn" placeholder="Namn" required />
+            <input
+              type="number"
+              step="0.5"
+              id="newKursPoang"
+              placeholder="Poäng HP"
+              required
+            />
+            <input
+              type="text"
+              id="newKursAvdelning"
+              placeholder="Avdelning"
+              required
+            />
+            <button id="saveKursBtn">Spara Kurs</button>
+            <button id="cancelKursBtn">Avbryt</button>
+          </div>
+
+          <div id="addGruppForm">
+            <h3>Lägg till Ny Studentgrupp</h3>
+            <input type="text" id="newGruppNamn" placeholder="Namn" required />
+            <input
+              type="number"
+              id="newGruppStartAr"
+              placeholder="Startår"
+              required
+            />
+            <button id="saveGruppBtn">Spara Grupp</button>
+            <button id="cancelGruppBtn">Avbryt</button>
+          </div>
+
+          <div id="addPersonalForm">
+            <h3>Lägg till Ny Personal</h3>
+            <input
+              type="text"
+              id="newPersonalFornamn"
+              placeholder="Förnamn"
+              required
+            />
+            <input
+              type="text"
+              id="newPersonalEfternamn"
+              placeholder="Efternamn"
+              required
+            />
+            <input
+              type="text"
+              id="newPersonalTitel"
+              placeholder="Titel"
+              required
+            />
+            <button id="savePersonalBtn">Spara Personal</button>
+            <button id="cancelPersonalBtn">Avbryt</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="presentationView" class="view" style="display: none">
+        <h2>Presentera Kursomgångar</h2>
+        <div id="filters">
+          <label for="filterKurs">Filtrera på Kurs:</label>
+          <select id="filterKurs">
+            <option value="">Alla</option>
+          </select>
+
+          <label for="filterGrupp">Filtrera på Grupp:</label>
+          <select id="filterGrupp">
+            <option value="">Alla</option>
+          </select>
+
+          <label for="filterPersonal">Filtrera på Personal:</label>
+          <select id="filterPersonal">
+            <option value="">Alla</option>
+          </select>
+        </div>
+        <table id="courseTable">
+          <thead>
+            <tr>
+              <th>Kurskod</th>
+              <th>Kursnamn</th>
+              <th>Grupp</th>
+              <th>Personal</th>
+              <th>Startdatum</th>
+              <th>Slutdatum</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
