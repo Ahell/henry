@@ -1,0 +1,266 @@
+import { LitElement, html, css } from 'lit';
+import { store } from './store.js';
+
+export class ImportExport extends LitElement {
+  static styles = css`
+    :host {
+      display: block;
+      padding: 1rem;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    button.secondary {
+      background: #6c757d;
+    }
+
+    button.secondary:hover {
+      background: #5a6268;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .message {
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+
+    .message.success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+
+    .data-preview {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-top: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .data-preview pre {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+  `;
+
+  static properties = {
+    message: { type: String },
+    messageType: { type: String }
+  };
+
+  constructor() {
+    super();
+    this.message = '';
+    this.messageType = '';
+  }
+
+  render() {
+    return html`
+      <div class="panel">
+        <h3>Importera Data från Excel/JSON</h3>
+        
+        ${this.message ? html`
+          <div class="message ${this.messageType}">
+            ${this.message}
+          </div>
+        ` : ''}
+
+        <div class="button-group">
+          <button @click="${this.triggerFileInput}">
+            Välj fil (CSV/JSON)
+          </button>
+          <button class="secondary" @click="${this.loadSampleData}">
+            Ladda Exempeldata
+          </button>
+        </div>
+
+        <input type="file" id="fileInput" accept=".json,.csv" @change="${this.handleFileUpload}">
+
+        <div class="data-preview">
+          <p><strong>Aktuell data:</strong></p>
+          <pre>${JSON.stringify(store.exportData(), null, 2)}</pre>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Exportera Data</h3>
+        <p>Exportera all data som JSON för att spara eller dela.</p>
+        <div class="button-group">
+          <button @click="${this.exportAsJson}">Exportera som JSON</button>
+          <button class="secondary" @click="${this.exportAsCSV}">Exportera som CSV</button>
+        </div>
+      </div>
+    `;
+  }
+
+  triggerFileInput() {
+    this.shadowRoot.querySelector('#fileInput').click();
+  }
+
+  async handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const content = await file.text();
+      let data;
+
+      if (file.name.endsWith('.json')) {
+        data = JSON.parse(content);
+      } else if (file.name.endsWith('.csv')) {
+        data = this.parseCSV(content);
+      } else {
+        throw new Error('Okänd filformat. Använd JSON eller CSV.');
+      }
+
+      store.importData(data);
+      this.message = `Importerade ${file.name} framgångsrikt!`;
+      this.messageType = 'success';
+    } catch (err) {
+      this.message = `Fel vid import: ${err.message}`;
+      this.messageType = 'error';
+    }
+
+    setTimeout(() => { this.message = ''; }, 4000);
+  }
+
+  parseCSV(content) {
+    // Enkel CSV-parser - detta kan utökas för mer komplexa scenarier
+    const lines = content.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    const data = { courses: [], cohorts: [], teachers: [], slots: [], courseRuns: [], teacherAvailability: [] };
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      const row = {};
+      headers.forEach((h, j) => {
+        row[h] = values[j];
+      });
+
+      // Försök identifiera vilken typ av data detta är
+      if (row.code && row.name && row.hp) {
+        data.courses.push({
+          code: row.code,
+          name: row.name,
+          hp: parseFloat(row.hp),
+          is_law_course: row.is_law_course === 'true',
+          law_type: row.law_type || null,
+          default_block_length: parseInt(row.default_block_length || '1')
+        });
+      }
+    }
+
+    return data;
+  }
+
+  loadSampleData() {
+    const sampleData = {
+      courses: [
+        { code: 'AI180U', name: 'Juridisk översiktskurs', hp: 15.0, is_law_course: true, law_type: 'overview', default_block_length: 2 },
+        { code: 'AI188U', name: 'Marknadsanalys och marknadsföring', hp: 7.5, is_law_course: false, law_type: null, default_block_length: 1 },
+        { code: 'AI183U', name: 'Husbyggnadsteknik', hp: 7.5, is_law_course: false, law_type: null, default_block_length: 1 },
+        { code: 'AI192U', name: 'Allmän fastighetsrätt', hp: 7.5, is_law_course: true, law_type: 'general', default_block_length: 1 }
+      ],
+      cohorts: [
+        { name: 'Start 1', start_date: '2024-06-10', planned_size: 30 },
+        { name: 'Start 2', start_date: '2025-02-10', planned_size: 35 }
+      ],
+      teachers: [
+        { name: 'Anna Broback', home_department: 'AIE' },
+        { name: 'Annina Persson', home_department: 'AIJ' }
+      ],
+      slots: [
+        { start_date: '2024-06-10', end_date: '2024-07-05', evening_pattern: 'tis/tor', is_placeholder: false },
+        { start_date: '2024-09-09', end_date: '2024-10-04', evening_pattern: 'mån/fre', is_placeholder: false }
+      ]
+    };
+
+    store.importData(sampleData);
+    this.message = 'Exempeldata laddad!';
+    this.messageType = 'success';
+    setTimeout(() => { this.message = ''; }, 3000);
+  }
+
+  exportAsJson() {
+    const data = store.exportData();
+    const json = JSON.stringify(data, null, 2);
+    this.downloadFile(json, 'henry-course-plan.json', 'application/json');
+  }
+
+  exportAsCSV() {
+    const data = store.exportData();
+    let csv = 'Courses\n';
+    csv += 'code,name,hp,is_law_course,law_type,default_block_length\n';
+    data.courses.forEach(c => {
+      csv += `${c.code},"${c.name}",${c.hp},${c.is_law_course},${c.law_type || ''},${c.default_block_length}\n`;
+    });
+
+    csv += '\nCohorts\n';
+    csv += 'name,start_date,planned_size\n';
+    data.cohorts.forEach(c => {
+      csv += `${c.name},${c.start_date},${c.planned_size}\n`;
+    });
+
+    this.downloadFile(csv, 'henry-course-plan.csv', 'text/csv');
+  }
+
+  downloadFile(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+}
+
+customElements.define('import-export', ImportExport);
