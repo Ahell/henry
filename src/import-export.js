@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { store } from './store.js';
+import { seedData } from './seedData.js';
 
 export class ImportExport extends LitElement {
   static styles = css`
@@ -200,31 +201,10 @@ export class ImportExport extends LitElement {
   }
 
   loadSampleData() {
-    const sampleData = {
-      courses: [
-        { code: 'AI180U', name: 'Juridisk översiktskurs', hp: 15.0, is_law_course: true, law_type: 'overview', default_block_length: 2 },
-        { code: 'AI188U', name: 'Marknadsanalys och marknadsföring', hp: 7.5, is_law_course: false, law_type: null, default_block_length: 1 },
-        { code: 'AI183U', name: 'Husbyggnadsteknik', hp: 7.5, is_law_course: false, law_type: null, default_block_length: 1 },
-        { code: 'AI192U', name: 'Allmän fastighetsrätt', hp: 7.5, is_law_course: true, law_type: 'general', default_block_length: 1 }
-      ],
-      cohorts: [
-        { name: 'Start 1', start_date: '2024-06-10', planned_size: 30 },
-        { name: 'Start 2', start_date: '2025-02-10', planned_size: 35 }
-      ],
-      teachers: [
-        { name: 'Anna Broback', home_department: 'AIE' },
-        { name: 'Annina Persson', home_department: 'AIJ' }
-      ],
-      slots: [
-        { start_date: '2024-06-10', end_date: '2024-07-05', evening_pattern: 'tis/tor', is_placeholder: false },
-        { start_date: '2024-09-09', end_date: '2024-10-04', evening_pattern: 'mån/fre', is_placeholder: false }
-      ]
-    };
-
-    store.importData(sampleData);
-    this.message = 'Exempeldata laddad!';
+    store.importData(seedData);
+    this.message = 'Fullständig testdata laddad (14 kurser, 10 kullar, 12 lärare, alla slots och kursomgångar)!';
     this.messageType = 'success';
-    setTimeout(() => { this.message = ''; }, 3000);
+    setTimeout(() => { this.message = ''; }, 4000);
   }
 
   exportAsJson() {

@@ -9,6 +9,27 @@ export class DataStore {
     this.courseRuns = [];
     this.teacherAvailability = [];
     this.listeners = [];
+
+    // Load seed data on first load if no data exists
+    this.loadInitialData();
+  }
+
+  // Load initial data from localStorage or use seed data
+  loadInitialData() {
+    const hasData = localStorage.getItem('kurser');
+    if (hasData) {
+      this.courses = JSON.parse(localStorage.getItem('kurser'));
+      this.cohorts = JSON.parse(localStorage.getItem('grupper'));
+      this.teachers = JSON.parse(localStorage.getItem('personal'));
+      this.slots = JSON.parse(localStorage.getItem('slots'));
+      this.courseRuns = JSON.parse(localStorage.getItem('kurstillfallen'));
+      this.teacherAvailability = JSON.parse(localStorage.getItem('teacherAvailability')) || [];
+    } else {
+      // Load seed data dynamically
+      import('./seedData.js').then(module => {
+        this.importData(module.seedData);
+      });
+    }
   }
 
   // Subscribe to changes
@@ -18,6 +39,7 @@ export class DataStore {
 
   notify() {
     this.listeners.forEach(l => l());
+    this.saveData();
   }
 
   // Courses
