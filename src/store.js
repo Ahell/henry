@@ -9,6 +9,7 @@ export class DataStore {
     this.slots = [];
     this.courseRuns = [];
     this.teacherAvailability = [];
+    this.prerequisiteProblems = [];
     this.listeners = [];
 
     // Try to load saved data from localStorage first
@@ -54,20 +55,82 @@ export class DataStore {
 
     // Validate courses have available teachers (remove those that don't)
     const removedCourses = this.validateCoursesHaveTeachers();
+
+    // Calculate prerequisite problems
+    this.prerequisiteProblems = this.findCoursesWithMissingPrerequisites();
+
     if (removedCourses.length > 0) {
       // Delay alert to after page load
       setTimeout(() => {
-        const messages = removedCourses.map(
-          (c) =>
-            `"${c.courseName}" (${c.courseCode}) för ${c.cohorts.join(", ")}`
-        );
-        alert(
-          `Följande kurser flyttades till depån (ingen lärare tillgänglig):\n\n${messages.join(
-            "\n"
-          )}`
-        );
+        let message = `Följande kurser flyttades till depån (ingen lärare tillgänglig):\n\n`;
+        message += removedCourses
+          .map(
+            (c) =>
+              `"${c.courseName}" (${c.courseCode}) för ${c.cohorts.join(", ")}`
+          )
+          .join("\n");
+
+        // Add prerequisite warnings if any
+        if (this.prerequisiteProblems.length > 0) {
+          message += `\n\n⚠️ VARNING: Följande kurser saknar nu sina spärrkurser:\n\n`;
+          const problemsByCourseCohort = new Map();
+          for (const p of this.prerequisiteProblems) {
+            const key = `${p.cohortName}-${p.courseCode}`;
+            if (!problemsByCourseCohort.has(key)) {
+              problemsByCourseCohort.set(key, {
+                cohortName: p.cohortName,
+                courseCode: p.courseCode,
+                courseName: p.courseName,
+                missingPrereqs: [],
+              });
+            }
+            problemsByCourseCohort
+              .get(key)
+              .missingPrereqs.push(p.missingPrereqCode);
+          }
+          message += Array.from(problemsByCourseCohort.values())
+            .map(
+              (p) =>
+                `${p.cohortName}: "${
+                  p.courseName
+                }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
+            )
+            .join("\n");
+        }
+
+        alert(message);
       }, 100);
       this.saveData(); // Save the changes
+    } else if (this.prerequisiteProblems.length > 0) {
+      // Show only prerequisite warnings if no courses were removed but there are issues
+      setTimeout(() => {
+        let message = `⚠️ VARNING: Följande kurser saknar sina spärrkurser:\n\n`;
+        const problemsByCourseCohort = new Map();
+        for (const p of this.prerequisiteProblems) {
+          const key = `${p.cohortName}-${p.courseCode}`;
+          if (!problemsByCourseCohort.has(key)) {
+            problemsByCourseCohort.set(key, {
+              cohortName: p.cohortName,
+              courseCode: p.courseCode,
+              courseName: p.courseName,
+              missingPrereqs: [],
+            });
+          }
+          problemsByCourseCohort
+            .get(key)
+            .missingPrereqs.push(p.missingPrereqCode);
+        }
+        message += Array.from(problemsByCourseCohort.values())
+          .map(
+            (p) =>
+              `${p.cohortName}: "${
+                p.courseName
+              }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
+          )
+          .join("\n");
+
+        alert(message);
+      }, 100);
     }
 
     return true;
@@ -169,7 +232,9 @@ export class DataStore {
         removedCourses.push({
           courseName: course?.name || "Okänd kurs",
           courseCode: course?.code || "",
+          courseId: courseId,
           cohorts: affectedCohorts,
+          cohortIds: runs.flatMap((r) => r.cohorts || []),
         });
 
         // Remove the runs
@@ -187,6 +252,81 @@ export class DataStore {
     return removedCourses;
   }
 
+  // Find courses that are missing their prerequisites
+  findCoursesWithMissingPrerequisites() {
+    const problems = []; // { cohortId, cohortName, courseId, courseName, missingPrereqId, missingPrereqName }
+
+    // Get all cohorts
+    for (const cohort of this.cohorts) {
+      // Get all runs for this cohort
+      const cohortRuns = this.courseRuns.filter(
+        (r) => r.cohorts && r.cohorts.includes(cohort.cohort_id)
+      );
+
+      // For each run, check if its prerequisites are scheduled before it
+      for (const run of cohortRuns) {
+        const course = this.getCourse(run.course_id);
+        if (
+          !course ||
+          !course.prerequisites ||
+          course.prerequisites.length === 0
+        ) {
+          continue;
+        }
+
+        const slot = this.getSlot(run.slot_id);
+        if (!slot) continue;
+        const runDate = new Date(slot.start_date);
+
+        // Check each prerequisite
+        for (const prereqId of course.prerequisites) {
+          const prereqCourse = this.getCourse(prereqId);
+          if (!prereqCourse) continue;
+
+          // Find if prerequisite is scheduled for this cohort
+          const prereqRun = cohortRuns.find((r) => r.course_id === prereqId);
+
+          if (!prereqRun) {
+            // Prerequisite not scheduled at all
+            problems.push({
+              cohortId: cohort.cohort_id,
+              cohortName: cohort.name,
+              courseId: course.course_id,
+              courseName: course.name,
+              courseCode: course.code,
+              runId: run.run_id,
+              missingPrereqId: prereqId,
+              missingPrereqName: prereqCourse.name,
+              missingPrereqCode: prereqCourse.code,
+            });
+          } else {
+            // Check that prerequisite comes before
+            const prereqSlot = this.getSlot(prereqRun.slot_id);
+            if (prereqSlot) {
+              const prereqDate = new Date(prereqSlot.start_date);
+              if (prereqDate >= runDate) {
+                // Prerequisite is not before this course
+                problems.push({
+                  cohortId: cohort.cohort_id,
+                  cohortName: cohort.name,
+                  courseId: course.course_id,
+                  courseName: course.name,
+                  courseCode: course.code,
+                  runId: run.run_id,
+                  missingPrereqId: prereqId,
+                  missingPrereqName: prereqCourse.name,
+                  missingPrereqCode: prereqCourse.code,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return problems;
+  }
+
   // Subscribe to changes
   subscribe(listener) {
     this.listeners.push(listener);
@@ -195,19 +335,93 @@ export class DataStore {
   notify() {
     this.validateTeacherAssignments();
     const removedCourses = this.validateCoursesHaveTeachers();
+
+    // Get previous prerequisite problems to detect new ones
+    const previousProblems = new Set(
+      (this.prerequisiteProblems || []).map(
+        (p) => `${p.cohortId}-${p.runId}-${p.missingPrereqId}`
+      )
+    );
+
+    // Check for prerequisite problems after removing courses
+    this.prerequisiteProblems = this.findCoursesWithMissingPrerequisites();
+
+    // Find NEW prerequisite problems (ones that weren't there before)
+    const newProblems = this.prerequisiteProblems.filter(
+      (p) =>
+        !previousProblems.has(`${p.cohortId}-${p.runId}-${p.missingPrereqId}`)
+    );
+
     this.listeners.forEach((l) => l());
     this.saveData();
 
     // Show alert if courses were removed
     if (removedCourses.length > 0) {
-      const messages = removedCourses.map(
-        (c) => `"${c.courseName}" (${c.courseCode}) för ${c.cohorts.join(", ")}`
-      );
-      alert(
-        `Följande kurser flyttades till depån (ingen lärare tillgänglig):\n\n${messages.join(
-          "\n"
-        )}`
-      );
+      let message = `Följande kurser flyttades till depån (ingen lärare tillgänglig):\n\n`;
+      message += removedCourses
+        .map(
+          (c) =>
+            `"${c.courseName}" (${c.courseCode}) för ${c.cohorts.join(", ")}`
+        )
+        .join("\n");
+
+      // Add prerequisite warnings if any NEW problems exist
+      if (newProblems.length > 0) {
+        message += `\n\n⚠️ VARNING: Följande kurser saknar nu sina spärrkurser:\n\n`;
+        const problemsByCourseCohort = new Map();
+        for (const p of newProblems) {
+          const key = `${p.cohortName}-${p.courseCode}`;
+          if (!problemsByCourseCohort.has(key)) {
+            problemsByCourseCohort.set(key, {
+              cohortName: p.cohortName,
+              courseCode: p.courseCode,
+              courseName: p.courseName,
+              missingPrereqs: [],
+            });
+          }
+          problemsByCourseCohort
+            .get(key)
+            .missingPrereqs.push(p.missingPrereqCode);
+        }
+        message += Array.from(problemsByCourseCohort.values())
+          .map(
+            (p) =>
+              `${p.cohortName}: "${
+                p.courseName
+              }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
+          )
+          .join("\n");
+      }
+
+      alert(message);
+    } else if (newProblems.length > 0) {
+      // Show alert only for new prerequisite problems even if no courses were removed
+      let message = `⚠️ VARNING: Följande kurser saknar nu sina spärrkurser:\n\n`;
+      const problemsByCourseCohort = new Map();
+      for (const p of newProblems) {
+        const key = `${p.cohortName}-${p.courseCode}`;
+        if (!problemsByCourseCohort.has(key)) {
+          problemsByCourseCohort.set(key, {
+            cohortName: p.cohortName,
+            courseCode: p.courseCode,
+            courseName: p.courseName,
+            missingPrereqs: [],
+          });
+        }
+        problemsByCourseCohort
+          .get(key)
+          .missingPrereqs.push(p.missingPrereqCode);
+      }
+      message += Array.from(problemsByCourseCohort.values())
+        .map(
+          (p) =>
+            `${p.cohortName}: "${
+              p.courseName
+            }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
+        )
+        .join("\n");
+
+      alert(message);
     }
   }
 
