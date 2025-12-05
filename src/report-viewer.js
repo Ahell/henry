@@ -758,7 +758,6 @@ export class ReportViewer extends LitElement {
     filterCohort: { type: String },
     isPainting: { type: Boolean },
     paintMode: { type: String },
-    inlineTeacherSelect: { type: Object },
   };
 
   constructor() {
@@ -769,7 +768,6 @@ export class ReportViewer extends LitElement {
     this.filterCohort = "";
     this.isPainting = false;
     this.paintMode = null; // 'add' or 'remove'
-    this.inlineTeacherSelect = null; // { slotDate, cohortId, courseId, course, targetSlot, availableTeachers, selectedTeachers }
 
     store.subscribe(() => this.requestUpdate());
   }
@@ -1180,9 +1178,34 @@ export class ReportViewer extends LitElement {
       const slotDate = cell.dataset.slotDate;
       if (!slotDate || cell.dataset.disabled === "true") return;
 
-      // Filter teachers that are available on this date
+      // Check if this course already exists in this slot (for any cohort)
+      // If so, teachers assigned to it are also available (co-teaching/samläsning)
+      const slot = store.getSlots().find((s) => s.start_date === slotDate);
+      const existingRunsForCourse = slot
+        ? store
+            .getCourseRuns()
+            .filter(
+              (r) => r.slot_id === slot.slot_id && r.course_id === courseId
+            )
+        : [];
+      const teachersAlreadyTeachingThisCourse = new Set();
+      existingRunsForCourse.forEach((r) => {
+        if (r.teachers) {
+          r.teachers.forEach((tid) =>
+            teachersAlreadyTeachingThisCourse.add(tid)
+          );
+        }
+      });
+
+      // Filter teachers that are available on this date OR already teaching this course
       const availableTeachers = compatibleTeachers.filter((teacher) => {
-        return !store.isTeacherUnavailable(teacher.teacher_id, slotDate);
+        const isAlreadyTeachingThisCourse =
+          teachersAlreadyTeachingThisCourse.has(teacher.teacher_id);
+        const isUnavailable = store.isTeacherUnavailable(
+          teacher.teacher_id,
+          slotDate
+        );
+        return isAlreadyTeachingThisCourse || !isUnavailable;
       });
 
       if (availableTeachers.length === 0) {
@@ -1193,6 +1216,65 @@ export class ReportViewer extends LitElement {
         const overlay = document.createElement("div");
         overlay.className = "available-teachers-overlay";
         // Show first name only, one per line
+        availableTeachers.forEach((t) => {
+          const span = document.createElement("span");
+          span.textContent = t.name.split(" ")[0];
+          overlay.appendChild(span);
+        });
+        overlay.title = availableTeachers.map((t) => t.name).join("\n");
+        cell.appendChild(overlay);
+      }
+    });
+  }
+
+  // Show available teachers for all cohorts (used when dragging for co-teaching)
+  showAvailableTeachersForDragAllCohorts(courseId) {
+    // Find all compatible teachers for this course
+    const compatibleTeachers = store
+      .getTeachers()
+      .filter((teacher) => teacher.compatible_courses?.includes(courseId));
+
+    // Get all slot cells (for all cohorts)
+    const cells = this.shadowRoot.querySelectorAll(".slot-cell");
+
+    cells.forEach((cell) => {
+      const slotDate = cell.dataset.slotDate;
+      if (!slotDate || cell.dataset.disabled === "true") return;
+
+      // Check if this course already exists in this slot (for any cohort)
+      const slot = store.getSlots().find((s) => s.start_date === slotDate);
+      const existingRunsForCourse = slot
+        ? store
+            .getCourseRuns()
+            .filter(
+              (r) => r.slot_id === slot.slot_id && r.course_id === courseId
+            )
+        : [];
+      const teachersAlreadyTeachingThisCourse = new Set();
+      existingRunsForCourse.forEach((r) => {
+        if (r.teachers) {
+          r.teachers.forEach((tid) =>
+            teachersAlreadyTeachingThisCourse.add(tid)
+          );
+        }
+      });
+
+      // Filter teachers that are available on this date OR already teaching this course
+      const availableTeachers = compatibleTeachers.filter((teacher) => {
+        const isAlreadyTeachingThisCourse =
+          teachersAlreadyTeachingThisCourse.has(teacher.teacher_id);
+        const isUnavailable = store.isTeacherUnavailable(
+          teacher.teacher_id,
+          slotDate
+        );
+        return isAlreadyTeachingThisCourse || !isUnavailable;
+      });
+
+      if (availableTeachers.length === 0) {
+        cell.classList.add("no-teachers-available");
+      } else {
+        const overlay = document.createElement("div");
+        overlay.className = "available-teachers-overlay";
         availableTeachers.forEach((t) => {
           const span = document.createElement("span");
           span.textContent = t.name.split(" ")[0];
@@ -1645,8 +1727,8 @@ export class ReportViewer extends LitElement {
     this._draggingFromCohortId = parseInt(cohortId);
     this._draggingCourseId = parseInt(courseId);
 
-    // Show available teachers in all cells for this cohort
-    this.showAvailableTeachersForDrag(parseInt(cohortId), parseInt(courseId));
+    // Show available teachers in all cells for ALL cohorts (for co-teaching visibility)
+    this.showAvailableTeachersForDragAllCohorts(parseInt(courseId));
   }
 
   handleDepotDragEnd(e) {
@@ -1932,12 +2014,6 @@ export class ReportViewer extends LitElement {
             });
           }
 
-          // Check if this cell has the inline teacher select
-          const hasInlineSelect =
-            this.inlineTeacherSelect &&
-            this.inlineTeacherSelect.slotDate === dateStr &&
-            this.inlineTeacherSelect.cohortId === cohort.cohort_id;
-
           return html`
             <td
               class="slot-cell ${isBeforeCohortStart
@@ -1961,7 +2037,6 @@ export class ReportViewer extends LitElement {
               ${continuationRuns.map((run) =>
                 this.renderGanttBlockForTable(run, cohort.cohort_id, true)
               )}
-              ${hasInlineSelect ? this.renderInlineTeacherSelect() : ""}
             </td>
           `;
         })}
@@ -2147,14 +2222,34 @@ export class ReportViewer extends LitElement {
 
     const currentCell = e.currentTarget;
     const targetCohortId = parseInt(currentCell.dataset.cohortId);
+    const targetSlotDate = currentCell.dataset.slotDate;
 
     // Check if cell is disabled (before cohort start date)
     const isDisabled = currentCell.dataset.disabled === "true";
 
     // Check if dragging to a different cohort
-    const isInvalidCohort =
+    let isInvalidCohort =
       this._draggingFromCohortId &&
       this._draggingFromCohortId !== targetCohortId;
+
+    // Allow drop if the same course already exists in this slot (co-teaching/samläsning)
+    if (isInvalidCohort && this._draggingCourseId && targetSlotDate) {
+      const slot = store
+        .getSlots()
+        .find((s) => s.start_date === targetSlotDate);
+      if (slot) {
+        const existingRunForCourse = store
+          .getCourseRuns()
+          .find(
+            (r) =>
+              r.slot_id === slot.slot_id &&
+              r.course_id === this._draggingCourseId
+          );
+        if (existingRunForCourse) {
+          isInvalidCohort = false; // Allow drop - same course exists for another cohort
+        }
+      }
+    }
 
     // Set drop effect based on validity
     if (isInvalidCohort || isDisabled) {
@@ -2260,9 +2355,21 @@ export class ReportViewer extends LitElement {
       return;
     }
 
-    // Prevent dropping to a different cohort
+    // Check if dropping to a different cohort
     if (fromCohortId !== targetCohortId) {
-      return; // Silently ignore - visual feedback already shown via red background
+      // Allow if the same course already exists in this slot (co-teaching/samläsning)
+      const slot = store
+        .getSlots()
+        .find((s) => s.start_date === targetSlotDate);
+      const existingRunForCourse = slot
+        ? store
+            .getCourseRuns()
+            .find((r) => r.slot_id === slot.slot_id && r.course_id === courseId)
+        : null;
+
+      if (!existingRunForCourse) {
+        return; // Silently ignore - can only drop to same cohort or where course exists
+      }
     }
 
     // Validate prerequisites for new course
@@ -2298,121 +2405,35 @@ export class ReportViewer extends LitElement {
       console.log("Created new slot:", targetSlot);
     }
 
-    // Get available teachers for this course and slot
-    const compatibleTeachers = store
-      .getTeachers()
-      .filter((teacher) => teacher.compatible_courses?.includes(courseId));
-    const availableTeachers = compatibleTeachers.filter((teacher) => {
-      return !store.isTeacherUnavailable(teacher.teacher_id, targetSlotDate);
-    });
+    // Check if this course already exists in this slot (for another cohort)
+    // If so, copy the assigned teachers (since they co-teach/samläser)
+    const existingRunsForCourse = store
+      .getCourseRuns()
+      .filter(
+        (r) => r.slot_id === targetSlot.slot_id && r.course_id === courseId
+      );
 
-    // Show inline teacher selection in the cell
-    this.inlineTeacherSelect = {
-      slotDate: targetSlotDate,
-      cohortId: targetCohortId,
-      courseId,
-      course,
-      targetSlot,
-      availableTeachers,
-      selectedTeachers: [],
-    };
-    this.requestUpdate();
-  }
-
-  renderInlineTeacherSelect() {
-    if (!this.inlineTeacherSelect) return "";
-
-    const { course, availableTeachers } = this.inlineTeacherSelect;
-
-    return html`
-      <div class="inline-teacher-select" @click="${(e) => e.stopPropagation()}">
-        <div class="course-header">${course.code}</div>
-        ${availableTeachers.length === 0
-          ? html`<div style="font-size: 0.5rem; color: #f44336;">
-              Ingen lärare tillgänglig
-            </div>`
-          : html`
-              <div class="teacher-list">
-                ${availableTeachers.map(
-                  (teacher) => html`
-                    <div class="teacher-option">
-                      <input
-                        type="checkbox"
-                        id="inline-teacher-${teacher.teacher_id}"
-                        .checked="${this.inlineTeacherSelect.selectedTeachers.includes(
-                          teacher.teacher_id
-                        )}"
-                        @change="${(e) =>
-                          this.handleInlineTeacherCheckbox(
-                            teacher.teacher_id,
-                            e.target.checked
-                          )}"
-                      />
-                      <label for="inline-teacher-${teacher.teacher_id}">
-                        ${teacher.name}
-                      </label>
-                    </div>
-                  `
-                )}
-              </div>
-            `}
-        <div class="select-buttons">
-          <button class="btn-cancel" @click="${this.handleInlineCancel}">
-            ✕
-          </button>
-          <button class="btn-ok" @click="${this.handleInlineConfirm}">✓</button>
-        </div>
-      </div>
-    `;
-  }
-
-  handleInlineTeacherCheckbox(teacherId, checked) {
-    if (checked) {
-      this.inlineTeacherSelect.selectedTeachers = [
-        ...this.inlineTeacherSelect.selectedTeachers,
-        teacherId,
-      ];
-    } else {
-      this.inlineTeacherSelect.selectedTeachers =
-        this.inlineTeacherSelect.selectedTeachers.filter(
-          (id) => id !== teacherId
-        );
+    let teachersToAssign = [];
+    if (existingRunsForCourse.length > 0) {
+      // Get teachers from existing runs of this course
+      const existingTeachers = new Set();
+      existingRunsForCourse.forEach((r) => {
+        if (r.teachers) {
+          r.teachers.forEach((tid) => existingTeachers.add(tid));
+        }
+      });
+      teachersToAssign = Array.from(existingTeachers);
     }
-    this.requestUpdate();
-  }
 
-  handleInlineCancel() {
-    this.inlineTeacherSelect = null;
-    this.requestUpdate();
-  }
-
-  handleInlineConfirm() {
-    if (!this.inlineTeacherSelect) return;
-
-    const { courseId, targetSlot, cohortId, selectedTeachers } =
-      this.inlineTeacherSelect;
-
-    // Create a new course run with selected teachers
+    // Create the course run with teachers (copied from existing runs if any)
     const newRun = store.addCourseRun({
       course_id: courseId,
       slot_id: targetSlot.slot_id,
-      cohorts: [cohortId],
-      teachers: selectedTeachers,
+      cohorts: [targetCohortId],
+      teachers: teachersToAssign,
     });
 
-    // Mark selected teachers as unavailable for this slot
-    selectedTeachers.forEach((teacherId) => {
-      store.toggleTeacherAvailabilityForSlot(
-        teacherId,
-        targetSlot.start_date,
-        true
-      );
-    });
-
-    console.log("Created new run with teachers:", newRun);
-
-    this.inlineTeacherSelect = null;
-    store.notify();
+    console.log("Created new run:", newRun, "with teachers:", teachersToAssign);
     this.requestUpdate();
   }
 
@@ -2452,11 +2473,21 @@ export class ReportViewer extends LitElement {
         const targetCourseId = runs.length > 0 ? runs[0].course_id : null;
 
         // Remove teacher from runs of OTHER courses in this slot
+        // and check if those courses now have no available teachers
         for (const otherRun of allRunsInSlot) {
           if (otherRun.course_id !== targetCourseId && otherRun.teachers) {
+            const wasAssigned = otherRun.teachers.includes(teacherId);
             otherRun.teachers = otherRun.teachers.filter(
               (id) => id !== teacherId
             );
+
+            // If teacher was removed, check if any compatible teachers remain available
+            if (wasAssigned) {
+              this.checkAndRemoveCourseIfNoTeachersAvailable(
+                otherRun.course_id,
+                slotDate
+              );
+            }
           }
         }
       }
@@ -2477,8 +2508,88 @@ export class ReportViewer extends LitElement {
       }
     }
 
+    // If unchecking, check if the course now has no available teachers
+    if (!checked && runs.length > 0) {
+      this.checkAndRemoveCourseIfNoTeachersAvailable(
+        runs[0].course_id,
+        slotDate
+      );
+    }
+
     store.notify();
     this.requestUpdate();
+  }
+
+  checkAndRemoveCourseIfNoTeachersAvailable(courseId, slotDate) {
+    const slot = store.getSlots().find((s) => s.start_date === slotDate);
+    if (!slot) return;
+
+    // Get all runs for this course in this slot
+    const runsForCourse = store
+      .getCourseRuns()
+      .filter((r) => r.slot_id === slot.slot_id && r.course_id === courseId);
+
+    if (runsForCourse.length === 0) return;
+
+    // Check if any teacher is still assigned to this course
+    const hasAssignedTeacher = runsForCourse.some(
+      (r) => r.teachers && r.teachers.length > 0
+    );
+    if (hasAssignedTeacher) return;
+
+    // Check if any compatible teacher is available
+    // A teacher is available if:
+    // 1. Not marked as unavailable (via teacher view), OR
+    // 2. Already assigned to THIS SAME course in this slot (for another cohort - co-teaching)
+    const teachers = store.getTeachers();
+
+    // Get teachers already assigned to this course in this slot
+    const teachersAssignedToThisCourse = new Set();
+    runsForCourse.forEach((r) => {
+      if (r.teachers) {
+        r.teachers.forEach((tid) => teachersAssignedToThisCourse.add(tid));
+      }
+    });
+
+    const availableCompatibleTeachers = teachers.filter((t) => {
+      if (!t.compatible_courses || !t.compatible_courses.includes(courseId)) {
+        return false;
+      }
+      // Teacher is available if not marked unavailable OR already teaching this course
+      const isAssignedToThisCourse = teachersAssignedToThisCourse.has(
+        t.teacher_id
+      );
+      const isUnavailable = store.isTeacherUnavailable(t.teacher_id, slotDate);
+      return isAssignedToThisCourse || !isUnavailable;
+    });
+
+    // If there are still available teachers, don't remove the course
+    if (availableCompatibleTeachers.length > 0) return;
+
+    // No available teachers - remove all runs for this course in this slot
+    const course = store.getCourse(courseId);
+    const courseName = course ? course.name : "Kursen";
+
+    // Collect cohort names for the message
+    const affectedCohorts = runsForCourse
+      .flatMap((r) => r.cohorts || [])
+      .map((cohortId) => store.getCohort(cohortId)?.name)
+      .filter(Boolean);
+
+    // Remove the runs
+    for (const run of runsForCourse) {
+      const index = store.courseRuns.findIndex((r) => r.run_id === run.run_id);
+      if (index !== -1) {
+        store.courseRuns.splice(index, 1);
+      }
+    }
+
+    // Show notification
+    const cohortText =
+      affectedCohorts.length > 0 ? ` för ${affectedCohorts.join(", ")}` : "";
+    alert(
+      `"${courseName}" har flyttats tillbaka till depån${cohortText} eftersom ingen lärare är tillgänglig.`
+    );
   }
 
   validatePrerequisitesForNew(course, targetSlotDate, targetCohortId) {
