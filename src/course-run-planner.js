@@ -1,5 +1,5 @@
-import { LitElement, html, css } from 'lit';
-import { store } from './store.js';
+import { LitElement, html, css } from "lit";
+import { store } from "./store.js";
 
 export class CourseRunPlanner extends LitElement {
   static styles = css`
@@ -32,7 +32,8 @@ export class CourseRunPlanner extends LitElement {
       color: #555;
     }
 
-    input, select {
+    input,
+    select {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid #ccc;
@@ -42,7 +43,8 @@ export class CourseRunPlanner extends LitElement {
       box-sizing: border-box;
     }
 
-    input:focus, select:focus {
+    input:focus,
+    select:focus {
       outline: none;
       border-color: #007bff;
       box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
@@ -99,7 +101,8 @@ export class CourseRunPlanner extends LitElement {
       margin-top: 1rem;
     }
 
-    th, td {
+    th,
+    td {
       border: 1px solid #ddd;
       padding: 0.75rem;
       text-align: left;
@@ -187,17 +190,17 @@ export class CourseRunPlanner extends LitElement {
     selectedCourse: { type: String },
     selectedTeacher: { type: String },
     selectedCohorts: { type: Array },
-    messages: { type: Array }
+    messages: { type: Array },
   };
 
   constructor() {
     super();
     this.selectedSlot = null;
-    this.selectedCourse = '';
-    this.selectedTeacher = '';
+    this.selectedCourse = "";
+    this.selectedTeacher = "";
     this.selectedCohorts = [];
     this.messages = [];
-    
+
     store.subscribe(() => this.requestUpdate());
   }
 
@@ -205,61 +208,106 @@ export class CourseRunPlanner extends LitElement {
     return html`
       <div class="panel">
         <h3>Skapa Ny Kursomgång</h3>
-        
-        ${this.messages.map(msg => html`
-          <div class="alert ${msg.type}">
-            ${msg.text}
-          </div>
-        `)}
+
+        ${this.messages.map(
+          (msg) => html` <div class="alert ${msg.type}">${msg.text}</div> `
+        )}
 
         <h4>1. Välj Tidslucka</h4>
         <div class="slot-grid">
-          ${store.getSlots().map(slot => html`
-            <div class="slot-card ${slot.is_placeholder ? 'placeholder' : ''}" 
-                 @click="${() => this.selectSlot(slot)}"
-                 style="${this.selectedSlot?.slot_id === slot.slot_id ? 'border-color: #007bff; background: #e7f3ff;' : ''}">
-              <div class="slot-date">${slot.start_date} → ${slot.end_date}</div>
-              ${slot.evening_pattern ? html`<div class="slot-pattern">Mönster: ${slot.evening_pattern}</div>` : ''}
-              ${this.getSlotContentInfo(slot)}
-            </div>
-          `)}
+          ${store.getSlots().map(
+            (slot) => html`
+              <div
+                class="slot-card ${slot.is_placeholder ? "placeholder" : ""}"
+                @click="${() => this.selectSlot(slot)}"
+                style="${this.selectedSlot?.slot_id === slot.slot_id
+                  ? "border-color: #007bff; background: #e7f3ff;"
+                  : ""}"
+              >
+                <div class="slot-date">
+                  ${slot.start_date} → ${slot.end_date}
+                </div>
+                ${slot.evening_pattern
+                  ? html`<div class="slot-pattern">
+                      Mönster: ${slot.evening_pattern}
+                    </div>`
+                  : ""}
+                ${this.getSlotContentInfo(slot)}
+              </div>
+            `
+          )}
         </div>
 
-        ${this.selectedSlot ? html`
-          <h4 style="margin-top: 2rem;">2. Välj Kurs</h4>
-          <div class="form-group">
-            <select id="courseSelect" @change="${(e) => this.selectedCourse = e.target.value}">
-              <option value="">Välj kurs...</option>
-              ${store.getCourses().map(course => html`
-                <option value="${course.course_id}">${course.code} - ${course.name}</option>
-              `)}
-            </select>
-          </div>
+        ${this.selectedSlot
+          ? html`
+              <h4 style="margin-top: 2rem;">2. Välj Kurs</h4>
+              <div class="form-group">
+                <select
+                  id="courseSelect"
+                  @change="${(e) => (this.selectedCourse = e.target.value)}"
+                >
+                  <option value="">Välj kurs...</option>
+                  ${store
+                    .getCourses()
+                    .map(
+                      (course) => html`
+                        <option value="${course.course_id}">
+                          ${course.code} - ${course.name}
+                        </option>
+                      `
+                    )}
+                </select>
+              </div>
 
-          <h4>3. Välj Lärare</h4>
-          <div class="form-group">
-            <select id="teacherSelect" @change="${(e) => this.selectedTeacher = e.target.value}">
-              <option value="">Välj lärare...</option>
-              ${store.getTeachers().map(teacher => html`
-                <option value="${teacher.teacher_id}">${teacher.name}</option>
-              `)}
-            </select>
-          </div>
+              <h4>3. Välj Lärare</h4>
+              <div class="form-group">
+                <select
+                  id="teacherSelect"
+                  @change="${(e) => (this.selectedTeacher = e.target.value)}"
+                >
+                  <option value="">Välj lärare...</option>
+                  ${store
+                    .getTeachers()
+                    .map(
+                      (teacher) => html`
+                        <option value="${teacher.teacher_id}">
+                          ${teacher.name}
+                        </option>
+                      `
+                    )}
+                </select>
+              </div>
 
-          <h4>4. Välj Kullar</h4>
-          <div class="form-group">
-            ${store.getCohorts().map(cohort => html`
-              <label>
-                <input type="checkbox" @change="${(e) => this.toggleCohort(cohort.cohort_id, e.target.checked)}">
-                ${cohort.name} (${cohort.planned_size} studenter)
-              </label>
-            `)}
-          </div>
+              <h4>4. Välj Kullar</h4>
+              <div class="form-group">
+                ${store.getCohorts().map(
+                  (cohort) => html`
+                    <label>
+                      <input
+                        type="checkbox"
+                        @change="${(e) =>
+                          this.toggleCohort(
+                            cohort.cohort_id,
+                            e.target.checked
+                          )}"
+                      />
+                      ${cohort.name} (${cohort.planned_size} studenter)
+                    </label>
+                  `
+                )}
+              </div>
 
-          ${this.selectedCourse && this.selectedTeacher && this.selectedCohorts.length > 0 ? html`
-            <button @click="${this.createCourseRun}">Skapa Kursomgång</button>
-          ` : ''}
-        ` : ''}
+              ${this.selectedCourse &&
+              this.selectedTeacher &&
+              this.selectedCohorts.length > 0
+                ? html`
+                    <button @click="${this.createCourseRun}">
+                      Skapa Kursomgång
+                    </button>
+                  `
+                : ""}
+            `
+          : ""}
       </div>
 
       <div class="panel">
@@ -276,7 +324,7 @@ export class CourseRunPlanner extends LitElement {
             </tr>
           </thead>
           <tbody>
-            ${store.getCourseRuns().map(run => this.renderCourseRun(run))}
+            ${store.getCourseRuns().map((run) => this.renderCourseRun(run))}
           </tbody>
         </table>
       </div>
@@ -288,9 +336,9 @@ export class CourseRunPlanner extends LitElement {
     const slot = store.getSlot(run.slot_id);
     const teacher = store.getTeacher(run.teacher_id);
     const cohortNames = run.cohorts
-      .map(id => store.getCohort(id)?.name)
+      .map((id) => store.getCohort(id)?.name)
       .filter(Boolean)
-      .join(', ');
+      .join(", ");
 
     return html`
       <tr>
@@ -306,8 +354,8 @@ export class CourseRunPlanner extends LitElement {
 
   selectSlot(slot) {
     this.selectedSlot = slot;
-    this.selectedCourse = '';
-    this.selectedTeacher = '';
+    this.selectedCourse = "";
+    this.selectedTeacher = "";
     this.selectedCohorts = [];
   }
 
@@ -315,7 +363,9 @@ export class CourseRunPlanner extends LitElement {
     if (checked) {
       this.selectedCohorts = [...this.selectedCohorts, cohortId];
     } else {
-      this.selectedCohorts = this.selectedCohorts.filter(id => id !== cohortId);
+      this.selectedCohorts = this.selectedCohorts.filter(
+        (id) => id !== cohortId
+      );
     }
   }
 
@@ -337,11 +387,14 @@ export class CourseRunPlanner extends LitElement {
 
     // Validera kapacitet
     if (totalStudents > 130) {
-      this.addMessage('error', `För många studenter (${totalStudents} > 130)`);
+      this.addMessage("error", `För många studenter (${totalStudents} > 130)`);
       return;
     }
     if (totalStudents > 100) {
-      this.addMessage('warning', `Varning: Många studenter (${totalStudents} > 100)`);
+      this.addMessage(
+        "warning",
+        `Varning: Många studenter (${totalStudents} > 100)`
+      );
     }
 
     // Skapa kursomgång
@@ -350,23 +403,23 @@ export class CourseRunPlanner extends LitElement {
       slot_id: this.selectedSlot.slot_id,
       teacher_id: parseInt(this.selectedTeacher),
       cohorts: this.selectedCohorts,
-      planned_students: totalStudents
+      planned_students: totalStudents,
     };
 
     store.addCourseRun(run);
-    this.addMessage('success', 'Kursomgång skapad!');
+    this.addMessage("success", "Kursomgång skapad!");
     this.selectedSlot = null;
-    this.selectedCourse = '';
-    this.selectedTeacher = '';
+    this.selectedCourse = "";
+    this.selectedTeacher = "";
     this.selectedCohorts = [];
   }
 
   addMessage(type, text) {
     this.messages = [...this.messages, { type, text }];
     setTimeout(() => {
-      this.messages = this.messages.filter(m => m.text !== text);
+      this.messages = this.messages.filter((m) => m.text !== text);
     }, 4000);
   }
 }
 
-customElements.define('course-run-planner', CourseRunPlanner);
+customElements.define("course-run-planner", CourseRunPlanner);

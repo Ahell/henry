@@ -5,11 +5,13 @@ En avancerad webbapp för kursplanering bygd med **Lit 3** utan TypeScript. Appe
 ## Funktioner
 
 ### 1. **Import/Export**
+
 - Ladda data från JSON eller CSV-filer
 - Exportera planen för delning eller backup
 - Exempeldata för snabb start
 
 ### 2. **Admin - Grunddata**
+
 - Lägg till och hantera kurser (inkl. juridikkurser)
 - Hantera studentkullar
 - Registrera lärare och deras hemavdelningar
@@ -17,6 +19,7 @@ En avancerad webbapp för kursplanering bygd med **Lit 3** utan TypeScript. Appe
 - Registrera lärarnas tillgänglighet (busy/free perioder)
 
 ### 3. **Skapa Kursomgångar**
+
 - Visuell slot-väljare
 - Välj kurs, lärare och kullar som ska delta
 - Automatisk kapacitetsvalidering
@@ -25,20 +28,24 @@ En avancerad webbapp för kursplanering bygd med **Lit 3** utan TypeScript. Appe
 ### 4. **Rapporter & Vyer**
 
 #### 4.1 Avdelningschef-vy
+
 - Bemanning per år/termin
 - Filtrera på år och avdelning
 - Se alla kurskoder, examinator, start/slut, antal studenter
 
 #### 4.2 Lärar-vy
+
 - Per lärare: vilka FEI-kursomgångar undervisar de?
 - Möjlighet att detektera krockar med busy-perioder (KTH)
 
 #### 4.3 Kull-vy
+
 - Per kull: sekvens av 14 kurser i kronologisk ordning
 - Markering av juridikkurser
 - Framgång/status för varje kurs
 
 #### 4.4 Gantt-vy (Planeringsöversikt)
+
 - Tidsaxel för alla kullar och kurser
 - Färgkodning: juridik (lila), normal (blå), 2-block (grön)
 - Visar studieverlauf per kull
@@ -46,20 +53,24 @@ En avancerad webbapp för kursplanering bygd med **Lit 3** utan TypeScript. Appe
 ## Affärsregler
 
 ### Juridiska kursberoenden
+
 - **Juridisk översiktskurs (AI180U)** måste komma före alla andra juridikkurser
 - Rekommenderad ordning: Översikt → Allmän → Speciell → Bostadsrätt/Beskattning/Kvalificerad
 - Varning om ordningen avviker från rekommenderad
 
 ### Kapacitet
+
 - **Föredragen max:** 100 studenter per kursomgång
 - **Hårt stopp:** 130 studenter
 - Automatisk varning och validering
 
 ### 2-block kurser
+
 - **AI180U (Juridisk översiktskurs):** 15 hp = 2 block
 - **AI184U (Fastighetsförmedling - introduktion):** 15 hp = 2 block
 
 ### Tidsluckor
+
 - Fördefinerade slots från FEI (t.o.m. 2027)
 - Slots kan vara "placeholders" (tomma) eller reserverade
 - Stöd för kvällsmönster (tis/tor, mån/fre, etc.)
@@ -83,6 +94,7 @@ npm run preview
 ## Datastruktur
 
 ### Kurser (Course)
+
 ```json
 {
   "course_id": 1,
@@ -97,6 +109,7 @@ npm run preview
 ```
 
 ### Kullar (Cohort)
+
 ```json
 {
   "cohort_id": 1,
@@ -107,6 +120,7 @@ npm run preview
 ```
 
 ### Kursomgångar (CourseRun)
+
 ```json
 {
   "run_id": 1,
@@ -120,6 +134,7 @@ npm run preview
 ```
 
 ### Tidsluckor (Slot)
+
 ```json
 {
   "slot_id": 1,
