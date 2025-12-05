@@ -179,6 +179,122 @@ export class ReportViewer extends LitElement {
       box-shadow: inset 0 0 0 2px #f44336;
     }
 
+    .gantt-table td.slot-cell.no-teachers-available {
+      background: #ffcdd2 !important;
+      box-shadow: inset 0 0 0 2px #f44336;
+    }
+
+    .available-teachers-overlay {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      right: 2px;
+      background: rgba(76, 175, 80, 0.9);
+      color: white;
+      font-size: 0.45rem;
+      padding: 2px 3px;
+      border-radius: 3px;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      line-height: 1.2;
+    }
+
+    .inline-teacher-select {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      border: 2px solid #4caf50;
+      border-radius: 4px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      padding: 4px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      min-width: 120px;
+      overflow: visible;
+    }
+
+    .inline-teacher-select .course-header {
+      font-size: 0.5rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 4px;
+      padding-bottom: 2px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .inline-teacher-select .teacher-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .inline-teacher-select .teacher-option {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.55rem;
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 2px;
+    }
+
+    .inline-teacher-select .teacher-option:hover {
+      background: #e8f5e9;
+    }
+
+    .inline-teacher-select .teacher-option input {
+      width: 12px;
+      height: 12px;
+      margin: 0;
+    }
+
+    .inline-teacher-select .teacher-option label {
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .inline-teacher-select .select-buttons {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+      padding-top: 4px;
+      border-top: 1px solid #eee;
+    }
+
+    .inline-teacher-select .select-buttons button {
+      flex: 1;
+      padding: 3px 6px;
+      font-size: 0.5rem;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .inline-teacher-select .select-buttons .btn-ok {
+      background: #4caf50;
+      color: white;
+    }
+
+    .inline-teacher-select .select-buttons .btn-cancel {
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    .no-teachers-message {
+      color: #f44336;
+      padding: 1rem;
+      text-align: center;
+    }
+
     .gantt-table td.slot-cell.disabled-slot {
       background: #e0e0e0;
       cursor: not-allowed;
@@ -318,13 +434,19 @@ export class ReportViewer extends LitElement {
 
     .summary-course {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 4px;
-      padding: 2px 4px;
-      border-radius: 3px;
+      padding: 4px 6px;
+      border-radius: 4px;
       font-size: 0.6rem;
       color: white;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
+    }
+
+    .summary-course .course-header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .summary-course .course-name {
@@ -332,6 +454,7 @@ export class ReportViewer extends LitElement {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-weight: bold;
     }
 
     .summary-course .participant-count {
@@ -339,6 +462,54 @@ export class ReportViewer extends LitElement {
       background: rgba(255, 255, 255, 0.3);
       padding: 1px 4px;
       border-radius: 2px;
+    }
+
+    .summary-course .summary-teacher-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 3px;
+      padding: 4px;
+    }
+
+    .summary-course .summary-teacher-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.55rem;
+      color: #333;
+      padding: 2px 4px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .summary-course .summary-teacher-row:hover {
+      background: #e0e0e0;
+    }
+
+    .summary-course .summary-teacher-row input {
+      width: 12px;
+      height: 12px;
+      margin: 0;
+      accent-color: #4caf50;
+      cursor: pointer;
+    }
+
+    .summary-course .summary-teacher-row label {
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .summary-course .summary-teacher-row.assigned {
+      background: #c8e6c9;
+      font-weight: 600;
+      color: #2e7d32;
+    }
+
+    .summary-course .summary-teacher-row.assigned:hover {
+      background: #a5d6a7;
     }
 
     .cohort-depot-content {
@@ -530,6 +701,12 @@ export class ReportViewer extends LitElement {
       font-weight: 500;
     }
 
+    .teacher-cell.assigned-course {
+      background-color: #4caf50;
+      color: white;
+      font-weight: 600;
+    }
+
     .teacher-cell.has-course.unavailable {
       background: repeating-linear-gradient(
         45deg,
@@ -581,6 +758,7 @@ export class ReportViewer extends LitElement {
     filterCohort: { type: String },
     isPainting: { type: Boolean },
     paintMode: { type: String },
+    inlineTeacherSelect: { type: Object },
   };
 
   constructor() {
@@ -591,6 +769,7 @@ export class ReportViewer extends LitElement {
     this.filterCohort = "";
     this.isPainting = false;
     this.paintMode = null; // 'add' or 'remove'
+    this.inlineTeacherSelect = null; // { slotDate, cohortId, courseId, course, targetSlot, availableTeachers, selectedTeachers }
 
     store.subscribe(() => this.requestUpdate());
   }
@@ -762,8 +941,12 @@ export class ReportViewer extends LitElement {
 
         <div class="legend">
           <div class="legend-item">
+            <div class="legend-box" style="background: #4caf50;"></div>
+            <span>Tilldelad kurs</span>
+          </div>
+          <div class="legend-item">
             <div class="legend-box" style="background: #4dabf7;"></div>
-            <span>Schemalagd kurs</span>
+            <span>Kompatibel kurs (ej tilldelad)</span>
           </div>
           <div class="legend-item">
             <div class="legend-box" style="background: #ff6b6b;"></div>
@@ -833,6 +1016,19 @@ export class ReportViewer extends LitElement {
           )
       : [];
 
+    // Check if teacher is actually assigned to any run in this slot
+    const assignedRuns = slot
+      ? store
+          .getCourseRuns()
+          .filter(
+            (r) =>
+              r.slot_id === slot.slot_id &&
+              r.teachers &&
+              r.teachers.includes(teacher.teacher_id)
+          )
+      : [];
+    const isAssigned = assignedRuns.length > 0;
+
     // Check if teacher is marked as unavailable
     const isUnavailable = store.isTeacherUnavailable(
       teacher.teacher_id,
@@ -843,7 +1039,23 @@ export class ReportViewer extends LitElement {
     let content = "";
     let titleText = "";
 
-    if (compatibleRuns.length > 0) {
+    if (isAssigned) {
+      // Teacher is assigned to a course - show green
+      cellClass += " assigned-course";
+      const courseCodes = assignedRuns
+        .map((run) => {
+          const course = store.getCourse(run.course_id);
+          return course?.code;
+        })
+        .filter(Boolean);
+      content = courseCodes.join(", ");
+      titleText =
+        "Tilldelad: " +
+        assignedRuns
+          .map((run) => store.getCourse(run.course_id)?.name)
+          .filter(Boolean)
+          .join(", ");
+    } else if (compatibleRuns.length > 0) {
       cellClass += " has-course";
       // Show course codes for compatible courses
       const courseCodes = compatibleRuns
@@ -859,7 +1071,7 @@ export class ReportViewer extends LitElement {
         .join(", ");
     }
 
-    if (isUnavailable) {
+    if (isUnavailable && !isAssigned) {
       cellClass += " unavailable";
       titleText += titleText ? " (Upptagen)" : "Upptagen";
     }
@@ -885,6 +1097,22 @@ export class ReportViewer extends LitElement {
     this.paintMode = null;
   }
 
+  removeTeacherFromRunsInSlot(teacherId, slotDate) {
+    // Find the slot
+    const slot = store.getSlots().find((s) => s.start_date === slotDate);
+    if (!slot) return;
+
+    // Remove teacher from all runs in this slot
+    const runsInSlot = store
+      .getCourseRuns()
+      .filter((r) => r.slot_id === slot.slot_id);
+    for (const run of runsInSlot) {
+      if (run.teachers && run.teachers.includes(teacherId)) {
+        run.teachers = run.teachers.filter((id) => id !== teacherId);
+      }
+    }
+  }
+
   handleCellMouseDown(e) {
     if (!this.isPainting) return;
 
@@ -898,6 +1126,11 @@ export class ReportViewer extends LitElement {
       slotDate
     );
     this.paintMode = isCurrentlyUnavailable ? "remove" : "add";
+
+    // If marking as unavailable, also remove from any assigned courses
+    if (this.paintMode === "add") {
+      this.removeTeacherFromRunsInSlot(teacherId, slotDate);
+    }
 
     // Toggle this cell
     store.toggleTeacherAvailabilityForSlot(teacherId, slotDate);
@@ -918,6 +1151,8 @@ export class ReportViewer extends LitElement {
 
     // Apply paint based on mode
     if (this.paintMode === "add" && !isCurrentlyUnavailable) {
+      // Remove teacher from assigned courses before marking unavailable
+      this.removeTeacherFromRunsInSlot(teacherId, slotDate);
       store.toggleTeacherAvailabilityForSlot(teacherId, slotDate);
     } else if (this.paintMode === "remove" && isCurrentlyUnavailable) {
       store.toggleTeacherAvailabilityForSlot(teacherId, slotDate);
@@ -927,6 +1162,58 @@ export class ReportViewer extends LitElement {
   handlePaintEnd() {
     this._isMouseDown = false;
     this.paintMode = null;
+  }
+
+  // Show available teachers for a course in all slot cells for a cohort
+  showAvailableTeachersForDrag(cohortId, courseId) {
+    // Find all compatible teachers for this course
+    const compatibleTeachers = store
+      .getTeachers()
+      .filter((teacher) => teacher.compatible_courses?.includes(courseId));
+
+    // Get all slot cells for this cohort
+    const cells = this.shadowRoot.querySelectorAll(
+      `.slot-cell[data-cohort-id="${cohortId}"]`
+    );
+
+    cells.forEach((cell) => {
+      const slotDate = cell.dataset.slotDate;
+      if (!slotDate || cell.dataset.disabled === "true") return;
+
+      // Filter teachers that are available on this date
+      const availableTeachers = compatibleTeachers.filter((teacher) => {
+        return !store.isTeacherUnavailable(teacher.teacher_id, slotDate);
+      });
+
+      if (availableTeachers.length === 0) {
+        // No teachers available - mark cell as invalid
+        cell.classList.add("no-teachers-available");
+      } else {
+        // Show available teacher names in vertical list
+        const overlay = document.createElement("div");
+        overlay.className = "available-teachers-overlay";
+        // Show first name only, one per line
+        availableTeachers.forEach((t) => {
+          const span = document.createElement("span");
+          span.textContent = t.name.split(" ")[0];
+          overlay.appendChild(span);
+        });
+        overlay.title = availableTeachers.map((t) => t.name).join("\n");
+        cell.appendChild(overlay);
+      }
+    });
+  }
+
+  // Clear all teacher overlays and classes
+  clearAvailableTeachersOverlays() {
+    this.shadowRoot
+      .querySelectorAll(".available-teachers-overlay")
+      .forEach((el) => {
+        el.remove();
+      });
+    this.shadowRoot.querySelectorAll(".no-teachers-available").forEach((el) => {
+      el.classList.remove("no-teachers-available");
+    });
   }
 
   renderCohortView() {
@@ -1091,7 +1378,7 @@ export class ReportViewer extends LitElement {
     // For each slot date, calculate total participants per course
     return html`
       <tr>
-        <td class="summary-label" colspan="2">Deltagare per kurs:</td>
+        <td class="summary-label" colspan="2">Kurser & Lärare:</td>
         ${slotDates.map((dateStr) => {
           const courseSummary = this.getCourseSummaryForSlot(dateStr);
           return html`
@@ -1099,18 +1386,60 @@ export class ReportViewer extends LitElement {
               ${courseSummary.map((item) => {
                 const course = item.course;
                 const bgColor = this.getCourseColor(course);
+                const runs = item.runs;
+                const assignedTeachers = item.assignedTeachers;
+                const availableTeachers = item.availableTeachers;
 
                 return html`
                   <div
                     class="summary-course"
                     style="background-color: ${bgColor};"
                   >
-                    <span class="course-name" title="${course.name}"
-                      >${course.code}</span
-                    >
-                    <span class="participant-count"
-                      >${item.totalParticipants}</span
-                    >
+                    <div class="course-header">
+                      <span class="course-name" title="${course.name}"
+                        >${course.code}</span
+                      >
+                      <span class="participant-count"
+                        >${item.totalParticipants} st</span
+                      >
+                    </div>
+                    ${availableTeachers.length > 0
+                      ? html`
+                          <div class="summary-teacher-list">
+                            ${availableTeachers.map(
+                              (teacher) => html`
+                                <div
+                                  class="summary-teacher-row ${assignedTeachers.includes(
+                                    teacher.teacher_id
+                                  )
+                                    ? "assigned"
+                                    : ""}"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    id="summary-${dateStr}-${course.course_id}-${teacher.teacher_id}"
+                                    .checked="${assignedTeachers.includes(
+                                      teacher.teacher_id
+                                    )}"
+                                    @change="${(e) =>
+                                      this.handleSummaryTeacherToggle(
+                                        runs,
+                                        teacher.teacher_id,
+                                        e.target.checked,
+                                        dateStr
+                                      )}"
+                                  />
+                                  <label
+                                    for="summary-${dateStr}-${course.course_id}-${teacher.teacher_id}"
+                                  >
+                                    ${teacher.name}
+                                  </label>
+                                </div>
+                              `
+                            )}
+                          </div>
+                        `
+                      : ""}
                   </div>
                 `;
               })}
@@ -1154,20 +1483,63 @@ export class ReportViewer extends LitElement {
         courseMap.set(course.course_id, {
           course,
           totalParticipants: 0,
+          runs: [],
+          assignedTeachers: new Set(),
         });
       }
 
-      courseMap.get(course.course_id).totalParticipants += totalParticipants;
+      const entry = courseMap.get(course.course_id);
+      entry.totalParticipants += totalParticipants;
+      entry.runs.push(run);
+
+      // Collect assigned teachers from this run
+      if (run.teachers && run.teachers.length > 0) {
+        run.teachers.forEach((tid) => entry.assignedTeachers.add(tid));
+      }
     }
 
-    // Convert to array and sort (courses with prerequisites first, then by name)
-    return Array.from(courseMap.values()).sort((a, b) => {
-      const aHasPrereqs = this.hasPrerequisites(a.course.course_id);
-      const bHasPrereqs = this.hasPrerequisites(b.course.course_id);
-      if (aHasPrereqs && !bHasPrereqs) return -1;
-      if (!aHasPrereqs && bHasPrereqs) return 1;
-      return a.course.name.localeCompare(b.course.name);
-    });
+    // Convert to array, add available teachers, and sort
+    return Array.from(courseMap.values())
+      .map((entry) => {
+        // Find teachers compatible with this course
+        const teachers = store.getTeachers();
+        const assignedTeacherIds = Array.from(entry.assignedTeachers);
+
+        // Filter to compatible teachers who are either:
+        // 1. Already assigned to THIS course, OR
+        // 2. Not marked as unavailable for this slot
+        const availableTeachers = teachers.filter((t) => {
+          if (
+            !t.compatible_courses ||
+            !t.compatible_courses.includes(entry.course.course_id)
+          ) {
+            return false;
+          }
+          const isAssignedToThisCourse = assignedTeacherIds.includes(
+            t.teacher_id
+          );
+          const isUnavailable = store.isTeacherUnavailable(
+            t.teacher_id,
+            slotDate
+          );
+          return isAssignedToThisCourse || !isUnavailable;
+        });
+
+        return {
+          course: entry.course,
+          totalParticipants: entry.totalParticipants,
+          runs: entry.runs,
+          assignedTeachers: assignedTeacherIds,
+          availableTeachers,
+        };
+      })
+      .sort((a, b) => {
+        const aHasPrereqs = this.hasPrerequisites(a.course.course_id);
+        const bHasPrereqs = this.hasPrerequisites(b.course.course_id);
+        if (aHasPrereqs && !bHasPrereqs) return -1;
+        if (!aHasPrereqs && bHasPrereqs) return 1;
+        return a.course.name.localeCompare(b.course.name);
+      });
   }
 
   renderCohortDepot(cohort, scheduledCourseIds) {
@@ -1271,6 +1643,10 @@ export class ReportViewer extends LitElement {
     this._draggingTwoBlock = isTwoBlock;
     this._draggingFromDepot = true;
     this._draggingFromCohortId = parseInt(cohortId);
+    this._draggingCourseId = parseInt(courseId);
+
+    // Show available teachers in all cells for this cohort
+    this.showAvailableTeachersForDrag(parseInt(cohortId), parseInt(courseId));
   }
 
   handleDepotDragEnd(e) {
@@ -1278,11 +1654,21 @@ export class ReportViewer extends LitElement {
     this._draggingTwoBlock = false;
     this._draggingFromDepot = false;
     this._draggingFromCohortId = null;
+    this._draggingCourseId = null;
+
+    // Clear available teachers overlays
+    this.clearAvailableTeachersOverlays();
 
     this.shadowRoot
-      .querySelectorAll(".drag-over, .drag-over-invalid")
+      .querySelectorAll(
+        ".drag-over, .drag-over-invalid, .no-teachers-available"
+      )
       .forEach((el) => {
-        el.classList.remove("drag-over", "drag-over-invalid");
+        el.classList.remove(
+          "drag-over",
+          "drag-over-invalid",
+          "no-teachers-available"
+        );
       });
   }
 
@@ -1546,6 +1932,12 @@ export class ReportViewer extends LitElement {
             });
           }
 
+          // Check if this cell has the inline teacher select
+          const hasInlineSelect =
+            this.inlineTeacherSelect &&
+            this.inlineTeacherSelect.slotDate === dateStr &&
+            this.inlineTeacherSelect.cohortId === cohort.cohort_id;
+
           return html`
             <td
               class="slot-cell ${isBeforeCohortStart
@@ -1569,6 +1961,7 @@ export class ReportViewer extends LitElement {
               ${continuationRuns.map((run) =>
                 this.renderGanttBlockForTable(run, cohort.cohort_id, true)
               )}
+              ${hasInlineSelect ? this.renderInlineTeacherSelect() : ""}
             </td>
           `;
         })}
@@ -1717,6 +2110,12 @@ export class ReportViewer extends LitElement {
     this._draggingTwoBlock = isTwoBlock;
     this._draggingFromDepot = false;
     this._draggingFromCohortId = parseInt(cohortId);
+    this._draggingCourseId = course?.course_id;
+
+    // Show available teachers in all cells for this cohort
+    if (course) {
+      this.showAvailableTeachersForDrag(parseInt(cohortId), course.course_id);
+    }
   }
 
   handleDragEnd(e) {
@@ -1724,12 +2123,22 @@ export class ReportViewer extends LitElement {
     this._draggingTwoBlock = false;
     this._draggingFromDepot = false;
     this._draggingFromCohortId = null;
+    this._draggingCourseId = null;
+
+    // Clear available teachers overlays
+    this.clearAvailableTeachersOverlays();
 
     // Clean up any remaining drag-over classes
     this.shadowRoot
-      .querySelectorAll(".drag-over, .drag-over-invalid")
+      .querySelectorAll(
+        ".drag-over, .drag-over-invalid, .no-teachers-available"
+      )
       .forEach((el) => {
-        el.classList.remove("drag-over", "drag-over-invalid");
+        el.classList.remove(
+          "drag-over",
+          "drag-over-invalid",
+          "no-teachers-available"
+        );
       });
   }
 
@@ -1799,6 +2208,11 @@ export class ReportViewer extends LitElement {
 
     // Block drop on disabled cells (before cohort start date)
     if (e.currentTarget.dataset.disabled === "true") {
+      return;
+    }
+
+    // Block drop if no compatible teachers are available
+    if (e.currentTarget.classList.contains("no-teachers-available")) {
       return;
     }
 
@@ -1884,15 +2298,184 @@ export class ReportViewer extends LitElement {
       console.log("Created new slot:", targetSlot);
     }
 
-    // Create a new course run
+    // Get available teachers for this course and slot
+    const compatibleTeachers = store
+      .getTeachers()
+      .filter((teacher) => teacher.compatible_courses?.includes(courseId));
+    const availableTeachers = compatibleTeachers.filter((teacher) => {
+      return !store.isTeacherUnavailable(teacher.teacher_id, targetSlotDate);
+    });
+
+    // Show inline teacher selection in the cell
+    this.inlineTeacherSelect = {
+      slotDate: targetSlotDate,
+      cohortId: targetCohortId,
+      courseId,
+      course,
+      targetSlot,
+      availableTeachers,
+      selectedTeachers: [],
+    };
+    this.requestUpdate();
+  }
+
+  renderInlineTeacherSelect() {
+    if (!this.inlineTeacherSelect) return "";
+
+    const { course, availableTeachers } = this.inlineTeacherSelect;
+
+    return html`
+      <div class="inline-teacher-select" @click="${(e) => e.stopPropagation()}">
+        <div class="course-header">${course.code}</div>
+        ${availableTeachers.length === 0
+          ? html`<div style="font-size: 0.5rem; color: #f44336;">
+              Ingen lärare tillgänglig
+            </div>`
+          : html`
+              <div class="teacher-list">
+                ${availableTeachers.map(
+                  (teacher) => html`
+                    <div class="teacher-option">
+                      <input
+                        type="checkbox"
+                        id="inline-teacher-${teacher.teacher_id}"
+                        .checked="${this.inlineTeacherSelect.selectedTeachers.includes(
+                          teacher.teacher_id
+                        )}"
+                        @change="${(e) =>
+                          this.handleInlineTeacherCheckbox(
+                            teacher.teacher_id,
+                            e.target.checked
+                          )}"
+                      />
+                      <label for="inline-teacher-${teacher.teacher_id}">
+                        ${teacher.name}
+                      </label>
+                    </div>
+                  `
+                )}
+              </div>
+            `}
+        <div class="select-buttons">
+          <button class="btn-cancel" @click="${this.handleInlineCancel}">
+            ✕
+          </button>
+          <button class="btn-ok" @click="${this.handleInlineConfirm}">✓</button>
+        </div>
+      </div>
+    `;
+  }
+
+  handleInlineTeacherCheckbox(teacherId, checked) {
+    if (checked) {
+      this.inlineTeacherSelect.selectedTeachers = [
+        ...this.inlineTeacherSelect.selectedTeachers,
+        teacherId,
+      ];
+    } else {
+      this.inlineTeacherSelect.selectedTeachers =
+        this.inlineTeacherSelect.selectedTeachers.filter(
+          (id) => id !== teacherId
+        );
+    }
+    this.requestUpdate();
+  }
+
+  handleInlineCancel() {
+    this.inlineTeacherSelect = null;
+    this.requestUpdate();
+  }
+
+  handleInlineConfirm() {
+    if (!this.inlineTeacherSelect) return;
+
+    const { courseId, targetSlot, cohortId, selectedTeachers } =
+      this.inlineTeacherSelect;
+
+    // Create a new course run with selected teachers
     const newRun = store.addCourseRun({
       course_id: courseId,
       slot_id: targetSlot.slot_id,
-      cohorts: [targetCohortId],
-      teachers: [],
+      cohorts: [cohortId],
+      teachers: selectedTeachers,
     });
 
-    console.log("Created new run:", newRun);
+    // Mark selected teachers as unavailable for this slot
+    selectedTeachers.forEach((teacherId) => {
+      store.toggleTeacherAvailabilityForSlot(
+        teacherId,
+        targetSlot.start_date,
+        true
+      );
+    });
+
+    console.log("Created new run with teachers:", newRun);
+
+    this.inlineTeacherSelect = null;
+    store.notify();
+    this.requestUpdate();
+  }
+
+  handleRunTeacherToggle(runId, teacherId, checked, slotDate) {
+    const run = store.courseRuns.find((r) => r.run_id === runId);
+    if (!run) return;
+
+    if (!run.teachers) {
+      run.teachers = [];
+    }
+
+    if (checked) {
+      // Add teacher to run
+      if (!run.teachers.includes(teacherId)) {
+        run.teachers.push(teacherId);
+      }
+    } else {
+      // Remove teacher from run
+      run.teachers = run.teachers.filter((id) => id !== teacherId);
+    }
+
+    store.notify();
+    this.requestUpdate();
+  }
+
+  handleSummaryTeacherToggle(runs, teacherId, checked, slotDate) {
+    // If checking a teacher, first remove them from OTHER courses in the same slot
+    if (checked) {
+      const slot = store.getSlots().find((s) => s.start_date === slotDate);
+      if (slot) {
+        // Get all runs for this slot
+        const allRunsInSlot = store
+          .getCourseRuns()
+          .filter((r) => r.slot_id === slot.slot_id);
+
+        // Get the course_id for the runs we're adding the teacher to
+        const targetCourseId = runs.length > 0 ? runs[0].course_id : null;
+
+        // Remove teacher from runs of OTHER courses in this slot
+        for (const otherRun of allRunsInSlot) {
+          if (otherRun.course_id !== targetCourseId && otherRun.teachers) {
+            otherRun.teachers = otherRun.teachers.filter(
+              (id) => id !== teacherId
+            );
+          }
+        }
+      }
+    }
+
+    // Toggle teacher for ALL runs of this course in this slot
+    for (const run of runs) {
+      if (!run.teachers) {
+        run.teachers = [];
+      }
+
+      if (checked) {
+        if (!run.teachers.includes(teacherId)) {
+          run.teachers.push(teacherId);
+        }
+      } else {
+        run.teachers = run.teachers.filter((id) => id !== teacherId);
+      }
+    }
 
     store.notify();
     this.requestUpdate();
