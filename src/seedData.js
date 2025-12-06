@@ -14,6 +14,7 @@ export const seedData = {
       law_type: "overview",
       default_block_length: 2,
       preferred_order_index: 0,
+      prerequisite_codes: [], // No prerequisites
     },
     {
       code: "AI188U",
@@ -59,6 +60,7 @@ export const seedData = {
       law_type: "general",
       default_block_length: 1,
       preferred_order_index: 5,
+      prerequisite_codes: ["AI180U"], // Requires JÖK
     },
     {
       code: "AI191U",
@@ -104,6 +106,7 @@ export const seedData = {
       law_type: "special",
       default_block_length: 1,
       preferred_order_index: 7,
+      prerequisite_codes: ["AI192U"], // Requires Allmän fastighetsrätt (which requires JÖK)
     },
     {
       code: "AI189U",

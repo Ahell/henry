@@ -400,6 +400,8 @@ export class ReportViewer extends LitElement {
     .gantt-block .course-code {
       font-weight: bold;
       font-size: 0.6rem;
+      position: relative;
+      z-index: 2;
     }
 
     .gantt-block .course-name {
@@ -410,6 +412,13 @@ export class ReportViewer extends LitElement {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      position: relative;
+      z-index: 2;
+    }
+
+    .gantt-block .warning-icon {
+      position: relative;
+      z-index: 2;
     }
 
     .gantt-block:active {
@@ -424,20 +433,60 @@ export class ReportViewer extends LitElement {
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
-    /* Kurs saknar sin spärrkurs - röd varning */
+    /* Kurs saknar sin spärrkurs - röd solid border och outline */
     .gantt-block.missing-prerequisite {
-      border: 3px solid #f44336 !important;
-      animation: pulse-warning 1s infinite;
-      box-shadow: 0 0 10px rgba(244, 67, 54, 0.6);
+      border: 4px solid #f44336 !important;
+      animation: pulse-warning-red 1s infinite;
+      box-shadow: 0 0 12px rgba(244, 67, 54, 0.7);
+      outline: 3px solid rgba(244, 67, 54, 0.3);
+      outline-offset: 2px;
     }
 
-    @keyframes pulse-warning {
+    @keyframes pulse-warning-red {
       0%,
       100% {
-        box-shadow: 0 0 10px rgba(244, 67, 54, 0.6);
+        box-shadow: 0 0 12px rgba(244, 67, 54, 0.7);
+        border-color: #f44336;
       }
       50% {
-        box-shadow: 0 0 20px rgba(244, 67, 54, 0.9);
+        box-shadow: 0 0 24px rgba(244, 67, 54, 1);
+        border-color: #d32f2f;
+      }
+    }
+
+    /* Kurs placerad före sin spärrkurs - orange dashed border och diagonal stripes */
+    .gantt-block.before-prerequisite {
+      border: 4px dashed #ff9800 !important;
+      animation: pulse-warning-orange 1.5s infinite;
+      box-shadow: inset 0 0 0 2px rgba(255, 152, 0, 0.3);
+      position: relative;
+    }
+
+    .gantt-block.before-prerequisite::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 8px,
+        rgba(255, 152, 0, 0.15) 8px,
+        rgba(255, 152, 0, 0.15) 16px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    @keyframes pulse-warning-orange {
+      0%,
+      100% {
+        border-color: #ff9800;
+      }
+      50% {
+        border-color: #f57c00;
       }
     }
 
@@ -2134,18 +2183,26 @@ export class ReportViewer extends LitElement {
     let blockClasses = [];
     let inlineStyle = "";
 
-    // Check if this course is missing a prerequisite
+    // Check if this course has prerequisite problems
     const prerequisiteProblems = store.prerequisiteProblems || [];
-    const hasMissingPrereq = prerequisiteProblems.some(
+    const courseProblems = prerequisiteProblems.filter(
       (p) => p.runId === run.run_id && p.cohortId === cohortId
+    );
+
+    const hasMissingPrereq = courseProblems.some((p) => p.type === "missing");
+    const hasBeforePrereqProblem = courseProblems.some(
+      (p) => p.type === "before_prerequisite"
     );
 
     // Use course color based on prerequisites
     const bgColor = this.getCourseColor(course);
     inlineStyle = `background-color: ${bgColor};`;
 
+    // Add appropriate CSS classes based on problem type
     if (hasMissingPrereq) {
       blockClasses.push("missing-prerequisite");
+    } else if (hasBeforePrereqProblem) {
+      blockClasses.push("before-prerequisite");
     } else if (hasPrereqs) {
       blockClasses.push("prerequisite-course");
     } else {
@@ -2166,10 +2223,18 @@ export class ReportViewer extends LitElement {
 
     // Add warning about missing prerequisites
     if (hasMissingPrereq) {
-      const missingPrereqs = prerequisiteProblems
-        .filter((p) => p.runId === run.run_id && p.cohortId === cohortId)
+      const missingPrereqs = courseProblems
+        .filter((p) => p.type === "missing")
         .map((p) => p.missingPrereqCode);
       prereqInfo += `\n⚠️ SAKNAR SPÄRRKURS: ${missingPrereqs.join(", ")}`;
+    }
+
+    // Add warning about courses placed before their prerequisites
+    if (hasBeforePrereqProblem) {
+      const beforePrereqs = courseProblems
+        .filter((p) => p.type === "before_prerequisite")
+        .map((p) => p.missingPrereqCode);
+      prereqInfo += `\n⚠️ FÖRE SPÄRRKURS: ${beforePrereqs.join(", ")}`;
     }
 
     return html`
@@ -2188,7 +2253,9 @@ export class ReportViewer extends LitElement {
         @dragstart="${this.handleDragStart}"
         @dragend="${this.handleDragEnd}"
       >
-        ${hasMissingPrereq ? html`<span class="warning-icon">⚠️</span>` : ""}
+        ${hasMissingPrereq || hasBeforePrereqProblem
+          ? html`<span class="warning-icon">⚠️</span>`
+          : ""}
         <span class="course-code"
           >${course?.code}${blockLabel ? ` ${blockLabel}` : ""}</span
         >
@@ -2484,6 +2551,53 @@ export class ReportViewer extends LitElement {
       return;
     }
 
+    // For 2-block courses, check that compatible teachers are available for BOTH blocks
+    if (course.default_block_length === 2) {
+      const availableTeachersBlock1 = this.getAvailableTeachersForSlot(
+        courseId,
+        targetSlotDate,
+        targetCohortId
+      );
+
+      if (availableTeachersBlock1.length === 0) {
+        alert(
+          `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 1.`
+        );
+        return;
+      }
+
+      // Get next slot (block 2)
+      const slots = store.getSlots().sort((a, b) => {
+        const dateA = new Date(a.start_date);
+        const dateB = new Date(b.start_date);
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      const currentSlotIndex = slots.findIndex(
+        (s) => s.start_date === targetSlotDate
+      );
+      if (currentSlotIndex < 0 || currentSlotIndex >= slots.length - 1) {
+        alert(
+          `Kan inte placera "${course.name}" - det finns inget block 2 efter denna period.`
+        );
+        return;
+      }
+
+      const nextSlot = slots[currentSlotIndex + 1];
+      const availableTeachersBlock2 = this.getAvailableTeachersForSlot(
+        courseId,
+        nextSlot.start_date,
+        targetCohortId
+      );
+
+      if (availableTeachersBlock2.length === 0) {
+        alert(
+          `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 2.`
+        );
+        return;
+      }
+    }
+
     // Find or create slot with target date
     let targetSlot = store
       .getSlots()
@@ -2619,6 +2733,22 @@ export class ReportViewer extends LitElement {
     this.requestUpdate();
   }
 
+  getAvailableTeachersForSlot(courseId, slotDate, targetCohortId) {
+    // Get all compatible teachers for this course
+    const teachers = store.getTeachers();
+    const compatibleTeachers = teachers.filter(
+      (t) => t.compatible_courses && t.compatible_courses.includes(courseId)
+    );
+
+    // Filter to those who are not marked as unavailable on this slot
+    const availableTeachers = compatibleTeachers.filter((t) => {
+      const isUnavailable = store.isTeacherUnavailable(t.teacher_id, slotDate);
+      return !isUnavailable;
+    });
+
+    return availableTeachers;
+  }
+
   checkAndRemoveCourseIfNoTeachersAvailable(courseId, slotDate) {
     const slot = store.getSlots().find((s) => s.start_date === slotDate);
     if (!slot) return;
@@ -2725,6 +2855,55 @@ export class ReportViewer extends LitElement {
       return;
     }
 
+    // For 2-block courses, check that compatible teachers are available for BOTH blocks
+    if (course.default_block_length === 2) {
+      const courseId = course.course_id;
+
+      const availableTeachersBlock1 = this.getAvailableTeachersForSlot(
+        courseId,
+        targetSlotDate,
+        targetCohortId
+      );
+
+      if (availableTeachersBlock1.length === 0) {
+        alert(
+          `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 1.`
+        );
+        return;
+      }
+
+      // Get next slot (block 2)
+      const slots = store.getSlots().sort((a, b) => {
+        const dateA = new Date(a.start_date);
+        const dateB = new Date(b.start_date);
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      const currentSlotIndex = slots.findIndex(
+        (s) => s.start_date === targetSlotDate
+      );
+      if (currentSlotIndex < 0 || currentSlotIndex >= slots.length - 1) {
+        alert(
+          `Kan inte placera "${course.name}" - det finns inget block 2 efter denna period.`
+        );
+        return;
+      }
+
+      const nextSlot = slots[currentSlotIndex + 1];
+      const availableTeachersBlock2 = this.getAvailableTeachersForSlot(
+        courseId,
+        nextSlot.start_date,
+        targetCohortId
+      );
+
+      if (availableTeachersBlock2.length === 0) {
+        alert(
+          `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 2.`
+        );
+        return;
+      }
+    }
+
     // Find or create slot with target date
     let targetSlot = store
       .getSlots()
@@ -2753,97 +2932,8 @@ export class ReportViewer extends LitElement {
    * Validate prerequisite ordering when moving an existing course
    */
   validatePrerequisitesForMove(run, course, targetSlotDate, targetCohortId) {
-    if (!course) {
-      return { valid: true };
-    }
-
-    const allPrereqs = this.getAllPrerequisites(course.course_id);
-
-    // Get all course runs for the target cohort, excluding the moving run
-    const cohortRuns = store
-      .getCourseRuns()
-      .filter((r) => r.cohorts && r.cohorts.includes(targetCohortId))
-      .filter((r) => r.run_id !== run.run_id);
-
-    const targetDate = new Date(targetSlotDate);
-
-    // Check that all prerequisites come before target date
-    for (const prereqId of allPrereqs) {
-      const prereqCourse = store.getCourse(prereqId);
-      if (!prereqCourse) continue;
-
-      const prereqRun = cohortRuns.find((r) => r.course_id === prereqId);
-      if (!prereqRun) continue; // If not scheduled, no constraint
-
-      const prereqSlot = store.getSlot(prereqRun.slot_id);
-      if (!prereqSlot) continue;
-
-      const prereqDate = new Date(prereqSlot.start_date);
-
-      // For 2-block courses, check if target is in either block of the prerequisite
-      if (prereqCourse.default_block_length === 2) {
-        // Check if target is the first block (same date as prereq start)
-        if (targetDate.getTime() === prereqDate.getTime()) {
-          return {
-            valid: false,
-            message: `Kan inte placera "${course.name}" i "${prereqCourse.name}" (spärrkurs).`,
-          };
-        }
-
-        // Check if target is the second block
-        const isSecondBlock = this.isSecondBlockOfCourse(
-          targetSlotDate,
-          prereqRun,
-          targetCohortId
-        );
-        if (isSecondBlock) {
-          return {
-            valid: false,
-            message: `Kan inte placera "${course.name}" i "${prereqCourse.name}" (spärrkurs).`,
-          };
-        }
-
-        // For 2-block courses, target must be AFTER the second block
-        let prereqEndDate = new Date(prereqDate);
-        prereqEndDate.setDate(prereqEndDate.getDate() + 28);
-
-        if (targetDate <= prereqEndDate) {
-          return {
-            valid: false,
-            message: `"${course.name}" måste placeras efter "${prereqCourse.name}".`,
-          };
-        }
-      } else {
-        // For single-block courses, target must be after the prereq date
-        if (targetDate <= prereqDate) {
-          return {
-            valid: false,
-            message: `"${course.name}" måste placeras efter "${prereqCourse.name}".`,
-          };
-        }
-      }
-    }
-
-    // Check that we're not moving AFTER any course that has this as prerequisite
-    for (const r of cohortRuns) {
-      const runCourse = store.getCourse(r.course_id);
-      if (!runCourse) continue;
-
-      const runPrereqs = this.getAllPrerequisites(r.course_id);
-      if (runPrereqs.includes(course.course_id)) {
-        const runSlot = store.getSlot(r.slot_id);
-        if (!runSlot) continue;
-
-        const runDate = new Date(runSlot.start_date);
-        if (targetDate >= runDate) {
-          return {
-            valid: false,
-            message: `"${course.name}" måste placeras före "${runCourse.name}".`,
-          };
-        }
-      }
-    }
-
+    // No validation needed - courses can always be moved in the schedule
+    // Missing or misordered prerequisites will show visual warnings instead
     return { valid: true };
   }
 

@@ -289,6 +289,7 @@ export class DataStore {
           if (!prereqRun) {
             // Prerequisite not scheduled at all
             problems.push({
+              type: "missing",
               cohortId: cohort.cohort_id,
               cohortName: cohort.name,
               courseId: course.course_id,
@@ -300,13 +301,77 @@ export class DataStore {
               missingPrereqCode: prereqCourse.code,
             });
           } else {
-            // Check that prerequisite comes before
+            // Check that prerequisite is completely finished before this course starts
             const prereqSlot = this.getSlot(prereqRun.slot_id);
             if (prereqSlot) {
-              const prereqDate = new Date(prereqSlot.start_date);
-              if (prereqDate >= runDate) {
-                // Prerequisite is not before this course
+              const prereqStartDate = new Date(prereqSlot.start_date);
+
+              // Calculate when the prerequisite course ends
+              let prereqEndDate;
+              if (prereqCourse.default_block_length === 2) {
+                // For 2-block courses, find the next slot (second block)
+                const allSlots = this.slots.sort((a, b) => {
+                  const dateA = new Date(a.start_date);
+                  const dateB = new Date(b.start_date);
+                  return dateA.getTime() - dateB.getTime();
+                });
+
+                const prereqSlotIndex = allSlots.findIndex(
+                  (s) => s.slot_id === prereqSlot.slot_id
+                );
+
+                if (
+                  prereqSlotIndex >= 0 &&
+                  prereqSlotIndex < allSlots.length - 1
+                ) {
+                  // For 2-block courses, the course ends AFTER block 2
+                  // So we need the slot after block 2
+                  if (prereqSlotIndex + 2 < allSlots.length) {
+                    // End date is the start of the slot AFTER the second block
+                    prereqEndDate = new Date(
+                      allSlots[prereqSlotIndex + 2].start_date
+                    );
+                  } else {
+                    // Fallback: add ~8 weeks to start date
+                    prereqEndDate = new Date(prereqStartDate);
+                    prereqEndDate.setDate(prereqEndDate.getDate() + 56);
+                  }
+                } else {
+                  // Fallback: add ~8 weeks to start date
+                  prereqEndDate = new Date(prereqStartDate);
+                  prereqEndDate.setDate(prereqEndDate.getDate() + 56);
+                }
+              } else {
+                // For 1-block courses, end date is the start of next slot
+                const allSlots = this.slots.sort((a, b) => {
+                  const dateA = new Date(a.start_date);
+                  const dateB = new Date(b.start_date);
+                  return dateA.getTime() - dateB.getTime();
+                });
+
+                const prereqSlotIndex = allSlots.findIndex(
+                  (s) => s.slot_id === prereqSlot.slot_id
+                );
+
+                if (
+                  prereqSlotIndex >= 0 &&
+                  prereqSlotIndex < allSlots.length - 1
+                ) {
+                  prereqEndDate = new Date(
+                    allSlots[prereqSlotIndex + 1].start_date
+                  );
+                } else {
+                  // Fallback: add 4 weeks to start date
+                  prereqEndDate = new Date(prereqStartDate);
+                  prereqEndDate.setDate(prereqEndDate.getDate() + 28);
+                }
+              }
+
+              // The dependent course must start AFTER the prerequisite ends
+              if (runDate < prereqEndDate) {
+                // Course starts before prerequisite is finished
                 problems.push({
+                  type: "before_prerequisite",
                   cohortId: cohort.cohort_id,
                   cohortName: cohort.name,
                   courseId: course.course_id,
@@ -743,6 +808,25 @@ export class DataStore {
   importData(data) {
     if (data.courses) {
       data.courses.forEach((c) => this.addCourse(c));
+
+      // After adding all courses, convert prerequisite_codes to prerequisite IDs
+      if (data.courses.some((c) => c.prerequisite_codes)) {
+        this.courses.forEach((course) => {
+          const seedCourse = data.courses.find((c) => c.code === course.code);
+          if (
+            seedCourse?.prerequisite_codes &&
+            seedCourse.prerequisite_codes.length > 0
+          ) {
+            // Convert codes to course_ids
+            course.prerequisites = seedCourse.prerequisite_codes
+              .map((code) => {
+                const prereqCourse = this.courses.find((c) => c.code === code);
+                return prereqCourse ? prereqCourse.course_id : null;
+              })
+              .filter((id) => id !== null);
+          }
+        });
+      }
     }
     if (data.cohorts) {
       data.cohorts.forEach((c) => this.addCohort(c));
