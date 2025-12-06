@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { store } from "./store.js";
+import "./report-viewer.js";
 import {
   validateLawPrerequisites,
   checkTeacherAvailability,
@@ -364,33 +365,31 @@ export class AdminPanel extends LitElement {
           class="tab-button ${this.activeTab === "courses" ? "active" : ""}"
           @click="${() => (this.activeTab = "courses")}"
         >
-          Kurser
+          📚 Kurser
         </button>
         <button
           class="tab-button ${this.activeTab === "cohorts" ? "active" : ""}"
           @click="${() => (this.activeTab = "cohorts")}"
         >
-          Kullar
+          👥 Kullar
         </button>
         <button
           class="tab-button ${this.activeTab === "teachers" ? "active" : ""}"
           @click="${() => (this.activeTab = "teachers")}"
         >
-          Lärare
+          👨‍🏫 Lärare
         </button>
         <button
-          class="tab-button ${this.activeTab === "slots" ? "active" : ""}"
-          @click="${() => (this.activeTab = "slots")}"
+          class="tab-button ${this.activeTab === "teacherView" ? "active" : ""}"
+          @click="${() => (this.activeTab = "teacherView")}"
         >
-          Tidsluckor
+          📅 Lärartillgänglighet
         </button>
         <button
-          class="tab-button ${this.activeTab === "availability"
-            ? "active"
-            : ""}"
-          @click="${() => (this.activeTab = "availability")}"
+          class="tab-button ${this.activeTab === "gantt" ? "active" : ""}"
+          @click="${() => (this.activeTab = "gantt")}"
         >
-          Lärartillgänglighet
+          📊 Schemaläggning
         </button>
       </div>
 
@@ -400,8 +399,12 @@ export class AdminPanel extends LitElement {
       ${this.activeTab === "courses" ? this.renderCourses() : ""}
       ${this.activeTab === "cohorts" ? this.renderCohorts() : ""}
       ${this.activeTab === "teachers" ? this.renderTeachers() : ""}
-      ${this.activeTab === "slots" ? this.renderSlots() : ""}
-      ${this.activeTab === "availability" ? this.renderAvailability() : ""}
+      ${this.activeTab === "teacherView"
+        ? html`<report-viewer .activeTab=${"teacher"}></report-viewer>`
+        : ""}
+      ${this.activeTab === "gantt"
+        ? html`<report-viewer .activeTab=${"gantt"}></report-viewer>`
+        : ""}
     `;
   }
 

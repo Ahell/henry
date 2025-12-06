@@ -1,8 +1,6 @@
 import "./admin-panel.js";
-import "./course-run-planner.js";
 import "./report-viewer.js";
 import "./import-export.js";
-import "./cohort-sequence-editor.js";
 
 // Handle navigation
 document.querySelectorAll(".nav-btn").forEach((btn) => {
