@@ -665,15 +665,6 @@ export class AdminPanel extends LitElement {
         <form @submit="${this.handleAddCohort}">
           <div class="form-row">
             <div class="form-group">
-              <label>Kullnamn</label>
-              <input
-                type="text"
-                id="cohortName"
-                placeholder="t.ex. FEI25"
-                required
-              />
-            </div>
-            <div class="form-group">
               <label>Startdatum</label>
               <input type="date" id="cohortStartDate" required />
             </div>
@@ -704,7 +695,10 @@ export class AdminPanel extends LitElement {
             </tr>
           </thead>
           <tbody>
-            ${store.getCohorts().map((cohort) => this.renderCohortRow(cohort))}
+            ${store
+              .getCohorts()
+              .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
+              .map((cohort) => this.renderCohortRow(cohort))}
           </tbody>
         </table>
       </div>
@@ -723,6 +717,9 @@ export class AdminPanel extends LitElement {
               class="edit-input"
               id="edit-cohort-name-${cohort.cohort_id}"
               .value="${cohort.name}"
+              readonly
+              disabled
+              style="background-color: #e9ecef; cursor: not-allowed;"
             />
           </td>
           <td>
@@ -1173,7 +1170,6 @@ export class AdminPanel extends LitElement {
   handleAddCohort(e) {
     e.preventDefault();
     const cohort = {
-      name: this.shadowRoot.querySelector("#cohortName").value,
       start_date: this.shadowRoot.querySelector("#cohortStartDate").value,
       planned_size: parseInt(
         this.shadowRoot.querySelector("#cohortSize").value
@@ -1197,9 +1193,6 @@ export class AdminPanel extends LitElement {
   }
 
   handleSaveCohort(cohortId) {
-    const name = this.shadowRoot.querySelector(
-      `#edit-cohort-name-${cohortId}`
-    ).value;
     const start_date = this.shadowRoot.querySelector(
       `#edit-cohort-date-${cohortId}`
     ).value;
@@ -1208,7 +1201,6 @@ export class AdminPanel extends LitElement {
     );
 
     store.updateCohort(cohortId, {
-      name,
       start_date,
       planned_size,
     });
@@ -1222,17 +1214,22 @@ export class AdminPanel extends LitElement {
   }
 
   handleDeleteCohort(cohortId, cohortName) {
+    console.log("handleDeleteCohort called with:", cohortId, cohortName);
     if (
       confirm(
         `Är du säker på att du vill ta bort kullen "${cohortName}"?\n\nDetta kommer även ta bort kullen från alla kurstillfällen.`
       )
     ) {
+      console.log("User confirmed deletion, calling store.deleteCohort");
       store.deleteCohort(cohortId);
+      console.log("store.deleteCohort returned");
       this.message = "Kull borttagen!";
       this.messageType = "success";
       setTimeout(() => {
         this.message = "";
       }, 3000);
+    } else {
+      console.log("User cancelled deletion");
     }
   }
 
