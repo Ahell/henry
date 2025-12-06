@@ -400,10 +400,16 @@ export class AdminPanel extends LitElement {
       ${this.activeTab === "cohorts" ? this.renderCohorts() : ""}
       ${this.activeTab === "teachers" ? this.renderTeachers() : ""}
       ${this.activeTab === "teacherView"
-        ? html`<report-viewer .activeTab=${"teacher"}></report-viewer>`
+        ? html`<report-viewer
+            .activeTab=${"teacher"}
+            .hideTabs=${true}
+          ></report-viewer>`
         : ""}
       ${this.activeTab === "gantt"
-        ? html`<report-viewer .activeTab=${"gantt"}></report-viewer>`
+        ? html`<report-viewer
+            .activeTab=${"gantt"}
+            .hideTabs=${true}
+          ></report-viewer>`
         : ""}
     `;
   }

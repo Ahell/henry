@@ -867,6 +867,7 @@ export class ReportViewer extends LitElement {
     filterCohort: { type: String },
     isPainting: { type: Boolean },
     paintMode: { type: String },
+    hideTabs: { type: Boolean },
   };
 
   constructor() {
@@ -877,39 +878,49 @@ export class ReportViewer extends LitElement {
     this.filterCohort = "";
     this.isPainting = false;
     this.paintMode = null; // 'add' or 'remove'
+    this.hideTabs = false;
 
     store.subscribe(() => this.requestUpdate());
   }
 
   render() {
     return html`
-      <div class="tabs">
-        <button
-          class="tab-button ${this.activeTab === "department" ? "active" : ""}"
-          @click="${() => (this.activeTab = "department")}"
-        >
-          Avdelningschef-vy
-        </button>
-        <button
-          class="tab-button ${this.activeTab === "teacher" ? "active" : ""}"
-          @click="${() => (this.activeTab = "teacher")}"
-        >
-          Lärar-vy
-        </button>
-        <button
-          class="tab-button ${this.activeTab === "cohort" ? "active" : ""}"
-          @click="${() => (this.activeTab = "cohort")}"
-        >
-          Kull-vy
-        </button>
-        <button
-          class="tab-button ${this.activeTab === "gantt" ? "active" : ""}"
-          @click="${() => (this.activeTab = "gantt")}"
-        >
-          Gantt (Planeringsöversikt)
-        </button>
-      </div>
-
+      ${!this.hideTabs
+        ? html`
+            <div class="tabs">
+              <button
+                class="tab-button ${this.activeTab === "department"
+                  ? "active"
+                  : ""}"
+                @click="${() => (this.activeTab = "department")}"
+              >
+                Avdelningschef-vy
+              </button>
+              <button
+                class="tab-button ${this.activeTab === "teacher"
+                  ? "active"
+                  : ""}"
+                @click="${() => (this.activeTab = "teacher")}"
+              >
+                Lärar-vy
+              </button>
+              <button
+                class="tab-button ${this.activeTab === "cohort"
+                  ? "active"
+                  : ""}"
+                @click="${() => (this.activeTab = "cohort")}"
+              >
+                Kull-vy
+              </button>
+              <button
+                class="tab-button ${this.activeTab === "gantt" ? "active" : ""}"
+                @click="${() => (this.activeTab = "gantt")}"
+              >
+                Gantt (Planeringsöversikt)
+              </button>
+            </div>
+          `
+        : ""}
       ${this.activeTab === "department" ? this.renderDepartmentView() : ""}
       ${this.activeTab === "teacher" ? this.renderTeacherView() : ""}
       ${this.activeTab === "cohort" ? this.renderCohortView() : ""}
