@@ -8,7 +8,6 @@ export class ReportViewer extends LitElement {
   static styles = css`
     :host {
       display: block;
-      padding: 1rem;
     }
 
     .tabs {
