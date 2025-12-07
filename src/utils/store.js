@@ -855,6 +855,26 @@ export class DataStore {
     }
   }
 
+  toggleTeacherAvailabilityForDay(teacherId, dateStr) {
+    // Check if there's already unavailability for this teacher on this day
+    const existing = this.teacherAvailability.find(
+      (a) => a.teacher_id === teacherId && a.from_date === dateStr
+    );
+
+    if (existing) {
+      // Remove it
+      this.removeTeacherAvailability(existing.id);
+    } else {
+      // Add unavailability
+      this.addTeacherAvailability({
+        teacher_id: teacherId,
+        from_date: dateStr,
+        to_date: dateStr,
+        type: "busy",
+      });
+    }
+  }
+
   isTeacherUnavailable(teacherId, slotDate) {
     return this.teacherAvailability.some(
       (a) =>
