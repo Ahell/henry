@@ -2,6 +2,7 @@ import { LitElement, html, css } from "lit";
 import { store } from "../utils/store.js";
 import "./ui/index.js";
 import "./report/teacher-availability-tab.js";
+import "./report/scheduling-tab.js";
 
 export class ReportViewer extends LitElement {
   static styles = css`
@@ -928,7 +929,9 @@ export class ReportViewer extends LitElement {
         ? html`<teacher-availability-tab></teacher-availability-tab>`
         : ""}
       ${this.activeTab === "cohort" ? this.renderCohortView() : ""}
-      ${this.activeTab === "gantt" ? this.renderGanttView() : ""}
+      ${this.activeTab === "gantt"
+        ? html`<scheduling-tab></scheduling-tab>`
+        : ""}
     `;
   }
 
