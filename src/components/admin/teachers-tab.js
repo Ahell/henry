@@ -17,27 +17,8 @@ export class TeachersTab extends LitElement {
       margin-bottom: var(--space-4);
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    henry-table {
       margin-top: var(--space-4);
-    }
-
-    th,
-    td {
-      padding: var(--space-3);
-      text-align: left;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    th {
-      background: var(--color-gray-50);
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-text-primary);
-    }
-
-    tr:hover {
-      background: var(--color-gray-50);
     }
 
     .edit-input {
@@ -121,7 +102,7 @@ export class TeachersTab extends LitElement {
             🎲 Slumpa kurser till alla lärare
           </henry-button>
         </div>
-        <table>
+        <henry-table striped hoverable>
           <thead>
             <tr>
               <th>Namn</th>
@@ -135,7 +116,7 @@ export class TeachersTab extends LitElement {
               .getTeachers()
               .map((teacher) => this.renderTeacherRow(teacher))}
           </tbody>
-        </table>
+        </henry-table>
       </henry-panel>
     `;
   }

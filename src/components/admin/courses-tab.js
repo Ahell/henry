@@ -21,27 +21,8 @@ export class CoursesTab extends LitElement {
       grid-template-columns: 1fr 1fr;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    henry-table {
       margin-top: var(--space-4);
-    }
-
-    th,
-    td {
-      padding: var(--space-3);
-      text-align: left;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    th {
-      background: var(--color-gray-50);
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-text-primary);
-    }
-
-    tr:hover {
-      background: var(--color-gray-50);
     }
 
     .edit-input {
@@ -145,7 +126,7 @@ export class CoursesTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">📚 Befintliga Kurser</henry-text>
         </div>
-        <table>
+        <henry-table striped hoverable>
           <thead>
             <tr>
               <th>Kod</th>
@@ -159,7 +140,7 @@ export class CoursesTab extends LitElement {
           <tbody>
             ${store.getCourses().map((course) => this.renderCourseRow(course))}
           </tbody>
-        </table>
+        </henry-table>
       </henry-panel>
     `;
   }

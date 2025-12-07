@@ -17,27 +17,8 @@ export class CohortsTab extends LitElement {
       margin-bottom: var(--space-4);
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    henry-table {
       margin-top: var(--space-4);
-    }
-
-    th,
-    td {
-      padding: var(--space-3);
-      text-align: left;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    th {
-      background: var(--color-gray-50);
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-text-primary);
-    }
-
-    tr:hover {
-      background: var(--color-gray-50);
     }
 
     .edit-input {
@@ -97,7 +78,7 @@ export class CohortsTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">Befintliga Kullar</henry-text>
         </div>
-        <table>
+        <henry-table striped hoverable>
           <thead>
             <tr>
               <th>Namn</th>
@@ -112,7 +93,7 @@ export class CohortsTab extends LitElement {
               .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
               .map((cohort) => this.renderCohortRow(cohort))}
           </tbody>
-        </table>
+        </henry-table>
       </henry-panel>
     `;
   }
