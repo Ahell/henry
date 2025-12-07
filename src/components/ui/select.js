@@ -15,6 +15,10 @@ export class HenrySelect extends LitElement {
     disabled: { type: Boolean },
     required: { type: Boolean },
     placeholder: { type: String },
+    id: { type: String },
+    name: { type: String },
+    multiple: { type: Boolean },
+    size: { type: Number },
   };
 
   static styles = css`
@@ -75,6 +79,11 @@ export class HenrySelect extends LitElement {
     select option {
       padding: var(--space-2);
     }
+
+    select[multiple] {
+      min-height: 100px;
+      padding: var(--space-2);
+    }
   `;
 
   constructor() {
@@ -84,6 +93,10 @@ export class HenrySelect extends LitElement {
     this.disabled = false;
     this.required = false;
     this.placeholder = "Välj...";
+    this.id = "";
+    this.name = "";
+    this.multiple = false;
+    this.size = 1;
   }
 
   render() {
@@ -101,6 +114,10 @@ export class HenrySelect extends LitElement {
           .value=${this.value}
           ?disabled=${this.disabled}
           ?required=${this.required}
+          ?multiple=${this.multiple}
+          size=${this.size}
+          id=${this.id}
+          name=${this.name || this.id}
           @change=${this._handleChange}
         >
           ${this.placeholder
@@ -121,6 +138,11 @@ export class HenrySelect extends LitElement {
         detail: { value: this.value },
       })
     );
+  }
+
+  // Method to get the native select element
+  getSelect() {
+    return this.shadowRoot.querySelector('select');
   }
 }
 

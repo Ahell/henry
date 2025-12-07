@@ -23,6 +23,8 @@ export class HenryInput extends LitElement {
     min: { type: Number },
     max: { type: Number },
     step: { type: Number },
+    id: { type: String },
+    name: { type: String },
   };
 
   static styles = css`
@@ -92,6 +94,8 @@ export class HenryInput extends LitElement {
     this.disabled = false;
     this.required = false;
     this.placeholder = "";
+    this.id = "";
+    this.name = "";
   }
 
   render() {
@@ -114,6 +118,8 @@ export class HenryInput extends LitElement {
           min=${this.min}
           max=${this.max}
           step=${this.step}
+          id=${this.id}
+          name=${this.name || this.id}
           @input=${this._handleInput}
         />
       </div>
@@ -129,6 +135,11 @@ export class HenryInput extends LitElement {
         detail: { value: this.value },
       })
     );
+  }
+
+  // Method to get the native input element
+  getInput() {
+    return this.shadowRoot.querySelector('input');
   }
 }
 

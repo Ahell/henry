@@ -52,6 +52,8 @@ Används för textinmatning, nummer, datum etc.
 - `disabled`: Boolean
 - `placeholder`: Placeholder-text
 - `min`, `max`, `step`: För nummer/datum
+- `id`: ID för elementet (används med querySelector)
+- `name`: Name-attribut för formulär
 
 **Användning:**
 
@@ -82,6 +84,25 @@ Används för textinmatning, nummer, datum etc.
   .value=${this.startDate}
   @input-change=${(e) => this.startDate = e.detail.value}
 ></henry-input>
+
+<!-- Input med ID för querySelector -->
+<henry-input
+  id="courseCode"
+  label="Kurskod"
+  placeholder="T.ex. AI180U"
+  required
+></henry-input>
+```
+
+**Hämta värde via ID:**
+
+```javascript
+// Via komponenten
+const input = this.shadowRoot.querySelector("#courseCode");
+const value = input.getInput().value;
+
+// Eller direkt via value property
+const value2 = input.value;
 ```
 
 ### 3. Henry Select
@@ -95,10 +116,15 @@ Används för dropdown-menyer.
 - `required`: Boolean
 - `disabled`: Boolean
 - `placeholder`: Placeholder-text
+- `id`: ID för elementet (används med querySelector)
+- `name`: Name-attribut för formulär
+- `multiple`: Boolean - tillåter flera val
+- `size`: Antal synliga rader (för multiple select)
 
 **Användning:**
 
 ```html
+<!-- Enkel dropdown -->
 <henry-select
   label="Blocklängd"
   .value=${this.blockLength}
@@ -109,6 +135,31 @@ Används för dropdown-menyer.
   <option value="2">2 block</option>
   <option value="4">4 block</option>
 </henry-select>
+
+<!-- Multiple select -->
+<henry-select
+  id="prerequisites"
+  label="Spärrkurser"
+  multiple
+  size="5"
+>
+  <option value="1">AI180U - Juridisk översiktskurs</option>
+  <option value="2">AI181U - Straffrätt</option>
+  <option value="3">AI182U - Processrätt</option>
+</henry-select>
+```
+
+**Hämta värde via ID:**
+
+```javascript
+// För enkel select
+const select = this.shadowRoot.querySelector("#blockLength");
+const value = select.getSelect().value;
+
+// För multiple select
+const multiSelect = this.shadowRoot.querySelector("#prerequisites");
+const selectedOptions = Array.from(multiSelect.getSelect().selectedOptions)
+  .map(opt => opt.value);
 ```
 
 ### 4. Henry Textarea
