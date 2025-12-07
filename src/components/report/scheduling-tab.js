@@ -45,25 +45,25 @@ export class SchedulingTab extends LitElement {
 
     .warning-pills {
       display: flex;
-      gap: 0.5rem;
+      gap: var(--space-2);
       flex-wrap: wrap;
     }
 
     .warning-pill {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      background: #f44336;
+      gap: var(--space-1);
+      background: var(--color-danger);
       color: white;
-      padding: 4px 10px;
+      padding: var(--space-1) var(--space-3);
       border-radius: 16px;
-      font-size: 0.75rem;
-      font-weight: 500;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
       animation: pulse-pill 1.5s infinite;
     }
 
     .warning-pill .cohort-name {
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
     }
 
     @keyframes pulse-pill {
@@ -80,42 +80,42 @@ export class SchedulingTab extends LitElement {
 
     .legend {
       display: flex;
-      gap: 2rem;
-      margin-top: 1rem;
+      gap: var(--space-8);
+      margin-top: var(--space-4);
       flex-wrap: wrap;
     }
 
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      font-size: 0.9rem;
+      gap: var(--space-2);
+      font-size: var(--font-size-sm);
     }
 
     .legend-box {
       width: 24px;
       height: 24px;
-      border-radius: 2px;
+      border-radius: var(--radius-sm);
     }
 
     .law-course.law-order-1 {
-      background: #2d1b4e;
+      background: var(--color-secondary-900);
     }
 
     .law-course.law-order-2 {
-      background: #4a2c7a;
+      background: var(--color-secondary-700);
     }
 
     .law-course.law-order-3 {
-      background: #6f42c1;
+      background: var(--color-secondary-500);
     }
 
     .law-course.law-order-rest {
-      background: #9c88ff;
+      background: var(--color-secondary-300);
     }
 
     .normal-course {
-      background: #007bff;
+      background: var(--color-primary-500);
     }
 
     .two-block-course {
@@ -136,7 +136,7 @@ export class SchedulingTab extends LitElement {
 
     .gantt-table th,
     .gantt-table td {
-      border: 1px solid #ddd;
+      border: 1px solid var(--color-border);
       padding: 0;
       min-width: 100px;
       width: 100px;
@@ -146,25 +146,25 @@ export class SchedulingTab extends LitElement {
     }
 
     .gantt-table th {
-      background: #e9ecef;
-      font-size: 0.7rem;
-      font-weight: bold;
-      padding: 0.3rem 0.2rem;
+      background: var(--color-gray-200);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      padding: var(--space-1) var(--space-1);
       position: sticky;
       top: 0;
       z-index: 10;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-sm);
     }
 
     .gantt-table th.cohort-header {
       min-width: 70px;
       width: 70px;
       text-align: left;
-      padding-left: 0.4rem;
+      padding-left: var(--space-2);
       position: sticky;
-      background: #e9ecef;
+      background: var(--color-gray-200);
       z-index: 20;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-sm);
     }
 
     .gantt-table th.cohort-header:first-child {
@@ -181,37 +181,37 @@ export class SchedulingTab extends LitElement {
       min-width: 180px;
       width: 180px;
       max-width: 180px;
-      background: #f8f9fa;
+      background: var(--color-surface);
       position: sticky;
       left: 0;
       z-index: 5;
       vertical-align: top;
-      padding: 3px;
+      padding: var(--space-1);
     }
 
     .gantt-table td.depot-cell.drag-over {
-      background: #fff3cd !important;
-      box-shadow: inset 0 0 0 2px #ffc107;
+      background: var(--color-warning-light) !important;
+      box-shadow: inset 0 0 0 2px var(--color-warning);
     }
 
     .gantt-table td.cohort-cell {
       min-width: 70px;
       width: 70px;
       text-align: left;
-      padding-left: 0.4rem;
-      font-weight: bold;
-      font-size: 0.75rem;
-      background: #f9f9f9;
+      padding-left: var(--space-2);
+      font-weight: var(--font-weight-bold);
+      font-size: var(--font-size-xs);
+      background: var(--color-gray-50);
       position: sticky;
       left: 180px;
       z-index: 5;
     }
 
     .gantt-table td.slot-cell {
-      background: #fafafa;
+      background: var(--color-surface);
       position: relative;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: var(--transition-fast);
       overflow: visible;
       min-width: 85px;
       width: 85px;
@@ -219,32 +219,32 @@ export class SchedulingTab extends LitElement {
     }
 
     .gantt-table td.slot-cell:hover {
-      background: #e3f2fd;
+      background: var(--color-info-light);
     }
 
     .gantt-table td.slot-cell.drag-over {
-      background: #bbdefb;
-      box-shadow: inset 0 0 0 2px #2196f3;
+      background: var(--color-info-light);
+      box-shadow: inset 0 0 0 2px var(--color-info);
     }
 
     .gantt-table td.slot-cell.drag-over-invalid {
-      background: #ffcdd2;
-      box-shadow: inset 0 0 0 2px #f44336;
+      background: var(--color-danger-light);
+      box-shadow: inset 0 0 0 2px var(--color-danger);
     }
 
     .gantt-table td.slot-cell.no-teachers-available {
-      background: #ffcdd2 !important;
-      box-shadow: inset 0 0 0 2px #f44336;
+      background: var(--color-danger-light) !important;
+      box-shadow: inset 0 0 0 2px var(--color-danger);
     }
 
     .gantt-table td.slot-cell.disabled-slot {
-      background: #e0e0e0;
+      background: var(--color-gray-300);
       cursor: not-allowed;
       opacity: 0.5;
     }
 
     .gantt-table td.slot-cell.disabled-slot:hover {
-      background: #e0e0e0;
+      background: var(--color-gray-300);
     }
 
     .gantt-table td.slot-cell.cohort-start-slot {
@@ -252,10 +252,10 @@ export class SchedulingTab extends LitElement {
     }
 
     .gantt-table tfoot td {
-      background: #e9ecef;
+      background: var(--color-gray-200);
       vertical-align: top;
-      padding: 4px;
-      border-top: 2px solid #dee2e6;
+      padding: var(--space-1);
+      border-top: 2px solid var(--color-gray-300);
     }
   `;
 
@@ -316,7 +316,7 @@ export class SchedulingTab extends LitElement {
           </henry-text>
           ${this._renderWarningPills()}
         </div>
-        <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+        <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-4);">
           Dra kurser från kullens depå till schemat. Kurser försvinner från
           depån när de schemaläggs.
         </p>

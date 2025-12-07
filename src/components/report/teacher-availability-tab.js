@@ -34,29 +34,30 @@ export class TeacherAvailabilityTab extends LitElement {
 
     .paint-controls {
       display: flex;
-      gap: 1rem;
+      gap: var(--space-4);
       align-items: center;
-      margin-bottom: 1rem;
+      margin-bottom: var(--space-4);
     }
 
     .legend {
       display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
+      gap: var(--space-4);
+      margin-bottom: var(--space-4);
       flex-wrap: wrap;
     }
 
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: var(--space-2);
+      font-size: var(--font-size-sm);
     }
 
     .legend-box {
       width: 20px;
       height: 20px;
-      border-radius: 3px;
-      border: 1px solid #ddd;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
     }
 
     .teacher-timeline-container {
@@ -75,16 +76,16 @@ export class TeacherAvailabilityTab extends LitElement {
 
     .teacher-timeline-table th,
     .teacher-timeline-table td {
-      border: 1px solid #ddd;
-      padding: 8px;
+      border: 1px solid var(--color-border);
+      padding: var(--space-2);
       text-align: center;
       min-width: 80px;
     }
 
     .teacher-timeline-table th {
-      background: #f5f5f5;
-      font-weight: 600;
-      font-size: 0.85rem;
+      background: var(--color-gray-100);
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--font-size-sm);
       position: sticky;
       top: 0;
       z-index: 2;
@@ -92,8 +93,8 @@ export class TeacherAvailabilityTab extends LitElement {
 
     .teacher-timeline-table tbody tr:first-child td {
       text-align: left;
-      font-weight: 500;
-      background: #fafafa;
+      font-weight: var(--font-weight-medium);
+      background: var(--color-surface);
       position: sticky;
       left: 0;
       z-index: 1;
@@ -101,26 +102,26 @@ export class TeacherAvailabilityTab extends LitElement {
 
     .teacher-cell {
       min-height: 40px;
-      padding: 4px;
+      padding: var(--space-1);
       cursor: pointer;
-      border-radius: 2px;
-      font-size: 0.75rem;
-      transition: all 0.2s;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      transition: var(--transition-all);
     }
 
     .teacher-cell.has-course {
-      background: #4dabf7;
+      background: var(--color-info);
       color: white;
     }
 
     .teacher-cell.assigned-course {
-      background: #4caf50;
+      background: var(--color-success);
       color: white;
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
     }
 
     .teacher-cell.unavailable {
-      background: #ff6b6b;
+      background: var(--color-danger);
       color: white;
       position: relative;
     }
@@ -166,7 +167,7 @@ export class TeacherAvailabilityTab extends LitElement {
         <div class="panel-header">
           <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
         </div>
-        <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+        <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-4);">
           Klicka på "Markera upptagen" och måla sedan i cellerna för att markera
           när en lärare är upptagen. Blå celler visar schemalagda kurser.
         </p>
@@ -180,7 +181,7 @@ export class TeacherAvailabilityTab extends LitElement {
           </henry-button>
           ${this.isPainting
             ? html`
-                <span style="color: #666; font-size: 0.85rem;">
+                <span style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">
                   Klicka eller dra över celler för att markera/avmarkera. Klicka
                   på knappen igen för att avsluta.
                 </span>
@@ -190,15 +191,15 @@ export class TeacherAvailabilityTab extends LitElement {
 
         <div class="legend">
           <div class="legend-item">
-            <div class="legend-box" style="background: #4caf50;"></div>
+            <div class="legend-box" style="background: var(--color-success);"></div>
             <span>Tilldelad kurs</span>
           </div>
           <div class="legend-item">
-            <div class="legend-box" style="background: #4dabf7;"></div>
+            <div class="legend-box" style="background: var(--color-info);"></div>
             <span>Kompatibel kurs (ej tilldelad)</span>
           </div>
           <div class="legend-item">
-            <div class="legend-box" style="background: #ff6b6b;"></div>
+            <div class="legend-box" style="background: var(--color-danger);"></div>
             <span>Upptagen/ej tillgänglig</span>
           </div>
         </div>
@@ -238,8 +239,8 @@ export class TeacherAvailabilityTab extends LitElement {
     return html`
       <tr>
         <td>
-          ${teacher.name}<br /><small style="color: #666;"
-            >${teacher.home_department}</small
+          ${teacher.name}<br /><small style="color: var(--color-text-secondary);">
+            ${teacher.home_department}</small
           >
         </td>
         ${slotDates.map((date) => this.renderTeacherCell(teacher, date))}
