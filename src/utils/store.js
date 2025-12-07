@@ -864,6 +864,16 @@ export class DataStore {
     );
   }
 
+  // Check if teacher is unavailable on a specific day (for detail view)
+  isTeacherUnavailableOnDay(teacherId, dateStr) {
+    return this.teacherAvailability.some(
+      (a) =>
+        a.teacher_id === teacherId &&
+        a.from_date === dateStr &&
+        a.type === "busy"
+    );
+  }
+
   // Get percentage of days in a slot where teacher is unavailable (0.0 to 1.0)
   getTeacherUnavailablePercentageForSlot(teacherId, slotDate) {
     const days = this.getSlotDays(slotDate);
