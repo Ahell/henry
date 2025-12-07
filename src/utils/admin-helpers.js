@@ -1,6 +1,6 @@
 /**
  * Admin helpers - Shared utilities for admin tab components
- * 
+ *
  * Provides consistent patterns for:
  * - Message handling
  * - Form value extraction

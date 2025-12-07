@@ -502,6 +502,51 @@ export class DataStore {
     );
   }
 
+  async saveToBackend() {
+    try {
+      const response = await fetch('http://localhost:3001/api/bulk-save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courses: this.courses,
+          cohorts: this.cohorts,
+          teachers: this.teachers,
+          slots: this.slots,
+          courseRuns: this.courseRuns,
+          teacherAvailability: this.teacherAvailability,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend save failed: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to save to backend:', error);
+      // Still save to localStorage as backup
+      this.saveData();
+      throw error;
+    }
+  }
+
+  renumberCohorts() {
+    // Sort cohorts by start_date
+    const sortedCohorts = [...this.cohorts].sort((a, b) => 
+      new Date(a.start_date) - new Date(b.start_date)
+    );
+    
+    // Assign sequential names
+    sortedCohorts.forEach((cohort, index) => {
+      cohort.name = `Kull ${index + 1}`;
+    });
+    
+    // Update the cohorts array with the renamed cohorts
+    this.cohorts = sortedCohorts;
+  }
+
   // Courses
   addCourse(course) {
     const id = Math.max(...this.courses.map((c) => c.course_id), 0) + 1;
@@ -577,7 +622,7 @@ export class DataStore {
   }
 
   // Cohorts
-  addCohort(cohort) {
+  async addCohort(cohort) {
     const id = Math.max(...this.cohorts.map((c) => c.cohort_id), 0) + 1;
     const newCohort = {
       cohort_id: id,
@@ -586,6 +631,14 @@ export class DataStore {
       planned_size: cohort.planned_size || 0,
     };
     this.cohorts.push(newCohort);
+    this.renumberCohorts();
+    
+    try {
+      await this.saveToBackend();
+    } catch (error) {
+      // Error already logged in saveToBackend
+    }
+    
     this.notify();
     return newCohort;
   }
@@ -598,26 +651,52 @@ export class DataStore {
     return this.cohorts.find((c) => c.cohort_id === cohortId);
   }
 
-  updateCohort(cohortId, updates) {
+  async updateCohort(cohortId, updates) {
     const index = this.cohorts.findIndex((c) => c.cohort_id === cohortId);
     if (index !== -1) {
       this.cohorts[index] = { ...this.cohorts[index], ...updates };
+      
+      // If start_date changed, renumber all cohorts
+      if (updates.start_date) {
+        this.renumberCohorts();
+      }
+      
+      try {
+        await this.saveToBackend();
+      } catch (error) {
+        // Error already logged
+      }
+      
       this.notify();
       return this.cohorts[index];
     }
     return null;
   }
 
-  deleteCohort(cohortId) {
+  async deleteCohort(cohortId) {
     const index = this.cohorts.findIndex((c) => c.cohort_id === cohortId);
     if (index !== -1) {
       this.cohorts.splice(index, 1);
-      // Also remove this cohort from all course runs
-      this.courseRuns.forEach((run) => {
+      
+      // Remove this cohort from all course runs and cleanup empty runs
+      this.courseRuns = this.courseRuns.filter(run => {
         if (run.cohorts) {
           run.cohorts = run.cohorts.filter((id) => id !== cohortId);
+          // Remove course run if it has no cohorts left
+          return run.cohorts.length > 0;
         }
+        return true;
       });
+      
+      // Renumber remaining cohorts
+      this.renumberCohorts();
+      
+      try {
+        await this.saveToBackend();
+      } catch (error) {
+        // Error already logged
+      }
+      
       this.notify();
       return true;
     }

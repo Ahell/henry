@@ -248,7 +248,12 @@ export class CohortsTab extends LitElement {
     showSuccessMessage(this, "Kull uppdaterad!");
   }
 
-  async handleDeleteCohort(cohortId, cohortName) {
+  async handleDeleteCohort(cohortId) {
+    const cohort = store.getCohort(cohortId);
+    if (!cohort) return;
+    
+    const cohortName = cohort.name;
+    
     if (
       confirm(
         `Är du säker på att du vill ta bort kullen "${cohortName}"?\n\nDetta kommer också ta bort alla schemalagda kurstillfällen för denna kull.`

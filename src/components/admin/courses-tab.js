@@ -362,7 +362,10 @@ export class CoursesTab extends LitElement {
     const name = getInputValue(root, "edit-name");
     const blockLength = parseInt(getRadioValue(root, "edit-blockLength"));
     const prerequisites = getSelectValues(root, "edit-prerequisites");
-    const selectedTeacherIds = getSelectValues(root, "edit-compatible-teachers");
+    const selectedTeacherIds = getSelectValues(
+      root,
+      "edit-compatible-teachers"
+    );
 
     store.updateCourse(courseId, {
       code,
