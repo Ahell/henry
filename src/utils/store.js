@@ -931,6 +931,17 @@ export class DataStore {
 
   // Get percentage of days in a slot where teacher is unavailable (0.0 to 1.0)
   getTeacherUnavailablePercentageForSlot(teacherId, slotDate) {
+    // Check if there's a slot-level unavailability entry (100%)
+    const hasSlotEntry = this.teacherAvailability.some(
+      (a) =>
+        a.teacher_id === teacherId &&
+        a.from_date === slotDate &&
+        a.type === "busy"
+    );
+    
+    if (hasSlotEntry) return 1.0; // 100% unavailable
+    
+    // Check individual days
     const days = this.getSlotDays(slotDate);
     if (days.length === 0) return 0;
 
