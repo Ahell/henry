@@ -49,16 +49,6 @@ export class CohortsTab extends LitElement {
     subscribeToStore(this);
   }
 
-  updated(changedProperties) {
-    // Update cohorts when component updates
-    if (
-      changedProperties.has("message") ||
-      changedProperties.has("editingCohortId")
-    ) {
-      this.cohorts = store.getCohorts();
-    }
-  }
-
   render() {
     return html`
       ${this.message
