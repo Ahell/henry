@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { store } from "../../utils/store.js";
 import "../ui/index.js";
+import "../henry-panel.js";
 import "./gantt-depot.js";
 import "./gantt-cell.js";
 import "./gantt-summary-row.js";
@@ -300,12 +301,14 @@ export class SchedulingTab extends LitElement {
     const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
 
     return html`
-      <div class="panel">
-        <div class="panel-header">
-          <henry-text variant="heading-3">
-            Gantt-vy: Planeringsöversikt
-          </henry-text>
-          ${this._renderWarningPills()}
+      <henry-panel>
+        <div slot="header">
+          <div class="header-wrapper">
+            <henry-text variant="heading-3">
+              Gantt-vy: Planeringsöversikt
+            </henry-text>
+            ${this._renderWarningPills()}
+          </div>
         </div>
         <p
           style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-4);"
