@@ -4,7 +4,7 @@ import "../ui/index.js";
 
 export class CohortsTab extends LitElement {
   static styles = css`
-    @import url('/src/styles/tokens.css');
+    @import url("/src/styles/tokens.css");
 
     :host {
       display: block;
@@ -63,7 +63,11 @@ export class CohortsTab extends LitElement {
     }
 
     button {
-      background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-secondary-500) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--color-primary-500) 0%,
+        var(--color-secondary-500) 100%
+      );
       color: white;
       border: none;
       padding: var(--space-3) var(--space-5);
@@ -86,7 +90,8 @@ export class CohortsTab extends LitElement {
       margin-top: var(--space-4);
     }
 
-    th, td {
+    th,
+    td {
       padding: var(--space-3);
       text-align: left;
       border-bottom: 1px solid var(--color-border);
@@ -102,7 +107,10 @@ export class CohortsTab extends LitElement {
       background: var(--color-gray-50);
     }
 
-    .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+    .btn-edit,
+    .btn-delete,
+    .btn-save,
+    .btn-cancel {
       padding: var(--space-2) var(--space-3);
       margin-right: var(--space-2);
       font-size: var(--font-size-xs);
@@ -149,7 +157,7 @@ export class CohortsTab extends LitElement {
       ${this.message
         ? html`<div class="${this.messageType}">${this.message}</div>`
         : ""}
-      
+
       <div class="panel">
         <h3>Lägg till Ny Kull</h3>
         <form @submit="${this.handleAddCohort}">
@@ -278,7 +286,9 @@ export class CohortsTab extends LitElement {
   async handleAddCohort(e) {
     e.preventDefault();
     const startDate = this.shadowRoot.querySelector("#cohortStartDate").value;
-    const plannedSize = parseInt(this.shadowRoot.querySelector("#cohortSize").value);
+    const plannedSize = parseInt(
+      this.shadowRoot.querySelector("#cohortSize").value
+    );
 
     const cohort = {
       start_date: startDate,
@@ -290,11 +300,15 @@ export class CohortsTab extends LitElement {
       this.message = "Kull tillagd!";
       this.messageType = "success";
       this.shadowRoot.querySelector("form").reset();
-      setTimeout(() => { this.message = ""; }, 3000);
+      setTimeout(() => {
+        this.message = "";
+      }, 3000);
     } catch (error) {
       this.message = `Fel: ${error.message}`;
       this.messageType = "error";
-      setTimeout(() => { this.message = ""; }, 5000);
+      setTimeout(() => {
+        this.message = "";
+      }, 5000);
     }
   }
 
@@ -307,8 +321,12 @@ export class CohortsTab extends LitElement {
   }
 
   handleSaveCohort(cohortId) {
-    const startDate = this.shadowRoot.querySelector(`#edit-cohort-date-${cohortId}`).value;
-    const plannedSize = parseInt(this.shadowRoot.querySelector(`#edit-cohort-size-${cohortId}`).value);
+    const startDate = this.shadowRoot.querySelector(
+      `#edit-cohort-date-${cohortId}`
+    ).value;
+    const plannedSize = parseInt(
+      this.shadowRoot.querySelector(`#edit-cohort-size-${cohortId}`).value
+    );
 
     store.updateCohort(cohortId, {
       start_date: startDate,
@@ -318,20 +336,30 @@ export class CohortsTab extends LitElement {
     this.editingCohortId = null;
     this.message = "Kull uppdaterad!";
     this.messageType = "success";
-    setTimeout(() => { this.message = ""; }, 3000);
+    setTimeout(() => {
+      this.message = "";
+    }, 3000);
   }
 
   async handleDeleteCohort(cohortId, cohortName) {
-    if (confirm(`Är du säker på att du vill ta bort kullen "${cohortName}"?\n\nDetta kommer också ta bort alla schemalagda kurstillfällen för denna kull.`)) {
+    if (
+      confirm(
+        `Är du säker på att du vill ta bort kullen "${cohortName}"?\n\nDetta kommer också ta bort alla schemalagda kurstillfällen för denna kull.`
+      )
+    ) {
       try {
         await store.deleteCohort(cohortId);
         this.message = `Kull "${cohortName}" borttagen!`;
         this.messageType = "success";
-        setTimeout(() => { this.message = ""; }, 3000);
+        setTimeout(() => {
+          this.message = "";
+        }, 3000);
       } catch (error) {
         this.message = `Fel: ${error.message}`;
         this.messageType = "error";
-        setTimeout(() => { this.message = ""; }, 5000);
+        setTimeout(() => {
+          this.message = "";
+        }, 5000);
       }
     }
   }

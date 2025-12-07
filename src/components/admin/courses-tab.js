@@ -4,7 +4,7 @@ import "../ui/index.js";
 
 export class CoursesTab extends LitElement {
   static styles = css`
-    @import url('/src/styles/tokens.css');
+    @import url("/src/styles/tokens.css");
 
     :host {
       display: block;
@@ -62,7 +62,9 @@ export class CoursesTab extends LitElement {
       font-size: var(--font-size-xs);
     }
 
-    input, select, textarea {
+    input,
+    select,
+    textarea {
       width: 100%;
       padding: var(--input-padding-y) var(--input-padding-x);
       border: var(--input-border-width) solid var(--color-border);
@@ -71,7 +73,9 @@ export class CoursesTab extends LitElement {
       transition: var(--transition-all);
     }
 
-    input:focus, select:focus, textarea:focus {
+    input:focus,
+    select:focus,
+    textarea:focus {
       outline: none;
       border-color: var(--color-primary-500);
       box-shadow: var(--input-focus-ring);
@@ -82,7 +86,11 @@ export class CoursesTab extends LitElement {
     }
 
     button {
-      background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-secondary-500) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--color-primary-500) 0%,
+        var(--color-secondary-500) 100%
+      );
       color: white;
       border: none;
       padding: var(--space-3) var(--space-5);
@@ -100,7 +108,11 @@ export class CoursesTab extends LitElement {
     }
 
     .btn-submit {
-      background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-secondary-500) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--color-primary-500) 0%,
+        var(--color-secondary-500) 100%
+      );
     }
 
     table {
@@ -109,7 +121,8 @@ export class CoursesTab extends LitElement {
       margin-top: var(--space-4);
     }
 
-    th, td {
+    th,
+    td {
       padding: var(--space-3);
       text-align: left;
       border-bottom: 1px solid var(--color-border);
@@ -125,7 +138,10 @@ export class CoursesTab extends LitElement {
       background: var(--color-gray-50);
     }
 
-    .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+    .btn-edit,
+    .btn-delete,
+    .btn-save,
+    .btn-cancel {
       padding: var(--space-2) var(--space-3);
       margin-right: var(--space-2);
       font-size: var(--font-size-xs);
@@ -181,7 +197,7 @@ export class CoursesTab extends LitElement {
       ${this.message
         ? html`<div class="${this.messageType}">${this.message}</div>`
         : ""}
-      
+
       <div class="panel">
         <h3>➕ Lägg till Ny Kurs</h3>
         <form @submit="${this.handleAddCourse}">
@@ -215,29 +231,39 @@ export class CoursesTab extends LitElement {
               </select>
             </div>
             <div class="form-group">
-              <label>Spärrkurser <span class="hint">(kurser som måste läsas före)</span></label>
+              <label
+                >Spärrkurser
+                <span class="hint">(kurser som måste läsas före)</span></label
+              >
               <select id="prerequisites" class="prerequisites-select" multiple>
-                ${store.getCourses().map(
-                  (c) => html`
-                    <option value="${c.course_id}">
-                      ${c.code} - ${c.name}
-                    </option>
-                  `
-                )}
+                ${store
+                  .getCourses()
+                  .map(
+                    (c) => html`
+                      <option value="${c.course_id}">
+                        ${c.code} - ${c.name}
+                      </option>
+                    `
+                  )}
               </select>
             </div>
           </div>
 
           <div class="form-group">
-            <label>Kompatibla lärare <span class="hint">(Ctrl/Cmd+klick för flera)</span></label>
+            <label
+              >Kompatibla lärare
+              <span class="hint">(Ctrl/Cmd+klick för flera)</span></label
+            >
             <select id="courseTeachers" multiple size="5" style="height: auto;">
-              ${store.getTeachers().map(
-                (teacher) => html`
-                  <option value="${teacher.teacher_id}">
-                    ${teacher.name}
-                  </option>
-                `
-              )}
+              ${store
+                .getTeachers()
+                .map(
+                  (teacher) => html`
+                    <option value="${teacher.teacher_id}">
+                      ${teacher.name}
+                    </option>
+                  `
+                )}
             </select>
           </div>
 
@@ -281,7 +307,9 @@ export class CoursesTab extends LitElement {
       })
       .filter(Boolean);
 
-    return html`<span class="prerequisites-list">${prereqNames.join(", ")}</span>`;
+    return html`<span class="prerequisites-list"
+      >${prereqNames.join(", ")}</span
+    >`;
   }
 
   renderCompatibleTeachersForCourse(course) {
@@ -305,32 +333,77 @@ export class CoursesTab extends LitElement {
     if (isEditing) {
       return html`
         <tr class="editing">
-          <td><input type="text" class="edit-input" id="edit-code-${course.course_id}" .value="${course.code}" /></td>
-          <td><input type="text" class="edit-input" id="edit-name-${course.course_id}" .value="${course.name}" /></td>
           <td>
-            <select class="edit-input prerequisites-select" id="edit-prerequisites-${course.course_id}" multiple>
-              ${store.getCourses().map(
-                (c) => html`
-                  <option
-                    value="${c.course_id}"
-                    ?selected="${course.prerequisites?.includes(c.course_id)}"
-                  >
-                    ${c.code}
-                  </option>
-                `
-              )}
+            <input
+              type="text"
+              class="edit-input"
+              id="edit-code-${course.course_id}"
+              .value="${course.code}"
+            />
+          </td>
+          <td>
+            <input
+              type="text"
+              class="edit-input"
+              id="edit-name-${course.course_id}"
+              .value="${course.name}"
+            />
+          </td>
+          <td>
+            <select
+              class="edit-input prerequisites-select"
+              id="edit-prerequisites-${course.course_id}"
+              multiple
+            >
+              ${store
+                .getCourses()
+                .map(
+                  (c) => html`
+                    <option
+                      value="${c.course_id}"
+                      ?selected="${course.prerequisites?.includes(c.course_id)}"
+                    >
+                      ${c.code}
+                    </option>
+                  `
+                )}
             </select>
           </td>
           <td>${this.renderCompatibleTeachersForCourse(course)}</td>
           <td>
-            <select class="edit-input" id="edit-blockLength-${course.course_id}">
-              <option value="1" ?selected="${course.default_block_length === 1}">1</option>
-              <option value="2" ?selected="${course.default_block_length === 2}">2</option>
+            <select
+              class="edit-input"
+              id="edit-blockLength-${course.course_id}"
+            >
+              <option
+                value="1"
+                ?selected="${course.default_block_length === 1}"
+              >
+                1
+              </option>
+              <option
+                value="2"
+                ?selected="${course.default_block_length === 2}"
+              >
+                2
+              </option>
             </select>
           </td>
           <td>
-            <button type="button" class="btn-save" @click="${() => this.handleSaveCourse(course.course_id)}">Spara</button>
-            <button type="button" class="btn-cancel" @click="${() => this.handleCancelEdit()}">Avbryt</button>
+            <button
+              type="button"
+              class="btn-save"
+              @click="${() => this.handleSaveCourse(course.course_id)}"
+            >
+              Spara
+            </button>
+            <button
+              type="button"
+              class="btn-cancel"
+              @click="${() => this.handleCancelEdit()}"
+            >
+              Avbryt
+            </button>
           </td>
         </tr>
       `;
@@ -344,8 +417,21 @@ export class CoursesTab extends LitElement {
         <td>${this.renderCompatibleTeachersForCourse(course)}</td>
         <td>${course.default_block_length} block</td>
         <td>
-          <button type="button" class="btn-edit" @click="${() => this.handleEditCourse(course.course_id)}">Redigera</button>
-          <button type="button" class="btn-delete" @click="${() => this.handleDeleteCourse(course.course_id, course.name)}">Ta bort</button>
+          <button
+            type="button"
+            class="btn-edit"
+            @click="${() => this.handleEditCourse(course.course_id)}"
+          >
+            Redigera
+          </button>
+          <button
+            type="button"
+            class="btn-delete"
+            @click="${() =>
+              this.handleDeleteCourse(course.course_id, course.name)}"
+          >
+            Ta bort
+          </button>
         </td>
       </tr>
     `;
@@ -353,11 +439,17 @@ export class CoursesTab extends LitElement {
 
   handleAddCourse(e) {
     e.preventDefault();
-    const blockLength = parseInt(this.shadowRoot.querySelector("#blockLength").value);
+    const blockLength = parseInt(
+      this.shadowRoot.querySelector("#blockLength").value
+    );
     const prerequisitesSelect = this.shadowRoot.querySelector("#prerequisites");
-    const prerequisites = Array.from(prerequisitesSelect.selectedOptions).map((opt) => parseInt(opt.value));
+    const prerequisites = Array.from(prerequisitesSelect.selectedOptions).map(
+      (opt) => parseInt(opt.value)
+    );
     const teachersSelect = this.shadowRoot.querySelector("#courseTeachers");
-    const selectedTeacherIds = Array.from(teachersSelect.selectedOptions).map((opt) => parseInt(opt.value));
+    const selectedTeacherIds = Array.from(teachersSelect.selectedOptions).map(
+      (opt) => parseInt(opt.value)
+    );
 
     const course = {
       code: this.shadowRoot.querySelector("#courseCode").value,
@@ -383,7 +475,9 @@ export class CoursesTab extends LitElement {
     this.message = "Kurs tillagd!";
     this.messageType = "success";
     this.shadowRoot.querySelector("form").reset();
-    setTimeout(() => { this.message = ""; }, 3000);
+    setTimeout(() => {
+      this.message = "";
+    }, 3000);
   }
 
   handleEditCourse(courseId) {
@@ -397,9 +491,15 @@ export class CoursesTab extends LitElement {
   handleSaveCourse(courseId) {
     const code = this.shadowRoot.querySelector(`#edit-code-${courseId}`).value;
     const name = this.shadowRoot.querySelector(`#edit-name-${courseId}`).value;
-    const blockLength = parseInt(this.shadowRoot.querySelector(`#edit-blockLength-${courseId}`).value);
-    const prerequisitesSelect = this.shadowRoot.querySelector(`#edit-prerequisites-${courseId}`);
-    const prerequisites = Array.from(prerequisitesSelect.selectedOptions).map((opt) => parseInt(opt.value));
+    const blockLength = parseInt(
+      this.shadowRoot.querySelector(`#edit-blockLength-${courseId}`).value
+    );
+    const prerequisitesSelect = this.shadowRoot.querySelector(
+      `#edit-prerequisites-${courseId}`
+    );
+    const prerequisites = Array.from(prerequisitesSelect.selectedOptions).map(
+      (opt) => parseInt(opt.value)
+    );
 
     store.updateCourse(courseId, {
       code,
@@ -412,7 +512,9 @@ export class CoursesTab extends LitElement {
     this.editingCourseId = null;
     this.message = "Kurs uppdaterad!";
     this.messageType = "success";
-    setTimeout(() => { this.message = ""; }, 3000);
+    setTimeout(() => {
+      this.message = "";
+    }, 3000);
   }
 
   handleDeleteCourse(courseId, courseName) {
@@ -420,7 +522,9 @@ export class CoursesTab extends LitElement {
       store.deleteCourse(courseId);
       this.message = `Kurs "${courseName}" borttagen!`;
       this.messageType = "success";
-      setTimeout(() => { this.message = ""; }, 3000);
+      setTimeout(() => {
+        this.message = "";
+      }, 3000);
     }
   }
 }

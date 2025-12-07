@@ -4,7 +4,7 @@ import "../ui/index.js";
 
 export class TeachersTab extends LitElement {
   static styles = css`
-    @import url('/src/styles/tokens.css');
+    @import url("/src/styles/tokens.css");
 
     :host {
       display: block;
@@ -53,7 +53,8 @@ export class TeachersTab extends LitElement {
       font-size: var(--font-size-xs);
     }
 
-    input, select {
+    input,
+    select {
       width: 100%;
       padding: var(--input-padding-y) var(--input-padding-x);
       border: var(--input-border-width) solid var(--color-border);
@@ -62,14 +63,19 @@ export class TeachersTab extends LitElement {
       transition: var(--transition-all);
     }
 
-    input:focus, select:focus {
+    input:focus,
+    select:focus {
       outline: none;
       border-color: var(--color-primary-500);
       box-shadow: var(--input-focus-ring);
     }
 
     button {
-      background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-secondary-500) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--color-primary-500) 0%,
+        var(--color-secondary-500) 100%
+      );
       color: white;
       border: none;
       padding: var(--space-3) var(--space-5);
@@ -92,7 +98,8 @@ export class TeachersTab extends LitElement {
       margin-top: var(--space-4);
     }
 
-    th, td {
+    th,
+    td {
       padding: var(--space-3);
       text-align: left;
       border-bottom: 1px solid var(--color-border);
@@ -108,7 +115,10 @@ export class TeachersTab extends LitElement {
       background: var(--color-gray-50);
     }
 
-    .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+    .btn-edit,
+    .btn-delete,
+    .btn-save,
+    .btn-cancel {
       padding: var(--space-2) var(--space-3);
       margin-right: var(--space-2);
       font-size: var(--font-size-xs);
@@ -158,7 +168,7 @@ export class TeachersTab extends LitElement {
       ${this.message
         ? html`<div class="${this.messageType}">${this.message}</div>`
         : ""}
-      
+
       <div class="panel">
         <h3>Lägg till Ny Lärare</h3>
         <form @submit="${this.handleAddTeacher}">
@@ -183,7 +193,10 @@ export class TeachersTab extends LitElement {
             </div>
           </div>
           <div class="form-group">
-            <label>Kompatibla kurser <span class="hint">(Ctrl/Cmd+klick för flera)</span></label>
+            <label
+              >Kompatibla kurser
+              <span class="hint">(Ctrl/Cmd+klick för flera)</span></label
+            >
             <select id="teacherCourses" multiple size="6" style="height: auto;">
               ${courses.map(
                 (course) => html`
@@ -215,7 +228,9 @@ export class TeachersTab extends LitElement {
             </tr>
           </thead>
           <tbody>
-            ${store.getTeachers().map((teacher) => this.renderTeacherRow(teacher))}
+            ${store
+              .getTeachers()
+              .map((teacher) => this.renderTeacherRow(teacher))}
           </tbody>
         </table>
       </div>
@@ -338,14 +353,17 @@ export class TeachersTab extends LitElement {
     );
     const teacher = {
       name: this.shadowRoot.querySelector("#teacherName").value,
-      home_department: this.shadowRoot.querySelector("#teacherDepartment").value,
+      home_department:
+        this.shadowRoot.querySelector("#teacherDepartment").value,
       compatible_courses: selectedCourses,
     };
     store.addTeacher(teacher);
     this.message = "Lärare tillagd!";
     this.messageType = "success";
     this.shadowRoot.querySelector("form").reset();
-    setTimeout(() => { this.message = ""; }, 3000);
+    setTimeout(() => {
+      this.message = "";
+    }, 3000);
   }
 
   handleEditTeacher(teacherId) {
@@ -357,9 +375,15 @@ export class TeachersTab extends LitElement {
   }
 
   handleSaveTeacher(teacherId) {
-    const name = this.shadowRoot.querySelector(`#edit-teacher-name-${teacherId}`).value;
-    const home_department = this.shadowRoot.querySelector(`#edit-teacher-dept-${teacherId}`).value;
-    const coursesSelect = this.shadowRoot.querySelector(`#edit-teacher-courses-${teacherId}`);
+    const name = this.shadowRoot.querySelector(
+      `#edit-teacher-name-${teacherId}`
+    ).value;
+    const home_department = this.shadowRoot.querySelector(
+      `#edit-teacher-dept-${teacherId}`
+    ).value;
+    const coursesSelect = this.shadowRoot.querySelector(
+      `#edit-teacher-courses-${teacherId}`
+    );
     const compatible_courses = Array.from(coursesSelect.selectedOptions).map(
       (opt) => parseInt(opt.value)
     );
@@ -373,7 +397,9 @@ export class TeachersTab extends LitElement {
     this.editingTeacherId = null;
     this.message = "Lärare uppdaterad!";
     this.messageType = "success";
-    setTimeout(() => { this.message = ""; }, 3000);
+    setTimeout(() => {
+      this.message = "";
+    }, 3000);
   }
 
   handleRandomizeCourses() {
@@ -385,16 +411,22 @@ export class TeachersTab extends LitElement {
       store.randomizeTeacherCourses(2, 5);
       this.message = "Kurser slumpade till alla lärare!";
       this.messageType = "success";
-      setTimeout(() => { this.message = ""; }, 3000);
+      setTimeout(() => {
+        this.message = "";
+      }, 3000);
     }
   }
 
   handleDeleteTeacher(teacherId, teacherName) {
-    if (confirm(`Är du säker på att du vill ta bort läraren "${teacherName}"?`)) {
+    if (
+      confirm(`Är du säker på att du vill ta bort läraren "${teacherName}"?`)
+    ) {
       store.deleteTeacher(teacherId);
       this.message = `Lärare "${teacherName}" borttagen!`;
       this.messageType = "success";
-      setTimeout(() => { this.message = ""; }, 3000);
+      setTimeout(() => {
+        this.message = "";
+      }, 3000);
     }
   }
 }

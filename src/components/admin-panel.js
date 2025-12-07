@@ -6,7 +6,7 @@ import "./admin/index.js";
 
 export class AdminPanel extends LitElement {
   static styles = css`
-    @import url('/src/styles/tokens.css');
+    @import url("/src/styles/tokens.css");
 
     :host {
       display: block;
@@ -92,7 +92,9 @@ export class AdminPanel extends LitElement {
 
       ${this.activeTab === "courses" ? html`<courses-tab></courses-tab>` : ""}
       ${this.activeTab === "cohorts" ? html`<cohorts-tab></cohorts-tab>` : ""}
-      ${this.activeTab === "teachers" ? html`<teachers-tab></teachers-tab>` : ""}
+      ${this.activeTab === "teachers"
+        ? html`<teachers-tab></teachers-tab>`
+        : ""}
       ${this.activeTab === "teacherView"
         ? html`<report-viewer
             .activeTab=${"teacher"}

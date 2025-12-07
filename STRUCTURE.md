@@ -87,6 +87,7 @@ Alla Lit-komponenter som bygger upp UI:t:
   - **checkbox.js** - Checkboxar med labels
   - **heading.js** - Rubriker H1-H6
   - **card.js** - Kort/paneler med variants
+
 #### `styles/` - Gemensamma Stilar
 
 - **tokens.css** - Design tokens (färger, spacing, typografi)
@@ -149,6 +150,7 @@ utils/
 ```
 
 ## 🎯 När ska du skapa nya filer?
+
 ### Ny Komponent
 
 **Skapa:** `src/components/my-component.js` eller `src/components/admin/my-tab.js`
@@ -160,7 +162,7 @@ import "../ui/index.js";
 
 export class MyComponent extends LitElement {
   static styles = css`
-    @import url('/src/styles/tokens.css');
+    @import url("/src/styles/tokens.css");
     /* använd design tokens */
   `;
   // ...
@@ -179,7 +181,7 @@ customElements.define("my-component", MyComponent);
 
 **Lägg till i:** `src/styles/tokens.css` (design tokens) eller `src/styles/theme.css` (utility classes)
 
-```css
+````css
 /* tokens.css */
 :root {
   --color-my-new: #abc123;
@@ -202,24 +204,26 @@ export const colors = {
 | Ändra design tokens       | `src/styles/tokens.css`                     |
 ## 📏 Storlek på filer
 
-```
+````
+
 Stora filer (>1000 rader):
-└── src/components/report-viewer.js    2995 rader  ⚠️  Överväg split
+└── src/components/report-viewer.js 2995 rader ⚠️ Överväg split
 
 Medelstora filer (300-700 rader):
-├── src/data/seedData.js                664 rader  ✅  OK
-├── server/server.js                    419 rader  ✅  OK
-├── src/components/admin/courses-tab.js 400 rader  ✅  OK
-├── src/components/admin/teachers-tab.js 380 rader ✅  OK
-├── src/components/admin/cohorts-tab.js 350 rader  ✅  OK
-└── src/components/import-export.js     302 rader  ✅  OK
+├── src/data/seedData.js 664 rader ✅ OK
+├── server/server.js 419 rader ✅ OK
+├── src/components/admin/courses-tab.js 400 rader ✅ OK
+├── src/components/admin/teachers-tab.js 380 rader ✅ OK
+├── src/components/admin/cohorts-tab.js 350 rader ✅ OK
+└── src/components/import-export.js 302 rader ✅ OK
 
 Små filer (<150 rader):
-├── src/components/admin-panel.js       110 rader  ✅  Perfect!
-├── src/components/ui/*.js              ~100 rader ✅  OK
-├── src/utils/businessRules.js          120 rader  ✅  OK
-└── src/main.js                          22 rader  ✅  OK
-``` src/utils/store.js                  892 rader  ✅  OK
+├── src/components/admin-panel.js 110 rader ✅ Perfect!
+├── src/components/ui/\*.js ~100 rader ✅ OK
+├── src/utils/businessRules.js 120 rader ✅ OK
+└── src/main.js 22 rader ✅ OK
+
+```src/utils/store.js 892 rader  ✅  OK
 
 Medelstora filer (300-700 rader):
 ├── src/data/seedData.js                664 rader  ✅  OK
