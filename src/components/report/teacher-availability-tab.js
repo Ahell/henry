@@ -46,6 +46,10 @@ export class TeacherAvailabilityTab extends LitElement {
 
     .teacher-timeline-container {
       overflow-x: auto;
+      margin-left: calc(var(--space-6) * -1);
+      margin-right: calc(var(--space-6) * -1);
+      margin-bottom: calc(var(--space-6) * -1);
+      padding: 0 var(--space-6) var(--space-6) var(--space-6);
     }
 
     .teacher-timeline-container.painting-active {
@@ -149,89 +153,90 @@ export class TeacherAvailabilityTab extends LitElement {
     const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
 
     return html`
-      <henry-panel noPadding>
+      <henry-panel>
         <div slot="header">
           <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
         </div>
-        <div style="padding: var(--space-6);">
-          <p
-            style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-4);"
-          >
-            Klicka på "Markera upptagen" och måla sedan i cellerna för att markera
-            när en lärare är upptagen. Blå celler visar schemalagda kurser.
-          </p>
+        <p
+          style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-4);"
+        >
+          Klicka på "Markera upptagen" och måla sedan i cellerna för att
+          markera när en lärare är upptagen. Blå celler visar schemalagda
+          kurser.
+        </p>
 
         <div class="paint-controls">
-          <henry-button
-            variant="${this.isPainting ? "success" : "secondary"}"
-            @click="${this.togglePaintMode}"
+            <henry-button
+              variant="${this.isPainting ? "success" : "secondary"}"
+              @click="${this.togglePaintMode}"
+            >
+              ${this.isPainting
+                ? "✓ Målningsläge aktivt"
+                : "🖌️ Markera upptagen"}
+            </henry-button>
+            ${this.isPainting
+              ? html`
+                  <span
+                    style="color: var(--color-text-secondary); font-size: var(--font-size-sm);"
+                  >
+                    Klicka eller dra över celler för att markera/avmarkera.
+                    Klicka på knappen igen för att avsluta.
+                  </span>
+                `
+              : ""}
+          </div>
+
+          <div class="legend">
+            <div class="legend-item">
+              <div
+                class="legend-box"
+                style="background: var(--color-success);"
+              ></div>
+              <span>Tilldelad kurs</span>
+            </div>
+            <div class="legend-item">
+              <div
+                class="legend-box"
+                style="background: var(--color-info);"
+              ></div>
+              <span>Kompatibel kurs (ej tilldelad)</span>
+            </div>
+            <div class="legend-item">
+              <div
+                class="legend-box"
+                style="background: var(--color-danger);"
+              ></div>
+              <span>Upptagen/ej tillgänglig</span>
+            </div>
+          </div>
+
+          <div
+            class="teacher-timeline-container ${this.isPainting
+              ? "painting-active"
+              : ""}"
+            @mouseup="${this.handlePaintEnd}"
+            @mouseleave="${this.handlePaintEnd}"
           >
-            ${this.isPainting ? "✓ Målningsläge aktivt" : "🖌️ Markera upptagen"}
-          </henry-button>
-          ${this.isPainting
-            ? html`
-                <span
-                  style="color: var(--color-text-secondary); font-size: var(--font-size-sm);"
-                >
-                  Klicka eller dra över celler för att markera/avmarkera. Klicka
-                  på knappen igen för att avsluta.
-                </span>
-              `
-            : ""}
-        </div>
-
-        <div class="legend">
-          <div class="legend-item">
-            <div
-              class="legend-box"
-              style="background: var(--color-success);"
-            ></div>
-            <span>Tilldelad kurs</span>
+            <table class="teacher-timeline-table">
+              <thead>
+                <tr>
+                  <th>Lärare</th>
+                  ${slotDates.map((date) => {
+                    const d = new Date(date);
+                    const day = d.getDate();
+                    const month = d.toLocaleString("sv-SE", { month: "short" });
+                    const year = d.getFullYear().toString().slice(-2);
+                    return html`<th>${day} ${month}<br />${year}</th>`;
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                ${teachers.map((teacher) =>
+                  this.renderTeacherTimelineRow(teacher, slotDates)
+                )}
+              </tbody>
+            </table>
           </div>
-          <div class="legend-item">
-            <div
-              class="legend-box"
-              style="background: var(--color-info);"
-            ></div>
-            <span>Kompatibel kurs (ej tilldelad)</span>
-          </div>
-          <div class="legend-item">
-            <div
-              class="legend-box"
-              style="background: var(--color-danger);"
-            ></div>
-            <span>Upptagen/ej tillgänglig</span>
-          </div>
-        </div>
-
-        <div
-          class="teacher-timeline-container ${this.isPainting
-            ? "painting-active"
-            : ""}"
-          @mouseup="${this.handlePaintEnd}"
-          @mouseleave="${this.handlePaintEnd}"
-        >
-          <table class="teacher-timeline-table">
-            <thead>
-              <tr>
-                <th>Lärare</th>
-                ${slotDates.map((date) => {
-                  const d = new Date(date);
-                  const day = d.getDate();
-                  const month = d.toLocaleString("sv-SE", { month: "short" });
-                  const year = d.getFullYear().toString().slice(-2);
-                  return html`<th>${day} ${month}<br />${year}</th>`;
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              ${teachers.map((teacher) =>
-                this.renderTeacherTimelineRow(teacher, slotDates)
-              )}
-            </tbody>
-          </table>
-        </div>
-        </div>
       </henry-panel>
     `;
   }
