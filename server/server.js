@@ -325,10 +325,18 @@ app.get("/api/bulk-load", (req, res) => {
       .map((r) => deserializeArrayFields(r, ["cohorts", "teachers"]));
     
     const availability = db.prepare("SELECT * FROM teacher_availability").all();
-    const teacherAvailability = {};
-    availability.forEach((a) => {
-      const key = `${a.teacher_id}-${a.slot_id}`;
-      teacherAvailability[key] = a.available === 1;
+    // Convert database format to application format (array of availability objects)
+    // Need to include both slot_id (for DB operations) and from_date (for app logic)
+    const teacherAvailability = availability.map((a) => {
+      const slot = slots.find((s) => s.slot_id === a.slot_id);
+      return {
+        id: a.id,
+        teacher_id: a.teacher_id,
+        from_date: slot ? slot.start_date : "",
+        to_date: slot ? slot.start_date : "",
+        slot_id: a.slot_id,
+        type: a.available === 1 ? "free" : "busy",
+      };
     });
 
     console.log("Bulk load successful:", {
@@ -443,12 +451,34 @@ app.post("/api/bulk-save", (req, res) => {
 
     if (teacherAvailability) {
       const stmt = db.prepare(
-        "INSERT OR REPLACE INTO teacher_availability (teacher_id, slot_id, available) VALUES (?, ?, ?)"
+        "INSERT OR REPLACE INTO teacher_availability (id, teacher_id, slot_id, available) VALUES (?, ?, ?, ?)"
       );
-      Object.entries(teacherAvailability).forEach(([key, available]) => {
-        const [teacher_id, slot_id] = key.split("-").map(Number);
-        stmt.run(teacher_id, slot_id, available ? 1 : 0);
-      });
+      
+      // Handle both array format (from store) and object format (legacy)
+      if (Array.isArray(teacherAvailability)) {
+        // Array format: { id, teacher_id, from_date, to_date, type, slot_id }
+        teacherAvailability.forEach((a) => {
+          // If slot_id is present, use it directly
+          if (a.slot_id) {
+            const available = a.type === "free" ? 1 : 0;
+            stmt.run(a.id || null, a.teacher_id, a.slot_id, available);
+          }
+          // Otherwise, find slot by from_date
+          else if (a.from_date) {
+            const slot = slots?.find((s) => s.start_date === a.from_date);
+            if (slot) {
+              const available = a.type === "free" ? 1 : 0;
+              stmt.run(a.id || null, a.teacher_id, slot.slot_id, available);
+            }
+          }
+        });
+      } else {
+        // Object format: { "teacherId-slotId": boolean }
+        Object.entries(teacherAvailability).forEach(([key, available]) => {
+          const [teacher_id, slot_id] = key.split("-").map(Number);
+          stmt.run(null, teacher_id, slot_id, available ? 1 : 0);
+        });
+      }
     }
 
     console.log("Bulk save completed successfully");

@@ -47,7 +47,7 @@ export class DataStore {
       this.teachers = data.teachers || [];
       this.slots = data.slots || [];
       this.courseRuns = data.courseRuns || [];
-      this.teacherAvailability = data.teacherAvailability || {};
+      this.teacherAvailability = data.teacherAvailability || [];
 
       // Validate and fix teacher assignments (ensure one course per teacher per slot)
       this.validateTeacherAssignments();
