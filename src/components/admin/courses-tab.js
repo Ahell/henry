@@ -116,26 +116,24 @@ export class CoursesTab extends LitElement {
           </div>
 
           <div class="form-row two-cols">
-            <henry-select id="blockLength" label="Blocklängd">
-              <option value="1">1 block (7.5 hp)</option>
-              <option value="2">2 block (15 hp)</option>
-            </henry-select>
+            <henry-select
+              id="blockLength"
+              label="Blocklängd"
+              .options=${[
+                { value: "1", label: "1 block (7.5 hp)" },
+                { value: "2", label: "2 block (15 hp)" },
+              ]}
+            ></henry-select>
             <henry-select
               id="prerequisites"
               label="Spärrkurser (kurser som måste läsas före)"
               multiple
               size="5"
-            >
-              ${store
-                .getCourses()
-                .map(
-                  (c) => html`
-                    <option value="${c.course_id}">
-                      ${c.code} - ${c.name}
-                    </option>
-                  `
-                )}
-            </henry-select>
+              .options=${store.getCourses().map((c) => ({
+                value: c.course_id.toString(),
+                label: `${c.code} - ${c.name}`,
+              }))}
+            ></henry-select>
           </div>
 
           <henry-select
@@ -143,15 +141,11 @@ export class CoursesTab extends LitElement {
             label="Kompatibla lärare (Ctrl/Cmd+klick för flera)"
             multiple
             size="5"
-          >
-            ${store
-              .getTeachers()
-              .map(
-                (teacher) => html`
-                  <option value="${teacher.teacher_id}">${teacher.name}</option>
-                `
-              )}
-          </henry-select>
+            .options=${store.getTeachers().map((teacher) => ({
+              value: teacher.teacher_id.toString(),
+              label: teacher.name,
+            }))}
+          ></henry-select>
 
           <div class="form-actions">
             <henry-button type="submit" variant="primary">
@@ -238,44 +232,34 @@ export class CoursesTab extends LitElement {
             />
           </td>
           <td>
-            <select
-              class="edit-input prerequisites-select"
+            <henry-select
               id="edit-prerequisites-${course.course_id}"
               multiple
-            >
-              ${store
-                .getCourses()
-                .map(
-                  (c) => html`
-                    <option
-                      value="${c.course_id}"
-                      ?selected="${course.prerequisites?.includes(c.course_id)}"
-                    >
-                      ${c.code}
-                    </option>
-                  `
-                )}
-            </select>
+              size="5"
+              .options=${store.getCourses().map((c) => ({
+                value: c.course_id.toString(),
+                label: c.code,
+                selected: course.prerequisites?.includes(c.course_id),
+              }))}
+            ></henry-select>
           </td>
           <td>${this.renderCompatibleTeachersForCourse(course)}</td>
           <td>
-            <select
-              class="edit-input"
+            <henry-select
               id="edit-blockLength-${course.course_id}"
-            >
-              <option
-                value="1"
-                ?selected="${course.default_block_length === 1}"
-              >
-                1
-              </option>
-              <option
-                value="2"
-                ?selected="${course.default_block_length === 2}"
-              >
-                2
-              </option>
-            </select>
+              .options=${[
+                {
+                  value: "1",
+                  label: "1",
+                  selected: course.default_block_length === 1,
+                },
+                {
+                  value: "2",
+                  label: "2",
+                  selected: course.default_block_length === 2,
+                },
+              ]}
+            ></henry-select>
           </td>
           <td>
             <henry-button
@@ -384,11 +368,12 @@ export class CoursesTab extends LitElement {
     const code = this.shadowRoot.querySelector(`#edit-code-${courseId}`).value;
     const name = this.shadowRoot.querySelector(`#edit-name-${courseId}`).value;
     const blockLength = parseInt(
-      this.shadowRoot.querySelector(`#edit-blockLength-${courseId}`).value
+      this.shadowRoot.querySelector(`#edit-blockLength-${courseId}`).getSelect()
+        .value
     );
-    const prerequisitesSelect = this.shadowRoot.querySelector(
-      `#edit-prerequisites-${courseId}`
-    );
+    const prerequisitesSelect = this.shadowRoot
+      .querySelector(`#edit-prerequisites-${courseId}`)
+      .getSelect();
     const prerequisites = Array.from(prerequisitesSelect.selectedOptions).map(
       (opt) => parseInt(opt.value)
     );

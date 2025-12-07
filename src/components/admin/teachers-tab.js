@@ -102,26 +102,22 @@ export class TeachersTab extends LitElement {
               label="Avdelning"
               placeholder="Välj avdelning..."
               required
-            >
-              ${departments.map(
-                (dept) => html`<option value="${dept}">${dept}</option>`
-              )}
-            </henry-select>
+              .options=${departments.map((dept) => ({
+                value: dept,
+                label: dept,
+              }))}
+            ></henry-select>
           </div>
           <henry-select
             id="teacherCourses"
             label="Kompatibla kurser (Ctrl/Cmd+klick för flera)"
             multiple
             size="6"
-          >
-            ${courses.map(
-              (course) => html`
-                <option value="${course.course_id}">
-                  ${course.code} - ${course.name}
-                </option>
-              `
-            )}
-          </henry-select>
+            .options=${courses.map((course) => ({
+              value: course.course_id.toString(),
+              label: `${course.code} - ${course.name}`,
+            }))}
+          ></henry-select>
           <henry-button type="submit" variant="primary">
             Lägg till Lärare
           </henry-button>
@@ -175,41 +171,26 @@ export class TeachersTab extends LitElement {
             />
           </td>
           <td>
-            <select
-              class="edit-input"
+            <henry-select
               id="edit-teacher-dept-${teacher.teacher_id}"
-            >
-              ${departments.map(
-                (dept) => html`
-                  <option
-                    value="${dept}"
-                    ?selected="${teacher.home_department === dept}"
-                  >
-                    ${dept}
-                  </option>
-                `
-              )}
-            </select>
+              .options=${departments.map((dept) => ({
+                value: dept,
+                label: dept,
+                selected: teacher.home_department === dept,
+              }))}
+            ></henry-select>
           </td>
           <td>
-            <select
-              class="edit-input"
+            <henry-select
               id="edit-teacher-courses-${teacher.teacher_id}"
               multiple
               size="4"
-              style="height: auto; min-width: 200px;"
-            >
-              ${courses.map(
-                (course) => html`
-                  <option
-                    value="${course.course_id}"
-                    ?selected="${compatibleCourses.includes(course.course_id)}"
-                  >
-                    ${course.code} - ${course.name}
-                  </option>
-                `
-              )}
-            </select>
+              .options=${courses.map((course) => ({
+                value: course.course_id.toString(),
+                label: `${course.code} - ${course.name}`,
+                selected: compatibleCourses.includes(course.course_id),
+              }))}
+            ></henry-select>
           </td>
           <td>
             <henry-button
@@ -301,12 +282,12 @@ export class TeachersTab extends LitElement {
     const name = this.shadowRoot.querySelector(
       `#edit-teacher-name-${teacherId}`
     ).value;
-    const home_department = this.shadowRoot.querySelector(
-      `#edit-teacher-dept-${teacherId}`
-    ).value;
-    const coursesSelect = this.shadowRoot.querySelector(
-      `#edit-teacher-courses-${teacherId}`
-    );
+    const home_department = this.shadowRoot
+      .querySelector(`#edit-teacher-dept-${teacherId}`)
+      .getSelect().value;
+    const coursesSelect = this.shadowRoot
+      .querySelector(`#edit-teacher-courses-${teacherId}`)
+      .getSelect();
     const compatible_courses = Array.from(coursesSelect.selectedOptions).map(
       (opt) => parseInt(opt.value)
     );

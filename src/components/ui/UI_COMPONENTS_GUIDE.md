@@ -120,33 +120,54 @@ Används för dropdown-menyer.
 - `name`: Name-attribut för formulär
 - `multiple`: Boolean - tillåter flera val
 - `size`: Antal synliga rader (för multiple select)
+- `options`: Array av option-objekt med `{value, label, selected?}`
 
 **Användning:**
 
 ```html
-<!-- Enkel dropdown -->
+<!-- Enkel dropdown med options property (rekommenderat) -->
 <henry-select
+  id="blockLength"
   label="Blocklängd"
-  .value=${this.blockLength}
   required
-  @select-change=${(e) => this.blockLength = e.detail.value}
->
-  <option value="1">1 block</option>
-  <option value="2">2 block</option>
-  <option value="4">4 block</option>
-</henry-select>
+  .options=${[
+    { value: "1", label: "1 block (7.5 hp)" },
+    { value: "2", label: "2 block (15 hp)" }
+  ]}
+></henry-select>
 
-<!-- Multiple select -->
+<!-- Multiple select med dynamiska options -->
 <henry-select
   id="prerequisites"
   label="Spärrkurser"
   multiple
   size="5"
->
-  <option value="1">AI180U - Juridisk översiktskurs</option>
-  <option value="2">AI181U - Straffrätt</option>
-  <option value="3">AI182U - Processrätt</option>
+  .options=${store.getCourses().map(c => ({
+    value: c.course_id.toString(),
+    label: `${c.code} - ${c.name}`,
+    selected: false  // eller baserat på data
+  }))}
+></henry-select>
+
+<!-- Legacy: Slots fungerar bara med statiskt innehåll -->
+<henry-select label="Blocklängd" .value=${this.blockLength}>
+  <option value="1">1 block</option>
+  <option value="2">2 block</option>
 </henry-select>
+```
+
+**Hämta värde:**
+
+```javascript
+// För enkel select
+const select = this.shadowRoot.querySelector("#blockLength");
+const value = select.getSelect().value;
+
+// För multiple select
+const multiSelect = this.shadowRoot.querySelector("#prerequisites");
+const selectedValues = Array.from(multiSelect.getSelect().selectedOptions).map(
+  (opt) => parseInt(opt.value)
+);
 ```
 
 **Hämta värde via ID:**

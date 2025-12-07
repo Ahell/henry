@@ -19,6 +19,7 @@ export class HenrySelect extends LitElement {
     name: { type: String },
     multiple: { type: Boolean },
     size: { type: Number },
+    options: { type: Array },
   };
 
   static styles = css`
@@ -85,7 +86,6 @@ export class HenrySelect extends LitElement {
       padding: var(--space-2);
     }
   `;
-
   constructor() {
     super();
     this.label = "";
@@ -97,6 +97,7 @@ export class HenrySelect extends LitElement {
     this.name = "";
     this.multiple = false;
     this.size = 1;
+    this.options = [];
   }
 
   render() {
@@ -123,7 +124,15 @@ export class HenrySelect extends LitElement {
           ${!this.multiple && this.placeholder
             ? html`<option value="">${this.placeholder}</option>`
             : ""}
-          <slot></slot>
+          ${this.options && this.options.length > 0
+            ? this.options.map(
+                (opt) => html`
+                  <option value="${opt.value}" ?selected="${opt.selected}">
+                    ${opt.label}
+                  </option>
+                `
+              )
+            : html`<slot></slot>`}
         </select>
       </div>
     `;
