@@ -97,16 +97,17 @@ export class TeachersTab extends LitElement {
               placeholder="Förnamn Efternamn"
               required
             ></henry-input>
-            <henry-select
+            <henry-radio-group
               id="teacherDepartment"
+              name="teacherDepartment"
               label="Avdelning"
-              placeholder="Välj avdelning..."
+              value="AIJ"
               required
               .options=${departments.map((dept) => ({
                 value: dept,
                 label: dept,
               }))}
-            ></henry-select>
+            ></henry-radio-group>
           </div>
           <henry-select
             id="teacherCourses"
@@ -171,14 +172,15 @@ export class TeachersTab extends LitElement {
             />
           </td>
           <td>
-            <henry-select
+            <henry-radio-group
               id="edit-teacher-dept-${teacher.teacher_id}"
+              name="edit-teacher-dept-${teacher.teacher_id}"
+              value="${teacher.home_department}"
               .options=${departments.map((dept) => ({
                 value: dept,
                 label: dept,
-                selected: teacher.home_department === dept,
               }))}
-            ></henry-select>
+            ></henry-radio-group>
           </td>
           <td>
             <henry-select
@@ -258,7 +260,7 @@ export class TeachersTab extends LitElement {
       name: this.shadowRoot.querySelector("#teacherName").getInput().value,
       home_department: this.shadowRoot
         .querySelector("#teacherDepartment")
-        .getSelect().value,
+        .getValue(),
       compatible_courses: selectedCourses,
     };
     store.addTeacher(teacher);
@@ -284,7 +286,7 @@ export class TeachersTab extends LitElement {
     ).value;
     const home_department = this.shadowRoot
       .querySelector(`#edit-teacher-dept-${teacherId}`)
-      .getSelect().value;
+      .getValue();
     const coursesSelect = this.shadowRoot
       .querySelector(`#edit-teacher-courses-${teacherId}`)
       .getSelect();

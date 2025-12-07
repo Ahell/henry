@@ -116,14 +116,16 @@ export class CoursesTab extends LitElement {
           </div>
 
           <div class="form-row two-cols">
-            <henry-select
+            <henry-radio-group
               id="blockLength"
+              name="blockLength"
               label="Blocklängd"
+              value="1"
               .options=${[
                 { value: "1", label: "1 block (7.5 hp)" },
                 { value: "2", label: "2 block (15 hp)" },
               ]}
-            ></henry-select>
+            ></henry-radio-group>
             <henry-select
               id="prerequisites"
               label="Spärrkurser (kurser som måste läsas före)"
@@ -312,7 +314,7 @@ export class CoursesTab extends LitElement {
   handleAddCourse(e) {
     e.preventDefault();
     const blockLength = parseInt(
-      this.shadowRoot.querySelector("#blockLength").getSelect().value
+      this.shadowRoot.querySelector("#blockLength").getValue()
     );
     const prerequisitesSelect = this.shadowRoot
       .querySelector("#prerequisites")

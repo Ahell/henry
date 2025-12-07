@@ -229,7 +229,67 @@ Används för checkboxar.
 ></henry-checkbox>
 ```
 
-### 6. Henry Heading
+### 6. Henry Radio Group
+
+Används för radiobuttons när du har 2-5 alternativ som ska vara synliga samtidigt.
+
+**Attribut:**
+
+- `label`: Label-text för gruppen
+- `name`: Name-attribut för radio-gruppen (krävs)
+- `value`: Valt värde
+- `required`: Boolean
+- `disabled`: Boolean
+- `options`: Array av `{value, label, disabled?}` objekt
+
+**Användning:**
+
+```html
+<!-- Enkel radio group med statiska alternativ -->
+<henry-radio-group
+  id="blockLength"
+  name="blockLength"
+  label="Blocklängd"
+  value="1"
+  required
+  .options=${[
+    { value: "1", label: "1 block (7.5 hp)" },
+    { value: "2", label: "2 block (15 hp)" }
+  ]}
+  @radio-change=${(e) => this.blockLength = e.detail.value}
+></henry-radio-group>
+
+<!-- Radio group med dynamiska alternativ -->
+<henry-radio-group
+  id="department"
+  name="department"
+  label="Avdelning"
+  value="AIJ"
+  .options=${departments.map(dept => ({
+    value: dept.id,
+    label: dept.name
+  }))}
+></henry-radio-group>
+```
+
+**Hämta värde:**
+
+```javascript
+// Via komponenten
+const radioGroup = this.shadowRoot.querySelector("#blockLength");
+const value = radioGroup.getValue();
+
+// Eller via property
+const value2 = radioGroup.value;
+```
+
+**När ska man använda radio buttons istället för select?**
+- 2-5 alternativ som användaren bör se direkt
+- Viktiga val som inte ska döljas i en dropdown
+- När alla alternativ ryms på skärmen utan scrollning
+- För att minska antalet klick (ett klick istället för två)
+
+### 7. Henry Heading
 
 Används för rubriker.
 
@@ -245,7 +305,7 @@ Används för rubriker.
 <henry-heading level="h3" align="center">Välkommen</henry-heading>
 ```
 
-### 7. Henry Card
+### 8. Henry Card
 
 Används för kort/paneler.
 
