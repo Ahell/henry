@@ -12,54 +12,56 @@ export class DataStore {
     this.prerequisiteProblems = [];
     this.listeners = [];
 
-    // Try to load saved data from localStorage first
-    const hasSavedData = this.loadData();
-
-    // If no saved data, load seed data
-    if (!hasSavedData) {
-      this.importData(seedData);
-    }
+    // Load data from backend asynchronously
+    this.loadFromBackend();
   }
 
-  // Load data from localStorage
-  loadData() {
-    const savedCourses = localStorage.getItem("kurser");
-    const savedCohorts = localStorage.getItem("grupper");
-    const savedTeachers = localStorage.getItem("personal");
-    const savedSlots = localStorage.getItem("slots");
-    const savedCourseRuns = localStorage.getItem("kurstillfallen");
-    const savedAvailability = localStorage.getItem("teacherAvailability");
+  // Load data from backend
+  async loadFromBackend() {
+    try {
+      const response = await fetch("http://localhost:3001/api/bulk-load");
+      
+      if (!response.ok) {
+        console.error("Backend load failed, using seed data");
+        this.importData(seedData);
+        return;
+      }
 
-    // Check if any data exists
-    if (
-      !savedCourses &&
-      !savedCohorts &&
-      !savedTeachers &&
-      !savedSlots &&
-      !savedCourseRuns
-    ) {
-      return false;
-    }
+      const data = await response.json();
+      
+      // Check if any data exists
+      if (
+        (!data.courses || data.courses.length === 0) &&
+        (!data.cohorts || data.cohorts.length === 0) &&
+        (!data.teachers || data.teachers.length === 0) &&
+        (!data.slots || data.slots.length === 0)
+      ) {
+        console.log("No data in backend, loading seed data");
+        this.importData(seedData);
+        return;
+      }
 
-    // Load saved data
-    if (savedCourses) this.courses = JSON.parse(savedCourses);
-    if (savedCohorts) this.cohorts = JSON.parse(savedCohorts);
-    if (savedTeachers) this.teachers = JSON.parse(savedTeachers);
-    if (savedSlots) this.slots = JSON.parse(savedSlots);
-    if (savedCourseRuns) this.courseRuns = JSON.parse(savedCourseRuns);
-    if (savedAvailability)
-      this.teacherAvailability = JSON.parse(savedAvailability);
+      // Load data from backend
+      this.courses = data.courses || [];
+      this.cohorts = data.cohorts || [];
+      this.teachers = data.teachers || [];
+      this.slots = data.slots || [];
+      this.courseRuns = data.courseRuns || [];
+      this.teacherAvailability = data.teacherAvailability || {};
 
-    // Validate and fix teacher assignments (ensure one course per teacher per slot)
-    this.validateTeacherAssignments();
+      // Validate and fix teacher assignments (ensure one course per teacher per slot)
+      this.validateTeacherAssignments();
 
-    // Validate courses have available teachers (remove those that don't)
-    const removedCourses = this.validateCoursesHaveTeachers();
+      // Validate courses have available teachers (remove those that don't)
+      const removedCourses = this.validateCoursesHaveTeachers();
 
-    // Calculate prerequisite problems
-    this.prerequisiteProblems = this.findCoursesWithMissingPrerequisites();
+      // Calculate prerequisite problems
+      this.prerequisiteProblems = this.findCoursesWithMissingPrerequisites();
 
-    if (removedCourses.length > 0) {
+      // Notify listeners that data is loaded
+      this.listeners.forEach((l) => l());
+
+      if (removedCourses.length > 0) {
       // Delay alert to after page load
       setTimeout(() => {
         let message = `Följande kurser flyttades till depån (ingen lärare tillgänglig):\n\n`;
@@ -131,9 +133,12 @@ export class DataStore {
 
         alert(message);
       }, 100);
+      }
+    } catch (error) {
+      console.error("Failed to load from backend:", error);
+      console.log("Loading seed data as fallback");
+      this.importData(seedData);
     }
-
-    return true;
   }
 
   // Ensure each teacher is only assigned to one course per slot
@@ -490,19 +495,7 @@ export class DataStore {
     }
   }
 
-  saveData() {
-    localStorage.setItem("kurser", JSON.stringify(this.courses));
-    localStorage.setItem("grupper", JSON.stringify(this.cohorts));
-    localStorage.setItem("personal", JSON.stringify(this.teachers));
-    localStorage.setItem("slots", JSON.stringify(this.slots));
-    localStorage.setItem("kurstillfallen", JSON.stringify(this.courseRuns));
-    localStorage.setItem(
-      "teacherAvailability",
-      JSON.stringify(this.teacherAvailability)
-    );
-  }
-
-  async saveToBackend() {
+  async saveData() {
     try {
       const response = await fetch("http://localhost:3001/api/bulk-save", {
         method: "POST",
@@ -526,8 +519,6 @@ export class DataStore {
       return await response.json();
     } catch (error) {
       console.error("Failed to save to backend:", error);
-      // Still save to localStorage as backup
-      this.saveData();
       throw error;
     }
   }
@@ -640,13 +631,6 @@ export class DataStore {
       this.cohorts.map((c) => c.name)
     );
 
-    try {
-      await this.saveToBackend();
-      console.log("🟢 Backend save successful");
-    } catch (error) {
-      console.error("🔴 Backend save failed:", error);
-    }
-
     console.log("🟢 Calling notify with", this.listeners.length, "listeners");
     this.notify();
     console.log("🟢 addCohort complete");
@@ -668,12 +652,6 @@ export class DataStore {
       // If start_date changed, renumber all cohorts
       if (updates.start_date) {
         this.renumberCohorts();
-      }
-
-      try {
-        await this.saveToBackend();
-      } catch (error) {
-        // Error already logged
       }
 
       this.notify();
@@ -699,12 +677,6 @@ export class DataStore {
 
       // Renumber remaining cohorts
       this.renumberCohorts();
-
-      try {
-        await this.saveToBackend();
-      } catch (error) {
-        // Error already logged
-      }
 
       this.notify();
       return true;
@@ -947,15 +919,7 @@ export class DataStore {
   }
 
   // Reset to seed data
-  resetToSeedData() {
-    // Clear localStorage
-    localStorage.removeItem("kurser");
-    localStorage.removeItem("grupper");
-    localStorage.removeItem("personal");
-    localStorage.removeItem("slots");
-    localStorage.removeItem("kurstillfallen");
-    localStorage.removeItem("teacherAvailability");
-
+  async resetToSeedData() {
     // Clear current data
     this.courses = [];
     this.cohorts = [];

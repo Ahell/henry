@@ -308,6 +308,52 @@ app.post("/api/teacher-availability", (req, res) => {
 });
 
 // BULK OPERATIONS
+app.get("/api/bulk-load", (req, res) => {
+  try {
+    const courses = db.prepare("SELECT * FROM courses").all()
+      .map((c) => deserializeArrayFields(c, ["prerequisites"]));
+    
+    const cohorts = db.prepare("SELECT * FROM cohorts").all()
+      .map((c) => deserializeArrayFields(c, ["courses"]));
+    
+    const teachers = db.prepare("SELECT * FROM teachers").all()
+      .map((t) => deserializeArrayFields(t, ["compatible_courses"]));
+    
+    const slots = db.prepare("SELECT * FROM slots").all();
+    
+    const courseRuns = db.prepare("SELECT * FROM course_runs").all()
+      .map((r) => deserializeArrayFields(r, ["cohorts", "teachers"]));
+    
+    const availability = db.prepare("SELECT * FROM teacher_availability").all();
+    const teacherAvailability = {};
+    availability.forEach((a) => {
+      const key = `${a.teacher_id}-${a.slot_id}`;
+      teacherAvailability[key] = a.available === 1;
+    });
+
+    console.log("Bulk load successful:", {
+      courses: courses.length,
+      cohorts: cohorts.length,
+      teachers: teachers.length,
+      slots: slots.length,
+      courseRuns: courseRuns.length,
+      teacherAvailability: Object.keys(teacherAvailability).length,
+    });
+
+    res.json({
+      courses,
+      cohorts,
+      teachers,
+      slots,
+      courseRuns,
+      teacherAvailability,
+    });
+  } catch (error) {
+    console.error("Bulk load error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/api/bulk-save", (req, res) => {
   const { courses, cohorts, teachers, slots, courseRuns, teacherAvailability } =
     req.body;
@@ -318,7 +364,7 @@ app.post("/api/bulk-save", (req, res) => {
     teachers: teachers?.length,
     slots: slots?.length,
     courseRuns: courseRuns?.length,
-    teacherAvailability: teacherAvailability?.length,
+    teacherAvailability: Object.keys(teacherAvailability || {}).length,
   });
 
   try {
