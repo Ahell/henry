@@ -191,7 +191,11 @@ export class GanttDepot extends LitElement {
     // Dispatch event to parent to show available teachers
     this.dispatchEvent(
       new CustomEvent("depot-drag-start", {
-        detail: { courseId: parseInt(courseId), cohortId: parseInt(cohortId), isTwoBlock },
+        detail: {
+          courseId: parseInt(courseId),
+          cohortId: parseInt(cohortId),
+          isTwoBlock,
+        },
         bubbles: true,
         composed: true,
       })
@@ -269,10 +273,22 @@ export class GanttDepot extends LitElement {
 
   _getNormalCourseColor(course) {
     const colors = [
-      "#2ecc71", "#3498db", "#e67e22", "#1abc9c",
-      "#e74c3c", "#f39c12", "#16a085", "#d35400",
-      "#27ae60", "#2980b9", "#c0392b", "#f1c40f",
-      "#00cec9", "#0984e3", "#00b894", "#fdcb6e",
+      "#2ecc71",
+      "#3498db",
+      "#e67e22",
+      "#1abc9c",
+      "#e74c3c",
+      "#f39c12",
+      "#16a085",
+      "#d35400",
+      "#27ae60",
+      "#2980b9",
+      "#c0392b",
+      "#f1c40f",
+      "#00cec9",
+      "#0984e3",
+      "#00b894",
+      "#fdcb6e",
     ];
     const colorIndex = (course.course_id || 0) % colors.length;
     return colors[colorIndex];

@@ -10,16 +10,26 @@ export class TeacherAvailabilityTab extends LitElement {
   };
 
   static styles = css`
+    @import url("/src/styles/tokens.css");
+
     :host {
       display: block;
     }
 
     .panel {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 1.5rem;
+      background: var(--color-background);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-6);
+      margin-bottom: var(--space-6);
+      box-shadow: var(--shadow-sm);
       overflow-x: auto;
+    }
+
+    .panel-header {
+      margin-bottom: var(--space-6);
+      padding-bottom: var(--space-3);
+      border-bottom: 2px solid var(--color-border);
     }
 
     .paint-controls {
@@ -153,7 +163,9 @@ export class TeacherAvailabilityTab extends LitElement {
 
     return html`
       <div class="panel">
-        <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
+        <div class="panel-header">
+          <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
+        </div>
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
           Klicka på "Markera upptagen" och måla sedan i cellerna för att markera
           när en lärare är upptagen. Blå celler visar schemalagda kurser.
@@ -380,7 +392,4 @@ export class TeacherAvailabilityTab extends LitElement {
   }
 }
 
-customElements.define(
-  "teacher-availability-tab",
-  TeacherAvailabilityTab
-);
+customElements.define("teacher-availability-tab", TeacherAvailabilityTab);

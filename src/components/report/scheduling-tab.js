@@ -19,22 +19,28 @@ export class SchedulingTab extends LitElement {
   };
 
   static styles = css`
+    @import url("/src/styles/tokens.css");
+
     :host {
       display: block;
     }
 
     .panel {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 1.5rem;
+      background: var(--color-background);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-6);
+      margin-bottom: var(--space-6);
+      box-shadow: var(--shadow-sm);
     }
 
     .panel-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 0.5rem;
+      margin-bottom: var(--space-6);
+      padding-bottom: var(--space-3);
+      border-bottom: 2px solid var(--color-border);
     }
 
     .warning-pills {
@@ -61,7 +67,8 @@ export class SchedulingTab extends LitElement {
     }
 
     @keyframes pulse-pill {
-      0%, 100% {
+      0%,
+      100% {
         opacity: 1;
         transform: scale(1);
       }
@@ -366,30 +373,26 @@ export class SchedulingTab extends LitElement {
 
     return html`
       <div class="warning-pills">
-        ${Array.from(problemsByCohort.entries()).map(
-          ([cohortId, problems]) => {
-            const cohort = store.getCohort(cohortId);
-            if (!cohort) return "";
+        ${Array.from(problemsByCohort.entries()).map(([cohortId, problems]) => {
+          const cohort = store.getCohort(cohortId);
+          if (!cohort) return "";
 
-            const missingCount = problems.filter(
-              (p) => p.type === "missing"
-            ).length;
-            const beforeCount = problems.filter(
-              (p) => p.type === "before_prerequisite"
-            ).length;
+          const missingCount = problems.filter(
+            (p) => p.type === "missing"
+          ).length;
+          const beforeCount = problems.filter(
+            (p) => p.type === "before_prerequisite"
+          ).length;
 
-            return html`
-              <div class="warning-pill">
-                <span class="cohort-name">${cohort.name}</span>:
-                ${missingCount > 0
-                  ? html`${missingCount} saknar spärrkurs`
-                  : ""}
-                ${missingCount > 0 && beforeCount > 0 ? ", " : ""}
-                ${beforeCount > 0 ? html`${beforeCount} före spärrkurs` : ""}
-              </div>
-            `;
-          }
-        )}
+          return html`
+            <div class="warning-pill">
+              <span class="cohort-name">${cohort.name}</span>:
+              ${missingCount > 0 ? html`${missingCount} saknar spärrkurs` : ""}
+              ${missingCount > 0 && beforeCount > 0 ? ", " : ""}
+              ${beforeCount > 0 ? html`${beforeCount} före spärrkurs` : ""}
+            </div>
+          `;
+        })}
       </div>
     `;
   }
@@ -550,7 +553,11 @@ export class SchedulingTab extends LitElement {
     this._draggedCells.forEach((cell) => {
       const td = cell.closest("td");
       if (td) {
-        td.classList.remove("drag-over", "drag-over-invalid", "no-teachers-available");
+        td.classList.remove(
+          "drag-over",
+          "drag-over-invalid",
+          "no-teachers-available"
+        );
       }
     });
     this._draggedCells = [];
@@ -654,7 +661,9 @@ export class SchedulingTab extends LitElement {
 
     // For 2-block courses, check teachers for both blocks
     if (course.default_block_length === 2) {
-      if (!this._checkTwoBlockTeachers(courseId, targetSlotDate, targetCohortId)) {
+      if (
+        !this._checkTwoBlockTeachers(courseId, targetSlotDate, targetCohortId)
+      ) {
         return;
       }
     }
@@ -718,7 +727,13 @@ export class SchedulingTab extends LitElement {
 
     // For 2-block courses, check teachers for both blocks
     if (course?.default_block_length === 2) {
-      if (!this._checkTwoBlockTeachers(course.course_id, targetSlotDate, targetCohortId)) {
+      if (
+        !this._checkTwoBlockTeachers(
+          course.course_id,
+          targetSlotDate,
+          targetCohortId
+        )
+      ) {
         return;
       }
     }

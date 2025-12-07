@@ -86,7 +86,8 @@ export class GanttCourseBlock extends LitElement {
     }
 
     @keyframes pulse-warning-red {
-      0%, 100% {
+      0%,
+      100% {
         box-shadow: 0 0 12px rgba(244, 67, 54, 0.7);
         border-color: #f44336;
       }
@@ -122,7 +123,8 @@ export class GanttCourseBlock extends LitElement {
     }
 
     @keyframes pulse-warning-orange {
-      0%, 100% {
+      0%,
+      100% {
         border-color: #ff9800;
       }
       50% {
@@ -336,10 +338,22 @@ export class GanttCourseBlock extends LitElement {
 
   _getNormalCourseColor(course) {
     const colors = [
-      "#2ecc71", "#3498db", "#e67e22", "#1abc9c",
-      "#e74c3c", "#f39c12", "#16a085", "#d35400",
-      "#27ae60", "#2980b9", "#c0392b", "#f1c40f",
-      "#00cec9", "#0984e3", "#00b894", "#fdcb6e",
+      "#2ecc71",
+      "#3498db",
+      "#e67e22",
+      "#1abc9c",
+      "#e74c3c",
+      "#f39c12",
+      "#16a085",
+      "#d35400",
+      "#27ae60",
+      "#2980b9",
+      "#c0392b",
+      "#f1c40f",
+      "#00cec9",
+      "#0984e3",
+      "#00b894",
+      "#fdcb6e",
     ];
     const colorIndex = (course.course_id || 0) % colors.length;
     return colors[colorIndex];
