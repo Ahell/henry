@@ -1,8 +1,57 @@
-# Henry Course Planner
+# Henry Course Planner 🎓
 
-En avancerad webbapp för kursplanering bygd med **Lit 3** utan TypeScript. Appen hjälper Henry att planera 14-kurskurser för flera kullar med stöd för juridiska kursberoenden, lärarnas tillgänglighet, och kapacitetsbegränsningar.
+En fullstack webbapp för kursplanering vid FEI, byggd med Lit 3, Express och SQLite.
 
-## Funktioner
+## 🚀 Snabbstart
+
+```bash
+# Installera alla dependencies
+npm install
+
+# Starta både frontend och backend
+npm run dev
+```
+
+Öppna http://localhost:5173 i webbläsaren.
+
+## 📁 Projektstruktur
+
+```
+henry/
+├── src/                    # Frontend (Lit components)
+│   ├── admin-panel.js      # Admin-gränssnitt för grunddata
+│   ├── report-viewer.js    # Rapporter och planeringsvy
+│   ├── import-export.js    # Import/export av data
+│   ├── store.js            # Datahantering och API-integration
+│   ├── businessRules.js    # Affärslogik och valideringsregler
+│   ├── seedData.js         # Initial testdata
+│   └── main.js             # Entry point
+├── server/                 # Backend (Express + SQLite)
+│   ├── server.js           # API-server och databas
+│   └── henry.db            # SQLite-databas (skapas automatiskt)
+├── index.html              # HTML entry point
+├── vite.config.js          # Vite-konfiguration
+└── package.json            # Projektberoenden
+```
+
+## 🛠️ Kommandon
+
+```bash
+# Utveckling
+npm run dev              # Starta frontend + backend samtidigt
+npm run dev:client       # Endast frontend (port 5173)
+npm run dev:server       # Endast backend (port 3001)
+
+# Produktion
+npm run build            # Bygga för produktion
+npm start                # Starta backend-server
+npm run preview          # Förhandsgranska produktionsbygge
+
+# Underhåll
+npm run clean            # Rensa alla dependencies och builds
+```
+
+## 🎯 Funktioner
 
 ### 1. **Import/Export**
 

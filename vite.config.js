@@ -4,9 +4,25 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    proxy: {
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     outDir: "dist",
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          lit: ["lit"],
+        },
+      },
+    },
+  },
+  optimizeDeps: {
+    include: ["lit"],
   },
 });
