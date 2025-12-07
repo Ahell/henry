@@ -78,104 +78,113 @@ export class CohortsTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">Befintliga Kullar</henry-text>
         </div>
-        <henry-table striped hoverable>
-          <thead>
-            <tr>
-              <th>Namn</th>
-              <th>Startdatum</th>
-              <th>Antal Studenter</th>
-              <th style="width: 180px;">Åtgärder</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${store
-              .getCohorts()
-              .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
-              .map((cohort) => this.renderCohortRow(cohort))}
-          </tbody>
-        </henry-table>
+        <henry-table
+          striped
+          hoverable
+          .columns="${this._getCohortTableColumns()}"
+          .data="${store.getCohorts().sort((a, b) => new Date(a.start_date) - new Date(b.start_date))}"
+          .renderCell="${(row, col) => this._renderCohortTableCell(row, col)}"
+        ></henry-table>
       </henry-panel>
     `;
   }
 
-  renderCohortRow(cohort) {
+  _getCohortTableColumns() {
+    return [
+      { key: 'name', label: 'Namn', width: '200px' },
+      { key: 'start_date', label: 'Startdatum', width: '150px' },
+      { key: 'planned_size', label: 'Antal Studenter', width: '150px' },
+      { key: 'actions', label: 'Åtgärder', width: '180px' },
+    ];
+  }
+
+  _renderCohortTableCell(cohort, column) {
     const isEditing = this.editingCohortId === cohort.cohort_id;
 
-    if (isEditing) {
-      return html`
-        <tr class="editing">
-          <td>
+    switch (column.key) {
+      case 'name':
+        if (isEditing) {
+          return html`
             <input
               type="text"
               class="edit-input"
               id="edit-cohort-name-${cohort.cohort_id}"
               .value="${cohort.name}"
-              readonly
-              disabled
-              style="background-color: #e9ecef; cursor: not-allowed;"
             />
-          </td>
-          <td>
+          `;
+        }
+        return html`${cohort.name}`;
+
+      case 'start_date':
+        if (isEditing) {
+          return html`
             <input
               type="date"
               class="edit-input"
               id="edit-cohort-date-${cohort.cohort_id}"
               .value="${cohort.start_date}"
             />
-          </td>
-          <td>
+          `;
+        }
+        return html`${cohort.start_date}`;
+
+      case 'planned_size':
+        if (isEditing) {
+          return html`
             <input
               type="number"
               class="edit-input"
               id="edit-cohort-size-${cohort.cohort_id}"
-              min="1"
               .value="${cohort.planned_size}"
+              min="1"
             />
-          </td>
-          <td>
-            <henry-button
-              size="small"
-              variant="success"
-              @click="${() => this.handleSaveCohort(cohort.cohort_id)}"
-            >
-              Spara
-            </henry-button>
-            <henry-button
-              size="small"
-              variant="secondary"
-              @click="${() => this.handleCancelCohortEdit()}"
-            >
-              Avbryt
-            </henry-button>
-          </td>
-        </tr>
-      `;
-    }
+          `;
+        }
+        return html`${cohort.planned_size}`;
 
-    return html`
-      <tr>
-        <td>${cohort.name}</td>
-        <td>${cohort.start_date}</td>
-        <td>${cohort.planned_size}</td>
-        <td>
-          <henry-button
-            size="small"
-            variant="secondary"
-            @click="${() => this.handleEditCohort(cohort.cohort_id)}"
-          >
-            Redigera
-          </henry-button>
-          <henry-button
-            size="small"
-            variant="danger"
-            @click="${() =>
-              this.handleDeleteCohort(cohort.cohort_id, cohort.name)}"
-          >
-            Ta bort
-          </henry-button>
-        </td>
-      </tr>
-    `;
+      case 'actions':
+        if (isEditing) {
+          return html`
+            <div style="display: flex; gap: var(--space-2);">
+              <henry-button
+                variant="success"
+                size="small"
+                @click="${() => this.handleSaveCohort(cohort.cohort_id)}"
+              >
+                💾 Spara
+              </henry-button>
+              <henry-button
+                variant="secondary"
+                size="small"
+                @click="${() => this.handleCancelEdit()}"
+              >
+                ❌ Avbryt
+              </henry-button>
+            </div>
+          `;
+        }
+        return html`
+          <div style="display: flex; gap: var(--space-2);">
+            <henry-button
+              variant="secondary"
+              size="small"
+              @click="${() => this.handleEditCohort(cohort.cohort_id)}"
+            >
+              ✏️ Redigera
+            </henry-button>
+            <henry-button
+              variant="danger"
+              size="small"
+              @click="${() => this.handleDeleteCohort(cohort.cohort_id)}"
+            >
+              🗑️ Ta bort
+            </henry-button>
+          </div>
+        `;
+
+      default:
+        return html`${cohort[column.key] ?? ''}`;
+    }
   }
 
   async handleAddCohort(e) {

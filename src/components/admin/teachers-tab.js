@@ -102,117 +102,131 @@ export class TeachersTab extends LitElement {
             🎲 Slumpa kurser till alla lärare
           </henry-button>
         </div>
-        <henry-table striped hoverable>
-          <thead>
-            <tr>
-              <th>Namn</th>
-              <th>Avdelning</th>
-              <th>Kompatibla kurser</th>
-              <th style="width: 180px;">Åtgärder</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${store
-              .getTeachers()
-              .map((teacher) => this.renderTeacherRow(teacher))}
-          </tbody>
-        </henry-table>
+        <henry-table
+          striped
+          hoverable
+          .columns="${this._getTeacherTableColumns()}"
+          .data="${store.getTeachers()}"
+          .renderCell="${(row, col) => this._renderTeacherTableCell(row, col)}"
+        ></henry-table>
       </henry-panel>
     `;
   }
 
-  renderTeacherRow(teacher) {
+  _getTeacherTableColumns() {
+    return [
+      { key: 'name', label: 'Namn', width: '200px' },
+      { key: 'department', label: 'Avdelning', width: '120px' },
+      { key: 'compatible_courses', label: 'Kompatibla kurser', width: '300px' },
+      { key: 'actions', label: 'Åtgärder', width: '180px' },
+    ];
+  }
+
+  _renderTeacherTableCell(teacher, column) {
     const isEditing = this.editingTeacherId === teacher.teacher_id;
     const departments = ["AIJ", "AIE", "AF"];
     const courses = store.getCourses();
     const compatibleCourses = teacher.compatible_courses || [];
 
-    if (isEditing) {
-      return html`
-        <tr class="editing">
-          <td>
+    switch (column.key) {
+      case 'name':
+        if (isEditing) {
+          return html`
             <input
               type="text"
               class="edit-input"
               id="edit-teacher-name-${teacher.teacher_id}"
               .value="${teacher.name}"
             />
-          </td>
-          <td>
-            <henry-radio-group
-              id="edit-teacher-dept-${teacher.teacher_id}"
-              name="edit-teacher-dept-${teacher.teacher_id}"
-              value="${teacher.home_department}"
+          `;
+        }
+        return html`${teacher.name}`;
+
+      case 'department':
+        if (isEditing) {
+          return html`
+            <henry-select
+              id="edit-teacher-department-${teacher.teacher_id}"
               .options=${departments.map((dept) => ({
                 value: dept,
                 label: dept,
+                selected: teacher.department === dept,
               }))}
-            ></henry-radio-group>
-          </td>
-          <td>
+            ></henry-select>
+          `;
+        }
+        return html`${teacher.department}`;
+
+      case 'compatible_courses':
+        if (isEditing) {
+          return html`
             <henry-select
               id="edit-teacher-courses-${teacher.teacher_id}"
               multiple
-              size="4"
-              .options=${courses.map((course) => ({
-                value: course.course_id.toString(),
-                label: `${course.code} - ${course.name}`,
-                selected: compatibleCourses.includes(course.course_id),
+              size="5"
+              .options=${courses.map((c) => ({
+                value: c.course_id.toString(),
+                label: c.code,
+                selected: compatibleCourses.includes(c.course_id),
               }))}
             ></henry-select>
-          </td>
-          <td>
+          `;
+        }
+        if (compatibleCourses.length === 0) {
+          return html`<span style="color: var(--color-text-disabled);">-</span>`;
+        }
+        const courseNames = compatibleCourses
+          .map((cid) => {
+            const course = courses.find((c) => c.course_id === cid);
+            return course ? course.code : null;
+          })
+          .filter(Boolean)
+          .join(", ");
+        return html`${courseNames}`;
+
+      case 'actions':
+        if (isEditing) {
+          return html`
+            <div style="display: flex; gap: var(--space-2);">
+              <henry-button
+                variant="success"
+                size="small"
+                @click="${() => this.handleSaveTeacher(teacher.teacher_id)}"
+              >
+                💾 Spara
+              </henry-button>
+              <henry-button
+                variant="secondary"
+                size="small"
+                @click="${() => this.handleCancelEdit()}"
+              >
+                ❌ Avbryt
+              </henry-button>
+            </div>
+          `;
+        }
+        return html`
+          <div style="display: flex; gap: var(--space-2);">
             <henry-button
-              size="small"
-              variant="success"
-              @click="${() => this.handleSaveTeacher(teacher.teacher_id)}"
-            >
-              Spara
-            </henry-button>
-            <henry-button
-              size="small"
               variant="secondary"
-              @click="${() => this.handleCancelTeacherEdit()}"
+              size="small"
+              @click="${() => this.handleEditTeacher(teacher.teacher_id)}"
             >
-              Avbryt
+              ✏️ Redigera
             </henry-button>
-          </td>
-        </tr>
-      `;
+            <henry-button
+              variant="danger"
+              size="small"
+              @click="${() => this.handleDeleteTeacher(teacher.teacher_id)}"
+            >
+              🗑️ Ta bort
+            </henry-button>
+          </div>
+        `;
+
+      default:
+        return html`${teacher[column.key] ?? ''}`;
     }
-
-    const courseNames = compatibleCourses
-      .map((courseId) => {
-        const course = store.getCourse(courseId);
-        return course ? course.code : null;
-      })
-      .filter(Boolean)
-      .join(", ");
-
-    return html`
-      <tr>
-        <td>${teacher.name}</td>
-        <td>${teacher.home_department}</td>
-        <td>${courseNames || "-"}</td>
-        <td>
-          <henry-button
-            size="small"
-            variant="secondary"
-            @click="${() => this.handleEditTeacher(teacher.teacher_id)}"
-          >
-            Redigera
-          </henry-button>
-          <henry-button
-            size="small"
-            variant="danger"
-            @click="${() =>
-              this.handleDeleteTeacher(teacher.teacher_id, teacher.name)}"
-          >
-            Ta bort
-          </henry-button>
-        </td>
-      </tr>
-    `;
   }
 
   handleAddTeacher(e) {

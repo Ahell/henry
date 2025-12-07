@@ -126,23 +126,143 @@ export class CoursesTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">📚 Befintliga Kurser</henry-text>
         </div>
-        <henry-table striped hoverable>
-          <thead>
-            <tr>
-              <th>Kod</th>
-              <th>Namn</th>
-              <th>Spärrkurser</th>
-              <th>Kompatibla lärare</th>
-              <th>Blocklängd</th>
-              <th>Åtgärder</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${store.getCourses().map((course) => this.renderCourseRow(course))}
-          </tbody>
-        </henry-table>
+        <henry-table
+          striped
+          hoverable
+          .columns="${this._getTableColumns()}"
+          .data="${store.getCourses()}"
+          .renderCell="${(row, col) => this._renderTableCell(row, col)}"
+        ></henry-table>
       </henry-panel>
     `;
+  }
+
+  _getTableColumns() {
+    return [
+      { key: 'code', label: 'Kod', width: '100px' },
+      { key: 'name', label: 'Namn', width: '200px' },
+      { key: 'prerequisites', label: 'Spärrkurser', width: '150px' },
+      { key: 'compatible_teachers', label: 'Kompatibla lärare', width: '200px' },
+      { key: 'default_block_length', label: 'Blocklängd', width: '100px' },
+      { key: 'actions', label: 'Åtgärder', width: '180px' },
+    ];
+  }
+
+  _renderTableCell(course, column) {
+    const isEditing = this.editingCourseId === course.course_id;
+
+    switch (column.key) {
+      case 'code':
+        if (isEditing) {
+          return html`
+            <input
+              type="text"
+              class="edit-input"
+              id="edit-code-${course.course_id}"
+              .value="${course.code}"
+            />
+          `;
+        }
+        return html`${course.code}`;
+
+      case 'name':
+        if (isEditing) {
+          return html`
+            <input
+              type="text"
+              class="edit-input"
+              id="edit-name-${course.course_id}"
+              .value="${course.name}"
+            />
+          `;
+        }
+        return html`${course.name}`;
+
+      case 'prerequisites':
+        if (isEditing) {
+          return html`
+            <henry-select
+              id="edit-prerequisites-${course.course_id}"
+              multiple
+              size="5"
+              .options=${store.getCourses().map((c) => ({
+                value: c.course_id.toString(),
+                label: c.code,
+                selected: course.prerequisites?.includes(c.course_id),
+              }))}
+            ></henry-select>
+          `;
+        }
+        return this.renderPrerequisitesList(course);
+
+      case 'compatible_teachers':
+        return this.renderCompatibleTeachersForCourse(course);
+
+      case 'default_block_length':
+        if (isEditing) {
+          return html`
+            <henry-select
+              id="edit-blockLength-${course.course_id}"
+              .options=${[
+                {
+                  value: "1",
+                  label: "1",
+                  selected: course.default_block_length === 1,
+                },
+                {
+                  value: "2",
+                  label: "2",
+                  selected: course.default_block_length === 2,
+                },
+              ]}
+            ></henry-select>
+          `;
+        }
+        return html`${course.default_block_length}`;
+
+      case 'actions':
+        if (isEditing) {
+          return html`
+            <div style="display: flex; gap: var(--space-2);">
+              <henry-button
+                variant="success"
+                size="small"
+                @click="${() => this.handleSaveCourse(course.course_id)}"
+              >
+                💾 Spara
+              </henry-button>
+              <henry-button
+                variant="secondary"
+                size="small"
+                @click="${() => this.handleCancelEdit()}"
+              >
+                ❌ Avbryt
+              </henry-button>
+            </div>
+          `;
+        }
+        return html`
+          <div style="display: flex; gap: var(--space-2);">
+            <henry-button
+              variant="secondary"
+              size="small"
+              @click="${() => this.handleEditCourse(course.course_id)}"
+            >
+              ✏️ Redigera
+            </henry-button>
+            <henry-button
+              variant="danger"
+              size="small"
+              @click="${() => this.handleDeleteCourse(course.course_id)}"
+            >
+              🗑️ Ta bort
+            </henry-button>
+          </div>
+        `;
+
+      default:
+        return html`${course[column.key] ?? ''}`;
+    }
   }
 
   renderPrerequisitesList(course) {
@@ -176,106 +296,6 @@ export class CoursesTab extends LitElement {
 
     const teacherNames = compatibleTeachers.map((t) => t.name).join(", ");
     return html`<span class="compatible-teachers">${teacherNames}</span>`;
-  }
-
-  renderCourseRow(course) {
-    const isEditing = this.editingCourseId === course.course_id;
-
-    if (isEditing) {
-      return html`
-        <tr class="editing">
-          <td>
-            <input
-              type="text"
-              class="edit-input"
-              id="edit-code-${course.course_id}"
-              .value="${course.code}"
-            />
-          </td>
-          <td>
-            <input
-              type="text"
-              class="edit-input"
-              id="edit-name-${course.course_id}"
-              .value="${course.name}"
-            />
-          </td>
-          <td>
-            <henry-select
-              id="edit-prerequisites-${course.course_id}"
-              multiple
-              size="5"
-              .options=${store.getCourses().map((c) => ({
-                value: c.course_id.toString(),
-                label: c.code,
-                selected: course.prerequisites?.includes(c.course_id),
-              }))}
-            ></henry-select>
-          </td>
-          <td>${this.renderCompatibleTeachersForCourse(course)}</td>
-          <td>
-            <henry-select
-              id="edit-blockLength-${course.course_id}"
-              .options=${[
-                {
-                  value: "1",
-                  label: "1",
-                  selected: course.default_block_length === 1,
-                },
-                {
-                  value: "2",
-                  label: "2",
-                  selected: course.default_block_length === 2,
-                },
-              ]}
-            ></henry-select>
-          </td>
-          <td>
-            <henry-button
-              size="small"
-              variant="success"
-              @click="${() => this.handleSaveCourse(course.course_id)}"
-            >
-              Spara
-            </henry-button>
-            <henry-button
-              size="small"
-              variant="secondary"
-              @click="${() => this.handleCancelEdit()}"
-            >
-              Avbryt
-            </henry-button>
-          </td>
-        </tr>
-      `;
-    }
-
-    return html`
-      <tr>
-        <td>${course.code}</td>
-        <td>${course.name}</td>
-        <td>${this.renderPrerequisitesList(course)}</td>
-        <td>${this.renderCompatibleTeachersForCourse(course)}</td>
-        <td>${course.default_block_length} block</td>
-        <td>
-          <henry-button
-            size="small"
-            variant="secondary"
-            @click="${() => this.handleEditCourse(course.course_id)}"
-          >
-            Redigera
-          </henry-button>
-          <henry-button
-            size="small"
-            variant="danger"
-            @click="${() =>
-              this.handleDeleteCourse(course.course_id, course.name)}"
-          >
-            Ta bort
-          </henry-button>
-        </td>
-      </tr>
-    `;
   }
 
   handleAddCourse(e) {
