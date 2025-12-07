@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css } from "lit";
 
 /**
  * Primary Card Component
@@ -8,55 +8,57 @@ import { LitElement, html, css } from 'lit';
 export class HenryCard extends LitElement {
   static properties = {
     variant: { type: String },
-    padding: { type: Boolean }
+    padding: { type: Boolean },
   };
 
   static styles = css`
+    @import url("/src/styles/tokens.css");
+
     :host {
       display: block;
     }
 
     .card {
-      background: white;
-      border-radius: 12px;
-      transition: all 0.3s ease;
+      background: var(--color-background);
+      border-radius: var(--radius-lg);
+      transition: var(--transition-all);
     }
 
     .card.padding {
-      padding: 24px;
+      padding: var(--space-6);
     }
 
     .card.default {
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--color-border);
     }
 
     .card.elevated {
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+      box-shadow: var(--shadow-base);
     }
 
     .card.elevated:hover {
-      box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-md);
       transform: translateY(-2px);
     }
 
     .card.bordered {
-      border: 2px solid #667eea;
+      border: 2px solid var(--color-primary-500);
     }
   `;
 
   constructor() {
     super();
-    this.variant = 'default';
+    this.variant = "default";
     this.padding = true;
   }
 
   render() {
     return html`
-      <div class="card ${this.variant} ${this.padding ? 'padding' : ''}">
+      <div class="card ${this.variant} ${this.padding ? "padding" : ""}">
         <slot></slot>
       </div>
     `;
   }
 }
 
-customElements.define('henry-card', HenryCard);
+customElements.define("henry-card", HenryCard);

@@ -43,6 +43,7 @@ npm run build         # Bygg för produktion
 ## Problem?
 
 ### Port redan upptagen
+
 ```bash
 # Stoppa alla processer
 pkill -f "npm run dev"
@@ -53,12 +54,14 @@ npm run dev
 ```
 
 ### Dependencies saknas
+
 ```bash
 npm run clean       # Rensa allt
 npm install         # Installera igen
 ```
 
 ### Databas problem
+
 ```bash
 # Ta bort databasen och börja om
 rm server/henry.db

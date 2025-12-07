@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css } from "lit";
 
 /**
  * Primary Textarea Component
@@ -16,85 +16,91 @@ export class HenryTextarea extends LitElement {
     disabled: { type: Boolean },
     required: { type: Boolean },
     placeholder: { type: String },
-    rows: { type: Number }
+    rows: { type: Number },
   };
 
   static styles = css`
+    @import url("/src/styles/tokens.css");
+
     :host {
       display: block;
-      margin-bottom: 16px;
+      margin-bottom: var(--space-4);
     }
 
     .textarea-wrapper {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: var(--space-2);
     }
 
     label {
-      font-size: 14px;
-      font-weight: 500;
-      color: #374151;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: var(--space-1);
     }
 
     .required {
-      color: #ef4444;
+      color: var(--color-danger);
     }
 
     textarea {
-      padding: 10px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 14px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      transition: all 0.2s ease;
+      padding: var(--input-padding-y) var(--input-padding-x);
+      border: var(--input-border-width) solid var(--color-border);
+      border-radius: var(--radius-base);
+      font-size: var(--font-size-sm);
+      font-family: var(--font-family-base);
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      transition: var(--transition-all);
       resize: vertical;
     }
 
     textarea:hover:not(:disabled) {
-      border-color: #9ca3af;
+      border-color: var(--color-border-hover);
     }
 
     textarea:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: var(--color-primary-500);
+      box-shadow: var(--input-focus-ring);
     }
 
     textarea:disabled {
-      background: #f3f4f6;
+      background: var(--color-gray-100);
       cursor: not-allowed;
       opacity: 0.6;
     }
 
     textarea::placeholder {
-      color: #9ca3af;
+      color: var(--color-text-disabled);
     }
   `;
 
   constructor() {
     super();
-    this.label = '';
-    this.value = '';
+    this.label = "";
+    this.value = "";
     this.disabled = false;
     this.required = false;
-    this.placeholder = '';
+    this.placeholder = "";
     this.rows = 4;
   }
 
   render() {
     return html`
       <div class="textarea-wrapper">
-        ${this.label ? html`
-          <label>
-            ${this.label}
-            ${this.required ? html`<span class="required">*</span>` : ''}
-          </label>
-        ` : ''}
-        <textarea 
+        ${this.label
+          ? html`
+              <label>
+                ${this.label}
+                ${this.required ? html`<span class="required">*</span>` : ""}
+              </label>
+            `
+          : ""}
+        <textarea
           .value=${this.value}
           ?disabled=${this.disabled}
           ?required=${this.required}
@@ -108,12 +114,14 @@ export class HenryTextarea extends LitElement {
 
   _handleInput(e) {
     this.value = e.target.value;
-    this.dispatchEvent(new CustomEvent('textarea-change', {
-      bubbles: true,
-      composed: true,
-      detail: { value: this.value }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("textarea-change", {
+        bubbles: true,
+        composed: true,
+        detail: { value: this.value },
+      })
+    );
   }
 }
 
-customElements.define('henry-textarea', HenryTextarea);
+customElements.define("henry-textarea", HenryTextarea);

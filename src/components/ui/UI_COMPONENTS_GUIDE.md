@@ -1,46 +1,50 @@
 # Henry UI Components Guide
 
 ## Översikt
+
 Denna guide visar hur du använder de primära UI-komponenterna i Henry-appen.
 
 ## Komponenter
 
 ### 1. Henry Button
+
 Används för alla knappar i appen.
 
 **Attribut:**
+
 - `variant`: `primary` (default), `secondary`, `danger`, `success`
 - `size`: `small`, `medium` (default), `large`
 - `disabled`: Boolean
 - `fullWidth`: Boolean
 
 **Användning:**
+
 ```html
 <!-- Primär knapp -->
-<henry-button @button-click=${this.handleClick}>
-  Spara
-</henry-button>
+<henry-button @button-click="${this.handleClick}"> Spara </henry-button>
 
 <!-- Sekundär knapp -->
-<henry-button variant="secondary" @button-click=${this.handleCancel}>
+<henry-button variant="secondary" @button-click="${this.handleCancel}">
   Avbryt
 </henry-button>
 
 <!-- Farlig handling -->
-<henry-button variant="danger" @button-click=${this.handleDelete}>
+<henry-button variant="danger" @button-click="${this.handleDelete}">
   Ta bort
 </henry-button>
 
 <!-- Full bredd -->
-<henry-button fullWidth @button-click=${this.handleSubmit}>
+<henry-button fullWidth @button-click="${this.handleSubmit}">
   ➕ Lägg till
 </henry-button>
 ```
 
 ### 2. Henry Input
+
 Används för textinmatning, nummer, datum etc.
 
 **Attribut:**
+
 - `label`: Label-text
 - `value`: Värde
 - `type`: `text` (default), `number`, `date`, `email`, etc.
@@ -50,10 +54,11 @@ Används för textinmatning, nummer, datum etc.
 - `min`, `max`, `step`: För nummer/datum
 
 **Användning:**
+
 ```html
 <!-- Text input med label -->
-<henry-input 
-  label="Kursnamn" 
+<henry-input
+  label="Kursnamn"
   .value=${this.courseName}
   placeholder="Ange kursnamn"
   required
@@ -61,8 +66,8 @@ Används för textinmatning, nummer, datum etc.
 ></henry-input>
 
 <!-- Nummer input -->
-<henry-input 
-  label="Poäng" 
+<henry-input
+  label="Poäng"
   type="number"
   .value=${this.points}
   min="0"
@@ -71,8 +76,8 @@ Används för textinmatning, nummer, datum etc.
 ></henry-input>
 
 <!-- Datum input -->
-<henry-input 
-  label="Startdatum" 
+<henry-input
+  label="Startdatum"
   type="date"
   .value=${this.startDate}
   @input-change=${(e) => this.startDate = e.detail.value}
@@ -80,9 +85,11 @@ Används för textinmatning, nummer, datum etc.
 ```
 
 ### 3. Henry Select
+
 Används för dropdown-menyer.
 
 **Attribut:**
+
 - `label`: Label-text
 - `value`: Valt värde
 - `required`: Boolean
@@ -90,9 +97,10 @@ Används för dropdown-menyer.
 - `placeholder`: Placeholder-text
 
 **Användning:**
+
 ```html
-<henry-select 
-  label="Blocklängd" 
+<henry-select
+  label="Blocklängd"
   .value=${this.blockLength}
   required
   @select-change=${(e) => this.blockLength = e.detail.value}
@@ -104,9 +112,11 @@ Används för dropdown-menyer.
 ```
 
 ### 4. Henry Textarea
+
 Används för flerradiga textfält.
 
 **Attribut:**
+
 - `label`: Label-text
 - `value`: Värde
 - `required`: Boolean
@@ -115,9 +125,10 @@ Används för flerradiga textfält.
 - `rows`: Antal rader (default: 4)
 
 **Användning:**
+
 ```html
-<henry-textarea 
-  label="Beskrivning" 
+<henry-textarea
+  label="Beskrivning"
   .value=${this.description}
   placeholder="Skriv en beskrivning..."
   rows="6"
@@ -126,50 +137,59 @@ Används för flerradiga textfält.
 ```
 
 ### 5. Henry Checkbox
+
 Används för checkboxar.
 
 **Attribut:**
+
 - `label`: Label-text
 - `checked`: Boolean
 - `disabled`: Boolean
 
 **Användning:**
+
 ```html
-<henry-checkbox 
-  label="Aktiv kurs" 
+<henry-checkbox
+  label="Aktiv kurs"
   .checked=${this.isActive}
   @checkbox-change=${(e) => this.isActive = e.detail.checked}
 ></henry-checkbox>
 ```
 
 ### 6. Henry Heading
+
 Används för rubriker.
 
 **Attribut:**
+
 - `level`: `h1`, `h2` (default), `h3`, `h4`, `h5`, `h6`
 - `align`: `left` (default), `center`, `right`
 
 **Användning:**
+
 ```html
 <henry-heading level="h2">Kurser</henry-heading>
 <henry-heading level="h3" align="center">Välkommen</henry-heading>
 ```
 
 ### 7. Henry Card
+
 Används för kort/paneler.
 
 **Attribut:**
+
 - `variant`: `default`, `elevated`, `bordered`
 - `padding`: Boolean (default: true)
 
 **Användning:**
+
 ```html
 <henry-card variant="elevated">
   <henry-heading level="h3">Panel titel</henry-heading>
   <p>Panel innehåll...</p>
 </henry-card>
 
-<henry-card variant="bordered" ?padding=${false}>
+<henry-card variant="bordered" ?padding="${false}">
   <div style="padding: 20px;">Custom padding</div>
 </henry-card>
 ```
@@ -188,25 +208,25 @@ render() {
   return html`
     <henry-card variant="elevated">
       <henry-heading level="h2">Lägg till ny kurs</henry-heading>
-      
+
       <form @submit=${this.handleSubmit}>
-        <henry-input 
-          label="Kursnamn" 
+        <henry-input
+          label="Kursnamn"
           .value=${this.courseName}
           required
           @input-change=${(e) => this.courseName = e.detail.value}
         ></henry-input>
 
-        <henry-input 
-          label="Poäng" 
+        <henry-input
+          label="Poäng"
           type="number"
           .value=${this.points}
           min="0"
           @input-change=${(e) => this.points = e.detail.value}
         ></henry-input>
 
-        <henry-select 
-          label="Blocklängd" 
+        <henry-select
+          label="Blocklängd"
           .value=${this.blockLength}
           required
           @select-change=${(e) => this.blockLength = e.detail.value}
@@ -215,15 +235,15 @@ render() {
           <option value="2">2 block</option>
         </henry-select>
 
-        <henry-textarea 
-          label="Beskrivning" 
+        <henry-textarea
+          label="Beskrivning"
           .value=${this.description}
           rows="4"
           @textarea-change=${(e) => this.description = e.detail.value}
         ></henry-textarea>
 
-        <henry-checkbox 
-          label="Aktiv kurs" 
+        <henry-checkbox
+          label="Aktiv kurs"
           .checked=${this.isActive}
           @checkbox-change=${(e) => this.isActive = e.detail.checked}
         ></henry-checkbox>
@@ -245,17 +265,21 @@ render() {
 ## Migration från gamla komponenter
 
 ### Före:
+
 ```html
 <button type="submit" class="btn-submit">Spara</button>
 <input type="text" id="courseName" />
-<select id="blockLength">...</select>
+<select id="blockLength">
+  ...
+</select>
 ```
 
 ### Efter:
+
 ```html
 <henry-button type="submit">Spara</henry-button>
-<henry-input label="Kursnamn" .value=${this.courseName}></henry-input>
-<henry-select label="Blocklängd" .value=${this.blockLength}>...</henry-select>
+<henry-input label="Kursnamn" .value="${this.courseName}"></henry-input>
+<henry-select label="Blocklängd" .value="${this.blockLength}">...</henry-select>
 ```
 
 ## Fördelar

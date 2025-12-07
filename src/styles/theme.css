@@ -1,0 +1,283 @@
+/**
+ * Theme Styles - Henry Course Planner
+ * Gemensamma stilar som kan användas i alla komponenter
+ */
+
+@import "./tokens.css";
+
+/* Global resets and base styles */
+* {
+  box-sizing: border-box;
+}
+
+/* Typography utilities */
+.text-xs {
+  font-size: var(--font-size-xs);
+}
+.text-sm {
+  font-size: var(--font-size-sm);
+}
+.text-base {
+  font-size: var(--font-size-base);
+}
+.text-lg {
+  font-size: var(--font-size-lg);
+}
+.text-xl {
+  font-size: var(--font-size-xl);
+}
+.text-2xl {
+  font-size: var(--font-size-2xl);
+}
+.text-3xl {
+  font-size: var(--font-size-3xl);
+}
+
+.font-normal {
+  font-weight: var(--font-weight-normal);
+}
+.font-medium {
+  font-weight: var(--font-weight-medium);
+}
+.font-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+.text-primary {
+  color: var(--color-text-primary);
+}
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+.text-disabled {
+  color: var(--color-text-disabled);
+}
+
+/* Common form element styles */
+.form-input {
+  width: 100%;
+  padding: var(--input-padding-y) var(--input-padding-x);
+  border: var(--input-border-width) solid var(--color-border);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  transition: var(--transition-all);
+}
+
+.form-input:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: var(--input-focus-ring);
+}
+
+.form-input:disabled {
+  background: var(--color-gray-100);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-input::placeholder {
+  color: var(--color-text-disabled);
+}
+
+/* Button base styles */
+.btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family-base);
+  border: none;
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  transition: var(--transition-all);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn-base:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-base:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.btn-base:not(:disabled):active {
+  transform: translateY(0);
+}
+
+/* Button sizes */
+.btn-sm {
+  height: var(--button-height-sm);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-xs);
+}
+
+.btn-base {
+  height: var(--button-height-base);
+  padding: 0 var(--space-5);
+  font-size: var(--font-size-sm);
+}
+
+.btn-lg {
+  height: var(--button-height-lg);
+  padding: 0 var(--space-8);
+  font-size: var(--font-size-base);
+}
+
+/* Button variants */
+.btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-500) 0%,
+    var(--color-secondary-500) 100%
+  );
+  color: white;
+  box-shadow: var(--shadow-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: var(--shadow-primary-hover);
+}
+
+.btn-secondary {
+  background: var(--color-gray-100);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-gray-200);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: white;
+  box-shadow: var(--shadow-danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+}
+
+.btn-success {
+  background: var(--color-success);
+  color: white;
+  box-shadow: var(--shadow-success);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: var(--color-success-hover);
+}
+
+/* Card styles */
+.card {
+  background: var(--color-background);
+  border-radius: var(--radius-lg);
+  transition: var(--transition-all);
+}
+
+.card-default {
+  border: 1px solid var(--color-border);
+}
+
+.card-elevated {
+  box-shadow: var(--shadow-base);
+}
+
+.card-elevated:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.card-bordered {
+  border: 2px solid var(--color-primary-500);
+}
+
+.card-padded {
+  padding: var(--space-6);
+}
+
+/* Label styles */
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.label-required {
+  color: var(--color-danger);
+}
+
+/* Spacing utilities */
+.mb-1 {
+  margin-bottom: var(--space-1);
+}
+.mb-2 {
+  margin-bottom: var(--space-2);
+}
+.mb-3 {
+  margin-bottom: var(--space-3);
+}
+.mb-4 {
+  margin-bottom: var(--space-4);
+}
+.mb-5 {
+  margin-bottom: var(--space-5);
+}
+.mb-6 {
+  margin-bottom: var(--space-6);
+}
+
+.mt-1 {
+  margin-top: var(--space-1);
+}
+.mt-2 {
+  margin-top: var(--space-2);
+}
+.mt-3 {
+  margin-top: var(--space-3);
+}
+.mt-4 {
+  margin-top: var(--space-4);
+}
+.mt-5 {
+  margin-top: var(--space-5);
+}
+.mt-6 {
+  margin-top: var(--space-6);
+}
+
+.gap-1 {
+  gap: var(--space-1);
+}
+.gap-2 {
+  gap: var(--space-2);
+}
+.gap-3 {
+  gap: var(--space-3);
+}
+.gap-4 {
+  gap: var(--space-4);
+}
+.gap-5 {
+  gap: var(--space-5);
+}
+.gap-6 {
+  gap: var(--space-6);
+}

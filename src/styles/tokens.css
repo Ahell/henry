@@ -1,0 +1,154 @@
+/**
+ * Design Tokens - Henry Course Planner
+ * Centraliserade designvariabler för konsekvent styling
+ */
+
+:root {
+  /* Colors - Primary */
+  --color-primary-50: #f5f7ff;
+  --color-primary-100: #ebedff;
+  --color-primary-200: #d6dbff;
+  --color-primary-300: #b8c1ff;
+  --color-primary-400: #919dff;
+  --color-primary-500: #667eea;
+  --color-primary-600: #5568d3;
+  --color-primary-700: #4553b8;
+  --color-primary-800: #3a469e;
+  --color-primary-900: #2e3785;
+
+  /* Colors - Secondary (Purple) */
+  --color-secondary-50: #faf5ff;
+  --color-secondary-100: #f3e8ff;
+  --color-secondary-200: #e9d5ff;
+  --color-secondary-300: #d8b4fe;
+  --color-secondary-400: #c084fc;
+  --color-secondary-500: #764ba2;
+  --color-secondary-600: #6b4394;
+  --color-secondary-700: #5e3a81;
+  --color-secondary-800: #50326e;
+  --color-secondary-900: #42295b;
+
+  /* Colors - Gray Scale */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6c757d;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Colors - Semantic */
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-success-light: #d1fae5;
+
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-light: #fee2e2;
+
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-warning-light: #fef3c7;
+
+  --color-info: #3b82f6;
+  --color-info-hover: #2563eb;
+  --color-info-light: #dbeafe;
+
+  /* Colors - UI */
+  --color-background: #ffffff;
+  --color-surface: #f9fafb;
+  --color-border: #e5e7eb;
+  --color-border-hover: #d1d5db;
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6c757d;
+  --color-text-disabled: #9ca3af;
+
+  /* Typography */
+  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-family-mono: "SF Mono", Monaco, "Cascadia Code", "Courier New",
+    monospace;
+
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
+  --font-size-3xl: 2rem; /* 32px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Spacing */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-10: 2.5rem; /* 40px */
+  --space-12: 3rem; /* 48px */
+  --space-16: 4rem; /* 64px */
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-base: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.07);
+  --shadow-base: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 6px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.18);
+
+  /* Special Shadows */
+  --shadow-primary: 0 2px 4px rgba(102, 126, 234, 0.4);
+  --shadow-primary-hover: 0 4px 8px rgba(102, 126, 234, 0.35);
+  --shadow-danger: 0 2px 4px rgba(239, 68, 68, 0.4);
+  --shadow-success: 0 2px 4px rgba(16, 185, 129, 0.4);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+  --transition-all: all 200ms ease;
+
+  /* Z-index */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+
+  /* Form Elements */
+  --input-height-sm: 32px;
+  --input-height-base: 40px;
+  --input-height-lg: 48px;
+  --input-padding-x: var(--space-3);
+  --input-padding-y: var(--space-2);
+  --input-border-width: 1px;
+  --input-focus-ring: 0 0 0 3px rgba(102, 126, 234, 0.1);
+
+  /* Button */
+  --button-height-sm: 32px;
+  --button-height-base: 40px;
+  --button-height-lg: 48px;
+}

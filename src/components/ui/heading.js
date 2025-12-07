@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css } from "lit";
 
 /**
  * Primary Heading Component
@@ -8,60 +8,73 @@ import { LitElement, html, css } from 'lit';
 export class HenryHeading extends LitElement {
   static properties = {
     level: { type: String },
-    align: { type: String }
+    align: { type: String },
   };
 
   static styles = css`
+    @import url("/src/styles/tokens.css");
+
     :host {
       display: block;
     }
 
-    h1, h2, h3, h4, h5, h6 {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
       margin: 0;
-      font-weight: 600;
-      color: #1f2937;
-      line-height: 1.3;
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      line-height: var(--line-height-tight);
     }
 
     h1 {
-      font-size: 32px;
-      margin-bottom: 24px;
+      font-size: var(--font-size-3xl);
+      margin-bottom: var(--space-6);
     }
 
     h2 {
-      font-size: 24px;
-      margin-bottom: 20px;
+      font-size: var(--font-size-2xl);
+      margin-bottom: var(--space-5);
     }
 
     h3 {
-      font-size: 20px;
-      margin-bottom: 16px;
+      font-size: var(--font-size-xl);
+      margin-bottom: var(--space-4);
     }
 
     h4 {
-      font-size: 18px;
-      margin-bottom: 12px;
+      font-size: var(--font-size-lg);
+      margin-bottom: var(--space-3);
     }
 
     h5 {
-      font-size: 16px;
-      margin-bottom: 10px;
+      font-size: var(--font-size-base);
+      margin-bottom: var(--space-2);
     }
 
     h6 {
-      font-size: 14px;
-      margin-bottom: 8px;
+      font-size: var(--font-size-sm);
+      margin-bottom: var(--space-2);
     }
 
-    .left { text-align: left; }
-    .center { text-align: center; }
-    .right { text-align: right; }
+    .left {
+      text-align: left;
+    }
+    .center {
+      text-align: center;
+    }
+    .right {
+      text-align: right;
+    }
   `;
 
   constructor() {
     super();
-    this.level = 'h2';
-    this.align = 'left';
+    this.level = "h2";
+    this.align = "left";
   }
 
   render() {
@@ -74,4 +87,4 @@ export class HenryHeading extends LitElement {
   }
 }
 
-customElements.define('henry-heading', HenryHeading);
+customElements.define("henry-heading", HenryHeading);

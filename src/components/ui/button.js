@@ -1,4 +1,9 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, unsafeCSS } from "lit";
+
+// Import design tokens
+const tokens = unsafeCSS(
+  await fetch("/src/styles/tokens.css").then((r) => r.text())
+);
 
 /**
  * Primary Button Component
@@ -12,10 +17,12 @@ export class HenryButton extends LitElement {
     variant: { type: String },
     disabled: { type: Boolean },
     size: { type: String },
-    fullWidth: { type: Boolean }
+    fullWidth: { type: Boolean },
   };
 
   static styles = css`
+    @import url("/src/styles/tokens.css");
+
     :host {
       display: inline-block;
     }
@@ -25,18 +32,18 @@ export class HenryButton extends LitElement {
     }
 
     button {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      font-family: var(--font-family-base);
       border: none;
-      border-radius: 6px;
+      border-radius: var(--radius-base);
       cursor: pointer;
-      transition: all 0.2s ease;
-      font-weight: 500;
+      transition: var(--transition-all);
+      font-weight: var(--font-weight-medium);
       white-space: nowrap;
     }
 
     button:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      box-shadow: var(--shadow-md);
     }
 
     button:active:not(:disabled) {
@@ -50,55 +57,66 @@ export class HenryButton extends LitElement {
 
     /* Sizes */
     button.small {
-      padding: 6px 12px;
-      font-size: 13px;
+      height: var(--button-height-sm);
+      padding: 0 var(--space-3);
+      font-size: var(--font-size-xs);
     }
 
     button.medium {
-      padding: 10px 20px;
-      font-size: 14px;
+      height: var(--button-height-base);
+      padding: 0 var(--space-5);
+      font-size: var(--font-size-sm);
     }
 
     button.large {
-      padding: 14px 28px;
-      font-size: 16px;
+      height: var(--button-height-lg);
+      padding: 0 var(--space-8);
+      font-size: var(--font-size-base);
     }
 
     /* Variants */
     button.primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(
+        135deg,
+        var(--color-primary-500) 0%,
+        var(--color-secondary-500) 100%
+      );
       color: white;
-      box-shadow: 0 2px 4px rgba(102, 126, 234, 0.4);
+      box-shadow: var(--shadow-primary);
+    }
+
+    button.primary:hover:not(:disabled) {
+      box-shadow: var(--shadow-primary-hover);
     }
 
     button.secondary {
-      background: #f3f4f6;
-      color: #374151;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      background: var(--color-gray-100);
+      color: var(--color-text-primary);
+      box-shadow: var(--shadow-sm);
     }
 
     button.secondary:hover:not(:disabled) {
-      background: #e5e7eb;
+      background: var(--color-gray-200);
     }
 
     button.danger {
-      background: #ef4444;
+      background: var(--color-danger);
       color: white;
-      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+      box-shadow: var(--shadow-danger);
     }
 
     button.danger:hover:not(:disabled) {
-      background: #dc2626;
+      background: var(--color-danger-hover);
     }
 
     button.success {
-      background: #10b981;
+      background: var(--color-success);
       color: white;
-      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.4);
+      box-shadow: var(--shadow-success);
     }
 
     button.success:hover:not(:disabled) {
-      background: #059669;
+      background: var(--color-success-hover);
     }
 
     :host([fullWidth]) button {
@@ -108,15 +126,15 @@ export class HenryButton extends LitElement {
 
   constructor() {
     super();
-    this.variant = 'primary';
+    this.variant = "primary";
     this.disabled = false;
-    this.size = 'medium';
+    this.size = "medium";
     this.fullWidth = false;
   }
 
   render() {
     return html`
-      <button 
+      <button
         class="${this.variant} ${this.size}"
         ?disabled=${this.disabled}
         @click=${this._handleClick}
@@ -128,13 +146,15 @@ export class HenryButton extends LitElement {
 
   _handleClick(e) {
     if (!this.disabled) {
-      this.dispatchEvent(new CustomEvent('button-click', { 
-        bubbles: true, 
-        composed: true,
-        detail: { originalEvent: e }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("button-click", {
+          bubbles: true,
+          composed: true,
+          detail: { originalEvent: e },
+        })
+      );
     }
   }
 }
 
-customElements.define('henry-button', HenryButton);
+customElements.define("henry-button", HenryButton);

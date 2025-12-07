@@ -26,6 +26,7 @@ henry/
 ### 🚀 Enklare Utveckling
 
 **Före:**
+
 ```bash
 # Terminal 1
 npm run dev
@@ -38,6 +39,7 @@ cd server && npm install
 ```
 
 **Efter:**
+
 ```bash
 # En enda kommando!
 npm run dev
@@ -46,20 +48,24 @@ npm run dev
 ### 🎯 Nya Features
 
 1. **Unified Package Management**
+
    - En `package.json` för hela projektet
    - Automatisk installation av server-dependencies (`postinstall`)
    - Concurrently kör frontend + backend samtidigt
 
 2. **VSCode Integration**
+
    - Debug-konfiguration för fullstack
    - Rekommenderade extensions
    - Optimerade editor-inställningar
 
 3. **Deployment Ready**
+
    - `./deploy.sh` bygger production-redo kod
    - Klar för deployment på server
 
 4. **Dokumentation**
+
    - `README.md` - Komplett översikt
    - `QUICKSTART.md` - För nya användare
    - `DEV_GUIDE.md` - För dig som utvecklare
@@ -70,15 +76,15 @@ npm run dev
 
 ### 📊 Jämförelse
 
-| Före | Efter |
-|------|-------|
-| 2 package.json | 1 package.json |
-| 2 terminaler | 1 terminal |
-| Manuell server-start | Automatisk |
-| Ingen .gitignore | Proper .gitignore |
-| Minimal dokumentation | Omfattande docs |
-| Ingen VSCode config | Full VSCode support |
-| Ingen deployment-plan | deploy.sh script |
+| Före                  | Efter               |
+| --------------------- | ------------------- |
+| 2 package.json        | 1 package.json      |
+| 2 terminaler          | 1 terminal          |
+| Manuell server-start  | Automatisk          |
+| Ingen .gitignore      | Proper .gitignore   |
+| Minimal dokumentation | Omfattande docs     |
+| Ingen VSCode config   | Full VSCode support |
+| Ingen deployment-plan | deploy.sh script    |
 
 ### 🛠️ Nya Kommandon
 
@@ -107,20 +113,22 @@ npm run clean            # Rensa allt
 
 ### 📚 Dokumentation
 
-| Fil | Syfte |
-|-----|-------|
-| `README.md` | Projektöversikt, funktioner, API-referens |
-| `QUICKSTART.md` | För snabb start och vanliga problem |
-| `DEV_GUIDE.md` | Djupgående utvecklingsguide |
+| Fil             | Syfte                                     |
+| --------------- | ----------------------------------------- |
+| `README.md`     | Projektöversikt, funktioner, API-referens |
+| `QUICKSTART.md` | För snabb start och vanliga problem       |
+| `DEV_GUIDE.md`  | Djupgående utvecklingsguide               |
 
 ### 🔧 Tekniska Förbättringar
 
 1. **Vite Config**
+
    - API proxy till backend
    - Optimerad bundling med manual chunks
    - Sourcemaps för debugging
 
 2. **Package.json**
+
    - Tydligare scripts
    - Postinstall hook
    - Bättre metadata
@@ -132,6 +140,7 @@ npm run clean            # Rensa allt
 ### ✨ Nästa Steg
 
 Projektet är nu klart för:
+
 - ✅ Snabb utveckling
 - ✅ Enkel deployment
 - ✅ Framtida skalning

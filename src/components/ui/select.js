@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css } from "lit";
 
 /**
  * Primary Select Component
@@ -14,91 +14,98 @@ export class HenrySelect extends LitElement {
     value: { type: String },
     disabled: { type: Boolean },
     required: { type: Boolean },
-    placeholder: { type: String }
+    placeholder: { type: String },
   };
 
   static styles = css`
+    @import url("/src/styles/tokens.css");
+
     :host {
       display: block;
-      margin-bottom: 16px;
+      margin-bottom: var(--space-4);
     }
 
     .select-wrapper {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: var(--space-2);
     }
 
     label {
-      font-size: 14px;
-      font-weight: 500;
-      color: #374151;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: var(--space-1);
     }
 
     .required {
-      color: #ef4444;
+      color: var(--color-danger);
     }
 
     select {
-      padding: 10px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 14px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: white;
+      padding: var(--input-padding-y) var(--input-padding-x);
+      border: var(--input-border-width) solid var(--color-border);
+      border-radius: var(--radius-base);
+      font-size: var(--font-size-sm);
+      font-family: var(--font-family-base);
+      background: var(--color-background);
+      color: var(--color-text-primary);
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: var(--transition-all);
     }
 
     select:hover:not(:disabled) {
-      border-color: #9ca3af;
+      border-color: var(--color-border-hover);
     }
 
     select:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: var(--color-primary-500);
+      box-shadow: var(--input-focus-ring);
     }
 
     select:disabled {
-      background: #f3f4f6;
+      background: var(--color-gray-100);
       cursor: not-allowed;
       opacity: 0.6;
     }
 
     select option {
-      padding: 8px;
+      padding: var(--space-2);
     }
   `;
 
   constructor() {
     super();
-    this.label = '';
-    this.value = '';
+    this.label = "";
+    this.value = "";
     this.disabled = false;
     this.required = false;
-    this.placeholder = 'Välj...';
+    this.placeholder = "Välj...";
   }
 
   render() {
     return html`
       <div class="select-wrapper">
-        ${this.label ? html`
-          <label>
-            ${this.label}
-            ${this.required ? html`<span class="required">*</span>` : ''}
-          </label>
-        ` : ''}
-        <select 
+        ${this.label
+          ? html`
+              <label>
+                ${this.label}
+                ${this.required ? html`<span class="required">*</span>` : ""}
+              </label>
+            `
+          : ""}
+        <select
           .value=${this.value}
           ?disabled=${this.disabled}
           ?required=${this.required}
           @change=${this._handleChange}
         >
-          ${this.placeholder ? html`<option value="">${this.placeholder}</option>` : ''}
+          ${this.placeholder
+            ? html`<option value="">${this.placeholder}</option>`
+            : ""}
           <slot></slot>
         </select>
       </div>
@@ -107,12 +114,14 @@ export class HenrySelect extends LitElement {
 
   _handleChange(e) {
     this.value = e.target.value;
-    this.dispatchEvent(new CustomEvent('select-change', {
-      bubbles: true,
-      composed: true,
-      detail: { value: this.value }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("select-change", {
+        bubbles: true,
+        composed: true,
+        detail: { value: this.value },
+      })
+    );
   }
 }
 
-customElements.define('henry-select', HenrySelect);
+customElements.define("henry-select", HenrySelect);

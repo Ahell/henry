@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css } from "lit";
 
 /**
  * Primary Checkbox Component
@@ -10,19 +10,21 @@ export class HenryCheckbox extends LitElement {
   static properties = {
     label: { type: String },
     checked: { type: Boolean },
-    disabled: { type: Boolean }
+    disabled: { type: Boolean },
   };
 
   static styles = css`
+    @import url("/src/styles/tokens.css");
+
     :host {
       display: block;
-      margin-bottom: 12px;
+      margin-bottom: var(--space-3);
     }
 
     .checkbox-wrapper {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: var(--space-2);
       cursor: pointer;
     }
 
@@ -35,7 +37,7 @@ export class HenryCheckbox extends LitElement {
       width: 18px;
       height: 18px;
       cursor: pointer;
-      accent-color: #667eea;
+      accent-color: var(--color-primary-500);
     }
 
     input[type="checkbox"]:disabled {
@@ -43,8 +45,8 @@ export class HenryCheckbox extends LitElement {
     }
 
     label {
-      font-size: 14px;
-      color: #374151;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-primary);
       cursor: pointer;
       user-select: none;
     }
@@ -56,25 +58,30 @@ export class HenryCheckbox extends LitElement {
 
   constructor() {
     super();
-    this.label = '';
+    this.label = "";
     this.checked = false;
     this.disabled = false;
   }
 
   render() {
     return html`
-      <div class="checkbox-wrapper ${this.disabled ? 'disabled' : ''}">
-        <input 
+      <div class="checkbox-wrapper ${this.disabled ? "disabled" : ""}">
+        <input
           type="checkbox"
           .checked=${this.checked}
           ?disabled=${this.disabled}
           @change=${this._handleChange}
         />
-        ${this.label ? html`
-          <label class="${this.disabled ? 'disabled' : ''}" @click=${this._handleLabelClick}>
-            ${this.label}
-          </label>
-        ` : ''}
+        ${this.label
+          ? html`
+              <label
+                class="${this.disabled ? "disabled" : ""}"
+                @click=${this._handleLabelClick}
+              >
+                ${this.label}
+              </label>
+            `
+          : ""}
       </div>
     `;
   }
@@ -82,11 +89,13 @@ export class HenryCheckbox extends LitElement {
   _handleChange(e) {
     if (!this.disabled) {
       this.checked = e.target.checked;
-      this.dispatchEvent(new CustomEvent('checkbox-change', {
-        bubbles: true,
-        composed: true,
-        detail: { checked: this.checked }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("checkbox-change", {
+          bubbles: true,
+          composed: true,
+          detail: { checked: this.checked },
+        })
+      );
     }
   }
 
@@ -94,13 +103,15 @@ export class HenryCheckbox extends LitElement {
     if (!this.disabled) {
       e.preventDefault();
       this.checked = !this.checked;
-      this.dispatchEvent(new CustomEvent('checkbox-change', {
-        bubbles: true,
-        composed: true,
-        detail: { checked: this.checked }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("checkbox-change", {
+          bubbles: true,
+          composed: true,
+          detail: { checked: this.checked },
+        })
+      );
     }
   }
 }
 
-customElements.define('henry-checkbox', HenryCheckbox);
+customElements.define("henry-checkbox", HenryCheckbox);
