@@ -18,6 +18,7 @@ export class HenryButton extends LitElement {
     disabled: { type: Boolean },
     size: { type: String },
     fullWidth: { type: Boolean },
+    type: { type: String },
   };
 
   static styles = css`
@@ -130,12 +131,14 @@ export class HenryButton extends LitElement {
     this.disabled = false;
     this.size = "medium";
     this.fullWidth = false;
+    this.type = "button";
   }
 
   render() {
     return html`
       <button
         class="${this.variant} ${this.size}"
+        type="${this.type}"
         ?disabled=${this.disabled}
         @click=${this._handleClick}
       >
