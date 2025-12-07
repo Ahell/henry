@@ -106,7 +106,7 @@ export class CohortsTab extends LitElement {
     if (!cohort) return html``;
 
     return html`
-      <henry-modal open title="Redigera Kull" @close="${this.handleCancelEdit}">
+      <henry-modal open title="Redigera Kull" @close="${this.handleCancelCohortEdit}">
         <form @submit="${(e) => this._handleSaveFromModal(e)}">
           <div
             style="display: flex; flex-direction: column; gap: var(--space-4);"
@@ -140,7 +140,7 @@ export class CohortsTab extends LitElement {
         </form>
 
         <div slot="footer">
-          <henry-button variant="secondary" @click="${this.handleCancelEdit}">
+          <henry-button variant="secondary" @click="${this.handleCancelCohortEdit}">
             Avbryt
           </henry-button>
           <henry-button

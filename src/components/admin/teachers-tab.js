@@ -136,7 +136,7 @@ export class TeachersTab extends LitElement {
       <henry-modal
         open
         title="Redigera Lärare"
-        @close="${this.handleCancelEdit}"
+        @close="${this.handleCancelTeacherEdit}"
       >
         <form @submit="${(e) => this._handleSaveFromModal(e)}">
           <div
@@ -175,7 +175,7 @@ export class TeachersTab extends LitElement {
         </form>
 
         <div slot="footer">
-          <henry-button variant="secondary" @click="${this.handleCancelEdit}">
+          <henry-button variant="secondary" @click="${this.handleCancelTeacherEdit}">
             Avbryt
           </henry-button>
           <henry-button
