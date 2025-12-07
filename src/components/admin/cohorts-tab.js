@@ -59,7 +59,10 @@ export class CohortsTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">Lägg till Ny Kull</henry-text>
         </div>
-        <form @submit="${this.handleAddCohort}">
+        <form
+          @submit="${this.handleAddCohort}"
+          @click="${(e) => console.log("🟡 Form clicked:", e.target)}"
+        >
           <div class="form-row">
             <henry-input
               id="cohortStartDate"
@@ -76,7 +79,12 @@ export class CohortsTab extends LitElement {
               required
             ></henry-input>
           </div>
-          <henry-button type="submit" variant="primary">
+          <henry-button
+            type="submit"
+            variant="primary"
+            @click="${(e) =>
+              console.log("🟡 Button clicked, type:", e.target.type)}"
+          >
             Lägg till Kull
           </henry-button>
         </form>
@@ -217,9 +225,11 @@ export class CohortsTab extends LitElement {
 
   async handleAddCohort(e) {
     e.preventDefault();
+    console.log("🔴 handleAddCohort called");
     const root = this.shadowRoot;
     const startDate = getInputValue(root, "cohortStartDate");
     const plannedSize = parseInt(getInputValue(root, "cohortSize"));
+    console.log("🔴 Form values:", { startDate, plannedSize });
 
     const cohort = {
       start_date: startDate,
@@ -227,10 +237,13 @@ export class CohortsTab extends LitElement {
     };
 
     try {
+      console.log("🔴 Calling store.addCohort");
       await store.addCohort(cohort);
+      console.log("🔴 store.addCohort completed");
       resetForm(root);
       showSuccessMessage(this, "Kull tillagd!");
     } catch (error) {
+      console.error("🔴 Error in handleAddCohort:", error);
       showErrorMessage(this, `Fel: ${error.message}`);
     }
   }

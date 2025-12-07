@@ -623,6 +623,7 @@ export class DataStore {
 
   // Cohorts
   async addCohort(cohort) {
+    console.log("🟢 addCohort called with:", cohort);
     const id = Math.max(...this.cohorts.map((c) => c.cohort_id), 0) + 1;
     const newCohort = {
       cohort_id: id,
@@ -631,18 +632,26 @@ export class DataStore {
       planned_size: cohort.planned_size || 0,
     };
     this.cohorts.push(newCohort);
+    console.log("🟢 Cohorts after push:", this.cohorts.length);
+
     this.renumberCohorts();
+    console.log(
+      "🟢 Cohorts after renumber:",
+      this.cohorts.map((c) => c.name)
+    );
 
     try {
       await this.saveToBackend();
+      console.log("🟢 Backend save successful");
     } catch (error) {
-      // Error already logged in saveToBackend
+      console.error("🔴 Backend save failed:", error);
     }
 
+    console.log("🟢 Calling notify with", this.listeners.length, "listeners");
     this.notify();
+    console.log("🟢 addCohort complete");
     return newCohort;
   }
-
   getCohorts() {
     return this.cohorts;
   }

@@ -149,13 +149,41 @@ export class HenryButton extends LitElement {
 
   _handleClick(e) {
     if (!this.disabled) {
-      this.dispatchEvent(
-        new CustomEvent("button-click", {
-          bubbles: true,
-          composed: true,
-          detail: { originalEvent: e },
-        })
-      );
+      // For submit buttons, find the form and submit it
+      if (this.type === "submit") {
+        // Prevent default button click
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Find the closest form (traversing shadow DOM boundaries)
+        let element = this;
+        while (element) {
+          // Check if parent has a form
+          const parent = element.parentNode;
+          if (parent instanceof ShadowRoot) {
+            element = parent.host;
+          } else if (parent) {
+            const form = parent.closest ? parent.closest("form") : null;
+            if (form) {
+              console.log("🟡 Found form, requesting submit");
+              form.requestSubmit();
+              return;
+            }
+            element = parent;
+          } else {
+            break;
+          }
+        }
+        console.error("🔴 Could not find form for submit button");
+      } else {
+        this.dispatchEvent(
+          new CustomEvent("button-click", {
+            bubbles: true,
+            composed: true,
+            detail: { originalEvent: e },
+          })
+        );
+      }
     }
   }
 }
