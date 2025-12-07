@@ -502,10 +502,63 @@ export class TeacherAvailabilityTable extends LitElement {
     if (isDetailView) {
       // Detail view: working with specific days
       const date = cell.dataset.date;
-      const isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(
+      
+      // Check if this day is unavailable (either day-level or slot-level)
+      let isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(
         teacherId,
         date
       );
+      
+      // If not a day-level entry, check if there's a slot-level entry
+      if (!isCurrentlyUnavailable && this._detailSlotDate) {
+        const hasSlotEntry = store.teacherAvailability.some(
+          (a) =>
+            a.teacher_id === teacherId &&
+            a.from_date === this._detailSlotDate &&
+            a.type === "busy"
+        );
+        if (hasSlotEntry) {
+          isCurrentlyUnavailable = true;
+          
+          // Convert slot-level entry to individual day entries
+          // Remove the slot-level entry
+          const slotEntry = store.teacherAvailability.find(
+            (a) =>
+              a.teacher_id === teacherId &&
+              a.from_date === this._detailSlotDate &&
+              a.type === "busy"
+          );
+          if (slotEntry) {
+            store.removeTeacherAvailability(slotEntry.id);
+          }
+          
+          // Add individual entries for all OTHER days in the slot
+          const days = store.getSlotDays(this._detailSlotDate);
+          days.forEach((day) => {
+            if (day !== date) {
+              // Add entry for all days except the one being clicked
+              store.addTeacherAvailability({
+                teacher_id: teacherId,
+                from_date: day,
+                to_date: day,
+                type: "busy",
+              });
+            }
+          });
+          
+          // Now set paint mode to remove (since we already handled this click)
+          this._paintMode = "remove";
+          this._isMouseDown = true;
+          this.requestUpdate();
+          
+          this.dispatchEvent(
+            new CustomEvent("availability-changed", {
+              detail: { teacherId, date, unavailable: false },
+            })
+          );
+          return;
+        }
+      }
 
       this._paintMode = isCurrentlyUnavailable ? "remove" : "add";
 
@@ -565,15 +618,46 @@ export class TeacherAvailabilityTable extends LitElement {
     if (isDetailView) {
       // Detail view: working with specific days
       const date = cell.dataset.date;
-      const isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(
+      
+      // Check if this day is unavailable (either day-level or slot-level)
+      let isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(
         teacherId,
         date
       );
+      
+      // If not a day-level entry, check if there's a slot-level entry
+      if (!isCurrentlyUnavailable && this._detailSlotDate) {
+        const hasSlotEntry = store.teacherAvailability.some(
+          (a) =>
+            a.teacher_id === teacherId &&
+            a.from_date === this._detailSlotDate &&
+            a.type === "busy"
+        );
+        if (hasSlotEntry) {
+          isCurrentlyUnavailable = true;
+        }
+      }
 
       if (this._paintMode === "add" && !isCurrentlyUnavailable) {
-        store.toggleTeacherAvailabilityForDay(teacherId, date);
+        // Check if there's a slot-level entry that needs to be converted
+        if (this._detailSlotDate) {
+          const slotEntry = store.teacherAvailability.find(
+            (a) =>
+              a.teacher_id === teacherId &&
+              a.from_date === this._detailSlotDate &&
+              a.type === "busy"
+          );
+          if (slotEntry) {
+            // This shouldn't happen in "add" mode, but handle it just in case
+            // (it means we're trying to add to an already fully marked slot)
+            store.toggleTeacherAvailabilityForDay(teacherId, date);
+          } else {
+            store.toggleTeacherAvailabilityForDay(teacherId, date);
+          }
+        } else {
+          store.toggleTeacherAvailabilityForDay(teacherId, date);
+        }
 
-        // Force immediate re-render
         this.requestUpdate();
 
         this.dispatchEvent(
@@ -582,9 +666,38 @@ export class TeacherAvailabilityTable extends LitElement {
           })
         );
       } else if (this._paintMode === "remove" && isCurrentlyUnavailable) {
-        store.toggleTeacherAvailabilityForDay(teacherId, date);
+        // Check if this is from a slot-level entry
+        const isDayLevel = store.isTeacherUnavailableOnDay(teacherId, date);
+        
+        if (!isDayLevel && this._detailSlotDate) {
+          // This is a slot-level entry, need to convert it
+          const slotEntry = store.teacherAvailability.find(
+            (a) =>
+              a.teacher_id === teacherId &&
+              a.from_date === this._detailSlotDate &&
+              a.type === "busy"
+          );
+          if (slotEntry) {
+            store.removeTeacherAvailability(slotEntry.id);
+            
+            // Add individual entries for all OTHER days
+            const days = store.getSlotDays(this._detailSlotDate);
+            days.forEach((day) => {
+              if (day !== date) {
+                store.addTeacherAvailability({
+                  teacher_id: teacherId,
+                  from_date: day,
+                  to_date: day,
+                  type: "busy",
+                });
+              }
+            });
+          }
+        } else {
+          // Regular day-level entry, just toggle it
+          store.toggleTeacherAvailabilityForDay(teacherId, date);
+        }
 
-        // Force immediate re-render
         this.requestUpdate();
 
         this.dispatchEvent(
