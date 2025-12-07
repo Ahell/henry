@@ -10,21 +10,6 @@ export class TeachersTab extends LitElement {
       display: block;
     }
 
-    .panel {
-      background: var(--color-background);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: var(--space-6);
-      margin-bottom: var(--space-6);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .panel-header {
-      margin-bottom: var(--space-6);
-      padding-bottom: var(--space-3);
-      border-bottom: 2px solid var(--color-border);
-    }
-
     .form-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -84,8 +69,8 @@ export class TeachersTab extends LitElement {
         ? html`<div class="${this.messageType}">${this.message}</div>`
         : ""}
 
-      <div class="panel">
-        <div class="panel-header">
+      <henry-panel>
+        <div slot="header">
           <henry-text variant="heading-3">Lägg till Ny Lärare</henry-text>
         </div>
         <form @submit="${this.handleAddTeacher}">
@@ -122,10 +107,10 @@ export class TeachersTab extends LitElement {
             Lägg till Lärare
           </henry-button>
         </form>
-      </div>
+      </henry-panel>
 
-      <div class="panel">
-        <div class="panel-header">
+      <henry-panel>
+        <div slot="header">
           <henry-text variant="heading-3">Befintliga Lärare</henry-text>
         </div>
         <div style="margin-bottom: 1rem;">
@@ -151,7 +136,7 @@ export class TeachersTab extends LitElement {
               .map((teacher) => this.renderTeacherRow(teacher))}
           </tbody>
         </table>
-      </div>
+      </henry-panel>
     `;
   }
 

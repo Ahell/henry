@@ -25,28 +25,17 @@ export class SchedulingTab extends LitElement {
       display: block;
     }
 
-    .panel {
-      background: var(--color-background);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: var(--space-6);
-      margin-bottom: var(--space-6);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: var(--space-6);
-      padding-bottom: var(--space-3);
-      border-bottom: 2px solid var(--color-border);
-    }
-
     .warning-pills {
       display: flex;
       gap: var(--space-2);
       flex-wrap: wrap;
+    }
+
+    .header-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-4);
     }
 
     .warning-pill {
@@ -299,10 +288,12 @@ export class SchedulingTab extends LitElement {
 
     if (slots.length === 0) {
       return html`
-        <div class="panel">
-          <henry-text variant="heading-3">Gantt-vy</henry-text>
+        <henry-panel>
+          <div slot="header">
+            <henry-text variant="heading-3">Gantt-vy</henry-text>
+          </div>
           <p>Inga slots tillgängliga.</p>
-        </div>
+        </henry-panel>
       `;
     }
 
@@ -316,7 +307,9 @@ export class SchedulingTab extends LitElement {
           </henry-text>
           ${this._renderWarningPills()}
         </div>
-        <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-4);">
+        <p
+          style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-4);"
+        >
           Dra kurser från kullens depå till schemat. Kurser försvinner från
           depån när de schemaläggs.
         </p>
@@ -355,7 +348,7 @@ export class SchedulingTab extends LitElement {
             </tfoot>
           </table>
         </div>
-      </div>
+      </henry-panel>
     `;
   }
 

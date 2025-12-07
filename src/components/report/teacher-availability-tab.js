@@ -16,22 +16,6 @@ export class TeacherAvailabilityTab extends LitElement {
       display: block;
     }
 
-    .panel {
-      background: var(--color-background);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: var(--space-6);
-      margin-bottom: var(--space-6);
-      box-shadow: var(--shadow-sm);
-      overflow-x: auto;
-    }
-
-    .panel-header {
-      margin-bottom: var(--space-6);
-      padding-bottom: var(--space-3);
-      border-bottom: 2px solid var(--color-border);
-    }
-
     .paint-controls {
       display: flex;
       gap: var(--space-4);
@@ -153,24 +137,29 @@ export class TeacherAvailabilityTab extends LitElement {
     const teachers = store.getTeachers();
 
     if (slots.length === 0) {
-      return html`<div class="panel">
-        <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
+      return html`<henry-panel>
+        <div slot="header">
+          <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
+        </div>
         <p>Inga tidsluckor tillgängliga.</p>
-      </div>`;
+      </henry-panel>`;
     }
 
     // Get unique slot start dates, sorted chronologically
     const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
 
     return html`
-      <div class="panel">
-        <div class="panel-header">
+      <henry-panel noPadding>
+        <div slot="header">
           <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
         </div>
-        <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-4);">
-          Klicka på "Markera upptagen" och måla sedan i cellerna för att markera
-          när en lärare är upptagen. Blå celler visar schemalagda kurser.
-        </p>
+        <div style="padding: var(--space-6);">
+          <p
+            style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-4);"
+          >
+            Klicka på "Markera upptagen" och måla sedan i cellerna för att markera
+            när en lärare är upptagen. Blå celler visar schemalagda kurser.
+          </p>
 
         <div class="paint-controls">
           <henry-button
@@ -181,7 +170,9 @@ export class TeacherAvailabilityTab extends LitElement {
           </henry-button>
           ${this.isPainting
             ? html`
-                <span style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">
+                <span
+                  style="color: var(--color-text-secondary); font-size: var(--font-size-sm);"
+                >
                   Klicka eller dra över celler för att markera/avmarkera. Klicka
                   på knappen igen för att avsluta.
                 </span>
@@ -191,15 +182,24 @@ export class TeacherAvailabilityTab extends LitElement {
 
         <div class="legend">
           <div class="legend-item">
-            <div class="legend-box" style="background: var(--color-success);"></div>
+            <div
+              class="legend-box"
+              style="background: var(--color-success);"
+            ></div>
             <span>Tilldelad kurs</span>
           </div>
           <div class="legend-item">
-            <div class="legend-box" style="background: var(--color-info);"></div>
+            <div
+              class="legend-box"
+              style="background: var(--color-info);"
+            ></div>
             <span>Kompatibel kurs (ej tilldelad)</span>
           </div>
           <div class="legend-item">
-            <div class="legend-box" style="background: var(--color-danger);"></div>
+            <div
+              class="legend-box"
+              style="background: var(--color-danger);"
+            ></div>
             <span>Upptagen/ej tillgänglig</span>
           </div>
         </div>
@@ -231,7 +231,8 @@ export class TeacherAvailabilityTab extends LitElement {
             </tbody>
           </table>
         </div>
-      </div>
+        </div>
+      </henry-panel>
     `;
   }
 
@@ -239,7 +240,9 @@ export class TeacherAvailabilityTab extends LitElement {
     return html`
       <tr>
         <td>
-          ${teacher.name}<br /><small style="color: var(--color-text-secondary);">
+          ${teacher.name}<br /><small
+            style="color: var(--color-text-secondary);"
+          >
             ${teacher.home_department}</small
           >
         </td>

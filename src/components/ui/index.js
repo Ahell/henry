@@ -13,6 +13,7 @@ export { HenryTextarea } from "./textarea.js";
 export { HenryCheckbox } from "./checkbox.js";
 export { HenryRadioGroup } from "./radio-group.js";
 export { HenryText } from "./text.js";
+export { HenryPanel } from "./panel.js";
 
 // Import all components to ensure they're registered
 import "./button.js";
@@ -24,3 +25,4 @@ import "./textarea.js";
 import "./checkbox.js";
 import "./radio-group.js";
 import "./text.js";
+import "./panel.js";
