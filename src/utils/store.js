@@ -836,16 +836,32 @@ export class DataStore {
   }
 
   toggleTeacherAvailabilityForSlot(teacherId, slotDate) {
-    // Check if there's already unavailability for this teacher on this slot
-    const existing = this.teacherAvailability.find(
+    // Check if there's a slot-level unavailability entry
+    const slotEntry = this.teacherAvailability.find(
       (a) => a.teacher_id === teacherId && a.from_date === slotDate
     );
 
-    if (existing) {
-      // Remove it
-      this.removeTeacherAvailability(existing.id);
+    if (slotEntry) {
+      // Remove slot-level entry
+      this.removeTeacherAvailability(slotEntry.id);
+      return;
+    }
+
+    // Check if ALL days are individually marked (happens when painting in detail view)
+    const days = this.getSlotDays(slotDate);
+    const dayEntries = days
+      .map(day => 
+        this.teacherAvailability.find(
+          (a) => a.teacher_id === teacherId && a.from_date === day && a.type === "busy"
+        )
+      )
+      .filter(Boolean);
+
+    if (dayEntries.length === days.length && days.length > 0) {
+      // All days are marked - remove them all
+      dayEntries.forEach(entry => this.removeTeacherAvailability(entry.id));
     } else {
-      // Add unavailability
+      // Add slot-level unavailability
       this.addTeacherAvailability({
         teacher_id: teacherId,
         from_date: slotDate,
@@ -876,12 +892,30 @@ export class DataStore {
   }
 
   isTeacherUnavailable(teacherId, slotDate) {
-    return this.teacherAvailability.some(
+    // Check if there's a slot-level unavailability entry
+    const hasSlotEntry = this.teacherAvailability.some(
       (a) =>
         a.teacher_id === teacherId &&
         a.from_date === slotDate &&
         a.type === "busy"
     );
+    
+    if (hasSlotEntry) return true;
+    
+    // Check if ALL days in the slot are individually marked as unavailable
+    const days = this.getSlotDays(slotDate);
+    if (days.length === 0) return false;
+    
+    const allDaysUnavailable = days.every((day) =>
+      this.teacherAvailability.some(
+        (a) =>
+          a.teacher_id === teacherId &&
+          a.from_date === day &&
+          a.type === "busy"
+      )
+    );
+    
+    return allDaysUnavailable;
   }
 
   // Check if teacher is unavailable on a specific day (for detail view)
