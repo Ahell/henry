@@ -175,7 +175,10 @@ export class TeachersTab extends LitElement {
         </form>
 
         <div slot="footer">
-          <henry-button variant="secondary" @click="${this.handleCancelTeacherEdit}">
+          <henry-button
+            variant="secondary"
+            @click="${this.handleCancelTeacherEdit}"
+          >
             Avbryt
           </henry-button>
           <henry-button

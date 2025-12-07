@@ -145,5 +145,11 @@ export function initializeEditState(component, editingProperty = "editingId") {
  * @param {LitElement} component - The component to subscribe
  */
 export function subscribeToStore(component) {
-  store.subscribe(() => component.requestUpdate());
+  store.subscribe(() => {
+    // Update cohorts array if it exists
+    if (component.cohorts !== undefined) {
+      component.cohorts = store.getCohorts();
+    }
+    component.requestUpdate();
+  });
 }

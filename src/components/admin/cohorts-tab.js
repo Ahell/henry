@@ -39,12 +39,24 @@ export class CohortsTab extends LitElement {
     editingCohortId: { type: Number },
     message: { type: String },
     messageType: { type: String },
+    cohorts: { type: Array },
   };
 
   constructor() {
     super();
     initializeEditState(this, "editingCohortId");
+    this.cohorts = store.getCohorts();
     subscribeToStore(this);
+  }
+
+  updated(changedProperties) {
+    // Update cohorts when component updates
+    if (
+      changedProperties.has("message") ||
+      changedProperties.has("editingCohortId")
+    ) {
+      this.cohorts = store.getCohorts();
+    }
   }
 
   render() {
@@ -88,8 +100,8 @@ export class CohortsTab extends LitElement {
           striped
           hoverable
           .columns="${this._getCohortTableColumns()}"
-          .data="${store
-            .getCohorts()
+          .data="${this.cohorts
+            .slice()
             .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))}"
           .renderCell="${(row, col) => this._renderCohortTableCell(row, col)}"
         ></henry-table>
@@ -106,7 +118,11 @@ export class CohortsTab extends LitElement {
     if (!cohort) return html``;
 
     return html`
-      <henry-modal open title="Redigera Kull" @close="${this.handleCancelCohortEdit}">
+      <henry-modal
+        open
+        title="Redigera Kull"
+        @close="${this.handleCancelCohortEdit}"
+      >
         <form @submit="${(e) => this._handleSaveFromModal(e)}">
           <div
             style="display: flex; flex-direction: column; gap: var(--space-4);"
@@ -140,7 +156,10 @@ export class CohortsTab extends LitElement {
         </form>
 
         <div slot="footer">
-          <henry-button variant="secondary" @click="${this.handleCancelCohortEdit}">
+          <henry-button
+            variant="secondary"
+            @click="${this.handleCancelCohortEdit}"
+          >
             Avbryt
           </henry-button>
           <henry-button
@@ -251,9 +270,9 @@ export class CohortsTab extends LitElement {
   async handleDeleteCohort(cohortId) {
     const cohort = store.getCohort(cohortId);
     if (!cohort) return;
-    
+
     const cohortName = cohort.name;
-    
+
     if (
       confirm(
         `Är du säker på att du vill ta bort kullen "${cohortName}"?\n\nDetta kommer också ta bort alla schemalagda kurstillfällen för denna kull.`
