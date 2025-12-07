@@ -35,41 +35,6 @@ export class TeachersTab extends LitElement {
       margin-bottom: var(--space-4);
     }
 
-    .form-group {
-      margin-bottom: 0;
-    }
-
-    label {
-      display: block;
-      font-weight: var(--font-weight-semibold);
-      margin-bottom: var(--space-2);
-      color: var(--color-text-primary);
-      font-size: var(--font-size-sm);
-    }
-
-    label .hint {
-      font-weight: var(--font-weight-normal);
-      color: var(--color-text-secondary);
-      font-size: var(--font-size-xs);
-    }
-
-    input,
-    select {
-      width: 100%;
-      padding: var(--input-padding-y) var(--input-padding-x);
-      border: var(--input-border-width) solid var(--color-border);
-      border-radius: var(--radius-base);
-      font-size: var(--font-size-sm);
-      transition: var(--transition-all);
-    }
-
-    input:focus,
-    select:focus {
-      outline: none;
-      border-color: var(--color-primary-500);
-      box-shadow: var(--input-focus-ring);
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -126,40 +91,37 @@ export class TeachersTab extends LitElement {
         <h3>Lägg till Ny Lärare</h3>
         <form @submit="${this.handleAddTeacher}">
           <div class="form-row">
-            <div class="form-group">
-              <label>Namn</label>
-              <input
-                type="text"
-                id="teacherName"
-                placeholder="Förnamn Efternamn"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label>Avdelning</label>
-              <select id="teacherDepartment" required>
-                <option value="">Välj avdelning...</option>
-                ${departments.map(
-                  (dept) => html`<option value="${dept}">${dept}</option>`
-                )}
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label
-              >Kompatibla kurser
-              <span class="hint">(Ctrl/Cmd+klick för flera)</span></label
+            <henry-input
+              id="teacherName"
+              label="Namn"
+              placeholder="Förnamn Efternamn"
+              required
+            ></henry-input>
+            <henry-select
+              id="teacherDepartment"
+              label="Avdelning"
+              placeholder="Välj avdelning..."
+              required
             >
-            <select id="teacherCourses" multiple size="6" style="height: auto;">
-              ${courses.map(
-                (course) => html`
-                  <option value="${course.course_id}">
-                    ${course.code} - ${course.name}
-                  </option>
-                `
+              ${departments.map(
+                (dept) => html`<option value="${dept}">${dept}</option>`
               )}
-            </select>
+            </henry-select>
           </div>
+          <henry-select
+            id="teacherCourses"
+            label="Kompatibla kurser (Ctrl/Cmd+klick för flera)"
+            multiple
+            size="6"
+          >
+            ${courses.map(
+              (course) => html`
+                <option value="${course.course_id}">
+                  ${course.code} - ${course.name}
+                </option>
+              `
+            )}
+          </henry-select>
           <henry-button type="submit" variant="primary">
             Lägg till Lärare
           </henry-button>
@@ -305,14 +267,14 @@ export class TeachersTab extends LitElement {
 
   handleAddTeacher(e) {
     e.preventDefault();
-    const coursesSelect = this.shadowRoot.querySelector("#teacherCourses");
+    const coursesSelect = this.shadowRoot.querySelector("#teacherCourses").getSelect();
     const selectedCourses = Array.from(coursesSelect.selectedOptions).map(
       (opt) => parseInt(opt.value)
     );
     const teacher = {
-      name: this.shadowRoot.querySelector("#teacherName").value,
+      name: this.shadowRoot.querySelector("#teacherName").getInput().value,
       home_department:
-        this.shadowRoot.querySelector("#teacherDepartment").value,
+        this.shadowRoot.querySelector("#teacherDepartment").getSelect().value,
       compatible_courses: selectedCourses,
     };
     store.addTeacher(teacher);

@@ -39,52 +39,6 @@ export class CoursesTab extends LitElement {
       grid-template-columns: 1fr 1fr;
     }
 
-    .form-group {
-      margin-bottom: 0;
-    }
-
-    label {
-      display: block;
-      font-weight: var(--font-weight-semibold);
-      margin-bottom: var(--space-2);
-      color: var(--color-text-primary);
-      font-size: var(--font-size-sm);
-    }
-
-    label .required {
-      color: var(--color-danger);
-      margin-left: 2px;
-    }
-
-    label .hint {
-      font-weight: var(--font-weight-normal);
-      color: var(--color-text-secondary);
-      font-size: var(--font-size-xs);
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      padding: var(--input-padding-y) var(--input-padding-x);
-      border: var(--input-border-width) solid var(--color-border);
-      border-radius: var(--radius-base);
-      font-size: var(--font-size-sm);
-      transition: var(--transition-all);
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      outline: none;
-      border-color: var(--color-primary-500);
-      box-shadow: var(--input-focus-ring);
-    }
-
-    .prerequisites-select {
-      min-height: 100px;
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -147,70 +101,59 @@ export class CoursesTab extends LitElement {
         <h3>➕ Lägg till Ny Kurs</h3>
         <form @submit="${this.handleAddCourse}">
           <div class="form-row two-cols">
-            <div class="form-group">
-              <label>Kurskod <span class="required">*</span></label>
-              <input
-                type="text"
-                id="courseCode"
-                placeholder="T.ex. AI180U"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label>Kursnamn <span class="required">*</span></label>
-              <input
-                type="text"
-                id="courseName"
-                placeholder="T.ex. Juridisk översiktskurs"
-                required
-              />
-            </div>
+            <henry-input
+              id="courseCode"
+              label="Kurskod"
+              placeholder="T.ex. AI180U"
+              required
+            ></henry-input>
+            <henry-input
+              id="courseName"
+              label="Kursnamn"
+              placeholder="T.ex. Juridisk översiktskurs"
+              required
+            ></henry-input>
           </div>
 
           <div class="form-row two-cols">
-            <div class="form-group">
-              <label>Blocklängd</label>
-              <select id="blockLength">
-                <option value="1">1 block (7.5 hp)</option>
-                <option value="2">2 block (15 hp)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label
-                >Spärrkurser
-                <span class="hint">(kurser som måste läsas före)</span></label
-              >
-              <select id="prerequisites" class="prerequisites-select" multiple>
-                ${store
-                  .getCourses()
-                  .map(
-                    (c) => html`
-                      <option value="${c.course_id}">
-                        ${c.code} - ${c.name}
-                      </option>
-                    `
-                  )}
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label
-              >Kompatibla lärare
-              <span class="hint">(Ctrl/Cmd+klick för flera)</span></label
+            <henry-select id="blockLength" label="Blocklängd">
+              <option value="1">1 block (7.5 hp)</option>
+              <option value="2">2 block (15 hp)</option>
+            </henry-select>
+            <henry-select
+              id="prerequisites"
+              label="Spärrkurser (kurser som måste läsas före)"
+              multiple
+              size="5"
             >
-            <select id="courseTeachers" multiple size="5" style="height: auto;">
               ${store
-                .getTeachers()
+                .getCourses()
                 .map(
-                  (teacher) => html`
-                    <option value="${teacher.teacher_id}">
-                      ${teacher.name}
+                  (c) => html`
+                    <option value="${c.course_id}">
+                      ${c.code} - ${c.name}
                     </option>
                   `
                 )}
-            </select>
+            </henry-select>
           </div>
+
+          <henry-select
+            id="courseTeachers"
+            label="Kompatibla lärare (Ctrl/Cmd+klick för flera)"
+            multiple
+            size="5"
+          >
+            ${store
+              .getTeachers()
+              .map(
+                (teacher) => html`
+                  <option value="${teacher.teacher_id}">
+                    ${teacher.name}
+                  </option>
+                `
+              )}
+          </henry-select>
 
           <div class="form-actions">
             <henry-button type="submit" variant="primary">
@@ -387,20 +330,20 @@ export class CoursesTab extends LitElement {
   handleAddCourse(e) {
     e.preventDefault();
     const blockLength = parseInt(
-      this.shadowRoot.querySelector("#blockLength").value
+      this.shadowRoot.querySelector("#blockLength").getSelect().value
     );
-    const prerequisitesSelect = this.shadowRoot.querySelector("#prerequisites");
+    const prerequisitesSelect = this.shadowRoot.querySelector("#prerequisites").getSelect();
     const prerequisites = Array.from(prerequisitesSelect.selectedOptions).map(
       (opt) => parseInt(opt.value)
     );
-    const teachersSelect = this.shadowRoot.querySelector("#courseTeachers");
+    const teachersSelect = this.shadowRoot.querySelector("#courseTeachers").getSelect();
     const selectedTeacherIds = Array.from(teachersSelect.selectedOptions).map(
       (opt) => parseInt(opt.value)
     );
 
     const course = {
-      code: this.shadowRoot.querySelector("#courseCode").value,
-      name: this.shadowRoot.querySelector("#courseName").value,
+      code: this.shadowRoot.querySelector("#courseCode").getInput().value,
+      name: this.shadowRoot.querySelector("#courseName").getInput().value,
       hp: blockLength * 7.5,
       default_block_length: blockLength,
       prerequisites: prerequisites,

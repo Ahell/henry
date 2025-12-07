@@ -35,33 +35,6 @@ export class CohortsTab extends LitElement {
       margin-bottom: var(--space-4);
     }
 
-    .form-group {
-      margin-bottom: 0;
-    }
-
-    label {
-      display: block;
-      font-weight: var(--font-weight-semibold);
-      margin-bottom: var(--space-2);
-      color: var(--color-text-primary);
-      font-size: var(--font-size-sm);
-    }
-
-    input {
-      width: 100%;
-      padding: var(--input-padding-y) var(--input-padding-x);
-      border: var(--input-border-width) solid var(--color-border);
-      border-radius: var(--radius-base);
-      font-size: var(--font-size-sm);
-      transition: var(--transition-all);
-    }
-
-    input:focus {
-      outline: none;
-      border-color: var(--color-primary-500);
-      box-shadow: var(--input-focus-ring);
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -115,20 +88,20 @@ export class CohortsTab extends LitElement {
         <h3>Lägg till Ny Kull</h3>
         <form @submit="${this.handleAddCohort}">
           <div class="form-row">
-            <div class="form-group">
-              <label>Startdatum</label>
-              <input type="date" id="cohortStartDate" required />
-            </div>
-            <div class="form-group">
-              <label>Planerat antal studenter</label>
-              <input
-                type="number"
-                id="cohortSize"
-                min="1"
-                placeholder="30"
-                required
-              />
-            </div>
+            <henry-input
+              id="cohortStartDate"
+              type="date"
+              label="Startdatum"
+              required
+            ></henry-input>
+            <henry-input
+              id="cohortSize"
+              type="number"
+              label="Planerat antal studenter"
+              min="1"
+              placeholder="30"
+              required
+            ></henry-input>
           </div>
           <henry-button type="submit" variant="primary">
             Lägg till Kull
@@ -240,9 +213,9 @@ export class CohortsTab extends LitElement {
 
   async handleAddCohort(e) {
     e.preventDefault();
-    const startDate = this.shadowRoot.querySelector("#cohortStartDate").value;
+    const startDate = this.shadowRoot.querySelector("#cohortStartDate").getInput().value;
     const plannedSize = parseInt(
-      this.shadowRoot.querySelector("#cohortSize").value
+      this.shadowRoot.querySelector("#cohortSize").getInput().value
     );
 
     const cohort = {
