@@ -906,7 +906,8 @@ export class DataStore {
     const days = this.getSlotDays(slotDate);
     if (days.length === 0) return false;
     
-    const allDaysUnavailable = days.every((day) =>
+    // Must have at least one unavailable day AND all days must be unavailable
+    const unavailableDays = days.filter((day) =>
       this.teacherAvailability.some(
         (a) =>
           a.teacher_id === teacherId &&
@@ -915,7 +916,7 @@ export class DataStore {
       )
     );
     
-    return allDaysUnavailable;
+    return unavailableDays.length > 0 && unavailableDays.length === days.length;
   }
 
   // Check if teacher is unavailable on a specific day (for detail view)
