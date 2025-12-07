@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { seedData } from "./seedData.js";
+import { seedData } from "../data/seedData.js";
 
 export class DataStore {
   constructor() {

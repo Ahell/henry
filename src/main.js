@@ -1,6 +1,6 @@
-import "./admin-panel.js";
-import "./report-viewer.js";
-import "./import-export.js";
+import "./components/admin-panel.js";
+import "./components/report-viewer.js";
+import "./components/import-export.js";
 
 // Handle navigation
 document.querySelectorAll(".nav-btn").forEach((btn) => {

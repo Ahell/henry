@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
-import { store } from "./store.js";
-import { seedData } from "./seedData.js";
+import { store } from "../utils/store.js";
+import { seedData } from "../data/seedData.js";
 
 export class ImportExport extends LitElement {
   static styles = css`

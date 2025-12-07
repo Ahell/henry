@@ -1,12 +1,12 @@
 import { LitElement, html, css } from "lit";
-import { store } from "./store.js";
+import { store } from "../utils/store.js";
 import "./report-viewer.js";
 import {
   validateLawPrerequisites,
   checkTeacherAvailability,
   calculatePlannedStudents,
   validateCapacity,
-} from "./businessRules.js";
+} from "../utils/businessRules.js";
 
 export class AdminPanel extends LitElement {
   static styles = css`
