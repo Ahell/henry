@@ -19,11 +19,8 @@ export class CoursesTab extends LitElement {
       box-shadow: var(--shadow-sm);
     }
 
-    h3 {
-      margin-top: 0;
+    .panel-header {
       margin-bottom: var(--space-6);
-      color: var(--color-text-primary);
-      font-size: var(--font-size-xl);
       padding-bottom: var(--space-3);
       border-bottom: 2px solid var(--color-border);
     }
@@ -98,7 +95,9 @@ export class CoursesTab extends LitElement {
         : ""}
 
       <div class="panel">
-        <h3>➕ Lägg till Ny Kurs</h3>
+        <div class="panel-header">
+          <henry-text variant="heading-3">➕ Lägg till Ny Kurs</henry-text>
+        </div>
         <form @submit="${this.handleAddCourse}">
           <div class="form-row two-cols">
             <henry-input
@@ -158,7 +157,9 @@ export class CoursesTab extends LitElement {
       </div>
 
       <div class="panel">
-        <h3>📚 Befintliga Kurser</h3>
+        <div class="panel-header">
+          <henry-text variant="heading-3">📚 Befintliga Kurser</henry-text>
+        </div>
         <table>
           <thead>
             <tr>

@@ -284,12 +284,75 @@ const value2 = radioGroup.value;
 ```
 
 **När ska man använda radio buttons istället för select?**
+
 - 2-5 alternativ som användaren bör se direkt
 - Viktiga val som inte ska döljas i en dropdown
 - När alla alternativ ryms på skärmen utan scrollning
 - För att minska antalet klick (ett klick istället för två)
 
-### 7. Henry Heading
+### 7. Henry Text
+
+**Standardiserad textkomponent** - Använd denna istället för direkta HTML-element (h1-h6, p, span) för att säkerställa konsekvent typografi i hela appen.
+
+**Attribut:**
+
+- `variant`: Text-stil variant
+  - `heading-1`, `heading-2`, `heading-3`, `heading-4` - Rubriker
+  - `body-large`, `body`, `body-small` - Brödtext
+  - `caption` - Bildtext/hjälptext
+  - `label` - Label-text
+- `color`: Färgvariant
+  - `primary` (default) - Normal textfärg
+  - `secondary` - Sekundär text
+  - `disabled` - Inaktiverad text
+  - `danger` - Felfärg
+  - `success` - Framgångsfärg
+- `align`: `left` (default), `center`, `right`
+- `bold`: Boolean - Fetstil
+- `as`: HTML-element att rendera som (override)
+
+**Användning:**
+
+```html
+<!-- Panel-rubriker -->
+<div class="panel-header">
+  <henry-text variant="heading-3">➕ Lägg till Ny Kurs</henry-text>
+</div>
+
+<!-- Olika rubriker -->
+<henry-text variant="heading-1">Huvudrubrik</henry-text>
+<henry-text variant="heading-2">Underrubrik</henry-text>
+<henry-text variant="heading-4">Liten rubrik</henry-text>
+
+<!-- Brödtext -->
+<henry-text variant="body">Normal text i standardstorlek</henry-text>
+<henry-text variant="body-large">Större brödtext</henry-text>
+<henry-text variant="body-small">Mindre text</henry-text>
+
+<!-- Text med färg -->
+<henry-text variant="caption" color="secondary">Hjälptext i grått</henry-text>
+<henry-text variant="body" color="danger">Felmeddelande</henry-text>
+<henry-text variant="body" color="success">Framgång!</henry-text>
+
+<!-- Fetstil och alignment -->
+<henry-text variant="body" bold>Viktigt meddelande</henry-text>
+<henry-text variant="heading-3" align="center">Centrerad rubrik</henry-text>
+
+<!-- Override element typ -->
+<henry-text variant="body" as="div">Text i div istället för p</henry-text>
+```
+
+**Varför använda henry-text?**
+
+- ✅ Ingen styling behövs i komponenter
+- ✅ Konsekvent typografi genom hela appen
+- ✅ Alla design tokens appliceras automatiskt
+- ✅ Enkel att ändra stil på alla texter globalt
+- ✅ Ingen duplicerad CSS i varje komponent
+
+### 8. Henry Heading
+
+**DEPRECATED** - Använd `henry-text` med `variant="heading-X"` istället.
 
 Används för rubriker.
 
@@ -305,7 +368,7 @@ Används för rubriker.
 <henry-heading level="h3" align="center">Välkommen</henry-heading>
 ```
 
-### 8. Henry Card
+### 9. Henry Card
 
 Används för kort/paneler.
 

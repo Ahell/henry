@@ -19,11 +19,8 @@ export class CohortsTab extends LitElement {
       box-shadow: var(--shadow-sm);
     }
 
-    h3 {
-      margin-top: 0;
+    .panel-header {
       margin-bottom: var(--space-6);
-      color: var(--color-text-primary);
-      font-size: var(--font-size-xl);
       padding-bottom: var(--space-3);
       border-bottom: 2px solid var(--color-border);
     }
@@ -85,7 +82,9 @@ export class CohortsTab extends LitElement {
         : ""}
 
       <div class="panel">
-        <h3>Lägg till Ny Kull</h3>
+        <div class="panel-header">
+          <henry-text variant="heading-3">Lägg till Ny Kull</henry-text>
+        </div>
         <form @submit="${this.handleAddCohort}">
           <div class="form-row">
             <henry-input
@@ -110,7 +109,9 @@ export class CohortsTab extends LitElement {
       </div>
 
       <div class="panel">
-        <h3>Befintliga Kullar</h3>
+        <div class="panel-header">
+          <henry-text variant="heading-3">Befintliga Kullar</henry-text>
+        </div>
         <table>
           <thead>
             <tr>
