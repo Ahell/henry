@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { seedData } from "../data/seedData.js";
+import { seedData } from "./seedData.js";
 
 export class DataStore {
   constructor() {
@@ -10,136 +10,66 @@ export class DataStore {
     this.courseRuns = [];
     this.teacherAvailability = [];
     this.prerequisiteProblems = [];
+    this.coursesWithoutTeachers = [];
     this.listeners = [];
+    this.apiBase = "http://localhost:3001/api";
 
-    // Load data from backend asynchronously
-    this.loadFromBackend();
+    // Load data from backend into memory
+    this.loadData();
   }
 
-  // Load data from backend
-  async loadFromBackend() {
+  // Load data from backend API
+  async loadData() {
     try {
-      const response = await fetch("http://localhost:3001/api/bulk-load");
+      const [courses, cohorts, teachers, slots, courseRuns, availability] =
+        await Promise.all([
+          fetch(`${this.apiBase}/courses`).then((r) => r.json()),
+          fetch(`${this.apiBase}/cohorts`).then((r) => r.json()),
+          fetch(`${this.apiBase}/teachers`).then((r) => r.json()),
+          fetch(`${this.apiBase}/slots`).then((r) => r.json()),
+          fetch(`${this.apiBase}/course-runs`).then((r) => r.json()),
+          fetch(`${this.apiBase}/teacher-availability`).then((r) => r.json()),
+        ]);
 
-      if (!response.ok) {
-        console.error("Backend load failed, using seed data");
-        this.importData(seedData);
+      // If no data exists, load seed data
+      if (!courses || courses.length === 0) {
+        await this.importData(seedData);
         return;
       }
 
-      const data = await response.json();
+      this.courses = courses;
+      this.cohorts = cohorts;
+      this.teachers = teachers;
+      this.slots = slots;
+      this.courseRuns = courseRuns;
+      this.teacherAvailability = availability;
 
-      // Check if any data exists
-      if (
-        (!data.courses || data.courses.length === 0) &&
-        (!data.cohorts || data.cohorts.length === 0) &&
-        (!data.teachers || data.teachers.length === 0) &&
-        (!data.slots || data.slots.length === 0)
-      ) {
-        console.log("No data in backend, loading seed data");
-        this.importData(seedData);
-        return;
-      }
+      // Fix cohorts without courses - assign all courses to them
+      this.cohorts.forEach((cohort) => {
+        if (!cohort.courses || cohort.courses.length === 0) {
+          cohort.courses = this.courses.map((c) => c.course_id);
+        }
+      });
 
-      // Load data from backend
-      this.courses = data.courses || [];
-      this.cohorts = data.cohorts || [];
-      this.teachers = data.teachers || [];
-      this.slots = data.slots || [];
-      this.courseRuns = data.courseRuns || [];
-      this.teacherAvailability = data.teacherAvailability || [];
+      // Renumber cohorts based on start date to ensure sequential naming
+      this.renumberCohorts();
 
-      // Validate and fix teacher assignments (ensure one course per teacher per slot)
+      // Validate and fix teacher assignments
       this.validateTeacherAssignments();
 
-      // Validate courses have available teachers (remove those that don't)
-      const removedCourses = this.validateCoursesHaveTeachers();
+      // Validate courses have available teachers
+      this.coursesWithoutTeachers = this.validateCoursesHaveTeachers();
 
       // Calculate prerequisite problems
       this.prerequisiteProblems = this.findCoursesWithMissingPrerequisites();
 
-      // Notify listeners that data is loaded
-      this.listeners.forEach((l) => l());
+      // Save updated data back to backend
+      await this.saveData();
 
-      if (removedCourses.length > 0) {
-        // Delay alert to after page load
-        setTimeout(() => {
-          let message = `Följande kurser flyttades till depån (ingen lärare tillgänglig):\n\n`;
-          message += removedCourses
-            .map(
-              (c) =>
-                `"${c.courseName}" (${c.courseCode}) för ${c.cohorts.join(
-                  ", "
-                )}`
-            )
-            .join("\n");
-
-          // Add prerequisite warnings if any
-          if (this.prerequisiteProblems.length > 0) {
-            message += `\n\n⚠️ VARNING: Följande kurser saknar nu sina spärrkurser:\n\n`;
-            const problemsByCourseCohort = new Map();
-            for (const p of this.prerequisiteProblems) {
-              const key = `${p.cohortName}-${p.courseCode}`;
-              if (!problemsByCourseCohort.has(key)) {
-                problemsByCourseCohort.set(key, {
-                  cohortName: p.cohortName,
-                  courseCode: p.courseCode,
-                  courseName: p.courseName,
-                  missingPrereqs: [],
-                });
-              }
-              problemsByCourseCohort
-                .get(key)
-                .missingPrereqs.push(p.missingPrereqCode);
-            }
-            message += Array.from(problemsByCourseCohort.values())
-              .map(
-                (p) =>
-                  `${p.cohortName}: "${
-                    p.courseName
-                  }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
-              )
-              .join("\n");
-          }
-
-          alert(message);
-        }, 100);
-        this.saveData(); // Save the changes
-      } else if (this.prerequisiteProblems.length > 0) {
-        // Show only prerequisite warnings if no courses were removed but there are issues
-        setTimeout(() => {
-          let message = `⚠️ VARNING: Följande kurser saknar sina spärrkurser:\n\n`;
-          const problemsByCourseCohort = new Map();
-          for (const p of this.prerequisiteProblems) {
-            const key = `${p.cohortName}-${p.courseCode}`;
-            if (!problemsByCourseCohort.has(key)) {
-              problemsByCourseCohort.set(key, {
-                cohortName: p.cohortName,
-                courseCode: p.courseCode,
-                courseName: p.courseName,
-                missingPrereqs: [],
-              });
-            }
-            problemsByCourseCohort
-              .get(key)
-              .missingPrereqs.push(p.missingPrereqCode);
-          }
-          message += Array.from(problemsByCourseCohort.values())
-            .map(
-              (p) =>
-                `${p.cohortName}: "${
-                  p.courseName
-                }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
-            )
-            .join("\n");
-
-          alert(message);
-        }, 100);
-      }
+      this.notify();
     } catch (error) {
-      console.error("Failed to load from backend:", error);
-      console.log("Loading seed data as fallback");
-      this.importData(seedData);
+      console.error("Error loading data from backend:", error);
+      await this.importData(seedData);
     }
   }
 
@@ -180,7 +110,7 @@ export class DataStore {
 
   // Remove courses that have no available teachers
   validateCoursesHaveTeachers() {
-    const removedCourses = [];
+    const coursesWithoutTeachers = [];
 
     // Group runs by slot and course
     const slotCourseRuns = new Map(); // "slotId-courseId" -> runs[]
@@ -229,34 +159,26 @@ export class DataStore {
       });
 
       if (availableTeachers.length === 0) {
-        // No available teachers - remove all runs for this course in this slot
+        // No available teachers - mark as problem but don't remove
         const course = this.getCourse(courseId);
         const affectedCohorts = runs
           .flatMap((r) => r.cohorts || [])
           .map((cohortId) => this.getCohort(cohortId)?.name)
           .filter(Boolean);
 
-        removedCourses.push({
+        coursesWithoutTeachers.push({
           courseName: course?.name || "Okänd kurs",
           courseCode: course?.code || "",
           courseId: courseId,
+          slotId: slotId,
+          slotDate: slotDate,
           cohorts: affectedCohorts,
           cohortIds: runs.flatMap((r) => r.cohorts || []),
         });
-
-        // Remove the runs
-        for (const run of runs) {
-          const index = this.courseRuns.findIndex(
-            (r) => r.run_id === run.run_id
-          );
-          if (index !== -1) {
-            this.courseRuns.splice(index, 1);
-          }
-        }
       }
     }
 
-    return removedCourses;
+    return coursesWithoutTeachers;
   }
 
   // Find courses that are missing their prerequisites
@@ -406,7 +328,7 @@ export class DataStore {
 
   notify() {
     this.validateTeacherAssignments();
-    const removedCourses = this.validateCoursesHaveTeachers();
+    this.coursesWithoutTeachers = this.validateCoursesHaveTeachers();
 
     // Get previous prerequisite problems to detect new ones
     const previousProblems = new Set(
@@ -415,7 +337,7 @@ export class DataStore {
       )
     );
 
-    // Check for prerequisite problems after removing courses
+    // Check for prerequisite problems
     this.prerequisiteProblems = this.findCoursesWithMissingPrerequisites();
 
     // Find NEW prerequisite problems (ones that weren't there before)
@@ -425,85 +347,17 @@ export class DataStore {
     );
 
     this.listeners.forEach((l) => l());
-    this.saveData();
 
-    // Show alert if courses were removed
-    if (removedCourses.length > 0) {
-      let message = `Följande kurser flyttades till depån (ingen lärare tillgänglig):\n\n`;
-      message += removedCourses
-        .map(
-          (c) =>
-            `"${c.courseName}" (${c.courseCode}) för ${c.cohorts.join(", ")}`
-        )
-        .join("\n");
-
-      // Add prerequisite warnings if any NEW problems exist
-      if (newProblems.length > 0) {
-        message += `\n\n⚠️ VARNING: Följande kurser saknar nu sina spärrkurser:\n\n`;
-        const problemsByCourseCohort = new Map();
-        for (const p of newProblems) {
-          const key = `${p.cohortName}-${p.courseCode}`;
-          if (!problemsByCourseCohort.has(key)) {
-            problemsByCourseCohort.set(key, {
-              cohortName: p.cohortName,
-              courseCode: p.courseCode,
-              courseName: p.courseName,
-              missingPrereqs: [],
-            });
-          }
-          problemsByCourseCohort
-            .get(key)
-            .missingPrereqs.push(p.missingPrereqCode);
-        }
-        message += Array.from(problemsByCourseCohort.values())
-          .map(
-            (p) =>
-              `${p.cohortName}: "${
-                p.courseName
-              }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
-          )
-          .join("\n");
-      }
-
-      alert(message);
-    } else if (newProblems.length > 0) {
-      // Show alert only for new prerequisite problems even if no courses were removed
-      let message = `⚠️ VARNING: Följande kurser saknar nu sina spärrkurser:\n\n`;
-      const problemsByCourseCohort = new Map();
-      for (const p of newProblems) {
-        const key = `${p.cohortName}-${p.courseCode}`;
-        if (!problemsByCourseCohort.has(key)) {
-          problemsByCourseCohort.set(key, {
-            cohortName: p.cohortName,
-            courseCode: p.courseCode,
-            courseName: p.courseName,
-            missingPrereqs: [],
-          });
-        }
-        problemsByCourseCohort
-          .get(key)
-          .missingPrereqs.push(p.missingPrereqCode);
-      }
-      message += Array.from(problemsByCourseCohort.values())
-        .map(
-          (p) =>
-            `${p.cohortName}: "${
-              p.courseName
-            }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
-        )
-        .join("\n");
-
-      alert(message);
-    }
+    // Note: Courses without teachers are now stored in this.coursesWithoutTeachers
+    // and displayed as warnings in the UI (not removed automatically)
   }
 
+  // Save data to backend API
   async saveData() {
     try {
-      const response = await fetch("http://localhost:3001/api/bulk-save", {
+      const response = await fetch(`${this.apiBase}/bulk-save`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           courses: this.courses,
           cohorts: this.cohorts,
@@ -515,29 +369,11 @@ export class DataStore {
       });
 
       if (!response.ok) {
-        throw new Error(`Backend save failed: ${response.statusText}`);
+        throw new Error(`Failed to save data: ${response.statusText}`);
       }
-
-      return await response.json();
     } catch (error) {
-      console.error("Failed to save to backend:", error);
-      throw error;
+      console.error("Error saving data to backend:", error);
     }
-  }
-
-  renumberCohorts() {
-    // Sort cohorts by start_date
-    const sortedCohorts = [...this.cohorts].sort(
-      (a, b) => new Date(a.start_date) - new Date(b.start_date)
-    );
-
-    // Assign sequential names
-    sortedCohorts.forEach((cohort, index) => {
-      cohort.name = `Kull ${index + 1}`;
-    });
-
-    // Update the cohorts array with the renamed cohorts
-    this.cohorts = sortedCohorts;
   }
 
   // Courses
@@ -616,28 +452,40 @@ export class DataStore {
 
   // Cohorts
   async addCohort(cohort) {
-    console.log("🟢 addCohort called with:", cohort);
     const id = Math.max(...this.cohorts.map((c) => c.cohort_id), 0) + 1;
+
+    // If courses not provided, assign all courses to the cohort
+    let courses = cohort.courses;
+    if (!courses || courses.length === 0) {
+      courses = this.courses.map((c) => c.course_id);
+    }
+
     const newCohort = {
       cohort_id: id,
-      name: cohort.name || "",
+      name: "", // Will be set by renumberCohorts
       start_date: cohort.start_date || "",
       planned_size: cohort.planned_size || 0,
+      courses: courses,
     };
     this.cohorts.push(newCohort);
-    console.log("🟢 Cohorts after push:", this.cohorts.length);
-
     this.renumberCohorts();
-    console.log(
-      "🟢 Cohorts after renumber:",
-      this.cohorts.map((c) => c.name)
-    );
-
-    console.log("🟢 Calling notify with", this.listeners.length, "listeners");
+    await this.saveData();
     this.notify();
-    console.log("🟢 addCohort complete");
     return newCohort;
   }
+
+  renumberCohorts() {
+    // Sort cohorts by start_date
+    const sortedCohorts = [...this.cohorts].sort((a, b) => {
+      return new Date(a.start_date) - new Date(b.start_date);
+    });
+
+    // Update names in sorted order
+    sortedCohorts.forEach((cohort, index) => {
+      cohort.name = `Kull ${index + 1}`;
+    });
+  }
+
   getCohorts() {
     return this.cohorts;
   }
@@ -646,16 +494,16 @@ export class DataStore {
     return this.cohorts.find((c) => c.cohort_id === cohortId);
   }
 
-  async updateCohort(cohortId, updates) {
+  updateCohort(cohortId, updates) {
     const index = this.cohorts.findIndex((c) => c.cohort_id === cohortId);
     if (index !== -1) {
+      const dateChanged =
+        updates.start_date &&
+        updates.start_date !== this.cohorts[index].start_date;
       this.cohorts[index] = { ...this.cohorts[index], ...updates };
-
-      // If start_date changed, renumber all cohorts
-      if (updates.start_date) {
+      if (dateChanged) {
         this.renumberCohorts();
       }
-
       this.notify();
       return this.cohorts[index];
     }
@@ -666,20 +514,14 @@ export class DataStore {
     const index = this.cohorts.findIndex((c) => c.cohort_id === cohortId);
     if (index !== -1) {
       this.cohorts.splice(index, 1);
-
-      // Remove this cohort from all course runs and cleanup empty runs
-      this.courseRuns = this.courseRuns.filter((run) => {
+      // Also remove this cohort from all course runs
+      this.courseRuns.forEach((run) => {
         if (run.cohorts) {
           run.cohorts = run.cohorts.filter((id) => id !== cohortId);
-          // Remove course run if it has no cohorts left
-          return run.cohorts.length > 0;
         }
-        return true;
       });
-
-      // Renumber remaining cohorts
       this.renumberCohorts();
-
+      await this.saveData();
       this.notify();
       return true;
     }
@@ -812,7 +654,6 @@ export class DataStore {
       teacher_id: availability.teacher_id,
       from_date: availability.from_date || "",
       to_date: availability.to_date || "",
-      slot_id: availability.slot_id || null, // Optional: for slot-level entries
       type: availability.type || "busy", // 'busy' eller 'free'
     };
     this.teacherAvailability.push(newAvailability);
@@ -838,54 +679,10 @@ export class DataStore {
     return false;
   }
 
-  toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId) {
-    // Check if there's a slot-level unavailability entry for THIS specific slot
-    const slotEntry = this.teacherAvailability.find(
-      (a) =>
-        a.teacher_id === teacherId &&
-        a.from_date === slotDate &&
-        a.slot_id === slotId
-    );
-
-    if (slotEntry) {
-      // Remove slot-level entry
-      this.removeTeacherAvailability(slotEntry.id);
-      return;
-    }
-
-    // Check if ALL days are individually marked (happens when painting in detail view)
-    const days = this.getSlotDays(slotId);
-    const dayEntries = days
-      .map((day) =>
-        this.teacherAvailability.find(
-          (a) =>
-            a.teacher_id === teacherId &&
-            a.from_date === day &&
-            a.type === "busy" &&
-            !a.slot_id // Day-level entries don't have slot_id
-        )
-      )
-      .filter(Boolean);
-
-    if (dayEntries.length === days.length && days.length > 0) {
-      // All days are marked - remove them all
-      dayEntries.forEach((entry) => this.removeTeacherAvailability(entry.id));
-    } else {
-      // Add slot-level unavailability
-      this.addTeacherAvailability({
-        teacher_id: teacherId,
-        from_date: slotDate,
-        to_date: slotDate,
-        slot_id: slotId,
-        type: "busy",
-      });
-    }
-  }
-
-  toggleTeacherAvailabilityForDay(teacherId, dateStr) {
-    // Check if there's already unavailability for this teacher on this day
+  toggleTeacherAvailabilityForSlot(teacherId, slotDate) {
+    // Check if there's already unavailability for this teacher on this slot
     const existing = this.teacherAvailability.find(
-      (a) => a.teacher_id === teacherId && a.from_date === dateStr
+      (a) => a.teacher_id === teacherId && a.from_date === slotDate
     );
 
     if (existing) {
@@ -895,128 +692,24 @@ export class DataStore {
       // Add unavailability
       this.addTeacherAvailability({
         teacher_id: teacherId,
-        from_date: dateStr,
-        to_date: dateStr,
+        from_date: slotDate,
+        to_date: slotDate,
         type: "busy",
       });
     }
   }
 
-  isTeacherUnavailable(teacherId, slotDate, slotId = null) {
-    // Check if there's a slot-level unavailability entry
-    const hasSlotEntry = this.teacherAvailability.some(
-      (a) =>
-        a.teacher_id === teacherId &&
-        a.from_date === slotDate &&
-        a.type === "busy" &&
-        a.slot_id && // Is a slot-level entry
-        (slotId === null || a.slot_id === slotId) // Match specific slot if provided
-    );
-
-    if (hasSlotEntry) return true;
-
-    // Check if ALL days in the slot are individually marked as unavailable
-    const days = this.getSlotDays(slotId || slotDate);
-    if (days.length === 0) return false;
-
-    // Must have at least one unavailable day AND all days must be unavailable
-    const unavailableDays = days.filter((day) =>
-      this.teacherAvailability.some(
-        (a) =>
-          a.teacher_id === teacherId &&
-          a.from_date === day &&
-          a.type === "busy" &&
-          !a.slot_id // Only count day-level entries
-      )
-    );
-
-    return unavailableDays.length > 0 && unavailableDays.length === days.length;
-  }
-
-  // Check if teacher is unavailable on a specific day (for detail view)
-  isTeacherUnavailableOnDay(teacherId, dateStr) {
+  isTeacherUnavailable(teacherId, slotDate) {
     return this.teacherAvailability.some(
       (a) =>
         a.teacher_id === teacherId &&
-        a.from_date === dateStr &&
+        a.from_date === slotDate &&
         a.type === "busy"
     );
   }
 
-  // Get percentage of days in a slot where teacher is unavailable (0.0 to 1.0)
-  getTeacherUnavailablePercentageForSlot(teacherId, slotDate, slotId = null) {
-    // Check if there's a slot-level unavailability entry (100%)
-    const hasSlotEntry = this.teacherAvailability.some(
-      (a) =>
-        a.teacher_id === teacherId &&
-        a.from_date === slotDate &&
-        a.type === "busy" &&
-        a.slot_id && // Is a slot-level entry
-        (slotId === null || a.slot_id === slotId) // Match specific slot if provided
-    );
-
-    if (hasSlotEntry) return 1.0; // 100% unavailable
-
-    // Check individual days
-    const days = this.getSlotDays(slotId || slotDate);
-    if (days.length === 0) return 0;
-
-    const unavailableDays = days.filter((day) =>
-      this.teacherAvailability.some(
-        (a) =>
-          a.teacher_id === teacherId &&
-          a.from_date === day &&
-          a.type === "busy" &&
-          !a.slot_id // Only count day-level entries
-      )
-    );
-
-    return unavailableDays.length / days.length;
-  }
-
-  // Get all individual days within a slot (for detail view)
-  getSlotDays(slotDateOrId) {
-    // Support both slot_id (number) and start_date (string)
-    const slot =
-      typeof slotDateOrId === "number"
-        ? this.slots.find((s) => s.slot_id === slotDateOrId)
-        : this.slots.find((s) => s.start_date === slotDateOrId);
-
-    if (!slot) return [];
-
-    // Find the slot's end date (next slot's start date or add 4 weeks)
-    const allSlots = this.slots.sort((a, b) => {
-      const dateA = new Date(a.start_date);
-      const dateB = new Date(b.start_date);
-      return dateA.getTime() - dateB.getTime();
-    });
-
-    const slotIndex = allSlots.findIndex((s) => s.slot_id === slot.slot_id);
-    let endDate;
-
-    if (slotIndex >= 0 && slotIndex < allSlots.length - 1) {
-      // Use next slot's start date as end date
-      endDate = new Date(allSlots[slotIndex + 1].start_date);
-    } else {
-      // Last slot: add 4 weeks
-      endDate = new Date(slot.start_date);
-      endDate.setDate(endDate.getDate() + 28);
-    }
-
-    // Generate array of all days between start and end
-    const days = [];
-    const currentDate = new Date(slot.start_date);
-
-    while (currentDate < endDate) {
-      days.push(currentDate.toISOString().split("T")[0]);
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return days;
-  }
-
   // Import from Excel/JSON
-  importData(data) {
+  async importData(data) {
     if (data.courses) {
       data.courses.forEach((c) => this.addCourse(c));
 
@@ -1040,7 +733,23 @@ export class DataStore {
       }
     }
     if (data.cohorts) {
-      data.cohorts.forEach((c) => this.addCohort(c));
+      // Add cohorts directly to memory without saving each time
+      data.cohorts.forEach((c) => {
+        const id = Math.max(...this.cohorts.map((ch) => ch.cohort_id), 0) + 1;
+        let courses = c.courses;
+        if (!courses || courses.length === 0) {
+          courses = this.courses.map((course) => course.course_id);
+        }
+        this.cohorts.push({
+          cohort_id: id,
+          name: c.name || "",
+          start_date: c.start_date || "",
+          planned_size: c.planned_size || 0,
+          courses: courses,
+        });
+      });
+      // Renumber cohorts after all are added
+      this.renumberCohorts();
     }
     if (data.teachers) {
       data.teachers.forEach((t) => this.addTeacher(t));
@@ -1054,6 +763,9 @@ export class DataStore {
     if (data.teacherAvailability) {
       data.teacherAvailability.forEach((a) => this.addTeacherAvailability(a));
     }
+
+    // Save all data to backend once after import
+    await this.saveData();
     this.notify();
   }
 
@@ -1088,7 +800,7 @@ export class DataStore {
       // courseRuns intentionally omitted - each cohort starts fresh
       teacherAvailability: seedData.teacherAvailability,
     };
-    this.importData(seedDataWithoutRuns);
+    await this.importData(seedDataWithoutRuns);
   }
 }
 

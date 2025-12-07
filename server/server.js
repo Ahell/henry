@@ -310,20 +310,28 @@ app.post("/api/teacher-availability", (req, res) => {
 // BULK OPERATIONS
 app.get("/api/bulk-load", (req, res) => {
   try {
-    const courses = db.prepare("SELECT * FROM courses").all()
+    const courses = db
+      .prepare("SELECT * FROM courses")
+      .all()
       .map((c) => deserializeArrayFields(c, ["prerequisites"]));
-    
-    const cohorts = db.prepare("SELECT * FROM cohorts").all()
+
+    const cohorts = db
+      .prepare("SELECT * FROM cohorts")
+      .all()
       .map((c) => deserializeArrayFields(c, ["courses"]));
-    
-    const teachers = db.prepare("SELECT * FROM teachers").all()
+
+    const teachers = db
+      .prepare("SELECT * FROM teachers")
+      .all()
       .map((t) => deserializeArrayFields(t, ["compatible_courses"]));
-    
+
     const slots = db.prepare("SELECT * FROM slots").all();
-    
-    const courseRuns = db.prepare("SELECT * FROM course_runs").all()
+
+    const courseRuns = db
+      .prepare("SELECT * FROM course_runs")
+      .all()
       .map((r) => deserializeArrayFields(r, ["cohorts", "teachers"]));
-    
+
     const availability = db.prepare("SELECT * FROM teacher_availability").all();
     // Convert database format to application format (array of availability objects)
     // Need to include both slot_id (for DB operations) and from_date (for app logic)
@@ -453,7 +461,7 @@ app.post("/api/bulk-save", (req, res) => {
       const stmt = db.prepare(
         "INSERT OR REPLACE INTO teacher_availability (id, teacher_id, slot_id, available) VALUES (?, ?, ?, ?)"
       );
-      
+
       // Handle both array format (from store) and object format (legacy)
       if (Array.isArray(teacherAvailability)) {
         // Array format: { id, teacher_id, from_date, to_date, type, slot_id }

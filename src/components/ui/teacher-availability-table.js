@@ -18,6 +18,7 @@ export class TeacherAvailabilityTable extends LitElement {
     _isMouseDown: { type: Boolean },
     _paintMode: { type: String }, // 'add' or 'remove'
     _detailSlotDate: { type: String }, // Set when in detail view for a specific slot
+    _detailSlotId: { type: Number }, // The specific slot_id being viewed in detail
   };
 
   static styles = css`
@@ -241,8 +242,8 @@ export class TeacherAvailabilityTable extends LitElement {
   }
 
   _renderDetailView() {
-    const days = store.getSlotDays(this._detailSlotDate);
-    const slot = this.slots.find((s) => s.start_date === this._detailSlotDate);
+    const days = store.getSlotDays(this._detailSlotId);
+    const slot = this.slots.find((s) => s.slot_id === this._detailSlotId);
 
     return html`
       <div class="detail-view-header">
@@ -308,18 +309,30 @@ export class TeacherAvailabilityTable extends LitElement {
       teacher.teacher_id,
       dateStr
     );
-    
+
+    if (dateStr === "2025-01-17" && teacher.teacher_id === 1) {
+      console.log("🎨 Rendering 2025-01-17 for teacher 1:", isUnavailable);
+    }
+
     // If not, check if the entire slot is marked as unavailable (slot-level entry)
-    if (!isUnavailable && this._detailSlotDate) {
+    if (!isUnavailable && this._detailSlotDate && this._detailSlotId) {
       const hasSlotEntry = store.teacherAvailability.some(
         (a) =>
           a.teacher_id === teacher.teacher_id &&
           a.from_date === this._detailSlotDate &&
+          a.slot_id === this._detailSlotId &&
           a.type === "busy"
       );
       if (hasSlotEntry) {
         isUnavailable = true;
+        if (dateStr === "2025-01-17" && teacher.teacher_id === 1) {
+          console.log("🔴 Found slot entry, marking as unavailable");
+        }
       }
+    }
+
+    if (dateStr === "2025-01-17" && teacher.teacher_id === 1) {
+      console.log("✅ Final isUnavailable:", isUnavailable);
     }
 
     let cellClass = "teacher-cell";
@@ -347,6 +360,7 @@ export class TeacherAvailabilityTable extends LitElement {
 
   _exitDetailView() {
     this._detailSlotDate = null;
+    this._detailSlotId = null;
     this.requestUpdate();
   }
 
@@ -366,15 +380,19 @@ export class TeacherAvailabilityTable extends LitElement {
     const year = d.getFullYear().toString().slice(-2);
     return html`<th
       class="slot-header"
-      @click="${() => this._enterDetailView(date)}"
+      @click="${(e) => {
+        const slot = this.slots.find((s) => s.start_date === date);
+        this._enterDetailView(date, slot?.slot_id);
+      }}"
       title="Klicka för att se dag-för-dag-vy"
     >
       ${day} ${month}<br />${year}
     </th>`;
   }
 
-  _enterDetailView(slotDate) {
+  _enterDetailView(slotDate, slotId) {
     this._detailSlotDate = slotDate;
+    this._detailSlotId = slotId;
     this.requestUpdate();
   }
 
@@ -416,13 +434,15 @@ export class TeacherAvailabilityTable extends LitElement {
     const isAssigned = assignedRuns.length > 0;
     const isUnavailable = store.isTeacherUnavailable(
       teacher.teacher_id,
-      slotDate
+      slotDate,
+      slot.slot_id
     );
 
     // Check if partially unavailable (has some days marked as busy in detail view)
     const unavailablePercentage = store.getTeacherUnavailablePercentageForSlot(
       teacher.teacher_id,
-      slotDate
+      slotDate,
+      slot.slot_id
     );
     const isPartiallyUnavailable =
       unavailablePercentage > 0 && unavailablePercentage < 1;
@@ -479,6 +499,7 @@ export class TeacherAvailabilityTable extends LitElement {
           class="${cellClass}"
           data-teacher-id="${teacher.teacher_id}"
           data-slot-date="${slotDate}"
+          data-slot-id="${slot.slot_id}"
           data-is-locked="${isPartiallyUnavailable}"
           @mousedown="${this._handleCellMouseDown}"
           @mouseenter="${this._handleCellMouseEnter}"
@@ -502,63 +523,70 @@ export class TeacherAvailabilityTable extends LitElement {
     if (isDetailView) {
       // Detail view: working with specific days
       const date = cell.dataset.date;
-      
-      // Check if this day is unavailable (either day-level or slot-level)
-      let isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(
-        teacherId,
-        date
-      );
-      
-      // If not a day-level entry, check if there's a slot-level entry
-      if (!isCurrentlyUnavailable && this._detailSlotDate) {
-        const hasSlotEntry = store.teacherAvailability.some(
+
+      // First check if there's a slot-level entry for THIS specific slot
+      let hasSlotEntry = false;
+      if (this._detailSlotDate && this._detailSlotId) {
+        hasSlotEntry = store.teacherAvailability.some(
           (a) =>
             a.teacher_id === teacherId &&
             a.from_date === this._detailSlotDate &&
+            a.slot_id === this._detailSlotId &&
             a.type === "busy"
         );
-        if (hasSlotEntry) {
-          isCurrentlyUnavailable = true;
-          
-          // Convert slot-level entry to individual day entries
-          // Remove the slot-level entry
-          const slotEntry = store.teacherAvailability.find(
-            (a) =>
-              a.teacher_id === teacherId &&
-              a.from_date === this._detailSlotDate &&
-              a.type === "busy"
-          );
-          if (slotEntry) {
-            store.removeTeacherAvailability(slotEntry.id);
-          }
-          
-          // Add individual entries for all OTHER days in the slot
-          const days = store.getSlotDays(this._detailSlotDate);
-          days.forEach((day) => {
-            if (day !== date) {
-              // Add entry for all days except the one being clicked
-              store.addTeacherAvailability({
-                teacher_id: teacherId,
-                from_date: day,
-                to_date: day,
-                type: "busy",
-              });
-            }
-          });
-          
-          // Now set paint mode to remove (since we already handled this click)
-          this._paintMode = "remove";
-          this._isMouseDown = true;
-          this.requestUpdate();
-          
-          this.dispatchEvent(
-            new CustomEvent("availability-changed", {
-              detail: { teacherId, date, unavailable: false },
-            })
-          );
-          return;
-        }
       }
+
+      if (hasSlotEntry) {
+        // There's a slot-level entry, convert it to individual day entries
+        // Remove the slot-level entry
+        const slotEntry = store.teacherAvailability.find(
+          (a) =>
+            a.teacher_id === teacherId &&
+            a.from_date === this._detailSlotDate &&
+            a.slot_id === this._detailSlotId &&
+            a.type === "busy"
+        );
+        if (slotEntry) {
+          console.log("🗑️ Removing slot entry:", slotEntry.id);
+          store.removeTeacherAvailability(slotEntry.id);
+        }
+
+        // Add individual entries for all OTHER days in the slot
+        const days = store.getSlotDays(this._detailSlotId);
+        console.log("📅 Days in slot:", days.length, "Clicked date:", date);
+        days.forEach((day) => {
+          if (day !== date) {
+            // Add entry for all days except the one being clicked
+            console.log("➕ Adding day entry for:", day);
+            store.addTeacherAvailability({
+              teacher_id: teacherId,
+              from_date: day,
+              to_date: day,
+              type: "busy",
+            });
+          } else {
+            console.log("⏭️ Skipping clicked day:", day);
+          }
+        });
+
+        // Set paint mode to remove (since we just unmarked this day)
+        this._paintMode = "remove";
+        this._isMouseDown = true;
+        this.requestUpdate();
+
+        this.dispatchEvent(
+          new CustomEvent("availability-changed", {
+            detail: { teacherId, date, unavailable: false },
+          })
+        );
+        return;
+      }
+
+      // No slot-level entry, check day-level
+      const isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(
+        teacherId,
+        date
+      );
 
       this._paintMode = isCurrentlyUnavailable ? "remove" : "add";
 
@@ -576,6 +604,7 @@ export class TeacherAvailabilityTable extends LitElement {
     } else {
       // Slot view: working with entire slots
       const slotDate = cell.dataset.slotDate;
+      const slotId = parseInt(cell.dataset.slotId);
 
       // Check if cell is locked (has day-specific availability data)
       const isLocked = cell.dataset.isLocked === "true";
@@ -585,7 +614,8 @@ export class TeacherAvailabilityTable extends LitElement {
 
       const isCurrentlyUnavailable = store.isTeacherUnavailable(
         teacherId,
-        slotDate
+        slotDate,
+        slotId
       );
 
       this._paintMode = isCurrentlyUnavailable ? "remove" : "add";
@@ -594,7 +624,7 @@ export class TeacherAvailabilityTable extends LitElement {
         this._removeTeacherFromRunsInSlot(teacherId, slotDate);
       }
 
-      store.toggleTeacherAvailabilityForSlot(teacherId, slotDate);
+      store.toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId);
       this._isMouseDown = true;
 
       // Force immediate re-render
@@ -618,13 +648,13 @@ export class TeacherAvailabilityTable extends LitElement {
     if (isDetailView) {
       // Detail view: working with specific days
       const date = cell.dataset.date;
-      
+
       // Check if this day is unavailable (either day-level or slot-level)
       let isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(
         teacherId,
         date
       );
-      
+
       // If not a day-level entry, check if there's a slot-level entry
       if (!isCurrentlyUnavailable && this._detailSlotDate) {
         const hasSlotEntry = store.teacherAvailability.some(
@@ -668,7 +698,7 @@ export class TeacherAvailabilityTable extends LitElement {
       } else if (this._paintMode === "remove" && isCurrentlyUnavailable) {
         // Check if this is from a slot-level entry
         const isDayLevel = store.isTeacherUnavailableOnDay(teacherId, date);
-        
+
         if (!isDayLevel && this._detailSlotDate) {
           // This is a slot-level entry, need to convert it
           const slotEntry = store.teacherAvailability.find(
@@ -679,7 +709,7 @@ export class TeacherAvailabilityTable extends LitElement {
           );
           if (slotEntry) {
             store.removeTeacherAvailability(slotEntry.id);
-            
+
             // Add individual entries for all OTHER days
             const days = store.getSlotDays(this._detailSlotDate);
             days.forEach((day) => {
@@ -709,6 +739,7 @@ export class TeacherAvailabilityTable extends LitElement {
     } else {
       // Slot view: working with entire slots
       const slotDate = cell.dataset.slotDate;
+      const slotId = parseInt(cell.dataset.slotId);
 
       // Check if cell is locked (has day-specific availability data)
       const isLocked = cell.dataset.isLocked === "true";
@@ -718,12 +749,13 @@ export class TeacherAvailabilityTable extends LitElement {
 
       const isCurrentlyUnavailable = store.isTeacherUnavailable(
         teacherId,
-        slotDate
+        slotDate,
+        slotId
       );
 
       if (this._paintMode === "add" && !isCurrentlyUnavailable) {
         this._removeTeacherFromRunsInSlot(teacherId, slotDate);
-        store.toggleTeacherAvailabilityForSlot(teacherId, slotDate);
+        store.toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId);
 
         // Force immediate re-render
         this.requestUpdate();
@@ -734,7 +766,7 @@ export class TeacherAvailabilityTable extends LitElement {
           })
         );
       } else if (this._paintMode === "remove" && isCurrentlyUnavailable) {
-        store.toggleTeacherAvailabilityForSlot(teacherId, slotDate);
+        store.toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId);
 
         // Force immediate re-render
         this.requestUpdate();
