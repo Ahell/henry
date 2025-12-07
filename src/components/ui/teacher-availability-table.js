@@ -303,10 +303,24 @@ export class TeacherAvailabilityTable extends LitElement {
   }
 
   _renderDayCell(teacher, dateStr) {
-    const isUnavailable = store.isTeacherUnavailableOnDay(
+    // Check if this specific day is unavailable
+    let isUnavailable = store.isTeacherUnavailableOnDay(
       teacher.teacher_id,
       dateStr
     );
+    
+    // If not, check if the entire slot is marked as unavailable (slot-level entry)
+    if (!isUnavailable && this._detailSlotDate) {
+      const hasSlotEntry = store.teacherAvailability.some(
+        (a) =>
+          a.teacher_id === teacher.teacher_id &&
+          a.from_date === this._detailSlotDate &&
+          a.type === "busy"
+      );
+      if (hasSlotEntry) {
+        isUnavailable = true;
+      }
+    }
 
     let cellClass = "teacher-cell";
     let titleText = dateStr;
