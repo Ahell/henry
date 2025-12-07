@@ -864,6 +864,59 @@ export class DataStore {
     );
   }
 
+  // Get percentage of days in a slot where teacher is unavailable (0.0 to 1.0)
+  getTeacherUnavailablePercentageForSlot(teacherId, slotDate) {
+    const days = this.getSlotDays(slotDate);
+    if (days.length === 0) return 0;
+
+    const unavailableDays = days.filter((day) =>
+      this.teacherAvailability.some(
+        (a) =>
+          a.teacher_id === teacherId &&
+          a.from_date === day &&
+          a.type === "busy"
+      )
+    );
+
+    return unavailableDays.length / days.length;
+  }
+
+  // Get all individual days within a slot (for detail view)
+  getSlotDays(slotDate) {
+    const slot = this.slots.find((s) => s.start_date === slotDate);
+    if (!slot) return [];
+
+    // Find the slot's end date (next slot's start date or add 4 weeks)
+    const allSlots = this.slots.sort((a, b) => {
+      const dateA = new Date(a.start_date);
+      const dateB = new Date(b.start_date);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    const slotIndex = allSlots.findIndex((s) => s.slot_id === slot.slot_id);
+    let endDate;
+
+    if (slotIndex >= 0 && slotIndex < allSlots.length - 1) {
+      // Use next slot's start date as end date
+      endDate = new Date(allSlots[slotIndex + 1].start_date);
+    } else {
+      // Last slot: add 4 weeks
+      endDate = new Date(slot.start_date);
+      endDate.setDate(endDate.getDate() + 28);
+    }
+
+    // Generate array of all days between start and end
+    const days = [];
+    const currentDate = new Date(slot.start_date);
+    
+    while (currentDate < endDate) {
+      days.push(currentDate.toISOString().split("T")[0]);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return days;
+  }
+
   // Import from Excel/JSON
   importData(data) {
     if (data.courses) {
