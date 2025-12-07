@@ -1,7 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { store } from "../../utils/store.js";
 import "../ui/index.js";
-import "../henry-panel.js";
 import "./gantt-depot.js";
 import "./gantt-cell.js";
 import "./gantt-summary-row.js";
