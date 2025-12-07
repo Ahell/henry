@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { store } from "../utils/store.js";
 import "./report-viewer.js";
+import "./ui/index.js";
 import {
   validateLawPrerequisites,
   checkTeacherAvailability,

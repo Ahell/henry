@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { store } from "../utils/store.js";
+import "./ui/index.js";
 
 export class ReportViewer extends LitElement {
   static styles = css`
