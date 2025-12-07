@@ -1958,7 +1958,10 @@ export class ReportViewer extends LitElement {
     // Validate: Can this course be removed?
     const validationResult = this.validateCourseRemoval(course, targetCohortId);
     if (!validationResult.valid) {
-      alert(validationResult.message);
+      console.log(
+        "Course removal validation failed:",
+        validationResult.message
+      );
       return;
     }
 
@@ -2558,7 +2561,10 @@ export class ReportViewer extends LitElement {
     console.log("Validation result:", validationResult);
 
     if (!validationResult.valid) {
-      alert(validationResult.message);
+      console.log(
+        "Course assignment validation failed:",
+        validationResult.message
+      );
       return;
     }
 
@@ -2571,7 +2577,7 @@ export class ReportViewer extends LitElement {
       );
 
       if (availableTeachersBlock1.length === 0) {
-        alert(
+        console.log(
           `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 1.`
         );
         return;
@@ -2588,7 +2594,7 @@ export class ReportViewer extends LitElement {
         (s) => s.start_date === targetSlotDate
       );
       if (currentSlotIndex < 0 || currentSlotIndex >= slots.length - 1) {
-        alert(
+        console.log(
           `Kan inte placera "${course.name}" - det finns inget block 2 efter denna period.`
         );
         return;
@@ -2602,7 +2608,7 @@ export class ReportViewer extends LitElement {
       );
 
       if (availableTeachersBlock2.length === 0) {
-        alert(
+        console.log(
           `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 2.`
         );
         return;
@@ -2827,7 +2833,7 @@ export class ReportViewer extends LitElement {
     // Show notification
     const cohortText =
       affectedCohorts.length > 0 ? ` för ${affectedCohorts.join(", ")}` : "";
-    alert(
+    console.log(
       `"${courseName}" har flyttats tillbaka till depån${cohortText} eftersom ingen lärare är tillgänglig.`
     );
   }
@@ -2844,7 +2850,7 @@ export class ReportViewer extends LitElement {
 
     // Prevent moving courses between different cohorts
     if (fromCohortId !== targetCohortId) {
-      alert("Kurser kan inte flyttas mellan olika kullar.");
+      console.log("Kurser kan inte flyttas mellan olika kullar.");
       return;
     }
 
@@ -2862,7 +2868,7 @@ export class ReportViewer extends LitElement {
       targetCohortId
     );
     if (!validationResult.valid) {
-      alert(validationResult.message);
+      console.log("Prerequisites validation failed:", validationResult.message);
       return;
     }
 
@@ -2877,7 +2883,7 @@ export class ReportViewer extends LitElement {
       );
 
       if (availableTeachersBlock1.length === 0) {
-        alert(
+        console.log(
           `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 1.`
         );
         return;
@@ -2894,7 +2900,7 @@ export class ReportViewer extends LitElement {
         (s) => s.start_date === targetSlotDate
       );
       if (currentSlotIndex < 0 || currentSlotIndex >= slots.length - 1) {
-        alert(
+        console.log(
           `Kan inte placera "${course.name}" - det finns inget block 2 efter denna period.`
         );
         return;
@@ -2908,7 +2914,7 @@ export class ReportViewer extends LitElement {
       );
 
       if (availableTeachersBlock2.length === 0) {
-        alert(
+        console.log(
           `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 2.`
         );
         return;

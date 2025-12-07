@@ -1167,7 +1167,7 @@ export class AdminPanel extends LitElement {
     }
   }
 
-  handleAddCohort(e) {
+  async handleAddCohort(e) {
     e.preventDefault();
     const cohort = {
       start_date: this.shadowRoot.querySelector("#cohortStartDate").value,
@@ -1175,10 +1175,11 @@ export class AdminPanel extends LitElement {
         this.shadowRoot.querySelector("#cohortSize").value
       ),
     };
-    store.addCohort(cohort);
+    await store.addCohort(cohort);
     this.message = "Kull tillagd!";
     this.messageType = "success";
     this.shadowRoot.querySelector("form").reset();
+    this.requestUpdate();
     setTimeout(() => {
       this.message = "";
     }, 3000);
@@ -1213,23 +1214,19 @@ export class AdminPanel extends LitElement {
     }, 3000);
   }
 
-  handleDeleteCohort(cohortId, cohortName) {
-    console.log("handleDeleteCohort called with:", cohortId, cohortName);
+  async handleDeleteCohort(cohortId, cohortName) {
     if (
       confirm(
         `Är du säker på att du vill ta bort kullen "${cohortName}"?\n\nDetta kommer även ta bort kullen från alla kurstillfällen.`
       )
     ) {
-      console.log("User confirmed deletion, calling store.deleteCohort");
-      store.deleteCohort(cohortId);
-      console.log("store.deleteCohort returned");
+      await store.deleteCohort(cohortId);
       this.message = "Kull borttagen!";
       this.messageType = "success";
+      this.requestUpdate();
       setTimeout(() => {
         this.message = "";
       }, 3000);
-    } else {
-      console.log("User cancelled deletion");
     }
   }
 
