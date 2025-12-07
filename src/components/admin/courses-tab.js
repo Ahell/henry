@@ -1,5 +1,16 @@
 import { LitElement, html, css } from "lit";
 import { store } from "../../utils/store.js";
+import {
+  getInputValue,
+  getSelectValues,
+  getRadioValue,
+  resetForm,
+  showSuccessMessage,
+  addCourseToTeachers,
+  syncCourseToTeachers,
+  initializeEditState,
+  subscribeToStore,
+} from "../../utils/admin-helpers.js";
 import "../ui/index.js";
 
 export class CoursesTab extends LitElement {
@@ -48,10 +59,8 @@ export class CoursesTab extends LitElement {
 
   constructor() {
     super();
-    this.editingCourseId = null;
-    this.message = "";
-    this.messageType = "";
-    store.subscribe(() => this.requestUpdate());
+    initializeEditState(this, "editingCourseId");
+    subscribeToStore(this);
   }
 
   render() {
@@ -134,113 +143,132 @@ export class CoursesTab extends LitElement {
           .renderCell="${(row, col) => this._renderTableCell(row, col)}"
         ></henry-table>
       </henry-panel>
+
+      ${this._renderEditModal()}
     `;
+  }
+
+  _renderEditModal() {
+    if (!this.editingCourseId) return html``;
+
+    const course = store.getCourse(this.editingCourseId);
+    if (!course) return html``;
+
+    return html`
+      <henry-modal open title="Redigera Kurs" @close="${this.handleCancelEdit}">
+        <form @submit="${(e) => this._handleSaveFromModal(e)}">
+          <div
+            style="display: flex; flex-direction: column; gap: var(--space-4);"
+          >
+            <henry-input
+              id="edit-code"
+              label="Kurskod"
+              .value="${course.code}"
+              required
+            ></henry-input>
+
+            <henry-input
+              id="edit-name"
+              label="Kursnamn"
+              .value="${course.name}"
+              required
+            ></henry-input>
+
+            <henry-select
+              id="edit-prerequisites"
+              label="Spärrkurser"
+              multiple
+              size="5"
+              .options=${store
+                .getCourses()
+                .filter((c) => c.course_id !== course.course_id)
+                .map((c) => ({
+                  value: c.course_id.toString(),
+                  label: c.code,
+                  selected: course.prerequisites?.includes(c.course_id),
+                }))}
+            ></henry-select>
+
+            <henry-radio-group
+              id="edit-blockLength"
+              label="Blocklängd"
+              name="edit-blockLength"
+              value="${course.default_block_length}"
+              .options=${[
+                { value: "1", label: "1 block" },
+                { value: "2", label: "2 block" },
+              ]}
+            ></henry-radio-group>
+
+            <henry-select
+              id="edit-compatible-teachers"
+              label="Kompatibla lärare"
+              multiple
+              size="5"
+              .options=${store.getTeachers().map((t) => ({
+                value: t.teacher_id.toString(),
+                label: t.name,
+                selected: t.compatible_courses?.includes(course.course_id),
+              }))}
+            ></henry-select>
+          </div>
+        </form>
+
+        <div slot="footer">
+          <henry-button variant="secondary" @click="${this.handleCancelEdit}">
+            Avbryt
+          </henry-button>
+          <henry-button
+            variant="success"
+            @click="${() => this.handleSaveCourse(course.course_id)}"
+          >
+            💾 Spara
+          </henry-button>
+        </div>
+      </henry-modal>
+    `;
+  }
+
+  _handleSaveFromModal(e) {
+    e.preventDefault();
+    if (this.editingCourseId) {
+      this.handleSaveCourse(this.editingCourseId);
+    }
   }
 
   _getTableColumns() {
     return [
-      { key: 'code', label: 'Kod', width: '100px' },
-      { key: 'name', label: 'Namn', width: '200px' },
-      { key: 'prerequisites', label: 'Spärrkurser', width: '150px' },
-      { key: 'compatible_teachers', label: 'Kompatibla lärare', width: '200px' },
-      { key: 'default_block_length', label: 'Blocklängd', width: '100px' },
-      { key: 'actions', label: 'Åtgärder', width: '180px' },
+      { key: "code", label: "Kod", width: "100px" },
+      { key: "name", label: "Namn", width: "200px" },
+      { key: "prerequisites", label: "Spärrkurser", width: "150px" },
+      {
+        key: "compatible_teachers",
+        label: "Kompatibla lärare",
+        width: "200px",
+      },
+      { key: "default_block_length", label: "Blocklängd", width: "100px" },
+      { key: "actions", label: "Åtgärder", width: "180px" },
     ];
   }
 
   _renderTableCell(course, column) {
-    const isEditing = this.editingCourseId === course.course_id;
-
     switch (column.key) {
-      case 'code':
-        if (isEditing) {
-          return html`
-            <input
-              type="text"
-              class="edit-input"
-              id="edit-code-${course.course_id}"
-              .value="${course.code}"
-            />
-          `;
-        }
+      case "code":
         return html`${course.code}`;
 
-      case 'name':
-        if (isEditing) {
-          return html`
-            <input
-              type="text"
-              class="edit-input"
-              id="edit-name-${course.course_id}"
-              .value="${course.name}"
-            />
-          `;
-        }
+      case "name":
         return html`${course.name}`;
 
-      case 'prerequisites':
-        if (isEditing) {
-          return html`
-            <henry-select
-              id="edit-prerequisites-${course.course_id}"
-              multiple
-              size="5"
-              .options=${store.getCourses().map((c) => ({
-                value: c.course_id.toString(),
-                label: c.code,
-                selected: course.prerequisites?.includes(c.course_id),
-              }))}
-            ></henry-select>
-          `;
-        }
+      case "prerequisites":
         return this.renderPrerequisitesList(course);
 
-      case 'compatible_teachers':
+      case "compatible_teachers":
         return this.renderCompatibleTeachersForCourse(course);
 
-      case 'default_block_length':
-        if (isEditing) {
-          return html`
-            <henry-select
-              id="edit-blockLength-${course.course_id}"
-              .options=${[
-                {
-                  value: "1",
-                  label: "1",
-                  selected: course.default_block_length === 1,
-                },
-                {
-                  value: "2",
-                  label: "2",
-                  selected: course.default_block_length === 2,
-                },
-              ]}
-            ></henry-select>
-          `;
-        }
+      case "default_block_length":
         return html`${course.default_block_length}`;
 
-      case 'actions':
-        if (isEditing) {
-          return html`
-            <div style="display: flex; gap: var(--space-2);">
-              <henry-button
-                variant="success"
-                size="small"
-                @click="${() => this.handleSaveCourse(course.course_id)}"
-              >
-                💾 Spara
-              </henry-button>
-              <henry-button
-                variant="secondary"
-                size="small"
-                @click="${() => this.handleCancelEdit()}"
-              >
-                ❌ Avbryt
-              </henry-button>
-            </div>
-          `;
-        }
+      case "actions":
         return html`
           <div style="display: flex; gap: var(--space-2);">
             <henry-button
@@ -261,7 +289,7 @@ export class CoursesTab extends LitElement {
         `;
 
       default:
-        return html`${course[column.key] ?? ''}`;
+        return html`${course[column.key] ?? ""}`;
     }
   }
 
@@ -300,49 +328,24 @@ export class CoursesTab extends LitElement {
 
   handleAddCourse(e) {
     e.preventDefault();
-    const blockLength = parseInt(
-      this.shadowRoot.querySelector("#blockLength").getValue()
-    );
-    const prerequisitesSelect = this.shadowRoot
-      .querySelector("#prerequisites")
-      .getSelect();
-    const prerequisites = Array.from(prerequisitesSelect.selectedOptions).map(
-      (opt) => parseInt(opt.value)
-    );
-    const teachersSelect = this.shadowRoot
-      .querySelector("#courseTeachers")
-      .getSelect();
-    const selectedTeacherIds = Array.from(teachersSelect.selectedOptions).map(
-      (opt) => parseInt(opt.value)
-    );
+    const root = this.shadowRoot;
+    const blockLength = parseInt(getRadioValue(root, "blockLength"));
+    const prerequisites = getSelectValues(root, "prerequisites");
+    const selectedTeacherIds = getSelectValues(root, "courseTeachers");
 
     const course = {
-      code: this.shadowRoot.querySelector("#courseCode").getInput().value,
-      name: this.shadowRoot.querySelector("#courseName").getInput().value,
+      code: getInputValue(root, "courseCode"),
+      name: getInputValue(root, "courseName"),
       hp: blockLength * 7.5,
       default_block_length: blockLength,
       prerequisites: prerequisites,
     };
     const newCourse = store.addCourse(course);
 
-    selectedTeacherIds.forEach((teacherId) => {
-      const teacher = store.getTeacher(teacherId);
-      if (teacher) {
-        const compatibleCourses = teacher.compatible_courses || [];
-        if (!compatibleCourses.includes(newCourse.course_id)) {
-          store.updateTeacher(teacherId, {
-            compatible_courses: [...compatibleCourses, newCourse.course_id],
-          });
-        }
-      }
-    });
+    addCourseToTeachers(newCourse.course_id, selectedTeacherIds);
 
-    this.message = "Kurs tillagd!";
-    this.messageType = "success";
-    this.shadowRoot.querySelector("form").reset();
-    setTimeout(() => {
-      this.message = "";
-    }, 3000);
+    resetForm(root);
+    showSuccessMessage(this, "Kurs tillagd!");
   }
 
   handleEditCourse(courseId) {
@@ -354,18 +357,12 @@ export class CoursesTab extends LitElement {
   }
 
   handleSaveCourse(courseId) {
-    const code = this.shadowRoot.querySelector(`#edit-code-${courseId}`).value;
-    const name = this.shadowRoot.querySelector(`#edit-name-${courseId}`).value;
-    const blockLength = parseInt(
-      this.shadowRoot.querySelector(`#edit-blockLength-${courseId}`).getSelect()
-        .value
-    );
-    const prerequisitesSelect = this.shadowRoot
-      .querySelector(`#edit-prerequisites-${courseId}`)
-      .getSelect();
-    const prerequisites = Array.from(prerequisitesSelect.selectedOptions).map(
-      (opt) => parseInt(opt.value)
-    );
+    const root = this.shadowRoot;
+    const code = getInputValue(root, "edit-code");
+    const name = getInputValue(root, "edit-name");
+    const blockLength = parseInt(getRadioValue(root, "edit-blockLength"));
+    const prerequisites = getSelectValues(root, "edit-prerequisites");
+    const selectedTeacherIds = getSelectValues(root, "edit-compatible-teachers");
 
     store.updateCourse(courseId, {
       code,
@@ -375,22 +372,16 @@ export class CoursesTab extends LitElement {
       prerequisites,
     });
 
+    syncCourseToTeachers(courseId, selectedTeacherIds);
+
     this.editingCourseId = null;
-    this.message = "Kurs uppdaterad!";
-    this.messageType = "success";
-    setTimeout(() => {
-      this.message = "";
-    }, 3000);
+    showSuccessMessage(this, "Kurs uppdaterad!");
   }
 
   handleDeleteCourse(courseId, courseName) {
     if (confirm(`Är du säker på att du vill ta bort kursen "${courseName}"?`)) {
       store.deleteCourse(courseId);
-      this.message = `Kurs "${courseName}" borttagen!`;
-      this.messageType = "success";
-      setTimeout(() => {
-        this.message = "";
-      }, 3000);
+      showSuccessMessage(this, `Kurs "${courseName}" borttagen!`);
     }
   }
 }

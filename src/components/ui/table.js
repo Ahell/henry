@@ -3,7 +3,7 @@ import { LitElement, html, css } from "lit";
 /**
  * Henry Table Component
  * Data-driven table with standardized styling
- * 
+ *
  * @property {Array} columns - Column definitions [{ key: 'name', label: 'Name', width: '200px', align: 'left' }]
  * @property {Array} data - Row data objects
  * @property {Function} renderCell - Optional custom cell renderer (row, column) => html
@@ -121,8 +121,8 @@ export class HenryTable extends LitElement {
             ${this.columns.map(
               (col) => html`
                 <th
-                  class="text-${col.align || 'left'}"
-                  style="${col.width ? `width: ${col.width};` : ''}"
+                  class="text-${col.align || "left"}"
+                  style="${col.width ? `width: ${col.width};` : ""}"
                 >
                   ${col.label}
                 </th>
@@ -161,14 +161,10 @@ export class HenryTable extends LitElement {
     } else if (column.render) {
       content = column.render(row);
     } else {
-      content = row[column.key] ?? '';
+      content = row[column.key] ?? "";
     }
 
-    return html`
-      <td class="text-${column.align || 'left'}">
-        ${content}
-      </td>
-    `;
+    return html` <td class="text-${column.align || "left"}">${content}</td> `;
   }
 
   _handleRowClick(row) {

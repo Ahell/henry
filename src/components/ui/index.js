@@ -15,6 +15,7 @@ export { HenryRadioGroup } from "./radio-group.js";
 export { HenryText } from "./text.js";
 export { HenryPanel } from "./panel.js";
 export { HenryTable } from "./table.js";
+export { HenryModal } from "./modal.js";
 
 // Import all components to ensure they're registered
 import "./button.js";
@@ -28,3 +29,4 @@ import "./radio-group.js";
 import "./text.js";
 import "./panel.js";
 import "./table.js";
+import "./modal.js";

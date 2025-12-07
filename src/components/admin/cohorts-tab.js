@@ -1,5 +1,13 @@
 import { LitElement, html, css } from "lit";
 import { store } from "../../utils/store.js";
+import {
+  getInputValue,
+  resetForm,
+  showSuccessMessage,
+  showErrorMessage,
+  initializeEditState,
+  subscribeToStore,
+} from "../../utils/admin-helpers.js";
 import "../ui/index.js";
 
 export class CohortsTab extends LitElement {
@@ -35,10 +43,8 @@ export class CohortsTab extends LitElement {
 
   constructor() {
     super();
-    this.editingCohortId = null;
-    this.message = "";
-    this.messageType = "";
-    store.subscribe(() => this.requestUpdate());
+    initializeEditState(this, "editingCohortId");
+    subscribeToStore(this);
   }
 
   render() {
@@ -82,87 +88,100 @@ export class CohortsTab extends LitElement {
           striped
           hoverable
           .columns="${this._getCohortTableColumns()}"
-          .data="${store.getCohorts().sort((a, b) => new Date(a.start_date) - new Date(b.start_date))}"
+          .data="${store
+            .getCohorts()
+            .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))}"
           .renderCell="${(row, col) => this._renderCohortTableCell(row, col)}"
         ></henry-table>
       </henry-panel>
+
+      ${this._renderEditModal()}
     `;
+  }
+
+  _renderEditModal() {
+    if (!this.editingCohortId) return html``;
+
+    const cohort = store.getCohort(this.editingCohortId);
+    if (!cohort) return html``;
+
+    return html`
+      <henry-modal open title="Redigera Kull" @close="${this.handleCancelEdit}">
+        <form @submit="${(e) => this._handleSaveFromModal(e)}">
+          <div
+            style="display: flex; flex-direction: column; gap: var(--space-4);"
+          >
+            <henry-input
+              id="edit-name"
+              label="Namn"
+              .value="${cohort.name}"
+              readonly
+              disabled
+              style="background-color: #e9ecef; cursor: not-allowed;"
+            ></henry-input>
+
+            <henry-input
+              id="edit-date"
+              label="Startdatum"
+              type="date"
+              .value="${cohort.start_date}"
+              required
+            ></henry-input>
+
+            <henry-input
+              id="edit-size"
+              label="Antal Studenter"
+              type="number"
+              min="1"
+              .value="${cohort.planned_size}"
+              required
+            ></henry-input>
+          </div>
+        </form>
+
+        <div slot="footer">
+          <henry-button variant="secondary" @click="${this.handleCancelEdit}">
+            Avbryt
+          </henry-button>
+          <henry-button
+            variant="success"
+            @click="${() => this.handleSaveCohort(cohort.cohort_id)}"
+          >
+            💾 Spara
+          </henry-button>
+        </div>
+      </henry-modal>
+    `;
+  }
+
+  _handleSaveFromModal(e) {
+    e.preventDefault();
+    if (this.editingCohortId) {
+      this.handleSaveCohort(this.editingCohortId);
+    }
   }
 
   _getCohortTableColumns() {
     return [
-      { key: 'name', label: 'Namn', width: '200px' },
-      { key: 'start_date', label: 'Startdatum', width: '150px' },
-      { key: 'planned_size', label: 'Antal Studenter', width: '150px' },
-      { key: 'actions', label: 'Åtgärder', width: '180px' },
+      { key: "name", label: "Namn", width: "200px" },
+      { key: "start_date", label: "Startdatum", width: "150px" },
+      { key: "planned_size", label: "Antal Studenter", width: "150px" },
+      { key: "actions", label: "Åtgärder", width: "180px" },
     ];
   }
 
   _renderCohortTableCell(cohort, column) {
-    const isEditing = this.editingCohortId === cohort.cohort_id;
-
     switch (column.key) {
-      case 'name':
-        if (isEditing) {
-          return html`
-            <input
-              type="text"
-              class="edit-input"
-              id="edit-cohort-name-${cohort.cohort_id}"
-              .value="${cohort.name}"
-            />
-          `;
-        }
+      case "name":
         return html`${cohort.name}`;
 
-      case 'start_date':
-        if (isEditing) {
-          return html`
-            <input
-              type="date"
-              class="edit-input"
-              id="edit-cohort-date-${cohort.cohort_id}"
-              .value="${cohort.start_date}"
-            />
-          `;
-        }
+      case "start_date":
         return html`${cohort.start_date}`;
 
-      case 'planned_size':
-        if (isEditing) {
-          return html`
-            <input
-              type="number"
-              class="edit-input"
-              id="edit-cohort-size-${cohort.cohort_id}"
-              .value="${cohort.planned_size}"
-              min="1"
-            />
-          `;
-        }
+      case "planned_size":
         return html`${cohort.planned_size}`;
 
-      case 'actions':
-        if (isEditing) {
-          return html`
-            <div style="display: flex; gap: var(--space-2);">
-              <henry-button
-                variant="success"
-                size="small"
-                @click="${() => this.handleSaveCohort(cohort.cohort_id)}"
-              >
-                💾 Spara
-              </henry-button>
-              <henry-button
-                variant="secondary"
-                size="small"
-                @click="${() => this.handleCancelEdit()}"
-              >
-                ❌ Avbryt
-              </henry-button>
-            </div>
-          `;
-        }
+      case "actions":
         return html`
           <div style="display: flex; gap: var(--space-2);">
             <henry-button
@@ -183,18 +202,15 @@ export class CohortsTab extends LitElement {
         `;
 
       default:
-        return html`${cohort[column.key] ?? ''}`;
+        return html`${cohort[column.key] ?? ""}`;
     }
   }
 
   async handleAddCohort(e) {
     e.preventDefault();
-    const startDate = this.shadowRoot
-      .querySelector("#cohortStartDate")
-      .getInput().value;
-    const plannedSize = parseInt(
-      this.shadowRoot.querySelector("#cohortSize").getInput().value
-    );
+    const root = this.shadowRoot;
+    const startDate = getInputValue(root, "cohortStartDate");
+    const plannedSize = parseInt(getInputValue(root, "cohortSize"));
 
     const cohort = {
       start_date: startDate,
@@ -203,18 +219,10 @@ export class CohortsTab extends LitElement {
 
     try {
       await store.addCohort(cohort);
-      this.message = "Kull tillagd!";
-      this.messageType = "success";
-      this.shadowRoot.querySelector("form").reset();
-      setTimeout(() => {
-        this.message = "";
-      }, 3000);
+      resetForm(root);
+      showSuccessMessage(this, "Kull tillagd!");
     } catch (error) {
-      this.message = `Fel: ${error.message}`;
-      this.messageType = "error";
-      setTimeout(() => {
-        this.message = "";
-      }, 5000);
+      showErrorMessage(this, `Fel: ${error.message}`);
     }
   }
 
@@ -227,12 +235,9 @@ export class CohortsTab extends LitElement {
   }
 
   handleSaveCohort(cohortId) {
-    const startDate = this.shadowRoot.querySelector(
-      `#edit-cohort-date-${cohortId}`
-    ).value;
-    const plannedSize = parseInt(
-      this.shadowRoot.querySelector(`#edit-cohort-size-${cohortId}`).value
-    );
+    const root = this.shadowRoot;
+    const startDate = getInputValue(root, "edit-date");
+    const plannedSize = parseInt(getInputValue(root, "edit-size"));
 
     store.updateCohort(cohortId, {
       start_date: startDate,
@@ -240,11 +245,7 @@ export class CohortsTab extends LitElement {
     });
 
     this.editingCohortId = null;
-    this.message = "Kull uppdaterad!";
-    this.messageType = "success";
-    setTimeout(() => {
-      this.message = "";
-    }, 3000);
+    showSuccessMessage(this, "Kull uppdaterad!");
   }
 
   async handleDeleteCohort(cohortId, cohortName) {
@@ -255,17 +256,9 @@ export class CohortsTab extends LitElement {
     ) {
       try {
         await store.deleteCohort(cohortId);
-        this.message = `Kull "${cohortName}" borttagen!`;
-        this.messageType = "success";
-        setTimeout(() => {
-          this.message = "";
-        }, 3000);
+        showSuccessMessage(this, `Kull "${cohortName}" borttagen!`);
       } catch (error) {
-        this.message = `Fel: ${error.message}`;
-        this.messageType = "error";
-        setTimeout(() => {
-          this.message = "";
-        }, 5000);
+        showErrorMessage(this, `Fel: ${error.message}`);
       }
     }
   }
