@@ -621,9 +621,9 @@ export class SchedulingTab extends LitElement {
       }
     }
 
-    if (td?.classList.contains("no-teachers-available")) {
-      return;
-    }
+    // Note: We don't block drops based on teacher availability
+    // The "no-teachers-available" class is purely for visualization
+    // Users should be able to schedule courses even if teachers are marked as unavailable
 
     if (data.fromDepot) {
       this._handleDropFromDepot(data, slotDate, cohortId);
