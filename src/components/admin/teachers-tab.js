@@ -70,28 +70,6 @@ export class TeachersTab extends LitElement {
       box-shadow: var(--input-focus-ring);
     }
 
-    button {
-      background: linear-gradient(
-        135deg,
-        var(--color-primary-500) 0%,
-        var(--color-secondary-500) 100%
-      );
-      color: white;
-      border: none;
-      padding: var(--space-3) var(--space-5);
-      border-radius: var(--radius-base);
-      cursor: pointer;
-      font-size: var(--font-size-sm);
-      font-weight: var(--font-weight-medium);
-      transition: var(--transition-all);
-      box-shadow: var(--shadow-primary);
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-primary-hover);
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -113,31 +91,6 @@ export class TeachersTab extends LitElement {
 
     tr:hover {
       background: var(--color-gray-50);
-    }
-
-    .btn-edit,
-    .btn-delete,
-    .btn-save,
-    .btn-cancel {
-      padding: var(--space-2) var(--space-3);
-      margin-right: var(--space-2);
-      font-size: var(--font-size-xs);
-    }
-
-    .btn-edit {
-      background: var(--color-info);
-    }
-
-    .btn-delete {
-      background: var(--color-danger);
-    }
-
-    .btn-save {
-      background: var(--color-success);
-    }
-
-    .btn-cancel {
-      background: var(--color-gray-500);
     }
 
     .edit-input {
@@ -207,16 +160,21 @@ export class TeachersTab extends LitElement {
               )}
             </select>
           </div>
-          <button type="submit">Lägg till Lärare</button>
+          <henry-button type="submit" variant="primary">
+            Lägg till Lärare
+          </henry-button>
         </form>
       </div>
 
       <div class="panel">
         <h3>Befintliga Lärare</h3>
         <div style="margin-bottom: 1rem;">
-          <button type="button" @click="${this.handleRandomizeCourses}">
+          <henry-button
+            variant="secondary"
+            @click="${this.handleRandomizeCourses}"
+          >
             🎲 Slumpa kurser till alla lärare
-          </button>
+          </henry-button>
         </div>
         <table>
           <thead>
@@ -292,20 +250,20 @@ export class TeachersTab extends LitElement {
             </select>
           </td>
           <td>
-            <button
-              type="button"
-              class="btn-save"
+            <henry-button
+              size="small"
+              variant="success"
               @click="${() => this.handleSaveTeacher(teacher.teacher_id)}"
             >
               Spara
-            </button>
-            <button
-              type="button"
-              class="btn-cancel"
+            </henry-button>
+            <henry-button
+              size="small"
+              variant="secondary"
               @click="${() => this.handleCancelTeacherEdit()}"
             >
               Avbryt
-            </button>
+            </henry-button>
           </td>
         </tr>
       `;
@@ -325,21 +283,21 @@ export class TeachersTab extends LitElement {
         <td>${teacher.home_department}</td>
         <td>${courseNames || "-"}</td>
         <td>
-          <button
-            type="button"
-            class="btn-edit"
+          <henry-button
+            size="small"
+            variant="secondary"
             @click="${() => this.handleEditTeacher(teacher.teacher_id)}"
           >
             Redigera
-          </button>
-          <button
-            type="button"
-            class="btn-delete"
+          </henry-button>
+          <henry-button
+            size="small"
+            variant="danger"
             @click="${() =>
               this.handleDeleteTeacher(teacher.teacher_id, teacher.name)}"
           >
             Ta bort
-          </button>
+          </henry-button>
         </td>
       </tr>
     `;

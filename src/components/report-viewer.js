@@ -1042,12 +1042,12 @@ export class ReportViewer extends LitElement {
         </p>
 
         <div class="paint-controls">
-          <button
-            class="paint-btn ${this.isPainting ? "active" : ""}"
+          <henry-button
+            variant="${this.isPainting ? "success" : "secondary"}"
             @click="${this.togglePaintMode}"
           >
             ${this.isPainting ? "✓ Målningsläge aktivt" : "🖌️ Markera upptagen"}
-          </button>
+          </henry-button>
           ${this.isPainting
             ? html`
                 <span style="color: #666; font-size: 0.85rem;">

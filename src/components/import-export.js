@@ -122,10 +122,12 @@ export class ImportExport extends LitElement {
           : ""}
 
         <div class="button-group">
-          <button @click="${this.triggerFileInput}">Välj fil (CSV/JSON)</button>
-          <button class="secondary" @click="${this.loadSampleData}">
+          <henry-button variant="primary" @click="${this.triggerFileInput}">
+            Välj fil (CSV/JSON)
+          </henry-button>
+          <henry-button variant="secondary" @click="${this.loadSampleData}">
             Ladda Exempeldata
-          </button>
+          </henry-button>
         </div>
 
         <input
@@ -145,10 +147,12 @@ export class ImportExport extends LitElement {
         <h3>Exportera Data</h3>
         <p>Exportera all data som JSON för att spara eller dela.</p>
         <div class="button-group">
-          <button @click="${this.exportAsJson}">Exportera som JSON</button>
-          <button class="secondary" @click="${this.exportAsCSV}">
+          <henry-button variant="primary" @click="${this.exportAsJson}">
+            Exportera som JSON
+          </henry-button>
+          <henry-button variant="secondary" @click="${this.exportAsCSV}">
             Exportera som CSV
-          </button>
+          </henry-button>
         </div>
       </div>
 
@@ -159,9 +163,9 @@ export class ImportExport extends LitElement {
           ändringar du gjort.
         </p>
         <div class="button-group">
-          <button class="danger" @click="${this.resetData}">
+          <henry-button variant="danger" @click="${this.resetData}">
             Återställ till Grunddata
-          </button>
+          </henry-button>
         </div>
       </div>
     `;

@@ -62,28 +62,6 @@ export class CohortsTab extends LitElement {
       box-shadow: var(--input-focus-ring);
     }
 
-    button {
-      background: linear-gradient(
-        135deg,
-        var(--color-primary-500) 0%,
-        var(--color-secondary-500) 100%
-      );
-      color: white;
-      border: none;
-      padding: var(--space-3) var(--space-5);
-      border-radius: var(--radius-base);
-      cursor: pointer;
-      font-size: var(--font-size-sm);
-      font-weight: var(--font-weight-medium);
-      transition: var(--transition-all);
-      box-shadow: var(--shadow-primary);
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-primary-hover);
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -105,31 +83,6 @@ export class CohortsTab extends LitElement {
 
     tr:hover {
       background: var(--color-gray-50);
-    }
-
-    .btn-edit,
-    .btn-delete,
-    .btn-save,
-    .btn-cancel {
-      padding: var(--space-2) var(--space-3);
-      margin-right: var(--space-2);
-      font-size: var(--font-size-xs);
-    }
-
-    .btn-edit {
-      background: var(--color-info);
-    }
-
-    .btn-delete {
-      background: var(--color-danger);
-    }
-
-    .btn-save {
-      background: var(--color-success);
-    }
-
-    .btn-cancel {
-      background: var(--color-gray-500);
     }
 
     .edit-input {
@@ -177,7 +130,9 @@ export class CohortsTab extends LitElement {
               />
             </div>
           </div>
-          <button type="submit">Lägg till Kull</button>
+          <henry-button type="submit" variant="primary">
+            Lägg till Kull
+          </henry-button>
         </form>
       </div>
 
@@ -238,20 +193,20 @@ export class CohortsTab extends LitElement {
             />
           </td>
           <td>
-            <button
-              type="button"
-              class="btn-save"
+            <henry-button
+              size="small"
+              variant="success"
               @click="${() => this.handleSaveCohort(cohort.cohort_id)}"
             >
               Spara
-            </button>
-            <button
-              type="button"
-              class="btn-cancel"
+            </henry-button>
+            <henry-button
+              size="small"
+              variant="secondary"
               @click="${() => this.handleCancelCohortEdit()}"
             >
               Avbryt
-            </button>
+            </henry-button>
           </td>
         </tr>
       `;
@@ -263,21 +218,21 @@ export class CohortsTab extends LitElement {
         <td>${cohort.start_date}</td>
         <td>${cohort.planned_size}</td>
         <td>
-          <button
-            type="button"
-            class="btn-edit"
+          <henry-button
+            size="small"
+            variant="secondary"
             @click="${() => this.handleEditCohort(cohort.cohort_id)}"
           >
             Redigera
-          </button>
-          <button
-            type="button"
-            class="btn-delete"
+          </henry-button>
+          <henry-button
+            size="small"
+            variant="danger"
             @click="${() =>
               this.handleDeleteCohort(cohort.cohort_id, cohort.name)}"
           >
             Ta bort
-          </button>
+          </henry-button>
         </td>
       </tr>
     `;

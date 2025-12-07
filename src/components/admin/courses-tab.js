@@ -85,36 +85,6 @@ export class CoursesTab extends LitElement {
       min-height: 100px;
     }
 
-    button {
-      background: linear-gradient(
-        135deg,
-        var(--color-primary-500) 0%,
-        var(--color-secondary-500) 100%
-      );
-      color: white;
-      border: none;
-      padding: var(--space-3) var(--space-5);
-      border-radius: var(--radius-base);
-      cursor: pointer;
-      font-size: var(--font-size-sm);
-      font-weight: var(--font-weight-medium);
-      transition: var(--transition-all);
-      box-shadow: var(--shadow-primary);
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-primary-hover);
-    }
-
-    .btn-submit {
-      background: linear-gradient(
-        135deg,
-        var(--color-primary-500) 0%,
-        var(--color-secondary-500) 100%
-      );
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -136,31 +106,6 @@ export class CoursesTab extends LitElement {
 
     tr:hover {
       background: var(--color-gray-50);
-    }
-
-    .btn-edit,
-    .btn-delete,
-    .btn-save,
-    .btn-cancel {
-      padding: var(--space-2) var(--space-3);
-      margin-right: var(--space-2);
-      font-size: var(--font-size-xs);
-    }
-
-    .btn-edit {
-      background: var(--color-info);
-    }
-
-    .btn-delete {
-      background: var(--color-danger);
-    }
-
-    .btn-save {
-      background: var(--color-success);
-    }
-
-    .btn-cancel {
-      background: var(--color-gray-500);
     }
 
     .edit-input {
@@ -268,7 +213,9 @@ export class CoursesTab extends LitElement {
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="btn-submit">➕ Lägg till kurs</button>
+            <henry-button type="submit" variant="primary">
+              ➕ Lägg till kurs
+            </henry-button>
           </div>
         </form>
       </div>
@@ -390,20 +337,20 @@ export class CoursesTab extends LitElement {
             </select>
           </td>
           <td>
-            <button
-              type="button"
-              class="btn-save"
+            <henry-button
+              size="small"
+              variant="success"
               @click="${() => this.handleSaveCourse(course.course_id)}"
             >
               Spara
-            </button>
-            <button
-              type="button"
-              class="btn-cancel"
+            </henry-button>
+            <henry-button
+              size="small"
+              variant="secondary"
               @click="${() => this.handleCancelEdit()}"
             >
               Avbryt
-            </button>
+            </henry-button>
           </td>
         </tr>
       `;
@@ -417,21 +364,21 @@ export class CoursesTab extends LitElement {
         <td>${this.renderCompatibleTeachersForCourse(course)}</td>
         <td>${course.default_block_length} block</td>
         <td>
-          <button
-            type="button"
-            class="btn-edit"
+          <henry-button
+            size="small"
+            variant="secondary"
             @click="${() => this.handleEditCourse(course.course_id)}"
           >
             Redigera
-          </button>
-          <button
-            type="button"
-            class="btn-delete"
+          </henry-button>
+          <henry-button
+            size="small"
+            variant="danger"
             @click="${() =>
               this.handleDeleteCourse(course.course_id, course.name)}"
           >
             Ta bort
-          </button>
+          </henry-button>
         </td>
       </tr>
     `;
