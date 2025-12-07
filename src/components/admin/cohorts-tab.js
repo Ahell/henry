@@ -213,7 +213,9 @@ export class CohortsTab extends LitElement {
 
   async handleAddCohort(e) {
     e.preventDefault();
-    const startDate = this.shadowRoot.querySelector("#cohortStartDate").getInput().value;
+    const startDate = this.shadowRoot
+      .querySelector("#cohortStartDate")
+      .getInput().value;
     const plannedSize = parseInt(
       this.shadowRoot.querySelector("#cohortSize").getInput().value
     );

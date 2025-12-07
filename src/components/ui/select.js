@@ -120,7 +120,7 @@ export class HenrySelect extends LitElement {
           name=${this.name || this.id}
           @change=${this._handleChange}
         >
-          ${this.placeholder
+          ${!this.multiple && this.placeholder
             ? html`<option value="">${this.placeholder}</option>`
             : ""}
           <slot></slot>
@@ -142,7 +142,7 @@ export class HenrySelect extends LitElement {
 
   // Method to get the native select element
   getSelect() {
-    return this.shadowRoot.querySelector('select');
+    return this.shadowRoot.querySelector("select");
   }
 }
 

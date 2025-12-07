@@ -158,8 +158,9 @@ const value = select.getSelect().value;
 
 // För multiple select
 const multiSelect = this.shadowRoot.querySelector("#prerequisites");
-const selectedOptions = Array.from(multiSelect.getSelect().selectedOptions)
-  .map(opt => opt.value);
+const selectedOptions = Array.from(multiSelect.getSelect().selectedOptions).map(
+  (opt) => opt.value
+);
 ```
 
 ### 4. Henry Textarea

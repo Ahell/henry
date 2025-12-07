@@ -139,7 +139,7 @@ export class HenryInput extends LitElement {
 
   // Method to get the native input element
   getInput() {
-    return this.shadowRoot.querySelector('input');
+    return this.shadowRoot.querySelector("input");
   }
 }
 

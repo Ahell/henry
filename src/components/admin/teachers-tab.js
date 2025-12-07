@@ -267,14 +267,17 @@ export class TeachersTab extends LitElement {
 
   handleAddTeacher(e) {
     e.preventDefault();
-    const coursesSelect = this.shadowRoot.querySelector("#teacherCourses").getSelect();
+    const coursesSelect = this.shadowRoot
+      .querySelector("#teacherCourses")
+      .getSelect();
     const selectedCourses = Array.from(coursesSelect.selectedOptions).map(
       (opt) => parseInt(opt.value)
     );
     const teacher = {
       name: this.shadowRoot.querySelector("#teacherName").getInput().value,
-      home_department:
-        this.shadowRoot.querySelector("#teacherDepartment").getSelect().value,
+      home_department: this.shadowRoot
+        .querySelector("#teacherDepartment")
+        .getSelect().value,
       compatible_courses: selectedCourses,
     };
     store.addTeacher(teacher);

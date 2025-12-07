@@ -148,9 +148,7 @@ export class CoursesTab extends LitElement {
               .getTeachers()
               .map(
                 (teacher) => html`
-                  <option value="${teacher.teacher_id}">
-                    ${teacher.name}
-                  </option>
+                  <option value="${teacher.teacher_id}">${teacher.name}</option>
                 `
               )}
           </henry-select>
@@ -332,11 +330,15 @@ export class CoursesTab extends LitElement {
     const blockLength = parseInt(
       this.shadowRoot.querySelector("#blockLength").getSelect().value
     );
-    const prerequisitesSelect = this.shadowRoot.querySelector("#prerequisites").getSelect();
+    const prerequisitesSelect = this.shadowRoot
+      .querySelector("#prerequisites")
+      .getSelect();
     const prerequisites = Array.from(prerequisitesSelect.selectedOptions).map(
       (opt) => parseInt(opt.value)
     );
-    const teachersSelect = this.shadowRoot.querySelector("#courseTeachers").getSelect();
+    const teachersSelect = this.shadowRoot
+      .querySelector("#courseTeachers")
+      .getSelect();
     const selectedTeacherIds = Array.from(teachersSelect.selectedOptions).map(
       (opt) => parseInt(opt.value)
     );
