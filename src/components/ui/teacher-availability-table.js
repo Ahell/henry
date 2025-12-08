@@ -118,22 +118,66 @@ export class TeacherAvailabilityTable extends LitElement {
       position: relative;
     }
 
-    .teacher-cell.teaching-day:not(.unavailable) {
+    /* Default teaching day - purple/lila, active */
+    .teacher-cell.teaching-day-default:not(.unavailable) {
+      background-color: #9333ea;
+    }
+
+    .teacher-timeline-table td:has(.teacher-cell.teaching-day-default) {
+      background-color: #9333ea;
+    }
+
+    .teacher-timeline-table th.teaching-day-default-header {
+      background-color: #9333ea;
+      color: white;
+      cursor: pointer;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .teacher-timeline-table th.teaching-day-default-header:hover {
+      background-color: #7e22ce;
+    }
+
+    /* Default teaching day - dimmed (inactive) */
+    .teacher-cell.teaching-day-default-dimmed:not(.unavailable) {
+      background-color: #e9d5ff;
+      opacity: 0.5;
+    }
+
+    .teacher-timeline-table td:has(.teacher-cell.teaching-day-default-dimmed) {
+      background-color: #e9d5ff;
+      opacity: 0.5;
+    }
+
+    .teacher-timeline-table th.teaching-day-default-dimmed-header {
+      background-color: #e9d5ff;
+      color: #6b21a8;
+      cursor: pointer;
+      font-weight: var(--font-weight-bold);
+      opacity: 0.5;
+    }
+
+    .teacher-timeline-table th.teaching-day-default-dimmed-header:hover {
+      opacity: 0.7;
+    }
+
+    /* Alternative teaching day - blue */
+    .teacher-cell.teaching-day-alt:not(.unavailable) {
       background-color: #3b82f6;
     }
 
-    .teacher-timeline-table td:has(.teacher-cell.teaching-day) {
+    .teacher-timeline-table td:has(.teacher-cell.teaching-day-alt) {
       background-color: #3b82f6;
     }
 
-    .teacher-timeline-table th.teaching-day-header {
+    .teacher-timeline-table th.teaching-day-alt-header {
       background-color: #3b82f6;
       color: white;
       cursor: pointer;
       font-weight: var(--font-weight-bold);
     }
 
-    .teacher-timeline-table th.teaching-day-header:hover {
+    .teacher-timeline-table th.teaching-day-alt-header:hover {
       background-color: #2563eb;
     }
 
@@ -306,14 +350,29 @@ export class TeacherAvailabilityTable extends LitElement {
     const day = d.getDate();
     const month = d.toLocaleString("sv-SE", { month: "short" });
     const weekday = d.toLocaleString("sv-SE", { weekday: "short" });
-    const isTeachingDay = store.isTeachingDay(this._detailSlotId, dateStr);
+
+    const state = store.getTeachingDayState(this._detailSlotId, dateStr);
+
+    let headerClass = "";
+    let titleText = "Klicka för att markera som undervisningsdag";
+
+    if (state) {
+      if (state.isDefault && state.active) {
+        headerClass = "teaching-day-default-header";
+        titleText = "Standarddag (klicka för att inaktivera)";
+      } else if (state.isDefault && !state.active) {
+        headerClass = "teaching-day-default-dimmed-header";
+        titleText = "Inaktiverad standarddag (klicka för att aktivera)";
+      } else if (!state.isDefault && state.active) {
+        headerClass = "teaching-day-alt-header";
+        titleText = "Alternativ undervisningsdag (klicka för att ta bort)";
+      }
+    }
 
     return html`<th
-      class="${isTeachingDay ? "teaching-day-header" : ""}"
+      class="${headerClass}"
       @click="${() => this._toggleTeachingDay(dateStr)}"
-      title="${isTeachingDay
-        ? "Undervisningsdag (klicka för att ta bort)"
-        : "Klicka för att markera som undervisningsdag"}"
+      title="${titleText}"
       style="cursor: pointer;"
     >
       ${weekday}<br />${day} ${month}
@@ -367,17 +426,31 @@ export class TeacherAvailabilityTable extends LitElement {
     let cellClass = "teacher-cell";
     let titleText = dateStr;
 
-    const isTeachingDay = store.isTeachingDay(this._detailSlotId, dateStr);
-    if (isTeachingDay) {
-      cellClass += " teaching-day";
-      titleText += " (Undervisningsdag)";
+    const state = store.getTeachingDayState(this._detailSlotId, dateStr);
+    if (state) {
+      if (state.isDefault && state.active) {
+        cellClass += " teaching-day-default";
+        titleText += " (Standarddag)";
+      } else if (state.isDefault && !state.active) {
+        cellClass += " teaching-day-default-dimmed";
+        titleText += " (Inaktiverad standarddag)";
+      } else if (!state.isDefault && state.active) {
+        cellClass += " teaching-day-alt";
+        titleText += " (Alternativ undervisningsdag)";
+      }
     }
 
     if (isUnavailable) {
       cellClass += " unavailable";
       titleText = `Upptagen ${dateStr}`;
-      if (isTeachingDay) {
-        titleText += " (Undervisningsdag)";
+      if (state) {
+        if (state.isDefault && state.active) {
+          titleText += " (Standarddag)";
+        } else if (state.isDefault && !state.active) {
+          titleText += " (Inaktiverad standarddag)";
+        } else if (!state.isDefault && state.active) {
+          titleText += " (Alternativ undervisningsdag)";
+        }
       }
     }
 

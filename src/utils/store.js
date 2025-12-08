@@ -1026,9 +1026,9 @@ export class DataStore {
   }
 
   // Teaching days methods
-  generateDefaultTeachingDays(slotId) {
+  getDefaultTeachingDaysPattern(slotId) {
     const slot = this.slots.find((s) => s.slot_id === slotId);
-    if (!slot) return;
+    if (!slot) return [];
 
     const startDate = new Date(slot.start_date);
     const teachingDays = [];
@@ -1062,10 +1062,23 @@ export class DataStore {
     teachingDays.push(getDateOfWeekday(startDate, 3, 1)); // Monday
     teachingDays.push(getDateOfWeekday(startDate, 3, 5)); // Friday (Tenta)
 
-    // Add to store (remove any existing teaching days for this slot first)
+    return teachingDays;
+  }
+
+  generateDefaultTeachingDays(slotId) {
+    const defaultDates = this.getDefaultTeachingDaysPattern(slotId);
+
+    // Remove any existing teaching days for this slot first
     this.teachingDays = this.teachingDays.filter((td) => td.slot_id !== slotId);
-    teachingDays.forEach((date) => {
-      this.teachingDays.push({ slot_id: slotId, date });
+
+    // Add default teaching days with isDefault flag and active state
+    defaultDates.forEach((date) => {
+      this.teachingDays.push({
+        slot_id: slotId,
+        date,
+        isDefault: true, // This is a standard day
+        active: true, // Standard days are active by default
+      });
     });
   }
 
@@ -1083,16 +1096,46 @@ export class DataStore {
   }
 
   toggleTeachingDay(slotId, date) {
-    const index = this.teachingDays.findIndex(
+    const defaultDates = this.getDefaultTeachingDaysPattern(slotId);
+    const isDefaultDate = defaultDates.includes(date);
+
+    const existingIndex = this.teachingDays.findIndex(
       (td) => td.slot_id === slotId && td.date === date
     );
 
-    if (index !== -1) {
-      this.teachingDays.splice(index, 1);
+    if (existingIndex !== -1) {
+      const existing = this.teachingDays[existingIndex];
+
+      if (existing.isDefault) {
+        // It's a default day - toggle active state
+        existing.active = !existing.active;
+      } else {
+        // It's an alternative day - remove it completely
+        this.teachingDays.splice(existingIndex, 1);
+      }
     } else {
-      this.teachingDays.push({ slot_id: slotId, date });
+      // Day doesn't exist - add it
+      this.teachingDays.push({
+        slot_id: slotId,
+        date,
+        isDefault: isDefaultDate,
+        active: true,
+      });
     }
     this.notify();
+  }
+
+  getTeachingDayState(slotId, date) {
+    const td = this.teachingDays.find(
+      (td) => td.slot_id === slotId && td.date === date
+    );
+
+    if (!td) return null;
+
+    return {
+      isDefault: td.isDefault || false,
+      active: td.active !== false, // Default to true for old data
+    };
   }
 
   getTeachingDaysForSlot(slotId) {
