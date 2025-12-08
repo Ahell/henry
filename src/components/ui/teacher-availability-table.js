@@ -118,6 +118,25 @@ export class TeacherAvailabilityTable extends LitElement {
       position: relative;
     }
 
+    .teacher-cell.teaching-day:not(.unavailable) {
+      background-color: #3b82f6;
+    }
+
+    .teacher-timeline-table td:has(.teacher-cell.teaching-day) {
+      background-color: #3b82f6;
+    }
+
+    .teacher-timeline-table th.teaching-day-header {
+      background-color: #3b82f6;
+      color: white;
+      cursor: pointer;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .teacher-timeline-table th.teaching-day-header:hover {
+      background-color: #2563eb;
+    }
+
     .teacher-cell.unavailable::after {
       content: "✕";
       position: absolute;
@@ -287,8 +306,18 @@ export class TeacherAvailabilityTable extends LitElement {
     const day = d.getDate();
     const month = d.toLocaleString("sv-SE", { month: "short" });
     const weekday = d.toLocaleString("sv-SE", { weekday: "short" });
+    const isTeachingDay = store.isTeachingDay(this._detailSlotId, dateStr);
 
-    return html`<th>${weekday}<br />${day} ${month}</th>`;
+    return html`<th
+      class="${isTeachingDay ? "teaching-day-header" : ""}"
+      @click="${() => this._toggleTeachingDay(dateStr)}"
+      title="${isTeachingDay
+        ? "Undervisningsdag (klicka för att ta bort)"
+        : "Klicka för att markera som undervisningsdag"}"
+      style="cursor: pointer;"
+    >
+      ${weekday}<br />${day} ${month}
+    </th>`;
   }
 
   _renderTeacherDetailRow(teacher, days) {
@@ -338,9 +367,18 @@ export class TeacherAvailabilityTable extends LitElement {
     let cellClass = "teacher-cell";
     let titleText = dateStr;
 
+    const isTeachingDay = store.isTeachingDay(this._detailSlotId, dateStr);
+    if (isTeachingDay) {
+      cellClass += " teaching-day";
+      titleText += " (Undervisningsdag)";
+    }
+
     if (isUnavailable) {
       cellClass += " unavailable";
       titleText = `Upptagen ${dateStr}`;
+      if (isTeachingDay) {
+        titleText += " (Undervisningsdag)";
+      }
     }
 
     return html`
@@ -358,9 +396,23 @@ export class TeacherAvailabilityTable extends LitElement {
     `;
   }
 
+  _toggleTeachingDay(dateStr) {
+    if (this._teachingDays.has(dateStr)) {
+      this._teachingDays.delete(dateStr);
+    } else {
+      this._teachingDays.add(dateStr);
+    }
+    this.requestUpdate();
+  }
+
   _exitDetailView() {
     this._detailSlotDate = null;
     this._detailSlotId = null;
+    this.requestUpdate();
+  }
+
+  _toggleTeachingDay(dateStr) {
+    store.toggleTeachingDay(this._detailSlotId, dateStr);
     this.requestUpdate();
   }
 

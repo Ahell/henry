@@ -9,6 +9,7 @@ export class DataStore {
     this.slots = [];
     this.courseRuns = [];
     this.teacherAvailability = [];
+    this.teachingDays = []; // Array of {slot_id, date} objects marking teaching days
     this.prerequisiteProblems = [];
     this.listeners = [];
 
@@ -48,6 +49,10 @@ export class DataStore {
       this.slots = data.slots || [];
       this.courseRuns = data.courseRuns || [];
       this.teacherAvailability = data.teacherAvailability || [];
+      this.teachingDays = data.teachingDays || [];
+
+      // Initialize default teaching days for slots that don't have any
+      this.initializeAllTeachingDays();
 
       // Validate and fix teacher assignments (ensure one course per teacher per slot)
       this.validateTeacherAssignments();
@@ -511,6 +516,7 @@ export class DataStore {
           slots: this.slots,
           courseRuns: this.courseRuns,
           teacherAvailability: this.teacherAvailability,
+          teachingDays: this.teachingDays,
         }),
       });
 
@@ -766,6 +772,10 @@ export class DataStore {
       is_law_period: slot.is_law_period || false,
     };
     this.slots.push(newSlot);
+
+    // Generate default teaching days for new slot
+    this.generateDefaultTeachingDays(id);
+
     this.notify();
     return newSlot;
   }
@@ -1013,6 +1023,88 @@ export class DataStore {
     }
 
     return days;
+  }
+
+  // Teaching days methods
+  generateDefaultTeachingDays(slotId) {
+    const slot = this.slots.find((s) => s.slot_id === slotId);
+    if (!slot) return;
+
+    const startDate = new Date(slot.start_date);
+    const teachingDays = [];
+
+    // Helper function to get date of specific weekday in specific week
+    const getDateOfWeekday = (baseDate, weekOffset, targetWeekday) => {
+      const date = new Date(baseDate);
+      date.setDate(date.getDate() + weekOffset * 7);
+
+      // targetWeekday: 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const currentDay = date.getDay();
+      const daysToAdd = (targetWeekday - currentDay + 7) % 7;
+      date.setDate(date.getDate() + daysToAdd);
+
+      return date.toISOString().split("T")[0];
+    };
+
+    // Week 1: Monday and Thursday
+    teachingDays.push(getDateOfWeekday(startDate, 0, 1)); // Monday
+    teachingDays.push(getDateOfWeekday(startDate, 0, 4)); // Thursday
+
+    // Week 2: Tuesday and Thursday
+    teachingDays.push(getDateOfWeekday(startDate, 1, 2)); // Tuesday
+    teachingDays.push(getDateOfWeekday(startDate, 1, 4)); // Thursday
+
+    // Week 3: Tuesday and Thursday
+    teachingDays.push(getDateOfWeekday(startDate, 2, 2)); // Tuesday
+    teachingDays.push(getDateOfWeekday(startDate, 2, 4)); // Thursday
+
+    // Week 4: Monday and Friday (exam)
+    teachingDays.push(getDateOfWeekday(startDate, 3, 1)); // Monday
+    teachingDays.push(getDateOfWeekday(startDate, 3, 5)); // Friday (Tenta)
+
+    // Add to store (remove any existing teaching days for this slot first)
+    this.teachingDays = this.teachingDays.filter((td) => td.slot_id !== slotId);
+    teachingDays.forEach((date) => {
+      this.teachingDays.push({ slot_id: slotId, date });
+    });
+  }
+
+  initializeAllTeachingDays() {
+    // Generate default teaching days for all slots that don't have any
+    this.slots.forEach((slot) => {
+      const hasTeachingDays = this.teachingDays.some(
+        (td) => td.slot_id === slot.slot_id
+      );
+      if (!hasTeachingDays) {
+        this.generateDefaultTeachingDays(slot.slot_id);
+      }
+    });
+    this.notify();
+  }
+
+  toggleTeachingDay(slotId, date) {
+    const index = this.teachingDays.findIndex(
+      (td) => td.slot_id === slotId && td.date === date
+    );
+
+    if (index !== -1) {
+      this.teachingDays.splice(index, 1);
+    } else {
+      this.teachingDays.push({ slot_id: slotId, date });
+    }
+    this.notify();
+  }
+
+  getTeachingDaysForSlot(slotId) {
+    return this.teachingDays
+      .filter((td) => td.slot_id === slotId)
+      .map((td) => td.date);
+  }
+
+  isTeachingDay(slotId, date) {
+    return this.teachingDays.some(
+      (td) => td.slot_id === slotId && td.date === date
+    );
   }
 
   // Import from Excel/JSON
