@@ -10,6 +10,7 @@ export class DataStore {
     this.courseRuns = [];
     this.teacherAvailability = [];
     this.teachingDays = []; // Array of {slot_id, date} objects marking teaching days
+    this.examDates = []; // Array of {slot_id, date} objects marking exam dates (single per slot)
     this.prerequisiteProblems = [];
     this.listeners = [];
 
@@ -50,6 +51,7 @@ export class DataStore {
       this.courseRuns = data.courseRuns || [];
       this.teacherAvailability = data.teacherAvailability || [];
       this.teachingDays = data.teachingDays || [];
+      this.examDates = data.examDates || [];
 
       // Initialize default teaching days for slots that don't have any
       this.initializeAllTeachingDays();
@@ -517,6 +519,7 @@ export class DataStore {
           courseRuns: this.courseRuns,
           teacherAvailability: this.teacherAvailability,
           teachingDays: this.teachingDays,
+          examDates: this.examDates,
         }),
       });
 
@@ -1148,6 +1151,58 @@ export class DataStore {
     return this.teachingDays.some(
       (td) => td.slot_id === slotId && td.date === date
     );
+  }
+
+  // Exam date management methods
+  setExamDate(slotId, date) {
+    // Remove any existing exam date for this slot (radio button behavior)
+    this.examDates = this.examDates.filter((ed) => ed.slot_id !== slotId);
+
+    // Add the new exam date
+    this.examDates.push({
+      slot_id: slotId,
+      date,
+      locked: true, // Exam dates are locked by default
+    });
+
+    this.notify();
+  }
+
+  clearExamDate(slotId) {
+    this.examDates = this.examDates.filter((ed) => ed.slot_id !== slotId);
+    this.notify();
+  }
+
+  getExamDate(slotId) {
+    const examDate = this.examDates.find((ed) => ed.slot_id === slotId);
+    return examDate ? examDate.date : null;
+  }
+
+  isExamDate(slotId, date) {
+    return this.examDates.some(
+      (ed) => ed.slot_id === slotId && ed.date === date
+    );
+  }
+
+  isExamDateLocked(slotId) {
+    const examDate = this.examDates.find((ed) => ed.slot_id === slotId);
+    return examDate ? examDate.locked : false;
+  }
+
+  unlockExamDate(slotId) {
+    const examDate = this.examDates.find((ed) => ed.slot_id === slotId);
+    if (examDate) {
+      examDate.locked = false;
+      this.notify();
+    }
+  }
+
+  lockExamDate(slotId) {
+    const examDate = this.examDates.find((ed) => ed.slot_id === slotId);
+    if (examDate) {
+      examDate.locked = true;
+      this.notify();
+    }
   }
 
   // Import from Excel/JSON

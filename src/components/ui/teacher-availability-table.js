@@ -19,6 +19,7 @@ export class TeacherAvailabilityTable extends LitElement {
     _paintMode: { type: String }, // 'add' or 'remove'
     _detailSlotDate: { type: String }, // Set when in detail view for a specific slot
     _detailSlotId: { type: Number }, // The specific slot_id being viewed in detail
+    _isEditingExamDate: { type: Boolean }, // Whether exam date editing is enabled
   };
 
   static styles = css`
@@ -181,6 +182,67 @@ export class TeacherAvailabilityTable extends LitElement {
       background-color: #2563eb;
     }
 
+    /* Exam date - orange (locked) */
+    .teacher-cell.exam-date-locked:not(.unavailable) {
+      background-color: #ea580c;
+      color: white;
+    }
+
+    .teacher-timeline-table td:has(.teacher-cell.exam-date-locked) {
+      background-color: #ea580c;
+    }
+
+    .teacher-timeline-table th.exam-date-locked-header {
+      background-color: #ea580c;
+      color: white;
+      cursor: not-allowed;
+      font-weight: var(--font-weight-bold);
+    }
+
+    /* Exam date - dimmed orange (unlocked) */
+    .teacher-cell.exam-date-unlocked:not(.unavailable) {
+      background-color: #fed7aa;
+      opacity: 0.7;
+    }
+
+    .teacher-timeline-table td:has(.teacher-cell.exam-date-unlocked) {
+      background-color: #fed7aa;
+      opacity: 0.7;
+    }
+
+    .teacher-timeline-table th.exam-date-unlocked-header {
+      background-color: #fed7aa;
+      color: #9a3412;
+      cursor: pointer;
+      font-weight: var(--font-weight-bold);
+      opacity: 0.7;
+    }
+
+    .teacher-timeline-table th.exam-date-unlocked-header:hover {
+      opacity: 0.9;
+    }
+
+    /* Exam date - yellow (new selection) */
+    .teacher-cell.exam-date-new:not(.unavailable) {
+      background-color: #eab308;
+      color: white;
+    }
+
+    .teacher-timeline-table td:has(.teacher-cell.exam-date-new) {
+      background-color: #eab308;
+    }
+
+    .teacher-timeline-table th.exam-date-new-header {
+      background-color: #eab308;
+      color: white;
+      cursor: pointer;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .teacher-timeline-table th.exam-date-new-header:hover {
+      background-color: #ca8a04;
+    }
+
     .teacher-cell.unavailable::after {
       content: "✕";
       position: absolute;
@@ -244,6 +306,11 @@ export class TeacherAvailabilityTable extends LitElement {
       font-weight: var(--font-weight-semibold);
       color: var(--color-primary);
     }
+
+    .detail-view-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
   `;
 
   constructor() {
@@ -254,6 +321,8 @@ export class TeacherAvailabilityTable extends LitElement {
     this._isMouseDown = false;
     this._paintMode = null;
     this._detailSlotDate = null;
+    this._detailSlotId = null;
+    this._isEditingExamDate = false;
   }
 
   render() {
@@ -314,13 +383,22 @@ export class TeacherAvailabilityTable extends LitElement {
           📅 Detaljvy för ${this._formatSlotDate(this._detailSlotDate)}
           ${slot ? ` (${days.length} dagar)` : ""}
         </div>
-        <henry-button
-          variant="secondary"
-          size="small"
-          @click="${this._exitDetailView}"
-        >
-          ← Avsluta detaljläge
-        </henry-button>
+        <div class="detail-view-actions">
+          <henry-button
+            variant="${this._isEditingExamDate ? 'primary' : 'outline'}"
+            size="small"
+            @click="${this._toggleExamDateEditing}"
+          >
+            ${this._isEditingExamDate ? '🚫 Avbryt ändring' : '📝 Ändra tentamensdatum'}
+          </henry-button>
+          <henry-button
+            variant="secondary"
+            size="small"
+            @click="${this._exitDetailView}"
+          >
+            ← Avsluta detaljläge
+          </henry-button>
+        </div>
       </div>
 
       <div
@@ -352,11 +430,37 @@ export class TeacherAvailabilityTable extends LitElement {
     const weekday = d.toLocaleString("sv-SE", { weekday: "short" });
 
     const state = store.getTeachingDayState(this._detailSlotId, dateStr);
+    const isExamDate = store.isExamDate(this._detailSlotId, dateStr);
+    const isExamDateLocked = store.isExamDateLocked(this._detailSlotId);
 
     let headerClass = "";
     let titleText = "Klicka för att markera som undervisningsdag";
+    let clickHandler = () => this._toggleTeachingDay(dateStr);
 
-    if (state) {
+    // Exam date logic takes precedence
+    if (isExamDate) {
+      if (isExamDateLocked) {
+        headerClass = "exam-date-locked-header";
+        titleText = "Tentamensdatum (låst - tryck 'Ändra tentamensdatum' för att ändra)";
+        clickHandler = null;
+      } else if (this._isEditingExamDate) {
+        // Currently editing - this is the unlocked existing date
+        headerClass = "exam-date-unlocked-header";
+        titleText = "Nuvarande tentamensdatum (klicka för att byta)";
+        clickHandler = () => this._setExamDate(dateStr);
+      } else {
+        // Shouldn't happen - unlocked but not editing
+        headerClass = "exam-date-unlocked-header";
+        titleText = "Tentamensdatum (olåst)";
+        clickHandler = null;
+      }
+    } else if (this._isEditingExamDate) {
+      // Not exam date but editing mode - can set as new exam date
+      headerClass = "exam-date-new-header";
+      titleText = "Klicka för att sätta som tentamensdatum";
+      clickHandler = () => this._setExamDate(dateStr);
+    } else if (state) {
+      // Teaching day logic
       if (state.isDefault && state.active) {
         headerClass = "teaching-day-default-header";
         titleText = "Standarddag (klicka för att inaktivera)";
@@ -371,9 +475,9 @@ export class TeacherAvailabilityTable extends LitElement {
 
     return html`<th
       class="${headerClass}"
-      @click="${() => this._toggleTeachingDay(dateStr)}"
+      @click="${clickHandler}"
       title="${titleText}"
-      style="cursor: pointer;"
+      style="cursor: ${clickHandler ? 'pointer' : 'not-allowed'};"
     >
       ${weekday}<br />${day} ${month}
     </th>`;
@@ -427,7 +531,28 @@ export class TeacherAvailabilityTable extends LitElement {
     let titleText = dateStr;
 
     const state = store.getTeachingDayState(this._detailSlotId, dateStr);
-    if (state) {
+    const isExamDate = store.isExamDate(this._detailSlotId, dateStr);
+    const isExamDateLocked = store.isExamDateLocked(this._detailSlotId);
+
+    // Exam date logic takes precedence over teaching days
+    if (isExamDate) {
+      if (isExamDateLocked) {
+        cellClass += " exam-date-locked";
+        titleText += " (Tentamensdatum - låst)";
+      } else if (this._isEditingExamDate) {
+        cellClass += " exam-date-unlocked";
+        titleText += " (Tentamensdatum - olåst)";
+      } else {
+        // Shouldn't happen
+        cellClass += " exam-date-unlocked";
+        titleText += " (Tentamensdatum - olåst)";
+      }
+    } else if (this._isEditingExamDate) {
+      // Not exam date but in editing mode - potential new selection
+      cellClass += " exam-date-new";
+      titleText += " (Kan väljas som tentamensdatum)";
+    } else if (state) {
+      // Teaching day logic
       if (state.isDefault && state.active) {
         cellClass += " teaching-day-default";
         titleText += " (Standarddag)";
@@ -443,7 +568,9 @@ export class TeacherAvailabilityTable extends LitElement {
     if (isUnavailable) {
       cellClass += " unavailable";
       titleText = `Upptagen ${dateStr}`;
-      if (state) {
+      if (isExamDate) {
+        titleText += " (Tentamensdatum)";
+      } else if (state) {
         if (state.isDefault && state.active) {
           titleText += " (Standarddag)";
         } else if (state.isDefault && !state.active) {
@@ -469,23 +596,35 @@ export class TeacherAvailabilityTable extends LitElement {
     `;
   }
 
-  _toggleTeachingDay(dateStr) {
-    if (this._teachingDays.has(dateStr)) {
-      this._teachingDays.delete(dateStr);
-    } else {
-      this._teachingDays.add(dateStr);
-    }
-    this.requestUpdate();
-  }
-
   _exitDetailView() {
     this._detailSlotDate = null;
     this._detailSlotId = null;
+    this._isEditingExamDate = false; // Reset exam date editing state
     this.requestUpdate();
   }
 
   _toggleTeachingDay(dateStr) {
     store.toggleTeachingDay(this._detailSlotId, dateStr);
+    this.requestUpdate();
+  }
+
+  _toggleExamDateEditing() {
+    this._isEditingExamDate = !this._isEditingExamDate;
+    if (this._isEditingExamDate) {
+      // When entering edit mode, unlock the current exam date if it exists
+      store.unlockExamDate(this._detailSlotId);
+    } else {
+      // When exiting edit mode, lock the current exam date
+      store.lockExamDate(this._detailSlotId);
+    }
+    this.requestUpdate();
+  }
+
+  _setExamDate(dateStr) {
+    store.setExamDate(this._detailSlotId, dateStr);
+    // Exit editing mode and lock the new date
+    this._isEditingExamDate = false;
+    store.lockExamDate(this._detailSlotId);
     this.requestUpdate();
   }
 
