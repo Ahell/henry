@@ -1,78 +1,19 @@
 import { LitElement, html, css } from "lit";
 import { store } from "../../utils/store.js";
 import "./button.js";
-
-// Helper wrappers and small utilities to improve readability
-// These are intentionally thin wrappers around `store` and
-// localize repeated logic so the main component methods stay concise.
-
-function teacherHasSlotEntry(teacherId, fromDate, slotId) {
-  return store.teacherAvailability.some(
-    (a) =>
-      a.teacher_id === teacherId &&
-      a.from_date === fromDate &&
-      a.slot_id === slotId &&
-      a.type === "busy"
-  );
-}
-
-function findTeacherSlotEntry(teacherId, fromDate, slotId) {
-  return store.teacherAvailability.find(
-    (a) =>
-      a.teacher_id === teacherId &&
-      a.from_date === fromDate &&
-      a.slot_id === slotId &&
-      a.type === "busy"
-  );
-}
-
-function convertSlotEntryToDayEntriesAndRemove(slotId, teacherId, clickedDate) {
-  // Remove the slot-level entry and add day-level entries for all
-  // other days in the slot (preserves existing behavior).
-  const slotEntry = findTeacherSlotEntry(
-    teacherId,
-    store.getSlotDays(slotId)[0],
-    slotId
-  );
-  // Note: we prefer to find the exact slot entry using findTeacherSlotEntry
-  // above in callers when we already know the exact from_date.
-  // Here we just proceed with the standard conversion using the slotId.
-  // Remove any slot-level entries that match teacher+slotId
-  const entryToRemove = store.teacherAvailability.find(
-    (a) =>
-      a.teacher_id === teacherId &&
-      a.slot_id === slotId &&
-      a.type === "busy" &&
-      a.from_date
-  );
-  if (entryToRemove) {
-    store.removeTeacherAvailability(entryToRemove.id);
-  }
-
-  const days = store.getSlotDays(slotId);
-  days.forEach((day) => {
-    if (day !== clickedDate) {
-      store.addTeacherAvailability({
-        teacher_id: teacherId,
-        from_date: day,
-        to_date: day,
-        type: "busy",
-      });
-    }
-  });
-}
-
-function toggleDayAvailability(teacherId, date) {
-  return store.toggleTeacherAvailabilityForDay(teacherId, date);
-}
-
-function isDayUnavailable(teacherId, date) {
-  return store.isTeacherUnavailableOnDay(teacherId, date);
-}
-
-function toggleSlotAvailability(teacherId, slotDate, slotId) {
-  return store.toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId);
-}
+import {
+  hasBusySlotEntry,
+  findBusySlotEntry,
+  removeBusySlotEntry,
+  convertSlotEntryToDayEntries,
+  isDayUnavailableConsideringSlot,
+  teacherHasSlotEntry,
+  findTeacherSlotEntry,
+  convertSlotEntryToDayEntriesAndRemove,
+  toggleDayAvailability,
+  isDayUnavailable,
+  toggleSlotAvailability,
+} from "../../utils/teacherAvailabilityHelpers.js";
 
 /**
  * TeacherAvailabilityTable - A specialized table component for displaying and managing teacher availability
@@ -596,36 +537,16 @@ export class TeacherAvailabilityTable extends LitElement {
   }
 
   _renderDayCell(teacher, dateStr) {
-    // Check if this specific day is unavailable
-    let isUnavailable = store.isTeacherUnavailableOnDay(
-      teacher.teacher_id,
-      dateStr
+    const teacherId = teacher.teacher_id;
+
+    // Determine if the day is unavailable either by day-level entry
+    // or by a slot-level busy entry when in detail view
+    const isUnavailable = isDayUnavailableConsideringSlot(
+      teacherId,
+      dateStr,
+      this._detailSlotId,
+      this._detailSlotDate
     );
-
-    if (dateStr === "2025-01-17" && teacher.teacher_id === 1) {
-      console.log("🎨 Rendering 2025-01-17 for teacher 1:", isUnavailable);
-    }
-
-    // If not, check if the entire slot is marked as unavailable (slot-level entry)
-    if (!isUnavailable && this._detailSlotDate && this._detailSlotId) {
-      const hasSlotEntry = store.teacherAvailability.some(
-        (a) =>
-          a.teacher_id === teacher.teacher_id &&
-          a.from_date === this._detailSlotDate &&
-          a.slot_id === this._detailSlotId &&
-          a.type === "busy"
-      );
-      if (hasSlotEntry) {
-        isUnavailable = true;
-        if (dateStr === "2025-01-17" && teacher.teacher_id === 1) {
-          console.log("🔴 Found slot entry, marking as unavailable");
-        }
-      }
-    }
-
-    if (dateStr === "2025-01-17" && teacher.teacher_id === 1) {
-      console.log("✅ Final isUnavailable:", isUnavailable);
-    }
 
     let cellClass = "teacher-cell";
     let titleText = dateStr;
@@ -889,49 +810,24 @@ export class TeacherAvailabilityTable extends LitElement {
       const date = cell.dataset.date;
 
       // First check if there's a slot-level entry for THIS specific slot
-      let hasSlotEntry = false;
-      if (this._detailSlotDate && this._detailSlotId) {
-        hasSlotEntry = store.teacherAvailability.some(
-          (a) =>
-            a.teacher_id === teacherId &&
-            a.from_date === this._detailSlotDate &&
-            a.slot_id === this._detailSlotId &&
-            a.type === "busy"
-        );
-      }
+      const hasSlotEntry = hasBusySlotEntry(
+        teacherId,
+        this._detailSlotId,
+        this._detailSlotDate
+      );
 
       if (hasSlotEntry) {
-        // There's a slot-level entry, convert it to individual day entries
-        // Remove the slot-level entry
-        const slotEntry = store.teacherAvailability.find(
-          (a) =>
-            a.teacher_id === teacherId &&
-            a.from_date === this._detailSlotDate &&
-            a.slot_id === this._detailSlotId &&
-            a.type === "busy"
+        // Convert slot-level entry into day-level entries and remove it
+        const removed = convertSlotEntryToDayEntriesAndRemove(
+          this._detailSlotId,
+          teacherId,
+          date
         );
-        if (slotEntry) {
-          console.log("🗑️ Removing slot entry:", slotEntry.id);
-          store.removeTeacherAvailability(slotEntry.id);
+        if (removed) {
+          console.log("🗑️ Removing slot entry:", removed.id);
+          const days = store.getSlotDays(this._detailSlotId);
+          console.log("📅 Days in slot:", days.length, "Clicked date:", date);
         }
-
-        // Add individual entries for all OTHER days in the slot
-        const days = store.getSlotDays(this._detailSlotId);
-        console.log("📅 Days in slot:", days.length, "Clicked date:", date);
-        days.forEach((day) => {
-          if (day !== date) {
-            // Add entry for all days except the one being clicked
-            console.log("➕ Adding day entry for:", day);
-            store.addTeacherAvailability({
-              teacher_id: teacherId,
-              from_date: day,
-              to_date: day,
-              type: "busy",
-            });
-          } else {
-            console.log("⏭️ Skipping clicked day:", day);
-          }
-        });
 
         // Set paint mode to remove (since we just unmarked this day)
         this._paintMode = "remove";
@@ -1020,37 +916,18 @@ export class TeacherAvailabilityTable extends LitElement {
       );
 
       // If not a day-level entry, check if there's a slot-level entry
-      if (!isCurrentlyUnavailable && this._detailSlotDate) {
-        const hasSlotEntry = store.teacherAvailability.some(
-          (a) =>
-            a.teacher_id === teacherId &&
-            a.from_date === this._detailSlotDate &&
-            a.type === "busy"
-        );
-        if (hasSlotEntry) {
+      if (!isCurrentlyUnavailable && this._detailSlotDate && this._detailSlotId) {
+        if (
+          hasBusySlotEntry(teacherId, this._detailSlotId, this._detailSlotDate)
+        ) {
           isCurrentlyUnavailable = true;
         }
       }
 
       if (this._paintMode === "add" && !isCurrentlyUnavailable) {
         // Check if there's a slot-level entry that needs to be converted
-        if (this._detailSlotDate) {
-          const slotEntry = store.teacherAvailability.find(
-            (a) =>
-              a.teacher_id === teacherId &&
-              a.from_date === this._detailSlotDate &&
-              a.type === "busy"
-          );
-          if (slotEntry) {
-            // This shouldn't happen in "add" mode, but handle it just in case
-            // (it means we're trying to add to an already fully marked slot)
-            store.toggleTeacherAvailabilityForDay(teacherId, date);
-          } else {
-            store.toggleTeacherAvailabilityForDay(teacherId, date);
-          }
-        } else {
-          store.toggleTeacherAvailabilityForDay(teacherId, date);
-        }
+        // In add mode we simply toggle the day-level availability
+        store.toggleTeacherAvailabilityForDay(teacherId, date);
 
         this.requestUpdate();
 
@@ -1063,29 +940,15 @@ export class TeacherAvailabilityTable extends LitElement {
         // Check if this is from a slot-level entry
         const isDayLevel = store.isTeacherUnavailableOnDay(teacherId, date);
 
-        if (!isDayLevel && this._detailSlotDate) {
-          // This is a slot-level entry, need to convert it
-          const slotEntry = store.teacherAvailability.find(
-            (a) =>
-              a.teacher_id === teacherId &&
-              a.from_date === this._detailSlotDate &&
-              a.type === "busy"
+        if (!isDayLevel && this._detailSlotDate && this._detailSlotId) {
+          // This is a slot-level entry, convert+remove via helper
+          const removed = convertSlotEntryToDayEntriesAndRemove(
+            this._detailSlotId,
+            teacherId,
+            date
           );
-          if (slotEntry) {
-            store.removeTeacherAvailability(slotEntry.id);
-
-            // Add individual entries for all OTHER days
-            const days = store.getSlotDays(this._detailSlotDate);
-            days.forEach((day) => {
-              if (day !== date) {
-                store.addTeacherAvailability({
-                  teacher_id: teacherId,
-                  from_date: day,
-                  to_date: day,
-                  type: "busy",
-                });
-              }
-            });
+          if (removed) {
+            // converted and removed
           }
         } else {
           // Regular day-level entry, just toggle it
