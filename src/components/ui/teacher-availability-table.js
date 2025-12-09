@@ -21,7 +21,12 @@ import {
  * @param {{slotId:number, dateStr:string, isEditingExamDate:boolean, store:object}} options
  * @returns {{className:string,title:string,clickMode:('toggleTeachingDay'|'setExamDate'|null)}}
  */
-export function getDetailDayHeaderPresentation({ slotId, dateStr, isEditingExamDate, store }) {
+export function getDetailDayHeaderPresentation({
+  slotId,
+  dateStr,
+  isEditingExamDate,
+  store,
+}) {
   const state = store.getTeachingDayState(slotId, dateStr);
   const isExamDate = store.isExamDate(slotId, dateStr);
   const isExamDateLocked = store.isExamDateLocked(slotId);
@@ -34,7 +39,8 @@ export function getDetailDayHeaderPresentation({ slotId, dateStr, isEditingExamD
   if (isExamDate) {
     if (isExamDateLocked) {
       className = "exam-date-locked-header";
-      title = "Tentamensdatum (låst - tryck 'Ändra tentamensdatum' för att ändra)";
+      title =
+        "Tentamensdatum (låst - tryck 'Ändra tentamensdatum' för att ändra)";
       clickMode = null;
     } else if (isEditingExamDate) {
       className = "exam-date-unlocked-header";
@@ -65,14 +71,20 @@ export function getDetailDayHeaderPresentation({ slotId, dateStr, isEditingExamD
   return { className, title, clickMode };
 }
 
-
 /**
  * Decide presentation for a day cell in the detail view.
  * Pure function: queries `store` but does NOT mutate state.
  * @param {{slotId:number, dateStr:string, teacherId:number, isEditingExamDate:boolean, store:object}} options
  * @returns {{className:string,title:string}}
  */
-export function getDetailDayCellPresentation({ slotId, slotDate, dateStr, teacherId, isEditingExamDate, store }) {
+export function getDetailDayCellPresentation({
+  slotId,
+  slotDate,
+  dateStr,
+  teacherId,
+  isEditingExamDate,
+  store,
+}) {
   const isUnavailable = isDayUnavailableConsideringSlot(
     teacherId,
     dateStr,
@@ -124,34 +136,47 @@ export function getDetailDayCellPresentation({ slotId, slotDate, dateStr, teache
   return { className, title };
 }
 
-
 /**
  * Decide presentation for an overview cell (slot-level view).
  * Pure function: queries `store` but does NOT mutate state.
  * @param {{teacher:object, slot:object, slotDate:string, store:object}} options
  * @returns {{className:string,title:string,content:string,isLocked:boolean}}
  */
-export function getOverviewCellPresentation({ teacher, slot, slotDate, store }) {
+export function getOverviewCellPresentation({
+  teacher,
+  slot,
+  slotDate,
+  store,
+}) {
   const compatibleCourseIds = teacher.compatible_courses || [];
   const courseRuns = store.getCourseRuns();
 
   const compatibleRuns = courseRuns.filter(
-    (r) => r.slot_id === slot.slot_id && compatibleCourseIds.includes(r.course_id)
+    (r) =>
+      r.slot_id === slot.slot_id && compatibleCourseIds.includes(r.course_id)
   );
 
   const assignedRuns = courseRuns.filter(
-    (r) => r.slot_id === slot.slot_id && r.teachers && r.teachers.includes(teacher.teacher_id)
+    (r) =>
+      r.slot_id === slot.slot_id &&
+      r.teachers &&
+      r.teachers.includes(teacher.teacher_id)
   );
 
   const isAssigned = assignedRuns.length > 0;
-  const isUnavailable = store.isTeacherUnavailable(teacher.teacher_id, slotDate, slot.slot_id);
+  const isUnavailable = store.isTeacherUnavailable(
+    teacher.teacher_id,
+    slotDate,
+    slot.slot_id
+  );
 
   const unavailablePercentage = store.getTeacherUnavailablePercentageForSlot(
     teacher.teacher_id,
     slotDate,
     slot.slot_id
   );
-  const isPartiallyUnavailable = unavailablePercentage > 0 && unavailablePercentage < 1;
+  const isPartiallyUnavailable =
+    unavailablePercentage > 0 && unavailablePercentage < 1;
 
   let className = "";
   let content = "";
@@ -226,6 +251,43 @@ export class TeacherAvailabilityTable extends LitElement {
   static styles = css`
     :host {
       display: block;
+      --teaching-day-default-bg: #9333ea;
+      --teaching-day-default-text: white;
+      --teaching-day-default-cursor: pointer;
+      --teaching-day-default-hover-bg: color-mix(
+        in srgb,
+        var(--teaching-day-default-bg),
+        black 15%
+      );
+      --teaching-day-default-dimmed-bg: #e9d5ff;
+      --teaching-day-default-dimmed-text: #6b21a8;
+      --teaching-day-default-dimmed-cursor: pointer;
+      --teaching-day-default-dimmed-opacity: 0.5;
+      --teaching-day-default-dimmed-hover-opacity: 0.7;
+      --teaching-day-alt-bg: #3b82f6;
+      --teaching-day-alt-text: white;
+      --teaching-day-alt-cursor: pointer;
+      --teaching-day-alt-hover-bg: color-mix(
+        in srgb,
+        var(--teaching-day-alt-bg),
+        black 10%
+      );
+      --exam-date-locked-bg: #ea580c;
+      --exam-date-locked-text: white;
+      --exam-date-locked-cursor: not-allowed;
+      --exam-date-unlocked-bg: #fed7aa;
+      --exam-date-unlocked-text: #9a3412;
+      --exam-date-unlocked-cursor: pointer;
+      --exam-date-unlocked-opacity: 0.7;
+      --exam-date-unlocked-hover-opacity: 0.9;
+      --exam-date-new-bg: #eab308;
+      --exam-date-new-text: white;
+      --exam-date-new-cursor: pointer;
+      --exam-date-new-hover-bg: color-mix(
+        in srgb,
+        var(--exam-date-new-bg),
+        black 10%
+      );
     }
 
     .table-container {
@@ -322,126 +384,126 @@ export class TeacherAvailabilityTable extends LitElement {
 
     /* Default teaching day - purple/lila, active */
     .teacher-cell.teaching-day-default:not(.unavailable) {
-      background-color: #9333ea;
+      background-color: var(--teaching-day-default-bg);
     }
 
     .teacher-timeline-table td:has(.teacher-cell.teaching-day-default) {
-      background-color: #9333ea;
+      background-color: var(--teaching-day-default-bg);
     }
 
     .teacher-timeline-table th.teaching-day-default-header {
-      background-color: #9333ea;
-      color: white;
-      cursor: pointer;
+      background-color: var(--teaching-day-default-bg);
+      color: var(--teaching-day-default-text);
+      cursor: var(--teaching-day-default-cursor);
       font-weight: var(--font-weight-bold);
     }
 
     .teacher-timeline-table th.teaching-day-default-header:hover {
-      background-color: #7e22ce;
+      background-color: var(--teaching-day-default-hover-bg);
     }
 
     /* Default teaching day - dimmed (inactive) */
     .teacher-cell.teaching-day-default-dimmed:not(.unavailable) {
-      background-color: #e9d5ff;
-      opacity: 0.5;
+      background-color: var(--teaching-day-default-dimmed-bg);
+      opacity: var(--teaching-day-default-dimmed-opacity);
     }
 
     .teacher-timeline-table td:has(.teacher-cell.teaching-day-default-dimmed) {
-      background-color: #e9d5ff;
-      opacity: 0.5;
+      background-color: var(--teaching-day-default-dimmed-bg);
+      opacity: var(--teaching-day-default-dimmed-opacity);
     }
 
     .teacher-timeline-table th.teaching-day-default-dimmed-header {
-      background-color: #e9d5ff;
-      color: #6b21a8;
-      cursor: pointer;
+      background-color: var(--teaching-day-default-dimmed-bg);
+      color: var(--teaching-day-default-dimmed-text);
+      cursor: var(--teaching-day-default-dimmed-cursor);
       font-weight: var(--font-weight-bold);
-      opacity: 0.5;
+      opacity: var(--teaching-day-default-dimmed-opacity);
     }
 
     .teacher-timeline-table th.teaching-day-default-dimmed-header:hover {
-      opacity: 0.7;
+      opacity: var(--teaching-day-default-dimmed-hover-opacity);
     }
 
     /* Alternative teaching day - blue */
     .teacher-cell.teaching-day-alt:not(.unavailable) {
-      background-color: #3b82f6;
+      background-color: var(--teaching-day-alt-bg);
     }
 
     .teacher-timeline-table td:has(.teacher-cell.teaching-day-alt) {
-      background-color: #3b82f6;
+      background-color: var(--teaching-day-alt-bg);
     }
 
     .teacher-timeline-table th.teaching-day-alt-header {
-      background-color: #3b82f6;
-      color: white;
-      cursor: pointer;
+      background-color: var(--teaching-day-alt-bg);
+      color: var(--teaching-day-alt-text);
+      cursor: var(--teaching-day-alt-cursor);
       font-weight: var(--font-weight-bold);
     }
 
     .teacher-timeline-table th.teaching-day-alt-header:hover {
-      background-color: #2563eb;
+      background-color: var(--teaching-day-alt-hover-bg);
     }
 
     /* Exam date - orange (locked) */
     .teacher-cell.exam-date-locked:not(.unavailable) {
-      background-color: #ea580c;
-      color: white;
+      background-color: var(--exam-date-locked-bg);
+      color: var(--exam-date-locked-text);
     }
 
     .teacher-timeline-table td:has(.teacher-cell.exam-date-locked) {
-      background-color: #ea580c;
+      background-color: var(--exam-date-locked-bg);
     }
 
     .teacher-timeline-table th.exam-date-locked-header {
-      background-color: #ea580c;
-      color: white;
-      cursor: not-allowed;
+      background-color: var(--exam-date-locked-bg);
+      color: var(--exam-date-locked-text);
+      cursor: var(--exam-date-locked-cursor);
       font-weight: var(--font-weight-bold);
     }
 
     /* Exam date - dimmed orange (unlocked) */
     .teacher-cell.exam-date-unlocked:not(.unavailable) {
-      background-color: #fed7aa;
-      opacity: 0.7;
+      background-color: var(--exam-date-unlocked-bg);
+      opacity: var(--exam-date-unlocked-opacity);
     }
 
     .teacher-timeline-table td:has(.teacher-cell.exam-date-unlocked) {
-      background-color: #fed7aa;
-      opacity: 0.7;
+      background-color: var(--exam-date-unlocked-bg);
+      opacity: var(--exam-date-unlocked-opacity);
     }
 
     .teacher-timeline-table th.exam-date-unlocked-header {
-      background-color: #fed7aa;
-      color: #9a3412;
-      cursor: pointer;
+      background-color: var(--exam-date-unlocked-bg);
+      color: var(--exam-date-unlocked-text);
+      cursor: var(--exam-date-unlocked-cursor);
       font-weight: var(--font-weight-bold);
-      opacity: 0.7;
+      opacity: var(--exam-date-unlocked-opacity);
     }
 
     .teacher-timeline-table th.exam-date-unlocked-header:hover {
-      opacity: 0.9;
+      opacity: var(--exam-date-unlocked-hover-opacity);
     }
 
     /* Exam date - yellow (new selection) */
     .teacher-cell.exam-date-new:not(.unavailable) {
-      background-color: #eab308;
-      color: white;
+      background-color: var(--exam-date-new-bg);
+      color: var(--exam-date-new-text);
     }
 
     .teacher-timeline-table td:has(.teacher-cell.exam-date-new) {
-      background-color: #eab308;
+      background-color: var(--exam-date-new-bg);
     }
 
     .teacher-timeline-table th.exam-date-new-header {
-      background-color: #eab308;
-      color: white;
-      cursor: pointer;
+      background-color: var(--exam-date-new-bg);
+      color: var(--exam-date-new-text);
+      cursor: var(--exam-date-new-cursor);
       font-weight: var(--font-weight-bold);
     }
 
     .teacher-timeline-table th.exam-date-new-header:hover {
-      background-color: #ca8a04;
+      background-color: var(--exam-date-new-hover-bg);
     }
 
     .teacher-cell.unavailable::after {
@@ -703,7 +765,9 @@ export class TeacherAvailabilityTable extends LitElement {
       store,
     });
 
-    const cellClass = `teacher-cell${presentation.className ? " " + presentation.className : ""}`;
+    const cellClass = `teacher-cell${
+      presentation.className ? " " + presentation.className : ""
+    }`;
     const titleText = presentation.title;
 
     return html`
@@ -810,7 +874,9 @@ export class TeacherAvailabilityTable extends LitElement {
       store,
     });
 
-    const cellClass = `teacher-cell${presentation.className ? " " + presentation.className : ""}`;
+    const cellClass = `teacher-cell${
+      presentation.className ? " " + presentation.className : ""
+    }`;
 
     return html`
       <td>
