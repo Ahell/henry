@@ -4,7 +4,6 @@ import "./button.js";
 import { renderDateHeader } from "./date-header.js";
 import "./detail-view-header.js";
 import "./teacher-cell.js";
-import "./teacher-row-element.js";
 import { renderDayHeader } from "./day-header.js";
 import "./overview-table.js";
 import "./detail-table.js";
