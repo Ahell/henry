@@ -35,13 +35,7 @@ export class OverviewTable extends LitElement {
           </thead>
           <tbody>
             ${this.teachers.map(teacher => html`
-              <tr>
-                <td>
-                  <span class="teacher-name">${teacher.name}</span>
-                  <span class="teacher-department">${teacher.home_department}</span>
-                </td>
-                ${this.slotDates.map(date => (this.teacherCellRenderer ? this.teacherCellRenderer(teacher, date) : html`<td></td>`))}
-              </tr>
+              <teacher-row .teacher=${teacher} .dates=${this.slotDates} .cellRenderer=${this.teacherCellRenderer}></teacher-row>
             `)}
           </tbody>
         </table>

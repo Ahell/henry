@@ -38,13 +38,7 @@ export class DetailTable extends LitElement {
           </thead>
           <tbody>
             ${this.teachers.map(teacher => html`
-              <tr>
-                <td>
-                  <span class="teacher-name">${teacher.name}</span>
-                  <span class="teacher-department">${teacher.home_department}</span>
-                </td>
-                ${this.days.map(day => (this.teacherDayCellRenderer ? this.teacherDayCellRenderer(teacher, day) : html`<td></td>`))}
-              </tr>
+              <teacher-row .teacher=${teacher} .dates=${this.days} .cellRenderer=${this.teacherDayCellRenderer}></teacher-row>
             `)}
           </tbody>
         </table>
