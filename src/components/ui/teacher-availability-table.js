@@ -5,6 +5,7 @@ import { renderDateHeader } from "./date-header.js";
 import "./detail-view-header.js";
 import "./teacher-cell.js";
 import { renderTeacherRow } from "./teacher-row.js";
+import { renderDayHeader } from "./day-header.js";
 import {
   hasBusySlotEntry,
   findBusySlotEntry,
@@ -701,10 +702,6 @@ export class TeacherAvailabilityTable extends LitElement {
   }
 
   _renderDayHeader(dateStr) {
-    const d = new Date(dateStr);
-    const day = d.getDate();
-    const month = d.toLocaleString("sv-SE", { month: "short" });
-    const weekday = d.toLocaleString("sv-SE", { weekday: "short" });
     const presentation = getDetailDayHeaderPresentation({
       slotId: this._detailSlotId,
       dateStr,
@@ -719,14 +716,7 @@ export class TeacherAvailabilityTable extends LitElement {
       clickHandler = () => this._setExamDate(dateStr);
     }
 
-    return html`<th
-      class="${presentation.className}"
-      @click="${clickHandler}"
-      title="${presentation.title}"
-      style="cursor: ${clickHandler ? "pointer" : "not-allowed"};"
-    >
-      ${weekday}<br />${day} ${month}
-    </th>`;
+    return renderDayHeader(dateStr, presentation, clickHandler);
   }
 
   
