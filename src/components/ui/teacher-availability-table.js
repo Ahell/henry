@@ -1,6 +1,8 @@
 import { LitElement, html, css } from "lit";
 import { store } from "../../utils/store.js";
 import "./button.js";
+import { renderDateHeader } from "./date-header.js";
+import "./detail-view-header.js";
 import {
   hasBusySlotEntry,
   findBusySlotEntry,
@@ -666,30 +668,13 @@ export class TeacherAvailabilityTable extends LitElement {
     const slot = this.slots.find((s) => s.slot_id === this._detailSlotId);
 
     return html`
-      <div class="detail-view-header">
-        <div class="detail-view-title">
-          📅 Detaljvy för ${this._formatSlotDate(this._detailSlotDate)}
-          ${slot ? ` (${days.length} dagar)` : ""}
-        </div>
-        <div class="detail-view-actions">
-          <henry-button
-            variant="${this._isEditingExamDate ? "primary" : "outline"}"
-            size="small"
-            @click="${this._toggleExamDateEditing}"
-          >
-            ${this._isEditingExamDate
-              ? "🚫 Avbryt ändring"
-              : "📝 Ändra tentamensdatum"}
-          </henry-button>
-          <henry-button
-            variant="secondary"
-            size="small"
-            @click="${this._exitDetailView}"
-          >
-            ← Avsluta detaljläge
-          </henry-button>
-        </div>
-      </div>
+      <detail-view-header
+        slotTitle="${this._formatSlotDate(this._detailSlotDate)}"
+        .daysLength=${days.length}
+        .isEditingExamDate=${this._isEditingExamDate}
+        @toggle-edit-exam=${() => this._toggleExamDateEditing()}
+        @exit-detail=${() => this._exitDetailView()}
+      ></detail-view-header>
 
       <div
         class="table-container ${this.isPainting ? "painting-active" : ""}"
@@ -827,20 +812,9 @@ export class TeacherAvailabilityTable extends LitElement {
   }
 
   _renderDateHeader(date) {
-    const d = new Date(date);
-    const day = d.getDate();
-    const month = d.toLocaleString("sv-SE", { month: "short" });
-    const year = d.getFullYear().toString().slice(-2);
-    return html`<th
-      class="slot-header"
-      @click="${(e) => {
-        const slot = this.slots.find((s) => s.start_date === date);
-        this._enterDetailView(date, slot?.slot_id);
-      }}"
-      title="Klicka för att se dag-för-dag-vy"
-    >
-      ${day} ${month}<br />${year}
-    </th>`;
+    const slot = this.slots.find((s) => s.start_date === date);
+    const slotId = slot?.slot_id;
+    return renderDateHeader(date, slotId, (slotDate, id) => this._enterDetailView(slotDate, id));
   }
 
   _enterDetailView(slotDate, slotId) {
