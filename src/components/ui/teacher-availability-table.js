@@ -2,6 +2,78 @@ import { LitElement, html, css } from "lit";
 import { store } from "../../utils/store.js";
 import "./button.js";
 
+// Helper wrappers and small utilities to improve readability
+// These are intentionally thin wrappers around `store` and
+// localize repeated logic so the main component methods stay concise.
+
+function teacherHasSlotEntry(teacherId, fromDate, slotId) {
+  return store.teacherAvailability.some(
+    (a) =>
+      a.teacher_id === teacherId &&
+      a.from_date === fromDate &&
+      a.slot_id === slotId &&
+      a.type === "busy"
+  );
+}
+
+function findTeacherSlotEntry(teacherId, fromDate, slotId) {
+  return store.teacherAvailability.find(
+    (a) =>
+      a.teacher_id === teacherId &&
+      a.from_date === fromDate &&
+      a.slot_id === slotId &&
+      a.type === "busy"
+  );
+}
+
+function convertSlotEntryToDayEntriesAndRemove(slotId, teacherId, clickedDate) {
+  // Remove the slot-level entry and add day-level entries for all
+  // other days in the slot (preserves existing behavior).
+  const slotEntry = findTeacherSlotEntry(
+    teacherId,
+    store.getSlotDays(slotId)[0],
+    slotId
+  );
+  // Note: we prefer to find the exact slot entry using findTeacherSlotEntry
+  // above in callers when we already know the exact from_date.
+  // Here we just proceed with the standard conversion using the slotId.
+  // Remove any slot-level entries that match teacher+slotId
+  const entryToRemove = store.teacherAvailability.find(
+    (a) =>
+      a.teacher_id === teacherId &&
+      a.slot_id === slotId &&
+      a.type === "busy" &&
+      a.from_date
+  );
+  if (entryToRemove) {
+    store.removeTeacherAvailability(entryToRemove.id);
+  }
+
+  const days = store.getSlotDays(slotId);
+  days.forEach((day) => {
+    if (day !== clickedDate) {
+      store.addTeacherAvailability({
+        teacher_id: teacherId,
+        from_date: day,
+        to_date: day,
+        type: "busy",
+      });
+    }
+  });
+}
+
+function toggleDayAvailability(teacherId, date) {
+  return store.toggleTeacherAvailabilityForDay(teacherId, date);
+}
+
+function isDayUnavailable(teacherId, date) {
+  return store.isTeacherUnavailableOnDay(teacherId, date);
+}
+
+function toggleSlotAvailability(teacherId, slotDate, slotId) {
+  return store.toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId);
+}
+
 /**
  * TeacherAvailabilityTable - A specialized table component for displaying and managing teacher availability
  * Features:
@@ -325,6 +397,31 @@ export class TeacherAvailabilityTable extends LitElement {
     this._isEditingExamDate = false;
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+
+    // Keep a bound listener so we can unsubscribe later
+    this._onStoreChange = () => {
+      this.teachers = store.getTeachers();
+      this.slots = store.getSlots();
+      this.requestUpdate();
+    };
+
+    // Subscribe to store changes and initialize values
+    store.subscribe(this._onStoreChange);
+    this._onStoreChange();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    // Unsubscribe our listener from the store (store exposes listeners array)
+    if (this._onStoreChange) {
+      const idx = store.listeners.indexOf(this._onStoreChange);
+      if (idx !== -1) store.listeners.splice(idx, 1);
+      this._onStoreChange = null;
+    }
+  }
+
   render() {
     if (this.slots.length === 0) {
       return html`
@@ -385,11 +482,13 @@ export class TeacherAvailabilityTable extends LitElement {
         </div>
         <div class="detail-view-actions">
           <henry-button
-            variant="${this._isEditingExamDate ? 'primary' : 'outline'}"
+            variant="${this._isEditingExamDate ? "primary" : "outline"}"
             size="small"
             @click="${this._toggleExamDateEditing}"
           >
-            ${this._isEditingExamDate ? '🚫 Avbryt ändring' : '📝 Ändra tentamensdatum'}
+            ${this._isEditingExamDate
+              ? "🚫 Avbryt ändring"
+              : "📝 Ändra tentamensdatum"}
           </henry-button>
           <henry-button
             variant="secondary"
@@ -441,7 +540,8 @@ export class TeacherAvailabilityTable extends LitElement {
     if (isExamDate) {
       if (isExamDateLocked) {
         headerClass = "exam-date-locked-header";
-        titleText = "Tentamensdatum (låst - tryck 'Ändra tentamensdatum' för att ändra)";
+        titleText =
+          "Tentamensdatum (låst - tryck 'Ändra tentamensdatum' för att ändra)";
         clickHandler = null;
       } else if (this._isEditingExamDate) {
         // Currently editing - this is the unlocked existing date
@@ -477,7 +577,7 @@ export class TeacherAvailabilityTable extends LitElement {
       class="${headerClass}"
       @click="${clickHandler}"
       title="${titleText}"
-      style="cursor: ${clickHandler ? 'pointer' : 'not-allowed'};"
+      style="cursor: ${clickHandler ? "pointer" : "not-allowed"};"
     >
       ${weekday}<br />${day} ${month}
     </th>`;

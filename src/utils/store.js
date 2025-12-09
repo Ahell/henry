@@ -1,6 +1,22 @@
 import { LitElement, html, css } from "lit";
 import { seedData } from "../data/seedData.js";
 
+// Dev-safe alert wrapper: logs as warning in dev, shows native alert in prod
+function showAlert(msg) {
+  const isDev =
+    typeof import.meta !== "undefined"
+      ? Boolean(import.meta.env && import.meta.env.DEV)
+      : typeof window !== "undefined" &&
+        window.location &&
+        (window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1");
+  if (isDev) {
+    console.warn("ALERT suppressed in dev:", msg);
+  } else {
+    alert(msg);
+  }
+}
+
 export class DataStore {
   constructor() {
     this.courses = [];
@@ -53,6 +69,29 @@ export class DataStore {
       this.teachingDays = data.teachingDays || [];
       this.examDates = data.examDates || [];
 
+      // Fallback: if backend omitted courseRuns or teacherAvailability, fall back to seed data
+      if (
+        (!this.courseRuns || this.courseRuns.length === 0) &&
+        seedData.courseRuns &&
+        seedData.courseRuns.length > 0
+      ) {
+        console.warn(
+          "Backend returned no courseRuns - falling back to seed data courseRuns"
+        );
+        this.courseRuns = seedData.courseRuns;
+      }
+
+      if (
+        (!this.teacherAvailability || this.teacherAvailability.length === 0) &&
+        seedData.teacherAvailability &&
+        seedData.teacherAvailability.length > 0
+      ) {
+        console.warn(
+          "Backend returned no teacherAvailability - falling back to seed data teacherAvailability"
+        );
+        this.teacherAvailability = seedData.teacherAvailability;
+      }
+
       // Initialize default teaching days for slots that don't have any
       this.initializeAllTeachingDays();
 
@@ -61,6 +100,40 @@ export class DataStore {
 
       // Validate courses have available teachers (remove those that don't)
       const removedCourses = this.validateCoursesHaveTeachers();
+
+      // If teachers exist but none have `compatible_courses` defined,
+      // try to infer from assigned runs or fall back to a random assignment.
+      const teachersMissingCompat =
+        this.teachers.length > 0 &&
+        this.teachers.every(
+          (t) => !t.compatible_courses || t.compatible_courses.length === 0
+        );
+
+      if (teachersMissingCompat) {
+        // Infer from assigned runs where possible
+        for (const teacher of this.teachers) {
+          const assignedCourseIds = new Set();
+          for (const run of this.courseRuns) {
+            if (
+              run.teacher_id === teacher.teacher_id ||
+              (run.teachers && run.teachers.includes(teacher.teacher_id))
+            ) {
+              assignedCourseIds.add(run.course_id);
+            }
+          }
+          if (assignedCourseIds.size > 0) {
+            teacher.compatible_courses = Array.from(assignedCourseIds);
+          }
+        }
+
+        // If still missing, assign random compatible courses so the UI can show options
+        const stillMissing = this.teachers.some(
+          (t) => !t.compatible_courses || t.compatible_courses.length === 0
+        );
+        if (stillMissing) {
+          this.randomizeTeacherCourses(2, 5);
+        }
+      }
 
       // Calculate prerequisite problems
       this.prerequisiteProblems = this.findCoursesWithMissingPrerequisites();
@@ -109,7 +182,7 @@ export class DataStore {
               .join("\n");
           }
 
-          alert(message);
+          showAlert(message);
         }, 100);
         this.saveData(); // Save the changes
       } else if (this.prerequisiteProblems.length > 0) {
@@ -140,7 +213,7 @@ export class DataStore {
             )
             .join("\n");
 
-          alert(message);
+          showAlert(message);
         }, 100);
       }
     } catch (error) {
@@ -472,7 +545,7 @@ export class DataStore {
           .join("\n");
       }
 
-      alert(message);
+      showAlert(message);
     } else if (newProblems.length > 0) {
       // Show alert only for new prerequisite problems even if no courses were removed
       let message = `⚠️ VARNING: Följande kurser saknar nu sina spärrkurser:\n\n`;
@@ -500,7 +573,7 @@ export class DataStore {
         )
         .join("\n");
 
-      alert(message);
+      showAlert(message);
     }
   }
 
