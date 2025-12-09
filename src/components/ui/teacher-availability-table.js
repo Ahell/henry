@@ -4,6 +4,7 @@ import "./button.js";
 import { renderDateHeader } from "./date-header.js";
 import "./detail-view-header.js";
 import "./teacher-cell.js";
+import { renderTeacherRow } from "./teacher-row.js";
 import {
   hasBusySlotEntry,
   findBusySlotEntry,
@@ -656,7 +657,7 @@ export class TeacherAvailabilityTable extends LitElement {
           </thead>
           <tbody>
             ${this.teachers.map((teacher) =>
-              this._renderTeacherRow(teacher, slotDates)
+              renderTeacherRow(teacher, slotDates, this._renderTeacherCell.bind(this))
             )}
           </tbody>
         </table>
@@ -691,7 +692,7 @@ export class TeacherAvailabilityTable extends LitElement {
           </thead>
           <tbody>
             ${this.teachers.map((teacher) =>
-              this._renderTeacherDetailRow(teacher, days)
+              renderTeacherRow(teacher, days, this._renderDayCell.bind(this))
             )}
           </tbody>
         </table>
@@ -728,17 +729,7 @@ export class TeacherAvailabilityTable extends LitElement {
     </th>`;
   }
 
-  _renderTeacherDetailRow(teacher, days) {
-    return html`
-      <tr>
-        <td>
-          <span class="teacher-name">${teacher.name}</span>
-          <span class="teacher-department">${teacher.home_department}</span>
-        </td>
-        ${days.map((day) => this._renderDayCell(teacher, day))}
-      </tr>
-    `;
-  }
+  
 
   _renderDayCell(teacher, dateStr) {
     const teacherId = teacher.teacher_id;
@@ -821,17 +812,7 @@ export class TeacherAvailabilityTable extends LitElement {
     this.requestUpdate();
   }
 
-  _renderTeacherRow(teacher, slotDates) {
-    return html`
-      <tr>
-        <td>
-          <span class="teacher-name">${teacher.name}</span>
-          <span class="teacher-department">${teacher.home_department}</span>
-        </td>
-        ${slotDates.map((date) => this._renderTeacherCell(teacher, date))}
-      </tr>
-    `;
-  }
+  
 
   _renderTeacherCell(teacher, slotDate) {
     const slot = this.slots.find((s) => s.start_date === slotDate);
