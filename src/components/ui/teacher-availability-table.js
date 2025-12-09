@@ -645,15 +645,23 @@ export class TeacherAvailabilityTable extends LitElement {
     const slotDates = [...new Set(this.slots.map((s) => s.start_date))].sort();
 
     return html`
-      <overview-table
-        .teachers=${this.teachers}
-        .slotDates=${slotDates}
-        .isPainting=${this.isPainting}
-        .dateHeaderRenderer=${this._renderDateHeader.bind(this)}
-        .teacherCellRenderer=${this._renderTeacherCell.bind(this)}
+      <div
+        class="table-container ${this.isPainting ? "painting-active" : ""}"
         @mouseup=${this._handlePaintEnd}
         @mouseleave=${this._handlePaintEnd}
-      ></overview-table>
+      >
+        <table class="teacher-timeline-table">
+          <thead>
+            <tr>
+              <th>Lärare</th>
+              ${slotDates.map((date) => this._renderDateHeader(date))}
+            </tr>
+          </thead>
+          <tbody>
+            ${this.teachers.map((teacher) => renderTeacherRow(teacher, slotDates, this._renderTeacherCell.bind(this)))}
+          </tbody>
+        </table>
+      </div>
     `;
   }
 
