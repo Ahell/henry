@@ -25,8 +25,6 @@ export class OverviewTable extends LitElement {
     return html`
       <div
         class="table-container ${this.isPainting ? 'painting-active' : ''}"
-        @mouseup="${(e) => {}}
-        @mouseleave="${(e) => {}}"
       >
         <table class="teacher-timeline-table">
           <thead>
