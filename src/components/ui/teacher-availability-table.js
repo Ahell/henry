@@ -16,6 +16,194 @@ import {
 } from "../../utils/teacherAvailabilityHelpers.js";
 
 /**
+ * Decide presentation for a day header in the detail view.
+ * Pure function: queries `store` but does NOT mutate state.
+ * @param {{slotId:number, dateStr:string, isEditingExamDate:boolean, store:object}} options
+ * @returns {{className:string,title:string,clickMode:('toggleTeachingDay'|'setExamDate'|null)}}
+ */
+export function getDetailDayHeaderPresentation({ slotId, dateStr, isEditingExamDate, store }) {
+  const state = store.getTeachingDayState(slotId, dateStr);
+  const isExamDate = store.isExamDate(slotId, dateStr);
+  const isExamDateLocked = store.isExamDateLocked(slotId);
+
+  // Defaults
+  let className = "";
+  let title = "Klicka för att markera som undervisningsdag";
+  let clickMode = "toggleTeachingDay";
+
+  if (isExamDate) {
+    if (isExamDateLocked) {
+      className = "exam-date-locked-header";
+      title = "Tentamensdatum (låst - tryck 'Ändra tentamensdatum' för att ändra)";
+      clickMode = null;
+    } else if (isEditingExamDate) {
+      className = "exam-date-unlocked-header";
+      title = "Nuvarande tentamensdatum (klicka för att byta)";
+      clickMode = "setExamDate";
+    } else {
+      className = "exam-date-unlocked-header";
+      title = "Tentamensdatum (olåst)";
+      clickMode = null;
+    }
+  } else if (isEditingExamDate) {
+    className = "exam-date-new-header";
+    title = "Klicka för att sätta som tentamensdatum";
+    clickMode = "setExamDate";
+  } else if (state) {
+    if (state.isDefault && state.active) {
+      className = "teaching-day-default-header";
+      title = "Standarddag (klicka för att inaktivera)";
+    } else if (state.isDefault && !state.active) {
+      className = "teaching-day-default-dimmed-header";
+      title = "Inaktiverad standarddag (klicka för att aktivera)";
+    } else if (!state.isDefault && state.active) {
+      className = "teaching-day-alt-header";
+      title = "Alternativ undervisningsdag (klicka för att ta bort)";
+    }
+  }
+
+  return { className, title, clickMode };
+}
+
+
+/**
+ * Decide presentation for a day cell in the detail view.
+ * Pure function: queries `store` but does NOT mutate state.
+ * @param {{slotId:number, dateStr:string, teacherId:number, isEditingExamDate:boolean, store:object}} options
+ * @returns {{className:string,title:string}}
+ */
+export function getDetailDayCellPresentation({ slotId, slotDate, dateStr, teacherId, isEditingExamDate, store }) {
+  const isUnavailable = isDayUnavailableConsideringSlot(
+    teacherId,
+    dateStr,
+    slotId,
+    slotDate
+  );
+
+  // NOTE: the helper `isDayUnavailableConsideringSlot` imported earlier already queries store internally
+
+  let className = "";
+  let title = dateStr;
+
+  const state = store.getTeachingDayState(slotId, dateStr);
+  const isExamDate = store.isExamDate(slotId, dateStr);
+  const isExamDateLocked = store.isExamDateLocked(slotId);
+
+  if (isExamDate) {
+    if (isExamDateLocked) {
+      className = "exam-date-locked";
+      title += " (Tentamensdatum - låst)";
+    } else if (isEditingExamDate) {
+      className = "exam-date-unlocked";
+      title += " (Tentamensdatum - olåst)";
+    } else {
+      className = "exam-date-unlocked";
+      title += " (Tentamensdatum - olåst)";
+    }
+  } else if (isEditingExamDate) {
+    className = "exam-date-new";
+    title += " (Kan väljas som tentamensdatum)";
+  } else if (state) {
+    if (state.isDefault && state.active) {
+      className = "teaching-day-default";
+      title += " (Standarddag)";
+    } else if (state.isDefault && !state.active) {
+      className = "teaching-day-default-dimmed";
+      title += " (Inaktiverad standarddag)";
+    } else if (!state.isDefault && state.active) {
+      className = "teaching-day-alt";
+      title += " (Alternativ undervisningsdag)";
+    }
+  }
+
+  if (isUnavailable) {
+    className += (className ? " " : "") + "unavailable";
+    title = `Upptagen ${dateStr}` + (isExamDate ? " (Tentamensdatum)" : "");
+  }
+
+  return { className, title };
+}
+
+
+/**
+ * Decide presentation for an overview cell (slot-level view).
+ * Pure function: queries `store` but does NOT mutate state.
+ * @param {{teacher:object, slot:object, slotDate:string, store:object}} options
+ * @returns {{className:string,title:string,content:string,isLocked:boolean}}
+ */
+export function getOverviewCellPresentation({ teacher, slot, slotDate, store }) {
+  const compatibleCourseIds = teacher.compatible_courses || [];
+  const courseRuns = store.getCourseRuns();
+
+  const compatibleRuns = courseRuns.filter(
+    (r) => r.slot_id === slot.slot_id && compatibleCourseIds.includes(r.course_id)
+  );
+
+  const assignedRuns = courseRuns.filter(
+    (r) => r.slot_id === slot.slot_id && r.teachers && r.teachers.includes(teacher.teacher_id)
+  );
+
+  const isAssigned = assignedRuns.length > 0;
+  const isUnavailable = store.isTeacherUnavailable(teacher.teacher_id, slotDate, slot.slot_id);
+
+  const unavailablePercentage = store.getTeacherUnavailablePercentageForSlot(
+    teacher.teacher_id,
+    slotDate,
+    slot.slot_id
+  );
+  const isPartiallyUnavailable = unavailablePercentage > 0 && unavailablePercentage < 1;
+
+  let className = "";
+  let content = "";
+  let title = "";
+  let isLocked = false;
+
+  if (isPartiallyUnavailable) {
+    className += " locked";
+    isLocked = true;
+  }
+
+  if (isAssigned) {
+    className += (className ? " " : "") + "assigned-course";
+    const courseCodes = assignedRuns
+      .map((run) => store.getCourse(run.course_id)?.code)
+      .filter(Boolean);
+    content = courseCodes.join(", ");
+    title =
+      "Tilldelad: " +
+      assignedRuns
+        .map((run) => store.getCourse(run.course_id)?.name)
+        .filter(Boolean)
+        .join(", ");
+  } else if (compatibleRuns.length > 0) {
+    className += (className ? " " : "") + "has-course";
+    const courseCodes = compatibleRuns
+      .map((run) => store.getCourse(run.course_id)?.code)
+      .filter(Boolean);
+    content = courseCodes.join(", ");
+    title = compatibleRuns
+      .map((run) => store.getCourse(run.course_id)?.name)
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  if (isUnavailable && !isAssigned) {
+    className += (className ? " " : "") + "unavailable";
+    title += title ? " (Upptagen)" : "Upptagen";
+  } else if (isPartiallyUnavailable && !isAssigned) {
+    className += (className ? " " : "") + "partially-unavailable";
+    const percentage = Math.round(unavailablePercentage * 100);
+    title += title ? ` (${percentage}% upptagen)` : `${percentage}% upptagen`;
+    title += " 🔒 Låst (använd detaljvy för att ändra)";
+  }
+
+  // Ensure leading/trailing whitespace trimmed
+  className = className.trim();
+
+  return { className, title, content, isLocked };
+}
+
+/**
  * TeacherAvailabilityTable - A specialized table component for displaying and managing teacher availability
  * Features:
  * - Paint mode for marking unavailable time slots
@@ -468,56 +656,24 @@ export class TeacherAvailabilityTable extends LitElement {
     const day = d.getDate();
     const month = d.toLocaleString("sv-SE", { month: "short" });
     const weekday = d.toLocaleString("sv-SE", { weekday: "short" });
+    const presentation = getDetailDayHeaderPresentation({
+      slotId: this._detailSlotId,
+      dateStr,
+      isEditingExamDate: this._isEditingExamDate,
+      store,
+    });
 
-    const state = store.getTeachingDayState(this._detailSlotId, dateStr);
-    const isExamDate = store.isExamDate(this._detailSlotId, dateStr);
-    const isExamDateLocked = store.isExamDateLocked(this._detailSlotId);
-
-    let headerClass = "";
-    let titleText = "Klicka för att markera som undervisningsdag";
-    let clickHandler = () => this._toggleTeachingDay(dateStr);
-
-    // Exam date logic takes precedence
-    if (isExamDate) {
-      if (isExamDateLocked) {
-        headerClass = "exam-date-locked-header";
-        titleText =
-          "Tentamensdatum (låst - tryck 'Ändra tentamensdatum' för att ändra)";
-        clickHandler = null;
-      } else if (this._isEditingExamDate) {
-        // Currently editing - this is the unlocked existing date
-        headerClass = "exam-date-unlocked-header";
-        titleText = "Nuvarande tentamensdatum (klicka för att byta)";
-        clickHandler = () => this._setExamDate(dateStr);
-      } else {
-        // Shouldn't happen - unlocked but not editing
-        headerClass = "exam-date-unlocked-header";
-        titleText = "Tentamensdatum (olåst)";
-        clickHandler = null;
-      }
-    } else if (this._isEditingExamDate) {
-      // Not exam date but editing mode - can set as new exam date
-      headerClass = "exam-date-new-header";
-      titleText = "Klicka för att sätta som tentamensdatum";
+    let clickHandler = null;
+    if (presentation.clickMode === "toggleTeachingDay") {
+      clickHandler = () => this._toggleTeachingDay(dateStr);
+    } else if (presentation.clickMode === "setExamDate") {
       clickHandler = () => this._setExamDate(dateStr);
-    } else if (state) {
-      // Teaching day logic
-      if (state.isDefault && state.active) {
-        headerClass = "teaching-day-default-header";
-        titleText = "Standarddag (klicka för att inaktivera)";
-      } else if (state.isDefault && !state.active) {
-        headerClass = "teaching-day-default-dimmed-header";
-        titleText = "Inaktiverad standarddag (klicka för att aktivera)";
-      } else if (!state.isDefault && state.active) {
-        headerClass = "teaching-day-alt-header";
-        titleText = "Alternativ undervisningsdag (klicka för att ta bort)";
-      }
     }
 
     return html`<th
-      class="${headerClass}"
+      class="${presentation.className}"
       @click="${clickHandler}"
-      title="${titleText}"
+      title="${presentation.title}"
       style="cursor: ${clickHandler ? "pointer" : "not-allowed"};"
     >
       ${weekday}<br />${day} ${month}
@@ -538,69 +694,17 @@ export class TeacherAvailabilityTable extends LitElement {
 
   _renderDayCell(teacher, dateStr) {
     const teacherId = teacher.teacher_id;
-
-    // Determine if the day is unavailable either by day-level entry
-    // or by a slot-level busy entry when in detail view
-    const isUnavailable = isDayUnavailableConsideringSlot(
-      teacherId,
+    const presentation = getDetailDayCellPresentation({
+      slotId: this._detailSlotId,
+      slotDate: this._detailSlotDate,
       dateStr,
-      this._detailSlotId,
-      this._detailSlotDate
-    );
+      teacherId,
+      isEditingExamDate: this._isEditingExamDate,
+      store,
+    });
 
-    let cellClass = "teacher-cell";
-    let titleText = dateStr;
-
-    const state = store.getTeachingDayState(this._detailSlotId, dateStr);
-    const isExamDate = store.isExamDate(this._detailSlotId, dateStr);
-    const isExamDateLocked = store.isExamDateLocked(this._detailSlotId);
-
-    // Exam date logic takes precedence over teaching days
-    if (isExamDate) {
-      if (isExamDateLocked) {
-        cellClass += " exam-date-locked";
-        titleText += " (Tentamensdatum - låst)";
-      } else if (this._isEditingExamDate) {
-        cellClass += " exam-date-unlocked";
-        titleText += " (Tentamensdatum - olåst)";
-      } else {
-        // Shouldn't happen
-        cellClass += " exam-date-unlocked";
-        titleText += " (Tentamensdatum - olåst)";
-      }
-    } else if (this._isEditingExamDate) {
-      // Not exam date but in editing mode - potential new selection
-      cellClass += " exam-date-new";
-      titleText += " (Kan väljas som tentamensdatum)";
-    } else if (state) {
-      // Teaching day logic
-      if (state.isDefault && state.active) {
-        cellClass += " teaching-day-default";
-        titleText += " (Standarddag)";
-      } else if (state.isDefault && !state.active) {
-        cellClass += " teaching-day-default-dimmed";
-        titleText += " (Inaktiverad standarddag)";
-      } else if (!state.isDefault && state.active) {
-        cellClass += " teaching-day-alt";
-        titleText += " (Alternativ undervisningsdag)";
-      }
-    }
-
-    if (isUnavailable) {
-      cellClass += " unavailable";
-      titleText = `Upptagen ${dateStr}`;
-      if (isExamDate) {
-        titleText += " (Tentamensdatum)";
-      } else if (state) {
-        if (state.isDefault && state.active) {
-          titleText += " (Standarddag)";
-        } else if (state.isDefault && !state.active) {
-          titleText += " (Inaktiverad standarddag)";
-        } else if (!state.isDefault && state.active) {
-          titleText += " (Alternativ undervisningsdag)";
-        }
-      }
-    }
+    const cellClass = `teacher-cell${presentation.className ? " " + presentation.className : ""}`;
+    const titleText = presentation.title;
 
     return html`
       <td>
@@ -699,84 +803,14 @@ export class TeacherAvailabilityTable extends LitElement {
       return html`<td><div class="teacher-cell"></div></td>`;
     }
 
-    const compatibleCourseIds = teacher.compatible_courses || [];
-    const courseRuns = store.getCourseRuns();
-
-    // Find compatible course runs in this slot
-    const compatibleRuns = courseRuns.filter(
-      (r) =>
-        r.slot_id === slot.slot_id && compatibleCourseIds.includes(r.course_id)
-    );
-
-    // Find assigned course runs in this slot
-    const assignedRuns = courseRuns.filter(
-      (r) =>
-        r.slot_id === slot.slot_id &&
-        r.teachers &&
-        r.teachers.includes(teacher.teacher_id)
-    );
-
-    const isAssigned = assignedRuns.length > 0;
-    const isUnavailable = store.isTeacherUnavailable(
-      teacher.teacher_id,
+    const presentation = getOverviewCellPresentation({
+      teacher,
+      slot,
       slotDate,
-      slot.slot_id
-    );
+      store,
+    });
 
-    // Check if partially unavailable (has some days marked as busy in detail view)
-    const unavailablePercentage = store.getTeacherUnavailablePercentageForSlot(
-      teacher.teacher_id,
-      slotDate,
-      slot.slot_id
-    );
-    const isPartiallyUnavailable =
-      unavailablePercentage > 0 && unavailablePercentage < 1;
-
-    // Determine cell appearance
-    let cellClass = "teacher-cell";
-    let content = "";
-    let titleText = "";
-
-    // Only partially unavailable cells should be locked (not fully unavailable)
-    if (isPartiallyUnavailable) {
-      cellClass += " locked";
-    }
-
-    if (isAssigned) {
-      cellClass += " assigned-course";
-      const courseCodes = assignedRuns
-        .map((run) => store.getCourse(run.course_id)?.code)
-        .filter(Boolean);
-      content = courseCodes.join(", ");
-      titleText =
-        "Tilldelad: " +
-        assignedRuns
-          .map((run) => store.getCourse(run.course_id)?.name)
-          .filter(Boolean)
-          .join(", ");
-    } else if (compatibleRuns.length > 0) {
-      cellClass += " has-course";
-      const courseCodes = compatibleRuns
-        .map((run) => store.getCourse(run.course_id)?.code)
-        .filter(Boolean);
-      content = courseCodes.join(", ");
-      titleText = compatibleRuns
-        .map((run) => store.getCourse(run.course_id)?.name)
-        .filter(Boolean)
-        .join(", ");
-    }
-
-    if (isUnavailable && !isAssigned) {
-      cellClass += " unavailable";
-      titleText += titleText ? " (Upptagen)" : "Upptagen";
-    } else if (isPartiallyUnavailable && !isAssigned) {
-      cellClass += " partially-unavailable";
-      const percentage = Math.round(unavailablePercentage * 100);
-      titleText += titleText
-        ? ` (${percentage}% upptagen)`
-        : `${percentage}% upptagen`;
-      titleText += " 🔒 Låst (använd detaljvy för att ändra)";
-    }
+    const cellClass = `teacher-cell${presentation.className ? " " + presentation.className : ""}`;
 
     return html`
       <td>
@@ -785,12 +819,12 @@ export class TeacherAvailabilityTable extends LitElement {
           data-teacher-id="${teacher.teacher_id}"
           data-slot-date="${slotDate}"
           data-slot-id="${slot.slot_id}"
-          data-is-locked="${isPartiallyUnavailable}"
+          data-is-locked="${presentation.isLocked}"
           @mousedown="${this._handleCellMouseDown}"
           @mouseenter="${this._handleCellMouseEnter}"
-          title="${titleText}"
+          title="${presentation.title}"
         >
-          ${content}
+          ${presentation.content}
         </div>
       </td>
     `;
@@ -916,7 +950,11 @@ export class TeacherAvailabilityTable extends LitElement {
       );
 
       // If not a day-level entry, check if there's a slot-level entry
-      if (!isCurrentlyUnavailable && this._detailSlotDate && this._detailSlotId) {
+      if (
+        !isCurrentlyUnavailable &&
+        this._detailSlotDate &&
+        this._detailSlotId
+      ) {
         if (
           hasBusySlotEntry(teacherId, this._detailSlotId, this._detailSlotDate)
         ) {
