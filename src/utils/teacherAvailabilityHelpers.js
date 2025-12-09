@@ -125,7 +125,12 @@ export function convertSlotEntryToDayEntriesAndRemove(
   // slotId, teacherId order preserved from previous signature
   const entry = findBusySlotEntry(teacherId, slotId);
   if (entry) {
-    convertSlotEntryToDayEntries(teacherId, slotId, entry.from_date, clickedDate);
+    convertSlotEntryToDayEntries(
+      teacherId,
+      slotId,
+      entry.from_date,
+      clickedDate
+    );
     removeBusySlotEntry(teacherId, slotId, entry.from_date);
     return entry;
   }
