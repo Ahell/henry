@@ -5,6 +5,7 @@ import { renderDateHeader } from "./date-header.js";
 import "./detail-view-header.js";
 import "./teacher-cell.js";
 import { renderDayHeader } from "./day-header.js";
+import { renderTeacherRow } from "./teacher-row.js";
 import "./overview-table.js";
 import "./detail-table.js";
 import {
