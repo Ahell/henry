@@ -23,7 +23,6 @@ export class OverviewTable extends LitElement {
   }
 
   render() {
-    console.log('OverviewTable render:', { slotDates: this.slotDates?.length, dateHeaderRenderer: !!this.dateHeaderRenderer, teacherCellRenderer: !!this.teacherCellRenderer });
     return html`
       <div
         class="table-container ${this.isPainting ? 'painting-active' : ''}"
