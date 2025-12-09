@@ -1,12 +1,10 @@
-import { html } from 'lit';
+import { html } from "lit";
+import { renderTeacherInfo } from "./teacher-info.js";
 
 export function renderTeacherRow(teacher, dates, cellRenderer) {
   return html`
     <tr>
-      <td>
-        <span class="teacher-name">${teacher.name}</span>
-        <span class="teacher-department">${teacher.home_department}</span>
-      </td>
+      ${renderTeacherInfo(teacher)}
       ${dates.map((d) => cellRenderer(teacher, d))}
     </tr>
   `;
