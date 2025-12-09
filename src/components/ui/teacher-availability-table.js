@@ -6,6 +6,8 @@ import "./detail-view-header.js";
 import "./teacher-cell.js";
 import { renderTeacherRow } from "./teacher-row.js";
 import { renderDayHeader } from "./day-header.js";
+import "./overview-table.js";
+import "./detail-table.js";
 import {
   hasBusySlotEntry,
   findBusySlotEntry,
@@ -644,25 +646,15 @@ export class TeacherAvailabilityTable extends LitElement {
     const slotDates = [...new Set(this.slots.map((s) => s.start_date))].sort();
 
     return html`
-      <div
-        class="table-container ${this.isPainting ? "painting-active" : ""}"
-        @mouseup="${this._handlePaintEnd}"
-        @mouseleave="${this._handlePaintEnd}"
-      >
-        <table class="teacher-timeline-table">
-          <thead>
-            <tr>
-              <th>Lärare</th>
-              ${slotDates.map((date) => this._renderDateHeader(date))}
-            </tr>
-          </thead>
-          <tbody>
-            ${this.teachers.map((teacher) =>
-              renderTeacherRow(teacher, slotDates, this._renderTeacherCell.bind(this))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <overview-table
+        .teachers=${this.teachers}
+        .slotDates=${slotDates}
+        .isPainting=${this.isPainting}
+        .dateHeaderRenderer=${this._renderDateHeader.bind(this)}
+        .teacherCellRenderer=${this._renderTeacherCell.bind(this)}
+        @mouseup=${this._handlePaintEnd}
+        @mouseleave=${this._handlePaintEnd}
+      ></overview-table>
     `;
   }
 
@@ -679,25 +671,17 @@ export class TeacherAvailabilityTable extends LitElement {
         @exit-detail=${() => this._exitDetailView()}
       ></detail-view-header>
 
-      <div
-        class="table-container ${this.isPainting ? "painting-active" : ""}"
-        @mouseup="${this._handlePaintEnd}"
-        @mouseleave="${this._handlePaintEnd}"
-      >
-        <table class="teacher-timeline-table">
-          <thead>
-            <tr>
-              <th>Lärare</th>
-              ${days.map((day) => this._renderDayHeader(day))}
-            </tr>
-          </thead>
-          <tbody>
-            ${this.teachers.map((teacher) =>
-              renderTeacherRow(teacher, days, this._renderDayCell.bind(this))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <detail-table
+        .teachers=${this.teachers}
+        .days=${days}
+        .slotId=${this._detailSlotId}
+        .slotDate=${this._detailSlotDate}
+        .isPainting=${this.isPainting}
+        .dayHeaderRenderer=${this._renderDayHeader.bind(this)}
+        .teacherDayCellRenderer=${this._renderDayCell.bind(this)}
+        @mouseup=${this._handlePaintEnd}
+        @mouseleave=${this._handlePaintEnd}
+      ></detail-table>
     `;
   }
 
