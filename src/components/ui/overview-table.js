@@ -1,4 +1,5 @@
 import { LitElement, html } from 'lit';
+import { renderTeacherRow } from './teacher-row.js';
 
 export class OverviewTable extends LitElement {
   static properties = {
@@ -34,9 +35,7 @@ export class OverviewTable extends LitElement {
             </tr>
           </thead>
           <tbody>
-            ${this.teachers.map(teacher => html`
-              <teacher-row .teacher=${teacher} .dates=${this.slotDates} .cellRenderer=${this.teacherCellRenderer}></teacher-row>
-            `)}
+            ${this.teachers.map(teacher => renderTeacherRow(teacher, this.slotDates, this.teacherCellRenderer))}
           </tbody>
         </table>
       </div>
