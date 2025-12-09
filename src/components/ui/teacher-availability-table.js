@@ -659,7 +659,13 @@ export class TeacherAvailabilityTable extends LitElement {
             </tr>
           </thead>
           <tbody>
-            ${this.teachers.map((teacher) => renderTeacherRow(teacher, slotDates, this._renderTeacherCell.bind(this)))}
+            ${this.teachers.map((teacher) =>
+              renderTeacherRow(
+                teacher,
+                slotDates,
+                this._renderTeacherCell.bind(this)
+              )
+            )}
           </tbody>
         </table>
       </div>
@@ -711,8 +717,6 @@ export class TeacherAvailabilityTable extends LitElement {
     return renderDayHeader(dateStr, presentation, clickHandler);
   }
 
-  
-
   _renderDayCell(teacher, dateStr) {
     const teacherId = teacher.teacher_id;
     const presentation = getDetailDayCellPresentation({
@@ -734,8 +738,8 @@ export class TeacherAvailabilityTable extends LitElement {
           .isDetail=${true}
           .classNameSuffix=${presentation.className}
           .titleText=${presentation.title}
-          @mousedown="${this._handleCellMouseDown}"
-          @mouseenter="${this._handleCellMouseEnter}"
+          @cell-mousedown="${this._handleCellMouseDown}"
+          @cell-enter="${this._handleCellMouseEnter}"
         ></teacher-cell>
       </td>
     `;
@@ -785,7 +789,9 @@ export class TeacherAvailabilityTable extends LitElement {
   _renderDateHeader(date) {
     const slot = this.slots.find((s) => s.start_date === date);
     const slotId = slot?.slot_id;
-    return renderDateHeader(date, slotId, (slotDate, id) => this._enterDetailView(slotDate, id));
+    return renderDateHeader(date, slotId, (slotDate, id) =>
+      this._enterDetailView(slotDate, id)
+    );
   }
 
   _enterDetailView(slotDate, slotId) {
@@ -793,8 +799,6 @@ export class TeacherAvailabilityTable extends LitElement {
     this._detailSlotId = slotId;
     this.requestUpdate();
   }
-
-  
 
   _renderTeacherCell(teacher, slotDate) {
     const slot = this.slots.find((s) => s.start_date === slotDate);
@@ -809,8 +813,6 @@ export class TeacherAvailabilityTable extends LitElement {
       store,
     });
 
-    
-
     return html`
       <td>
         <teacher-cell
@@ -822,8 +824,8 @@ export class TeacherAvailabilityTable extends LitElement {
           .titleText=${presentation.title}
           .content=${presentation.content}
           .isLocked=${presentation.isLocked}
-          @mousedown="${this._handleCellMouseDown}"
-          @mouseenter="${this._handleCellMouseEnter}"
+          @cell-mousedown="${this._handleCellMouseDown}"
+          @cell-enter="${this._handleCellMouseEnter}"
         ></teacher-cell>
       </td>
     `;
@@ -832,30 +834,24 @@ export class TeacherAvailabilityTable extends LitElement {
   _handleCellMouseDown(e) {
     if (!this.isPainting) return;
 
-    e.preventDefault(); // Prevent text selection during drag
-
-    const cell = e.currentTarget;
-    const teacherId = parseInt(cell.dataset.teacherId);
-    const isDetailView = cell.dataset.isDetail === "true";
+    // If normalized event emitted by teacher-cell, data will be in event.detail
+    const d = e.detail || {};
+    const isDetailView = d.isDetail !== undefined ? d.isDetail : (e.currentTarget?.dataset?.isDetail === "true");
+    const teacherId = d.teacherId !== undefined ? parseInt(d.teacherId) : parseInt(e.currentTarget?.dataset?.teacherId);
+    const date = d.date !== undefined ? d.date : e.currentTarget?.dataset?.date; // Use previously extracted date variable
+    const slotDate = d.slotDate !== undefined ? d.slotDate : e.currentTarget?.dataset?.slotDate;
+    const slotId = d.slotId !== undefined ? d.slotId : parseInt(e.currentTarget?.dataset?.slotId);
+    const isLocked = d.isLocked !== undefined ? d.isLocked : e.currentTarget?.dataset?.isLocked === "true";
 
     if (isDetailView) {
       // Detail view: working with specific days
-      const date = cell.dataset.date;
 
       // First check if there's a slot-level entry for THIS specific slot
-      const hasSlotEntry = hasBusySlotEntry(
-        teacherId,
-        this._detailSlotId,
-        this._detailSlotDate
-      );
+      const hasSlotEntry = hasBusySlotEntry(teacherId, this._detailSlotId, this._detailSlotDate);
 
       if (hasSlotEntry) {
         // Convert slot-level entry into day-level entries and remove it
-        const removed = convertSlotEntryToDayEntriesAndRemove(
-          this._detailSlotId,
-          teacherId,
-          date
-        );
+        const removed = convertSlotEntryToDayEntriesAndRemove(this._detailSlotId, teacherId, date);
         if (removed) {
           console.log("🗑️ Removing slot entry:", removed.id);
           const days = store.getSlotDays(this._detailSlotId);
@@ -876,10 +872,7 @@ export class TeacherAvailabilityTable extends LitElement {
       }
 
       // No slot-level entry, check day-level
-      const isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(
-        teacherId,
-        date
-      );
+      const isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(teacherId, date);
 
       this._paintMode = isCurrentlyUnavailable ? "remove" : "add";
 
@@ -889,74 +882,56 @@ export class TeacherAvailabilityTable extends LitElement {
       // Force immediate re-render
       this.requestUpdate();
 
-      this.dispatchEvent(
-        new CustomEvent("availability-changed", {
-          detail: { teacherId, date, unavailable: !isCurrentlyUnavailable },
-        })
-      );
+      this.dispatchEvent(new CustomEvent('availability-changed', { detail: { teacherId, date, unavailable: !isCurrentlyUnavailable } }));
     } else {
       // Slot view: working with entire slots
-      const slotDate = cell.dataset.slotDate;
-      const slotId = parseInt(cell.dataset.slotId);
+      const slotDateLocal = slotDate;
+      const slotIdLocal = slotId;
 
       // Check if cell is locked (has day-specific availability data)
-      const isLocked = cell.dataset.isLocked === "true";
-      if (isLocked) {
+      const isLockedLocal = isLocked; // Use correct isLockedLocal variable
+      if (isLockedLocal) {
         return; // Don't allow toggling locked cells
       }
 
-      const isCurrentlyUnavailable = store.isTeacherUnavailable(
-        teacherId,
-        slotDate,
-        slotId
-      );
+      const isCurrentlyUnavailable = store.isTeacherUnavailable(teacherId, slotDateLocal, slotIdLocal);
 
       this._paintMode = isCurrentlyUnavailable ? "remove" : "add";
 
-      if (this._paintMode === "add") {
-        this._removeTeacherFromRunsInSlot(teacherId, slotDate);
+      if (this._paintMode === 'add') {
+        this._removeTeacherFromRunsInSlot(teacherId, slotDateLocal);
       }
 
-      store.toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId);
+      store.toggleTeacherAvailabilityForSlot(teacherId, slotDateLocal, slotIdLocal);
       this._isMouseDown = true;
 
       // Force immediate re-render
       this.requestUpdate();
 
-      this.dispatchEvent(
-        new CustomEvent("availability-changed", {
-          detail: { teacherId, slotDate, unavailable: !isCurrentlyUnavailable },
-        })
-      );
+      this.dispatchEvent(new CustomEvent('availability-changed', { detail: { teacherId, slotDate: slotDateLocal, unavailable: !isCurrentlyUnavailable } }));
     }
   }
 
   _handleCellMouseEnter(e) {
     if (!this.isPainting || !this._isMouseDown || !this._paintMode) return;
 
-    const cell = e.currentTarget;
-    const teacherId = parseInt(cell.dataset.teacherId);
-    const isDetailView = cell.dataset.isDetail === "true";
+    const d = e.detail || {};
+    const teacherId = d.teacherId !== undefined ? parseInt(d.teacherId) : parseInt(e.currentTarget?.dataset?.teacherId);
+    const isDetailView = d.isDetail !== undefined ? d.isDetail : (e.currentTarget?.dataset?.isDetail === 'true');
+    const date = d.date !== undefined ? d.date : e.currentTarget?.dataset?.date;
+    const slotDate = d.slotDate !== undefined ? d.slotDate : e.currentTarget?.dataset?.slotDate;
+    const slotId = d.slotId !== undefined ? d.slotId : parseInt(e.currentTarget?.dataset?.slotId);
+    const isLocked = d.isLocked !== undefined ? d.isLocked : e.currentTarget?.dataset?.isLocked === 'true';
 
     if (isDetailView) {
       // Detail view: working with specific days
-      const date = cell.dataset.date;
 
       // Check if this day is unavailable (either day-level or slot-level)
-      let isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(
-        teacherId,
-        date
-      );
+      let isCurrentlyUnavailable = store.isTeacherUnavailableOnDay(teacherId, date);
 
       // If not a day-level entry, check if there's a slot-level entry
-      if (
-        !isCurrentlyUnavailable &&
-        this._detailSlotDate &&
-        this._detailSlotId
-      ) {
-        if (
-          hasBusySlotEntry(teacherId, this._detailSlotId, this._detailSlotDate)
-        ) {
+      if (!isCurrentlyUnavailable && this._detailSlotDate && this._detailSlotId) {
+        if (hasBusySlotEntry(teacherId, this._detailSlotId, this._detailSlotDate)) {
           isCurrentlyUnavailable = true;
         }
       }
@@ -968,22 +943,14 @@ export class TeacherAvailabilityTable extends LitElement {
 
         this.requestUpdate();
 
-        this.dispatchEvent(
-          new CustomEvent("availability-changed", {
-            detail: { teacherId, date, unavailable: true },
-          })
-        );
-      } else if (this._paintMode === "remove" && isCurrentlyUnavailable) {
+        this.dispatchEvent(new CustomEvent('availability-changed', { detail: { teacherId, date, unavailable: true } }));
+      } else if (this._paintMode === 'remove' && isCurrentlyUnavailable) {
         // Check if this is from a slot-level entry
         const isDayLevel = store.isTeacherUnavailableOnDay(teacherId, date);
 
         if (!isDayLevel && this._detailSlotDate && this._detailSlotId) {
           // This is a slot-level entry, convert+remove via helper
-          const removed = convertSlotEntryToDayEntriesAndRemove(
-            this._detailSlotId,
-            teacherId,
-            date
-          );
+          const removed = convertSlotEntryToDayEntriesAndRemove(this._detailSlotId, teacherId, date);
           if (removed) {
             // converted and removed
           }
@@ -994,52 +961,36 @@ export class TeacherAvailabilityTable extends LitElement {
 
         this.requestUpdate();
 
-        this.dispatchEvent(
-          new CustomEvent("availability-changed", {
-            detail: { teacherId, date, unavailable: false },
-          })
-        );
+          this.dispatchEvent(new CustomEvent('availability-changed', { detail: { teacherId, date, unavailable: false } }));
       }
     } else {
       // Slot view: working with entire slots
-      const slotDate = cell.dataset.slotDate;
-      const slotId = parseInt(cell.dataset.slotId);
+      const slotDateLocal = slotDate;
+      const slotIdLocal = slotId;
 
       // Check if cell is locked (has day-specific availability data)
-      const isLocked = cell.dataset.isLocked === "true";
-      if (isLocked) {
+      const isLockedLocal = isLocked;
+      if (isLockedLocal) {
         return; // Skip locked cells during drag painting
       }
 
-      const isCurrentlyUnavailable = store.isTeacherUnavailable(
-        teacherId,
-        slotDate,
-        slotId
-      );
+      const isCurrentlyUnavailable = store.isTeacherUnavailable(teacherId, slotDateLocal, slotIdLocal);
 
       if (this._paintMode === "add" && !isCurrentlyUnavailable) {
-        this._removeTeacherFromRunsInSlot(teacherId, slotDate);
-        store.toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId);
+        this._removeTeacherFromRunsInSlot(teacherId, slotDateLocal);
+        store.toggleTeacherAvailabilityForSlot(teacherId, slotDateLocal, slotIdLocal);
 
         // Force immediate re-render
         this.requestUpdate();
 
-        this.dispatchEvent(
-          new CustomEvent("availability-changed", {
-            detail: { teacherId, slotDate, unavailable: true },
-          })
-        );
-      } else if (this._paintMode === "remove" && isCurrentlyUnavailable) {
-        store.toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId);
+        this.dispatchEvent(new CustomEvent('availability-changed', { detail: { teacherId, slotDate: slotDateLocal, unavailable: true } }));
+      } else if (this._paintMode === 'remove' && isCurrentlyUnavailable) {
+        store.toggleTeacherAvailabilityForSlot(teacherId, slotDateLocal, slotIdLocal);
 
         // Force immediate re-render
         this.requestUpdate();
 
-        this.dispatchEvent(
-          new CustomEvent("availability-changed", {
-            detail: { teacherId, slotDate, unavailable: false },
-          })
-        );
+        this.dispatchEvent(new CustomEvent('availability-changed', { detail: { teacherId, slotDate: slotDateLocal, unavailable: false } }));
       }
     }
   }
