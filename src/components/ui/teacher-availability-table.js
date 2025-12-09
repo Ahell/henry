@@ -3,6 +3,7 @@ import { store } from "../../utils/store.js";
 import "./button.js";
 import { renderDateHeader } from "./date-header.js";
 import "./detail-view-header.js";
+import "./teacher-cell.js";
 import {
   hasBusySlotEntry,
   findBusySlotEntry,
@@ -750,22 +751,19 @@ export class TeacherAvailabilityTable extends LitElement {
       store,
     });
 
-    const cellClass = `teacher-cell${
-      presentation.className ? " " + presentation.className : ""
-    }`;
-    const titleText = presentation.title;
-
     return html`
       <td>
-        <div
-          class="${cellClass}"
-          data-teacher-id="${teacher.teacher_id}"
-          data-date="${dateStr}"
-          data-is-detail="true"
+        <teacher-cell
+          .teacherId=${teacher.teacher_id}
+          .date=${dateStr}
+          .slotId=${this._detailSlotId}
+          .slotDate=${this._detailSlotDate}
+          .isDetail=${true}
+          .classNameSuffix=${presentation.className}
+          .titleText=${presentation.title}
           @mousedown="${this._handleCellMouseDown}"
           @mouseenter="${this._handleCellMouseEnter}"
-          title="${titleText}"
-        ></div>
+        ></teacher-cell>
       </td>
     `;
   }
@@ -848,24 +846,22 @@ export class TeacherAvailabilityTable extends LitElement {
       store,
     });
 
-    const cellClass = `teacher-cell${
-      presentation.className ? " " + presentation.className : ""
-    }`;
+    
 
     return html`
       <td>
-        <div
-          class="${cellClass}"
-          data-teacher-id="${teacher.teacher_id}"
-          data-slot-date="${slotDate}"
-          data-slot-id="${slot.slot_id}"
-          data-is-locked="${presentation.isLocked}"
+        <teacher-cell
+          .teacherId=${teacher.teacher_id}
+          .slotDate=${slotDate}
+          .slotId=${slot.slot_id}
+          .isDetail=${false}
+          .classNameSuffix=${presentation.className}
+          .titleText=${presentation.title}
+          .content=${presentation.content}
+          .isLocked=${presentation.isLocked}
           @mousedown="${this._handleCellMouseDown}"
           @mouseenter="${this._handleCellMouseEnter}"
-          title="${presentation.title}"
-        >
-          ${presentation.content}
-        </div>
+        ></teacher-cell>
       </td>
     `;
   }
