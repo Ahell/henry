@@ -1,15 +1,22 @@
-import { LitElement, html, css } from 'lit';
-import './button.js';
+import { LitElement, html, css } from "lit";
+import "./button.js";
 
 export class PaintControls extends LitElement {
   static properties = {
     isPainting: { type: Boolean },
-    paintMode: { type: String }
+    paintMode: { type: String },
   };
 
   static styles = css`
-    :host { display:block; margin-bottom: var(--space-4); }
-    .controls { display:flex; gap:var(--space-2); align-items:center; }
+    :host {
+      display: block;
+      margin-bottom: var(--space-4);
+    }
+    .controls {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+    }
   `;
 
   constructor() {
@@ -18,35 +25,42 @@ export class PaintControls extends LitElement {
     this.paintMode = null;
   }
 
+  get statusText() {
+    if (!this.isPainting) return "";
+    if (this.paintMode === "add") return "Mode: lägg till";
+    if (this.paintMode === "remove") return "Mode: ta bort";
+    return "Mode: auto";
+  }
+
   render() {
     return html`
       <div class="controls">
         <henry-button
-          variant="${this.isPainting ? 'primary' : 'outline'}"
+          variant="${this.isPainting ? "primary" : "outline"}"
           size="small"
           @click=${this._togglePaint}
         >
-          ${this.isPainting ? '🎨 Sluta måla' : '🎨 Måla'}
+          ${this.isPainting ? "🎨 Sluta måla" : "🎨 Måla"}
         </henry-button>
 
         <henry-button
-          variant="${this.paintMode === 'add' ? 'primary' : 'outline'}"
+          variant="${this.paintMode === "add" ? "primary" : "outline"}"
           size="small"
-          @click=${() => this._setMode('add')}
+          @click=${() => this._setMode("add")}
         >
           ➕ Lägg till
         </henry-button>
 
         <henry-button
-          variant="${this.paintMode === 'remove' ? 'primary' : 'outline'}"
+          variant="${this.paintMode === "remove" ? "primary" : "outline"}"
           size="small"
-          @click=${() => this._setMode('remove')}
+          @click=${() => this._setMode("remove")}
         >
           ✖ Ta bort
         </henry-button>
 
-        <div style="color:var(--color-text-secondary);font-size:var(--font-size-xs)">
-          ${this.isPainting ? (this.paintMode ? `Mode: ${this.paintMode}` : 'Mode: auto') : ''}
+        <div class="status" style="color:var(--color-text-secondary);font-size:var(--font-size-xs)">
+          ${this.statusText}
         </div>
       </div>
     `;
@@ -56,7 +70,13 @@ export class PaintControls extends LitElement {
     this.isPainting = !this.isPainting;
     // If turning off, clear mode
     if (!this.isPainting) this.paintMode = null;
-    this.dispatchEvent(new CustomEvent('paint-toggle', { detail: { isPainting: this.isPainting }, bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent("paint-toggle", {
+        detail: { isPainting: this.isPainting },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   _setMode(mode) {
@@ -66,9 +86,21 @@ export class PaintControls extends LitElement {
       this.paintMode = mode;
       this.isPainting = true; // ensure painting is enabled
     }
-    this.dispatchEvent(new CustomEvent('paint-set-mode', { detail: { paintMode: this.paintMode }, bubbles: true, composed: true }));
-    this.dispatchEvent(new CustomEvent('paint-toggle', { detail: { isPainting: this.isPainting }, bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent("paint-set-mode", {
+        detail: { paintMode: this.paintMode },
+        bubbles: true,
+        composed: true,
+      })
+    );
+    this.dispatchEvent(
+      new CustomEvent("paint-toggle", {
+        detail: { isPainting: this.isPainting },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 }
 
-customElements.define('paint-controls', PaintControls);
+customElements.define("paint-controls", PaintControls);
