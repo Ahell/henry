@@ -1,4 +1,4 @@
-import { html } from 'lit';
+import { html } from "lit";
 
 /**
  * Render a <th> for a slot date header in overview table.
@@ -11,14 +11,18 @@ import { html } from 'lit';
 export function renderDateHeader(dateStr, slotId, onEnterDetail) {
   const d = new Date(dateStr);
   const day = d.getDate();
-  const month = d.toLocaleString('sv-SE', { month: 'short' });
+  const month = d.toLocaleString("sv-SE", { month: "short" });
   const year = d.getFullYear().toString().slice(-2);
 
   const handler = (e) => {
-    if (typeof onEnterDetail === 'function') onEnterDetail(dateStr, slotId);
+    if (typeof onEnterDetail === "function") onEnterDetail(dateStr, slotId);
   };
 
-  return html`<th class="slot-header" @click=${handler} title="Klicka för att se dag-för-dag-vy">
+  return html`<th
+    class="slot-header"
+    @click=${handler}
+    title="Klicka för att se dag-för-dag-vy"
+  >
     ${day} ${month}<br />${year}
   </th>`;
 }

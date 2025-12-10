@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { renderTeacherInfo } from "./teacher-info.js";
+import { renderTeacherInfo } from "../../components/ui/teacher-info.js";
 
 export function renderTeacherRow(teacher, dates, cellRenderer) {
   return html`

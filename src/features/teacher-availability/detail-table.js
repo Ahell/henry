@@ -1,5 +1,5 @@
-import { LitElement, html } from 'lit';
-import { renderTeacherRow } from './teacher-row.js';
+import { LitElement, html } from "lit";
+import { renderTeacherRow } from "./teacher-row.js";
 
 export class DetailTable extends LitElement {
   static properties = {
@@ -12,14 +12,16 @@ export class DetailTable extends LitElement {
     teacherDayCellRenderer: { type: Object },
   };
 
-  createRenderRoot() { return this; }
+  createRenderRoot() {
+    return this;
+  }
 
   constructor() {
     super();
     this.teachers = [];
     this.days = [];
     this.slotId = null;
-    this.slotDate = '';
+    this.slotDate = "";
     this.isPainting = false;
     this.dayHeaderRenderer = null;
     this.teacherDayCellRenderer = null;
@@ -27,18 +29,22 @@ export class DetailTable extends LitElement {
 
   render() {
     return html`
-      <div
-        class="table-container ${this.isPainting ? 'painting-active' : ''}"
-      >
+      <div class="table-container ${this.isPainting ? "painting-active" : ""}">
         <table class="teacher-timeline-table">
           <thead>
             <tr>
               <th>Lärare</th>
-              ${this.days.map(day => (this.dayHeaderRenderer ? this.dayHeaderRenderer(day) : html`<th>${day}</th>`))}
+              ${this.days.map((day) =>
+                this.dayHeaderRenderer
+                  ? this.dayHeaderRenderer(day)
+                  : html`<th>${day}</th>`
+              )}
             </tr>
           </thead>
           <tbody>
-            ${this.teachers.map(teacher => renderTeacherRow(teacher, this.days, this.teacherDayCellRenderer))}
+            ${this.teachers.map((teacher) =>
+              renderTeacherRow(teacher, this.days, this.teacherDayCellRenderer)
+            )}
           </tbody>
         </table>
       </div>
@@ -46,4 +52,4 @@ export class DetailTable extends LitElement {
   }
 }
 
-customElements.define('detail-table', DetailTable);
+customElements.define("detail-table", DetailTable);

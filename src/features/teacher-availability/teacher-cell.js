@@ -63,7 +63,11 @@ export class TeacherCell extends LitElement {
     // Use event listeners on the host (light DOM) to normalize interactions
     this._onMouseDownListener = (e) => {
       // Prevent text selection and other default browser behaviors for painting
-      try { e.preventDefault(); } catch (err) { /* ignore */ }
+      try {
+        e.preventDefault();
+      } catch (err) {
+        /* ignore */
+      }
       // Build normalized payload
       const detail = {
         teacherId: this.teacherId,
@@ -73,7 +77,13 @@ export class TeacherCell extends LitElement {
         isDetail: !!this.isDetail,
         isLocked: !!this.isLocked,
       };
-      this.dispatchEvent(new CustomEvent('cell-mousedown', { detail, bubbles: true, composed: true }));
+      this.dispatchEvent(
+        new CustomEvent("cell-mousedown", {
+          detail,
+          bubbles: true,
+          composed: true,
+        })
+      );
     };
 
     this._onMouseEnterListener = (e) => {
@@ -85,17 +95,21 @@ export class TeacherCell extends LitElement {
         isDetail: !!this.isDetail,
         isLocked: !!this.isLocked,
       };
-      this.dispatchEvent(new CustomEvent('cell-enter', { detail, bubbles: true, composed: true }));
+      this.dispatchEvent(
+        new CustomEvent("cell-enter", { detail, bubbles: true, composed: true })
+      );
     };
 
-    this.addEventListener('mousedown', this._onMouseDownListener);
-    this.addEventListener('mouseenter', this._onMouseEnterListener);
+    this.addEventListener("mousedown", this._onMouseDownListener);
+    this.addEventListener("mouseenter", this._onMouseEnterListener);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    if (this._onMouseDownListener) this.removeEventListener('mousedown', this._onMouseDownListener);
-    if (this._onMouseEnterListener) this.removeEventListener('mouseenter', this._onMouseEnterListener);
+    if (this._onMouseDownListener)
+      this.removeEventListener("mousedown", this._onMouseDownListener);
+    if (this._onMouseEnterListener)
+      this.removeEventListener("mouseenter", this._onMouseEnterListener);
   }
 
   render() {
