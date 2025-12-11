@@ -29,76 +29,43 @@ export class TeacherCell extends LitElement {
     this.titleText = "";
     this.content = "";
     this.isLocked = false;
+    this._prevClassTokens = [];
     this._onMouseDownListener = null;
     this._onMouseEnterListener = null;
   }
 
   updated() {
-    // Ensure host element carries needed class and attributes
-    // Keep existing classes but ensure `teacher-cell` is present
-    if (!this.classList.contains("teacher-cell")) {
-      this.classList.add("teacher-cell");
-    }
+    // Ensure host element carries base class
+    this.classList.add("teacher-cell");
 
-    // Apply suffix classes (like 'unavailable', 'teaching-day-default')
-    if (this.classNameSuffix) {
-      const tokens = this.classNameSuffix.split(" ").filter(Boolean);
-      for (const t of tokens) {
-        if (!this.classList.contains(t)) this.classList.add(t);
-      }
+    // Update suffix classes (like 'unavailable', 'teaching-day-default')
+    const nextTokens = this.classNameSuffix
+      ? this.classNameSuffix.split(" ").filter(Boolean)
+      : [];
+    // Remove previously applied tokens to avoid stale classes
+    for (const token of this._prevClassTokens) {
+      if (!nextTokens.includes(token)) this.classList.remove(token);
     }
+    // Add current tokens
+    for (const token of nextTokens) {
+      this.classList.add(token);
+    }
+    this._prevClassTokens = nextTokens;
 
-    this.setAttribute("data-teacher-id", this.teacherId ?? "");
-    if (this.slotDate) this.setAttribute("data-slot-date", this.slotDate);
-    if (this.slotId !== null)
-      this.setAttribute("data-slot-id", String(this.slotId));
-    if (this.date) this.setAttribute("data-date", this.date);
-    this.setAttribute("data-is-detail", this.isDetail ? "true" : "false");
-    this.setAttribute("title", this.titleText ?? "");
-    this.setAttribute("data-is-locked", this.isLocked ? "true" : "false");
+    this._setAttr("data-teacher-id", this.teacherId ?? "");
+    this._setAttr("data-slot-date", this.slotDate);
+    this._setAttr("data-slot-id", this.slotId != null ? String(this.slotId) : "");
+    this._setAttr("data-date", this.date);
+    this._setAttr("data-is-detail", this.isDetail ? "true" : "false");
+    this._setAttr("data-is-locked", this.isLocked ? "true" : "false");
+    this._setAttr("title", this.titleText ?? "");
   }
 
   connectedCallback() {
     super.connectedCallback();
     // Use event listeners on the host (light DOM) to normalize interactions
-    this._onMouseDownListener = (e) => {
-      // Prevent text selection and other default browser behaviors for painting
-      try {
-        e.preventDefault();
-      } catch (err) {
-        /* ignore */
-      }
-      // Build normalized payload
-      const detail = {
-        teacherId: this.teacherId,
-        slotDate: this.slotDate,
-        date: this.date,
-        slotId: this.slotId,
-        isDetail: !!this.isDetail,
-        isLocked: !!this.isLocked,
-      };
-      this.dispatchEvent(
-        new CustomEvent("cell-mousedown", {
-          detail,
-          bubbles: true,
-          composed: true,
-        })
-      );
-    };
-
-    this._onMouseEnterListener = (e) => {
-      const detail = {
-        teacherId: this.teacherId,
-        slotDate: this.slotDate,
-        date: this.date,
-        slotId: this.slotId,
-        isDetail: !!this.isDetail,
-        isLocked: !!this.isLocked,
-      };
-      this.dispatchEvent(
-        new CustomEvent("cell-enter", { detail, bubbles: true, composed: true })
-      );
-    };
+    this._onMouseDownListener = (e) => this._handleMouseDown(e);
+    this._onMouseEnterListener = (e) => this._handleMouseEnter(e);
 
     this.addEventListener("mousedown", this._onMouseDownListener);
     this.addEventListener("mouseenter", this._onMouseEnterListener);
@@ -113,7 +80,52 @@ export class TeacherCell extends LitElement {
   }
 
   render() {
-    return html`${this.content || ""}`;
+    return html`<span class="cell-content">${this.content || ""}</span>`;
+  }
+
+  _handleMouseDown(e) {
+    // Prevent text selection and other default browser behaviors for painting
+    try {
+      e.preventDefault();
+    } catch (err) {
+      /* ignore */
+    }
+    this.dispatchEvent(
+      new CustomEvent("cell-mousedown", {
+        detail: this._buildDetail(),
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  _handleMouseEnter() {
+    this.dispatchEvent(
+      new CustomEvent("cell-enter", {
+        detail: this._buildDetail(),
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  _buildDetail() {
+    return {
+      teacherId: this.teacherId,
+      slotDate: this.slotDate,
+      date: this.date,
+      slotId: this.slotId,
+      isDetail: !!this.isDetail,
+      isLocked: !!this.isLocked,
+    };
+  }
+
+  _setAttr(name, value) {
+    if (value === undefined || value === null || value === "") {
+      this.removeAttribute(name);
+    } else {
+      this.setAttribute(name, value);
+    }
   }
 }
 

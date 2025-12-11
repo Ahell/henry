@@ -108,6 +108,9 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-cell {
+    display: block;
+    width: 100%;
+    height: 100%;
     min-height: 40px;
     padding: var(--space-1);
     cursor: pointer;
@@ -115,6 +118,9 @@ export const teacherAvailabilityTableStyles = css`
     font-size: var(--font-size-xs);
     transition: var(--transition-all);
     user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .teacher-cell.assigned-course {
@@ -132,6 +138,26 @@ export const teacherAvailabilityTableStyles = css`
     background: var(--color-danger);
     color: white;
     position: relative;
+  }
+
+  .teacher-cell .cell-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .teacher-cell.unavailable .cell-content,
+  .teacher-cell.partially-unavailable .cell-content {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--color-text-primary);
+    box-shadow: var(--shadow-xs);
   }
 
   /* Default teaching day - purple/lila, active */
@@ -261,10 +287,9 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-cell.unavailable::after {
     content: "✕";
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1.2rem;
+    top: 6px;
+    right: 6px;
+    font-size: 1.1rem;
   }
 
   .teacher-cell.partially-unavailable {

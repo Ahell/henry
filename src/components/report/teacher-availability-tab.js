@@ -1,7 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { store } from "../../utils/store.js";
 import "../ui/index.js";
-import "../../features/teacher-availability/teacher-availability-table.js";
+import "../../features/teacher-availability/index.js";
 
 export class TeacherAvailabilityTab extends LitElement {
   static properties = {

@@ -1,9 +1,4 @@
-import { LitElement, html, css, unsafeCSS } from "lit";
-
-// Import design tokens
-const tokens = unsafeCSS(
-  await fetch("/src/styles/tokens.css").then((r) => r.text())
-);
+import { LitElement, html, css } from "lit";
 
 /**
  * Primary Button Component

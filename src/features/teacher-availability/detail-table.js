@@ -1,5 +1,4 @@
 import { LitElement, html } from "lit";
-import { renderTeacherRow } from "./teacher-row.js";
 
 export class DetailTable extends LitElement {
   static properties = {
@@ -42,8 +41,17 @@ export class DetailTable extends LitElement {
             </tr>
           </thead>
           <tbody>
-            ${this.teachers.map((teacher) =>
-              renderTeacherRow(teacher, this.days, this.teacherDayCellRenderer)
+            ${this.teachers.map(
+              (teacher) => html`
+                <tr>
+                  ${renderTeacherInfoCell(teacher)}
+                  ${this.days.map((d) =>
+                    this.teacherDayCellRenderer
+                      ? this.teacherDayCellRenderer(teacher, d)
+                      : html`<td></td>`
+                  )}
+                </tr>
+              `
             )}
           </tbody>
         </table>
@@ -51,5 +59,12 @@ export class DetailTable extends LitElement {
     `;
   }
 }
+
+const renderTeacherInfoCell = (teacher) => html`
+  <td>
+    <span class="teacher-name">${teacher?.name ?? ""}</span>
+    <span class="teacher-department">${teacher?.home_department ?? ""}</span>
+  </td>
+`;
 
 customElements.define("detail-table", DetailTable);

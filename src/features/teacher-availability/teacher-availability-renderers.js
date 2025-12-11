@@ -6,7 +6,6 @@ import {
   getDetailDayCellPresentation,
   getOverviewCellPresentation,
 } from "./teacher-availability-presenters.js";
-import { renderTeacherRow } from "./teacher-row.js";
 import { renderDateHeader } from "./date-header.js";
 import {
   enterDetailView,
