@@ -54,7 +54,15 @@ export class DetailTable extends LitElement {
       }
     }
     if (!days || days.length === 0) {
-      console.warn("DetailTable: computed days is empty", { slotId: this.slotId, slotDate: this.slotDate, days });
+      const slots = (store && store.slots) || [];
+      const slotById = slots.find((s) => s.slot_id == this.slotId);
+      const normalizedDate = this.slotDate ? this.slotDate.split("T")[0] : null;
+      const slotByDate = slots.find((s) => {
+        if (!normalizedDate) return false;
+        const sDate = (s.start_date || "").split("T")[0];
+        return sDate === normalizedDate;
+      });
+      console.warn("DetailTable: computed days is empty", { slotId: this.slotId, slotDate: this.slotDate, days, slotsLength: slots.length, slotByIdExists: !!slotById, slotByDateExists: !!slotByDate, slotById, slotByDate });
     }
     return html`
       <div class="table-container ${this.isPainting ? "painting-active" : ""}">
