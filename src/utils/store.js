@@ -1062,22 +1062,34 @@ export class DataStore {
 
   // Get all individual days within a slot (for detail view)
   getSlotDays(slotDateOrId) {
-    // Support both slot_id (number) and start_date (string)
+    if (!slotDateOrId) return [];
+
+    const normalizeDate = (value) => (value || "").split("T")[0];
+    const normalizedDate =
+      typeof slotDateOrId === "string" ? normalizeDate(slotDateOrId) : null;
+
+    // Support both slot_id (number/string) and start_date (string)
     const slot =
-      typeof slotDateOrId === "number"
-        ? this.slots.find((s) => s.slot_id === slotDateOrId)
-        : this.slots.find((s) => s.start_date === slotDateOrId);
+      this.slots.find((s) => String(s.slot_id) === String(slotDateOrId)) ||
+      this.slots.find(
+        (s) => normalizeDate(s.start_date) === normalizedDate
+      );
 
     if (!slot) return [];
 
     // Find the slot's end date (next slot's start date or add 4 weeks)
-    const allSlots = this.slots.sort((a, b) => {
-      const dateA = new Date(a.start_date);
-      const dateB = new Date(b.start_date);
-      return dateA.getTime() - dateB.getTime();
-    });
+    const allSlots = this.slots
+      .slice()
+      .sort(
+        (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      );
 
-    const slotIndex = allSlots.findIndex((s) => s.slot_id === slot.slot_id);
+    const slotIndex = allSlots.findIndex(
+      (s) =>
+        String(s.slot_id) === String(slot.slot_id) ||
+        normalizeDate(s.start_date) === normalizeDate(slot.start_date)
+    );
+
     let endDate = null;
     // Find the next slot whose start_date is strictly greater than this slot's start_date
     for (let i = slotIndex + 1; i < allSlots.length; i++) {

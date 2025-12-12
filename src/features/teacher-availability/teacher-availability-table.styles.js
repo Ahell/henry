@@ -3,7 +3,7 @@ import { css } from "lit";
 export const teacherAvailabilityTableStyles = css`
   :host {
     display: block;
-    --teaching-day-default-bg: var(--color-secondary-600);
+    --teaching-day-default-bg: var(--color-primary-600);
     --teaching-day-default-text: var(--color-background);
     --teaching-day-default-cursor: pointer;
     --teaching-day-default-hover-bg: color-mix(
@@ -11,12 +11,12 @@ export const teacherAvailabilityTableStyles = css`
       var(--teaching-day-default-bg),
       black 15%
     );
-    --teaching-day-default-dimmed-bg: var(--color-secondary-200);
-    --teaching-day-default-dimmed-text: var(--color-secondary-700);
+    --teaching-day-default-dimmed-bg: var(--color-primary-100);
+    --teaching-day-default-dimmed-text: var(--color-primary-700);
     --teaching-day-default-dimmed-cursor: pointer;
     --teaching-day-default-dimmed-opacity: 0.5;
     --teaching-day-default-dimmed-hover-opacity: 0.7;
-    --teaching-day-alt-bg: var(--color-info);
+    --teaching-day-alt-bg: var(--color-primary-500);
     --teaching-day-alt-text: var(--color-background);
     --teaching-day-alt-cursor: pointer;
     --teaching-day-alt-hover-bg: color-mix(
@@ -24,15 +24,15 @@ export const teacherAvailabilityTableStyles = css`
       var(--teaching-day-alt-bg),
       black 10%
     );
-    --exam-date-locked-bg: var(--color-warning-hover);
+    --exam-date-locked-bg: var(--color-primary-600);
     --exam-date-locked-text: var(--color-background);
     --exam-date-locked-cursor: not-allowed;
-    --exam-date-unlocked-bg: var(--color-warning-light);
-    --exam-date-unlocked-text: var(--color-warning-hover);
+    --exam-date-unlocked-bg: var(--color-primary-100);
+    --exam-date-unlocked-text: var(--color-primary-700);
     --exam-date-unlocked-cursor: pointer;
     --exam-date-unlocked-opacity: 0.7;
     --exam-date-unlocked-hover-opacity: 0.9;
-    --exam-date-new-bg: var(--color-warning);
+    --exam-date-new-bg: var(--color-primary-600);
     --exam-date-new-text: var(--color-background);
     --exam-date-new-cursor: pointer;
     --exam-date-new-hover-bg: color-mix(
@@ -56,7 +56,8 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-timeline-table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
     font-size: var(--font-size-sm);
   }
@@ -230,10 +231,6 @@ export const teacherAvailabilityTableStyles = css`
     border-color: transparent;
   }
 
-  .teacher-timeline-table td:has(.teacher-cell.teaching-day-default) {
-    background-color: var(--teaching-day-default-bg);
-  }
-
   .teacher-timeline-table th.teaching-day-default-header {
     background-color: var(--teaching-day-default-bg);
     color: var(--teaching-day-default-text);
@@ -250,11 +247,6 @@ export const teacherAvailabilityTableStyles = css`
     background-color: var(--teaching-day-default-dimmed-bg);
     opacity: var(--teaching-day-default-dimmed-opacity);
     border-color: transparent;
-  }
-
-  .teacher-timeline-table td:has(.teacher-cell.teaching-day-default-dimmed) {
-    background-color: var(--teaching-day-default-dimmed-bg);
-    opacity: var(--teaching-day-default-dimmed-opacity);
   }
 
   .teacher-timeline-table th.teaching-day-default-dimmed-header {
@@ -276,10 +268,6 @@ export const teacherAvailabilityTableStyles = css`
     border-color: transparent;
   }
 
-  .teacher-timeline-table td:has(.teacher-cell.teaching-day-alt) {
-    background-color: var(--teaching-day-alt-bg);
-  }
-
   .teacher-timeline-table th.teaching-day-alt-header {
     background-color: var(--teaching-day-alt-bg);
     color: var(--teaching-day-alt-text);
@@ -298,10 +286,6 @@ export const teacherAvailabilityTableStyles = css`
     border-color: transparent;
   }
 
-  .teacher-timeline-table td:has(.teacher-cell.exam-date-locked) {
-    background-color: var(--exam-date-locked-bg);
-  }
-
   .teacher-timeline-table th.exam-date-locked-header {
     background-color: var(--exam-date-locked-bg);
     color: var(--exam-date-locked-text);
@@ -314,11 +298,6 @@ export const teacherAvailabilityTableStyles = css`
     background-color: var(--exam-date-unlocked-bg);
     opacity: var(--exam-date-unlocked-opacity);
     border-color: transparent;
-  }
-
-  .teacher-timeline-table td:has(.teacher-cell.exam-date-unlocked) {
-    background-color: var(--exam-date-unlocked-bg);
-    opacity: var(--exam-date-unlocked-opacity);
   }
 
   .teacher-timeline-table th.exam-date-unlocked-header {
@@ -340,10 +319,6 @@ export const teacherAvailabilityTableStyles = css`
     border-color: transparent;
   }
 
-  .teacher-timeline-table td:has(.teacher-cell.exam-date-new) {
-    background-color: var(--exam-date-new-bg);
-  }
-
   .teacher-timeline-table th.exam-date-new-header {
     background-color: var(--exam-date-new-bg);
     color: var(--exam-date-new-text);
@@ -359,6 +334,19 @@ export const teacherAvailabilityTableStyles = css`
     background: var(--color-danger);
     color: white;
     position: relative;
+  }
+
+  /* Keep teaching/exam selections focused on headers; body cells stay neutral unless unavailable or carrying course pills */
+  .teacher-cell.teaching-day-default:not(.unavailable):not(.has-course):not(.assigned-course),
+  .teacher-cell.teaching-day-default-dimmed:not(.unavailable):not(.has-course):not(.assigned-course),
+  .teacher-cell.teaching-day-alt:not(.unavailable):not(.has-course):not(.assigned-course),
+  .teacher-cell.exam-date-locked:not(.unavailable):not(.has-course):not(.assigned-course),
+  .teacher-cell.exam-date-unlocked:not(.unavailable):not(.has-course):not(.assigned-course),
+  .teacher-cell.exam-date-new:not(.unavailable):not(.has-course):not(.assigned-course) {
+    background: transparent;
+    color: var(--color-text-primary);
+    border-color: transparent;
+    box-shadow: none;
   }
 
   .teacher-cell.locked {

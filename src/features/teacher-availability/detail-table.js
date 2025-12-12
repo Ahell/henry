@@ -28,18 +28,27 @@ export class DetailTable extends LitElement {
   }
 
   render() {
-    let days = this.days && this.days.length ? this.days : store.getSlotDays(this.slotId || this.slotDate);
+    let days =
+      this.days && this.days.length
+        ? this.days
+        : store.getSlotDays(this.slotId || this.slotDate);
     // Robust fallback: if store didn't compute days (maybe slot date mismatched), compute days from store.slots directly
     if ((!days || days.length === 0) && store && Array.isArray(store.slots)) {
       const slotIdOrDate = this.slotId || this.slotDate;
       const isNumeric = slotIdOrDate != null && !isNaN(Number(slotIdOrDate));
-      const normalizedDate = slotIdOrDate ? String(slotIdOrDate).split("T")[0] : null;
+      const normalizedDate = slotIdOrDate
+        ? String(slotIdOrDate).split("T")[0]
+        : null;
       const slot = isNumeric
         ? store.slots.find((s) => s.slot_id == Number(slotIdOrDate))
-        : store.slots.find((s) => (s.start_date || "").split("T")[0] === normalizedDate);
+        : store.slots.find(
+            (s) => (s.start_date || "").split("T")[0] === normalizedDate
+          );
       if (slot) {
-        const allSlots = store.slots.slice().sort((a,b)=> new Date(a.start_date)-new Date(b.start_date));
-        const idx = allSlots.findIndex((s)=> s.slot_id === slot.slot_id);
+        const allSlots = store.slots
+          .slice()
+          .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+        const idx = allSlots.findIndex((s) => s.slot_id === slot.slot_id);
         let endDate = null;
         for (let i = idx + 1; i < allSlots.length; i++) {
           const candidate = new Date(allSlots[i].start_date).getTime();
@@ -56,8 +65,8 @@ export class DetailTable extends LitElement {
         days = [];
         const current = new Date(slot.start_date);
         while (current < endDate) {
-          days.push(current.toISOString().split('T')[0]);
-          current.setDate(current.getDate()+1);
+          days.push(current.toISOString().split("T")[0]);
+          current.setDate(current.getDate() + 1);
         }
       }
     }

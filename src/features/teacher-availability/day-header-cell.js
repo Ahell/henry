@@ -20,7 +20,7 @@ export function renderDayHeaderCell({ dateStr, presentation, onClick }) {
   const cursor = clickHandler ? "pointer" : "not-allowed";
 
   return html`<th
-    class="${presentation.className}"
+    class="slot-header ${presentation.className}"
     @click=${clickHandler}
     title="${presentation.title}"
     style="cursor: ${cursor};"

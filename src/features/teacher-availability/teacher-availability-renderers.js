@@ -84,6 +84,50 @@ export function renderDayCell(component, teacher, dateStr) {
     store,
   });
 
+  const slot =
+    component._detailSlotId != null
+      ? component.slots.find((s) => s.slot_id === component._detailSlotId)
+      : component.slots.find((s) => s.start_date === component._detailSlotDate);
+
+  const overviewPresentation = slot
+    ? getOverviewCellPresentation({
+        teacher,
+        slot,
+        slotDate: component._detailSlotDate,
+        store,
+      })
+    : null;
+
+  const shouldShowContent =
+    presentation.className.includes("teaching-day") ||
+    presentation.className.includes("exam-date") ||
+    presentation.className.includes("teaching-day-default");
+
+  const overviewClassTokens = (overviewPresentation?.className || "")
+    .split(" ")
+    .filter(Boolean);
+  const hasAvailability = presentation.className.includes("unavailable");
+  const hasCourseContent = Boolean(
+    (overviewPresentation?.content || "").trim()
+  );
+  const isActiveDay =
+    presentation.className.includes("exam-date") ||
+    presentation.className.includes("teaching-day-alt") ||
+    (presentation.className.includes("teaching-day-default") &&
+      !presentation.className.includes("dimmed"));
+  const shouldShowCourse = !hasAvailability && hasCourseContent && isActiveDay;
+  const shouldShowUnavailableCourse =
+    hasAvailability && hasCourseContent && isActiveDay;
+  const courseTokens = overviewClassTokens.filter((token) =>
+    ["assigned-course", "has-course"].includes(token)
+  );
+  const combinedClassName = [
+    presentation.className,
+    shouldShowCourse ? courseTokens.join(" ") : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return html`
     <td>
       <teacher-cell
@@ -92,8 +136,14 @@ export function renderDayCell(component, teacher, dateStr) {
         .slotId=${component._detailSlotId}
         .slotDate=${component._detailSlotDate}
         .isDetail=${true}
-        .classNameSuffix=${presentation.className}
+        .classNameSuffix=${combinedClassName}
         .titleText=${presentation.title}
+        .content=${shouldShowContent && (shouldShowCourse || shouldShowUnavailableCourse)
+          ? overviewPresentation?.content
+          : shouldShowUnavailableCourse
+          ? overviewPresentation?.content
+          : ""}
+        .isLocked=${overviewPresentation?.isLocked ?? false}
       ></teacher-cell>
     </td>
   `;
@@ -157,23 +207,27 @@ function computeSlotDaysFromComponent(component) {
   const slots = Array.isArray(component.slots) ? [...component.slots] : [];
   if (!slots.length) return [];
 
+  const normalizeDate = (value) => (value || "").split("T")[0];
   const slotId = component._detailSlotId;
   const slotDate = component._detailSlotDate;
 
   const targetSlot =
-    slotId != null
-      ? slots.find((s) => s.slot_id === slotId)
-      : slots.find((s) => s.start_date === slotDate);
+    slots.find((s) => String(s.slot_id) === String(slotId)) ||
+    slots.find((s) => normalizeDate(s.start_date) === normalizeDate(slotDate));
 
   if (!targetSlot) return [];
 
-  const sorted = slots.slice().sort((a, b) => {
-    const dateA = new Date(a.start_date).getTime();
-    const dateB = new Date(b.start_date).getTime();
-    return dateA - dateB;
-  });
+  const sorted = slots
+    .slice()
+    .sort(
+      (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+    );
 
-  const idx = sorted.findIndex((s) => s.slot_id === targetSlot.slot_id);
+  const idx = sorted.findIndex(
+    (s) =>
+      String(s.slot_id) === String(targetSlot.slot_id) ||
+      normalizeDate(s.start_date) === normalizeDate(targetSlot.start_date)
+  );
   // Find the first slot after targetSlot that has a strictly greater start_date
   let endDate = null;
   for (let i = idx + 1; i < sorted.length; i++) {

@@ -73,12 +73,11 @@ export class DetailViewHeader extends LitElement {
       border-color: var(--color-warning);
     }
 
-    .subtitle {
-      margin-top: var(--space-2);
-      color: var(--color-text-secondary);
-      font-size: var(--font-size-sm);
-      line-height: var(--line-height-normal);
-      max-width: 640px;
+    .title-block {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
     }
 
     .detail-view-actions {
@@ -99,21 +98,11 @@ export class DetailViewHeader extends LitElement {
   render() {
     return html`
       <div class="detail-view-header">
-        <div>
-          <div class="eyebrow">Detaljvy</div>
-          <div class="title-row">
-            <div class="detail-view-title">${this.slotTitle}</div>
-            ${this.daysLength
-              ? html`<span class="pill">${this.daysLength} dagar</span>`
-              : ""}
-            ${this.isEditingExamDate
-              ? html`<span class="pill warning">Tentamensläge aktivt</span>`
-              : ""}
-          </div>
-          <p class="subtitle">
-            Klicka på en dag för att aktivera/inaktivera undervisningsdagar eller
-            sätt tentamensdatum.
-          </p>
+        <div class="title-block">
+          <div class="detail-view-title">${this.slotTitle}</div>
+          ${this.daysLength
+            ? html`<span class="pill">${this.daysLength} dagar</span>`
+            : ""}
         </div>
         <div class="detail-view-actions">
           <henry-button
