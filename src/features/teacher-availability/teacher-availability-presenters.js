@@ -19,7 +19,8 @@ export function getDetailDayHeaderPresentation({
   if (isExamDateLocked) {
     return {
       className: "exam-date-locked-header",
-      title: "Tentamensdatum (låst - tryck 'Ändra tentamensdatum' för att ändra)",
+      title:
+        "Tentamensdatum (låst - tryck 'Ändra tentamensdatum' för att ändra)",
       clickMode: null,
     };
   }
@@ -97,11 +98,6 @@ export function getDetailDayCellPresentation({
   store,
 }) {
   const state = store.getTeachingDayState(slotId, dateStr);
-  // Only display teaching-day styles for teachers that have a course assigned in this slot
-  const assignedRuns = store.getCourseRuns().filter(
-    (r) => r.slot_id === slotId && r.teachers && r.teachers.includes(teacherId)
-  );
-  const isAssignedToSlot = assignedRuns.length > 0;
   const isExamDate = store.isExamDate(slotId, dateStr);
   const isExamDateLocked = store.isExamDateLocked(slotId);
   const isUnavailable = isDayUnavailableConsideringSlot(
@@ -129,7 +125,7 @@ export function getDetailDayCellPresentation({
   } else if (isEditingExamDate) {
     className = "exam-date-new";
     title += " (Kan väljas som tentamensdatum)";
-  } else if (state && isAssignedToSlot) {
+  } else if (state) {
     if (state.isDefault && state.active) {
       className = "teaching-day-default";
       title += " (Standarddag)";
@@ -229,7 +225,9 @@ export function getOverviewCellPresentation({
   } else if (isPartiallyUnavailable && !isAssigned) {
     const percentage = Math.round(unavailablePercentage * 100);
     className = appendClass(className, "partially-unavailable");
-    const base = title ? `${title} (${percentage}% upptagen)` : `${percentage}% upptagen`;
+    const base = title
+      ? `${title} (${percentage}% upptagen)`
+      : `${percentage}% upptagen`;
     title = `${base} 🔒 Låst (använd detaljvy för att ändra)`;
   }
 
@@ -239,5 +237,4 @@ export function getOverviewCellPresentation({
   return { className, title, content, isLocked };
 }
 
-const appendClass = (current, next) =>
-  current ? `${current} ${next}` : next;
+const appendClass = (current, next) => (current ? `${current} ${next}` : next);
