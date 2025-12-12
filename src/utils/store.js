@@ -1345,14 +1345,8 @@ export class DataStore {
 
       if (existingIndex !== -1) {
         const existing = this.teachingDays[existingIndex];
-
-        if (existing.isDefault) {
-          // It's a default day - toggle active state
-          existing.active = !existing.active;
-        } else {
-          // It's an alternative day - remove it completely
-          this.teachingDays.splice(existingIndex, 1);
-        }
+        existing.active = !existing.active; // always keep entry, just toggle
+        existing.isDefault = existing.isDefault ?? isDefaultDate;
       } else {
         // Day doesn't exist - add it
         this.teachingDays.push({

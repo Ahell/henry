@@ -92,8 +92,32 @@ export function renderDayHeader(component, dateStr, courseId = null) {
       td.date === dateStr &&
       td.active !== false
   );
+  const genericState = store.getTeachingDayState(
+    component._detailSlotId,
+    dateStr,
+    null
+  );
+  const hideForAllCourses =
+    courseId == null && genericState && genericState.active === false;
+  const hasCourseSlotDay =
+    courseId == null &&
+    (store.courseSlotDays || []).some((csd) => {
+      const matchingSlot = (store.courseSlots || []).find(
+        (cs) =>
+          String(cs.course_slot_id) === String(csd.course_slot_id) &&
+          String(cs.slot_id) === String(component._detailSlotId)
+      );
+      return (
+        matchingSlot &&
+        csd.date === dateStr &&
+        csd.active !== false
+      );
+    });
   const headerPresentation =
-    courseId == null && anyActiveForDate && !presentation.className
+    courseId == null &&
+    !hideForAllCourses &&
+    (anyActiveForDate || hasCourseSlotDay) &&
+    !presentation.className
       ? {
           ...presentation,
           className: "teaching-day-default-header",
@@ -140,11 +164,6 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
       })
     : null;
 
-  const shouldShowContent =
-    presentation.className.includes("teaching-day") ||
-    presentation.className.includes("exam-date") ||
-    presentation.className.includes("teaching-day-default");
-
   const overviewClassTokens = (overviewPresentation?.className || "")
     .split(" ")
     .filter(Boolean);
@@ -156,6 +175,10 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
     dateStr,
     null
   );
+  const hideForAllCourses =
+    selectedCourseId == null &&
+    genericTeachingState &&
+    genericTeachingState.active === false;
   const courseHasDay = (id) => {
     const normalizeDate = (v) => (v || "").split("T")[0];
     const courseSlot = store.getCourseSlot(id, component._detailSlotId);
@@ -208,14 +231,32 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
 
   const hasActiveCourses = filteredCourseIds.length > 0;
   const shouldShowCourse =
-    !hasAvailability && hasActiveCourses && filteredContent.length > 0;
+    !hideForAllCourses &&
+    !hasAvailability &&
+    hasActiveCourses &&
+    filteredContent.length > 0;
   const shouldShowUnavailableCourse =
-    hasAvailability && hasActiveCourses && filteredContent.length > 0;
+    !hideForAllCourses &&
+    hasAvailability &&
+    hasActiveCourses &&
+    filteredContent.length > 0;
+  const shouldShowContent =
+    !hideForAllCourses &&
+    (presentation.className.includes("teaching-day") ||
+      presentation.className.includes("exam-date") ||
+      presentation.className.includes("teaching-day-default") ||
+      shouldShowCourse ||
+      shouldShowUnavailableCourse);
   const courseTokens = overviewClassTokens.filter((token) =>
     ["assigned-course", "has-course"].includes(token)
   );
   let effectiveClassName = presentation.className;
-  if (!hasActiveCourses) {
+  if (hideForAllCourses) {
+    effectiveClassName = effectiveClassName
+      .split(" ")
+      .filter((cls) => !cls.startsWith("teaching-day"))
+      .join(" ");
+  } else if (!hasActiveCourses) {
     effectiveClassName = effectiveClassName
       .split(" ")
       .filter(
