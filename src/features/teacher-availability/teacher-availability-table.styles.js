@@ -71,6 +71,22 @@ export const teacherAvailabilityTableStyles = css`
     background: var(--color-background);
   }
 
+  .teacher-timeline-table tbody tr:nth-child(even) td {
+    background: var(--color-gray-50);
+  }
+
+  .teacher-timeline-table tbody tr:hover td {
+    background: var(--color-primary-50);
+  }
+
+  .teacher-timeline-table tbody tr:nth-child(even) td:first-child {
+    background: var(--color-gray-50);
+  }
+
+  .teacher-timeline-table tbody tr:hover td:first-child {
+    background: var(--color-primary-50);
+  }
+
   .teacher-timeline-table th:not(:first-child),
   .teacher-timeline-table td:not(:first-child) {
     width: 120px;
@@ -79,7 +95,7 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-timeline-table th {
-    background: var(--color-gray-50);
+    background: var(--color-gray-100);
     font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-sm);
     position: sticky;
@@ -91,7 +107,7 @@ export const teacherAvailabilityTableStyles = css`
     position: sticky;
     left: 0;
     z-index: 3;
-    background: var(--color-gray-50);
+    background: var(--color-gray-100);
   }
 
   .teacher-timeline-table th.slot-header {
@@ -112,8 +128,9 @@ export const teacherAvailabilityTableStyles = css`
     background: var(--color-background);
     position: sticky;
     left: 0;
-    z-index: 1;
+    z-index: 2;
     min-width: 160px;
+    box-shadow: 2px 0 0 var(--color-border);
   }
 
   .teacher-timeline-table tr:last-child td {
@@ -147,7 +164,7 @@ export const teacherAvailabilityTableStyles = css`
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
-    background: var(--color-background);
+    background: transparent;
     text-align: center;
     box-sizing: border-box;
   }
