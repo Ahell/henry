@@ -25,6 +25,9 @@ export class DataStore {
     this.slots = [];
     this.courseRuns = [];
     this.teacherAvailability = [];
+    this.courseSlots = [];
+    this.slotDays = [];
+    this.courseSlotDays = [];
     this.teachingDays = []; // Array of {slot_id, date} objects marking teaching days
     this.examDates = []; // Array of {slot_id, date} objects marking exam dates (single per slot)
     this.prerequisiteProblems = [];
@@ -41,7 +44,8 @@ export class DataStore {
 
       if (!response.ok) {
         console.error("Backend load failed, using seed data");
-        this.importData(seedData);
+        this._loadSnapshot(seedData);
+        this.notify();
         return;
       }
 
@@ -55,7 +59,12 @@ export class DataStore {
         (!data.slots || data.slots.length === 0)
       ) {
         console.log("No data in backend, loading seed data");
-        this.importData(seedData);
+        this._loadSnapshot(seedData);
+        this.notify();
+        // Persist seed to backend so subsequent loads have data
+        this.saveData().catch((e) =>
+          console.error("Failed to persist seed data:", e)
+        );
         return;
       }
 
@@ -68,6 +77,9 @@ export class DataStore {
       this.teacherAvailability = data.teacherAvailability || [];
       this.teachingDays = data.teachingDays || [];
       this.examDates = data.examDates || [];
+      this.courseSlots = data.courseSlots || [];
+      this.slotDays = data.slotDays || [];
+      this.courseSlotDays = data.courseSlotDays || [];
 
       // Fallback: if backend omitted courseRuns or teacherAvailability, fall back to seed data
       if (
@@ -94,6 +106,9 @@ export class DataStore {
 
       // Initialize default teaching days for slots that don't have any
       this.initializeAllTeachingDays();
+      // Derive normalized structures if missing
+      this._ensureCourseSlotsFromRuns();
+      this._ensureSlotDaysFromSlots();
 
       // Validate and fix teacher assignments (ensure one course per teacher per slot)
       this.validateTeacherAssignments();
@@ -593,6 +608,9 @@ export class DataStore {
           teacherAvailability: this.teacherAvailability,
           teachingDays: this.teachingDays,
           examDates: this.examDates,
+          courseSlots: this.courseSlots,
+          slotDays: this.slotDays,
+          courseSlotDays: this.courseSlotDays,
         }),
       });
 
@@ -851,6 +869,8 @@ export class DataStore {
 
     // Generate default teaching days for new slot
     this.generateDefaultTeachingDays(id);
+    // Keep normalized slotDays in sync
+    this._ensureSlotDaysFromSlots();
 
     this.notify();
     return newSlot;
@@ -878,6 +898,8 @@ export class DataStore {
       status: run.status || "planerad",
     };
     this.courseRuns.push(newRun);
+    // Ensure the normalized course-slot link exists
+    this._ensureCourseSlotsFromRuns();
     this.notify();
     return newRun;
   }
@@ -1065,6 +1087,7 @@ export class DataStore {
     if (!slotDateOrId) return [];
 
     const normalizeDate = (value) => (value || "").split("T")[0];
+
     const normalizedDate =
       typeof slotDateOrId === "string" ? normalizeDate(slotDateOrId) : null;
 
@@ -1075,15 +1098,37 @@ export class DataStore {
         (s) => normalizeDate(s.start_date) === normalizedDate
       );
 
+    // Prefer normalized slotDays if they exist
+    if (
+      slot?.slot_id &&
+      Array.isArray(this.slotDays) &&
+      this.slotDays.some(
+        (sd) => String(sd.slot_id) === String(slot.slot_id)
+      )
+    ) {
+      return this.slotDays
+        .filter((sd) => String(sd.slot_id) === String(slot.slot_id))
+        .sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        )
+        .map((sd) => normalizeDate(sd.date));
+    }
+
     if (!slot) return [];
 
-    // Find the slot's end date (next slot's start date or add 4 weeks)
+    return this._computeSlotDayRange(slot);
+  }
+  _computeSlotDayRange(slot) {
+    if (!slot) return [];
+
     const allSlots = this.slots
       .slice()
       .sort(
-        (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+        (a, b) =>
+          new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
       );
 
+    const normalizeDate = (value) => (value || "").split("T")[0];
     const slotIndex = allSlots.findIndex(
       (s) =>
         String(s.slot_id) === String(slot.slot_id) ||
@@ -1091,7 +1136,6 @@ export class DataStore {
     );
 
     let endDate = null;
-    // Find the next slot whose start_date is strictly greater than this slot's start_date
     for (let i = slotIndex + 1; i < allSlots.length; i++) {
       const candidateDate = new Date(allSlots[i].start_date).getTime();
       const currentStart = new Date(slot.start_date).getTime();
@@ -1101,12 +1145,10 @@ export class DataStore {
       }
     }
     if (!endDate) {
-      // No later slot found - add 4 weeks
       endDate = new Date(slot.start_date);
       endDate.setDate(endDate.getDate() + 28);
     }
 
-    // Generate array of all days between start and end
     const days = [];
     const currentDate = new Date(slot.start_date);
 
@@ -1116,6 +1158,80 @@ export class DataStore {
     }
 
     return days;
+  }
+
+  _ensureCourseSlotsFromRuns() {
+    if (!Array.isArray(this.courseSlots)) {
+      this.courseSlots = [];
+    }
+
+    const existingKeys = new Set(
+      this.courseSlots.map((cs) => `${cs.course_id}-${cs.slot_id}`)
+    );
+    let nextId =
+      this.courseSlots.reduce(
+        (max, cs) => Math.max(max, cs.course_slot_id || 0),
+        0
+      ) + 1;
+
+    for (const run of this.courseRuns || []) {
+      if (run.course_id == null || run.slot_id == null) continue;
+      const key = `${run.course_id}-${run.slot_id}`;
+      if (existingKeys.has(key)) continue;
+
+      this.courseSlots.push({
+        course_slot_id: nextId++,
+        course_id: run.course_id,
+        slot_id: run.slot_id,
+        created_at: run.created_at || new Date().toISOString(),
+      });
+      existingKeys.add(key);
+    }
+  }
+
+  _ensureSlotDaysFromSlots() {
+    if (!Array.isArray(this.slotDays)) {
+      this.slotDays = [];
+    }
+
+    const normalizeDate = (value) => (value || "").split("T")[0];
+    let nextId =
+      this.slotDays.reduce(
+        (max, sd) => Math.max(max, sd.slot_day_id || 0),
+        0
+      ) + 1;
+
+    for (const slot of this.slots || []) {
+      const hasDays = this.slotDays.some(
+        (sd) => String(sd.slot_id) === String(slot.slot_id)
+      );
+      if (hasDays) continue;
+
+      const days = this._computeSlotDayRange(slot);
+      days.forEach((date) =>
+        this.slotDays.push({
+          slot_day_id: nextId++,
+          slot_id: slot.slot_id,
+          date: normalizeDate(date),
+        })
+      );
+    }
+  }
+
+  _loadSnapshot(data) {
+    this.courses = data.courses || [];
+    this.cohorts = data.cohorts || [];
+    this.teachers = data.teachers || [];
+    this.slots = data.slots || [];
+    this.courseRuns = data.courseRuns || [];
+    this.teacherAvailability = data.teacherAvailability || [];
+    this.teachingDays = data.teachingDays || [];
+    this.examDates = data.examDates || [];
+    this.courseSlots = data.courseSlots || [];
+    this.slotDays = data.slotDays || [];
+    this.courseSlotDays = data.courseSlotDays || [];
+    this._ensureCourseSlotsFromRuns();
+    this._ensureSlotDaysFromSlots();
   }
 
   // Teaching days methods
@@ -1188,46 +1304,104 @@ export class DataStore {
     this.notify();
   }
 
-  toggleTeachingDay(slotId, date) {
+  toggleTeachingDay(slotId, date, courseId = null) {
     const defaultDates = this.getDefaultTeachingDaysPattern(slotId);
     const isDefaultDate = defaultDates.includes(date);
 
-    const existingIndex = this.teachingDays.findIndex(
-      (td) => td.slot_id === slotId && td.date === date
-    );
+    if (courseId != null) {
+      const specificIndex = this.teachingDays.findIndex(
+        (td) =>
+          td.slot_id === slotId &&
+          td.date === date &&
+          td.course_id === courseId
+      );
+      const baseState =
+        this.getTeachingDayState(slotId, date, courseId) || {
+          isDefault: isDefaultDate,
+          active: false,
+        };
+      const desiredActive = !(baseState.active ?? false);
 
-    if (existingIndex !== -1) {
-      const existing = this.teachingDays[existingIndex];
-
-      if (existing.isDefault) {
-        // It's a default day - toggle active state
-        existing.active = !existing.active;
+      if (specificIndex !== -1) {
+        // Toggle the course-specific entry directly
+        this.teachingDays[specificIndex].active = desiredActive;
       } else {
-        // It's an alternative day - remove it completely
-        this.teachingDays.splice(existingIndex, 1);
+        // Create a course-specific override (active or inactive) without touching generic
+        this.teachingDays.push({
+          slot_id: slotId,
+          date,
+          course_id: courseId,
+          isDefault: baseState.isDefault ?? isDefaultDate,
+          active: desiredActive,
+        });
       }
     } else {
-      // Day doesn't exist - add it
-      this.teachingDays.push({
-        slot_id: slotId,
-        date,
-        isDefault: isDefaultDate,
-        active: true,
-      });
+      const existingIndex = this.teachingDays.findIndex(
+        (td) =>
+          td.slot_id === slotId &&
+          td.date === date &&
+          (td.course_id === null || td.course_id === undefined)
+      );
+
+      if (existingIndex !== -1) {
+        const existing = this.teachingDays[existingIndex];
+
+        if (existing.isDefault) {
+          // It's a default day - toggle active state
+          existing.active = !existing.active;
+        } else {
+          // It's an alternative day - remove it completely
+          this.teachingDays.splice(existingIndex, 1);
+        }
+      } else {
+        // Day doesn't exist - add it
+        this.teachingDays.push({
+          slot_id: slotId,
+          date,
+          isDefault: isDefaultDate,
+          active: true,
+        });
+      }
     }
     this.notify();
   }
 
-  getTeachingDayState(slotId, date) {
-    const td = this.teachingDays.find(
-      (td) => td.slot_id === slotId && td.date === date
+  getTeachingDayState(slotId, date, courseId = null) {
+    // If courseId is provided, prefer course-specific entry; otherwise fall back to generic.
+    if (courseId != null) {
+      const td =
+        this.teachingDays.find(
+          (t) =>
+            t.slot_id === slotId &&
+            t.date === date &&
+            t.course_id === courseId
+        ) ||
+        this.teachingDays.find(
+          (t) =>
+            t.slot_id === slotId &&
+            t.date === date &&
+            (t.course_id === null || t.course_id === undefined)
+        );
+
+      if (!td) return null;
+
+      return {
+        isDefault: td.isDefault || false,
+        active: td.active !== false,
+      };
+    }
+
+    // courseId === null: only consider the slot-level (generic) entry, if any.
+    const generic = this.teachingDays.find(
+      (t) =>
+        t.slot_id === slotId &&
+        t.date === date &&
+        (t.course_id === null || t.course_id === undefined)
     );
-
-    if (!td) return null;
-
+    if (!generic) return null;
     return {
-      isDefault: td.isDefault || false,
-      active: td.active !== false, // Default to true for old data
+      isDefault: generic.isDefault || false,
+      active: generic.active !== false,
     };
   }
 
@@ -1334,6 +1508,17 @@ export class DataStore {
     if (data.teacherAvailability) {
       data.teacherAvailability.forEach((a) => this.addTeacherAvailability(a));
     }
+    if (data.courseSlots) {
+      this.courseSlots = data.courseSlots;
+    }
+    if (data.slotDays) {
+      this.slotDays = data.slotDays;
+    }
+    if (data.courseSlotDays) {
+      this.courseSlotDays = data.courseSlotDays;
+    }
+    this._ensureCourseSlotsFromRuns();
+    this._ensureSlotDaysFromSlots();
     this.notify();
   }
 
@@ -1346,6 +1531,9 @@ export class DataStore {
       slots: this.slots,
       courseRuns: this.courseRuns,
       teacherAvailability: this.teacherAvailability,
+      courseSlots: this.courseSlots,
+      slotDays: this.slotDays,
+      courseSlotDays: this.courseSlotDays,
     };
   }
 
@@ -1358,6 +1546,11 @@ export class DataStore {
     this.slots = [];
     this.courseRuns = [];
     this.teacherAvailability = [];
+    this.teachingDays = [];
+    this.examDates = [];
+    this.courseSlots = [];
+    this.slotDays = [];
+    this.courseSlotDays = [];
 
     // Reload seed data WITHOUT courseRuns - cohorts should start with empty sequences
     const seedDataWithoutRuns = {
@@ -1367,8 +1560,81 @@ export class DataStore {
       slots: seedData.slots,
       // courseRuns intentionally omitted - each cohort starts fresh
       teacherAvailability: seedData.teacherAvailability,
+      courseSlots: seedData.courseSlots || [],
+      slotDays: seedData.slotDays || [],
+      courseSlotDays: seedData.courseSlotDays || [],
     };
     this.importData(seedDataWithoutRuns);
+  }
+
+  getCourseSlots() {
+    return this.courseSlots || [];
+  }
+
+  getCourseSlot(courseId, slotId) {
+    return (this.courseSlots || []).find(
+      (cs) =>
+        String(cs.course_id) === String(courseId) &&
+        String(cs.slot_id) === String(slotId)
+    );
+  }
+
+  getCourseSlotDays(courseSlotId) {
+    return (this.courseSlotDays || [])
+      .filter((csd) => String(csd.course_slot_id) === String(courseSlotId))
+      .filter((csd) => csd.active !== false)
+      .map((csd) => (csd.date || csd.slot_day_id_date || "").split("T")[0]);
+  }
+
+  getCourseSlotDaysForCourse(slotId, courseId) {
+    const courseSlot = this.getCourseSlot(courseId, slotId);
+    if (!courseSlot) return [];
+    return this.getCourseSlotDays(courseSlot.course_slot_id);
+  }
+
+  toggleCourseSlotDay(slotId, courseId, dateStr) {
+    const courseSlot = this.getCourseSlot(courseId, slotId);
+    if (!courseSlot) {
+      return;
+    }
+    if (!Array.isArray(this.courseSlotDays)) {
+      this.courseSlotDays = [];
+    }
+    const normalizeDate = (value) => (value || "").split("T")[0];
+    const normalizedDate = normalizeDate(dateStr);
+    const defaultDates = this.getDefaultTeachingDaysPattern(slotId);
+    const isDefault = defaultDates.includes(normalizedDate);
+
+    const existingIdx = this.courseSlotDays.findIndex(
+      (csd) =>
+        String(csd.course_slot_id) === String(courseSlot.course_slot_id) &&
+        normalizeDate(csd.date) === normalizedDate
+    );
+
+    if (existingIdx >= 0) {
+      const record = this.courseSlotDays[existingIdx];
+      if (record.is_default) {
+        // Default days toggle active/inactive but stay in DB
+        record.active = record.active === false;
+      } else {
+        // Non-default days are removed when toggled off
+        this.courseSlotDays.splice(existingIdx, 1);
+      }
+    } else {
+      const nextId =
+        this.courseSlotDays.reduce(
+          (max, csd) => Math.max(max, csd.course_slot_day_id || 0),
+          0
+        ) + 1;
+      this.courseSlotDays.push({
+        course_slot_day_id: nextId,
+        course_slot_id: courseSlot.course_slot_id,
+        date: normalizedDate,
+        is_default: isDefault ? 1 : 0,
+        active: isDefault ? 0 : 1, // default dates start inactive when toggled, non-default start active
+      });
+    }
+    this.notify();
   }
 }
 

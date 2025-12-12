@@ -6,6 +6,8 @@ export class DetailViewHeader extends LitElement {
     slotTitle: { type: String },
     daysLength: { type: Number },
     isEditingExamDate: { type: Boolean },
+    courses: { type: Array },
+    courseFilter: { type: Number },
   };
 
   // Keep default shadow DOM here - the header is a div outside of the table
@@ -73,6 +75,23 @@ export class DetailViewHeader extends LitElement {
       border-color: var(--color-warning);
     }
 
+    .pill.select-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .pill.select-pill select {
+      border: none;
+      background: transparent;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-primary);
+      padding: 0;
+      min-width: 140px;
+      outline: none;
+      font-weight: var(--font-weight-medium);
+    }
+
     .title-block {
       display: flex;
       align-items: center;
@@ -93,15 +112,37 @@ export class DetailViewHeader extends LitElement {
     this.slotTitle = "";
     this.daysLength = 0;
     this.isEditingExamDate = false;
+    this.courses = [];
+    this.courseFilter = null;
   }
 
   render() {
+    const hasCourses = Array.isArray(this.courses) && this.courses.length > 0;
     return html`
       <div class="detail-view-header">
         <div class="title-block">
           <div class="detail-view-title">${this.slotTitle}</div>
           ${this.daysLength
             ? html`<span class="pill">${this.daysLength} dagar</span>`
+            : ""}
+          ${hasCourses
+            ? html`
+                <label class="pill select-pill">
+                  <span>Kurser</span>
+                  <select
+                    @change="${this._onCourseChange}"
+                    .value=${this.courseFilter ?? "all"}
+                  >
+                    <option value="all">Alla kurser</option>
+                    ${this.courses.map(
+                      (c) =>
+                        html`<option value=${c.course_id}>
+                          ${c.code || c.name || c.course_id}
+                        </option>`
+                    )}
+                  </select>
+                </label>
+              `
             : ""}
         </div>
         <div class="detail-view-actions">
@@ -110,7 +151,9 @@ export class DetailViewHeader extends LitElement {
             size="small"
             @click="${this._toggleExamDateEditing}"
           >
-            ${this.isEditingExamDate ? "Avbryt ändring" : "Ändra tentamensdatum"}
+            ${this.isEditingExamDate
+              ? "Avbryt ändring"
+              : "Ändra tentamensdatum"}
           </henry-button>
           <henry-button
             variant="secondary"
@@ -137,6 +180,17 @@ export class DetailViewHeader extends LitElement {
   _exitDetailView() {
     this.dispatchEvent(
       new CustomEvent("exit-detail", { bubbles: true, composed: true })
+    );
+  }
+
+  _onCourseChange(e) {
+    const courseId = e?.target?.value ?? "all";
+    this.dispatchEvent(
+      new CustomEvent("course-filter-change", {
+        detail: { courseId },
+        bubbles: true,
+        composed: true,
+      })
     );
   }
 }

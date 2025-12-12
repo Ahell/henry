@@ -68,7 +68,41 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(teacher_id, slot_id)
   );
+
+  CREATE TABLE IF NOT EXISTS course_slots (
+    course_slot_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_id INTEGER NOT NULL,
+    slot_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(course_id, slot_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS slot_days (
+    slot_day_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slot_id INTEGER NOT NULL,
+    date TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS course_slot_days (
+    course_slot_day_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_slot_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    is_default INTEGER DEFAULT 0,
+    active INTEGER DEFAULT 1
+  );
 `);
+
+// Ensure new columns exist after deploy (SQLite lacks IF NOT EXISTS for columns)
+const ensureColumn = (table, column, typeWithDefault) => {
+  const info = db.prepare(`PRAGMA table_info(${table})`).all();
+  const hasCol = info.some((c) => c.name === column);
+  if (!hasCol) {
+    db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${typeWithDefault}`).run();
+  }
+};
+
+ensureColumn("course_slot_days", "is_default", "INTEGER DEFAULT 0");
+ensureColumn("course_slot_days", "active", "INTEGER DEFAULT 1");
 
 // Helper function to convert array fields
 function serializeArrayFields(obj, fields) {
@@ -356,6 +390,10 @@ app.get("/api/bulk-load", (req, res) => {
       teacherAvailability: Object.keys(teacherAvailability).length,
     });
 
+    const courseSlots = db.prepare("SELECT * FROM course_slots").all();
+    const slotDays = db.prepare("SELECT * FROM slot_days").all();
+    const courseSlotDays = db.prepare("SELECT * FROM course_slot_days").all();
+
     res.json({
       courses,
       cohorts,
@@ -363,6 +401,9 @@ app.get("/api/bulk-load", (req, res) => {
       slots,
       courseRuns,
       teacherAvailability,
+      courseSlots,
+      slotDays,
+      courseSlotDays,
     });
   } catch (error) {
     console.error("Bulk load error:", error);
@@ -371,8 +412,17 @@ app.get("/api/bulk-load", (req, res) => {
 });
 
 app.post("/api/bulk-save", (req, res) => {
-  const { courses, cohorts, teachers, slots, courseRuns, teacherAvailability } =
-    req.body;
+  const {
+    courses,
+    cohorts,
+    teachers,
+    slots,
+    courseRuns,
+    teacherAvailability,
+    courseSlots,
+    slotDays,
+    courseSlotDays,
+  } = req.body;
 
   console.log("Bulk save received:", {
     courses: courses?.length,
@@ -390,6 +440,9 @@ app.post("/api/bulk-save", (req, res) => {
     db.prepare("DELETE FROM slots").run();
     db.prepare("DELETE FROM course_runs").run();
     db.prepare("DELETE FROM teacher_availability").run();
+    db.prepare("DELETE FROM course_slots").run();
+    db.prepare("DELETE FROM slot_days").run();
+    db.prepare("DELETE FROM course_slot_days").run();
 
     if (courses) {
       const stmt = db.prepare(
@@ -487,6 +540,44 @@ app.post("/api/bulk-save", (req, res) => {
           stmt.run(null, teacher_id, slot_id, available ? 1 : 0);
         });
       }
+    }
+
+    if (courseSlots) {
+      const stmt = db.prepare(
+        "INSERT INTO course_slots (course_slot_id, course_id, slot_id, created_at) VALUES (?, ?, ?, ?)"
+      );
+      courseSlots.forEach((cs) => {
+        stmt.run(
+          cs.course_slot_id || null,
+          cs.course_id,
+          cs.slot_id,
+          cs.created_at || new Date().toISOString()
+        );
+      });
+    }
+
+    if (slotDays) {
+      const stmt = db.prepare(
+        "INSERT INTO slot_days (slot_day_id, slot_id, date) VALUES (?, ?, ?)"
+      );
+      slotDays.forEach((sd) => {
+        stmt.run(sd.slot_day_id || null, sd.slot_id, sd.date);
+      });
+    }
+
+    if (courseSlotDays) {
+      const stmt = db.prepare(
+        "INSERT INTO course_slot_days (course_slot_day_id, course_slot_id, date, is_default, active) VALUES (?, ?, ?, ?, ?)"
+      );
+      courseSlotDays.forEach((csd) => {
+        stmt.run(
+          csd.course_slot_day_id || null,
+          csd.course_slot_id,
+          csd.date,
+          csd.is_default ? 1 : 0,
+          csd.active === 0 ? 0 : 1
+        );
+      });
     }
 
     console.log("Bulk save completed successfully");

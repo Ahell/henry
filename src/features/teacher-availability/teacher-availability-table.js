@@ -40,6 +40,7 @@ export class TeacherAvailabilityTable extends LitElement {
     _detailSlotDate: { type: String }, // Set when in detail view for a specific slot
     _detailSlotId: { type: Number }, // The specific slot_id being viewed in detail
     _isEditingExamDate: { type: Boolean }, // Whether exam date editing is enabled
+    _detailCourseFilter: { type: Number }, // Selected course_id filter for detail view (null = all)
   };
 
   constructor() {
@@ -52,6 +53,7 @@ export class TeacherAvailabilityTable extends LitElement {
     this._detailSlotDate = null;
     this._detailSlotId = null;
     this._isEditingExamDate = false;
+    this._detailCourseFilter = null;
   }
 
   static styles = teacherAvailabilityTableStyles;
@@ -129,6 +131,13 @@ export class TeacherAvailabilityTable extends LitElement {
   // key — we update accordingly without overwriting unspecified values.
   _handlePaintChangeRequest(e) {
     handlePaintChangeRequest(this, e);
+  }
+
+  _handleCourseFilterChange(e) {
+    const nextFilter =
+      e?.detail?.courseId === "all" ? null : Number(e?.detail?.courseId);
+    this._detailCourseFilter = Number.isNaN(nextFilter) ? null : nextFilter;
+    this.requestUpdate();
   }
 }
 

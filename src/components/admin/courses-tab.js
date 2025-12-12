@@ -101,16 +101,19 @@ export class CoursesTab extends LitElement {
               ]}
             ></henry-radio-group>
             <henry-select
-              id="prerequisites"
-              label="Spärrkurser (kurser som måste läsas före)"
-              multiple
-              size="5"
-              .options=${store.getCourses().map((c) => ({
-                value: c.course_id.toString(),
-                label: `${c.code} - ${c.name}`,
+            id="prerequisites"
+            label="Spärrkurser (kurser som måste läsas före)"
+            multiple
+            size="5"
+            .options=${store
+              .getCourses()
+              .filter((c) => c && c.course_id != null)
+              .map((c) => ({
+                value: String(c.course_id),
+                label: `${c.code ?? "OKÄND"} - ${c.name ?? ""}`,
               }))}
-            ></henry-select>
-          </div>
+          ></henry-select>
+        </div>
 
           <henry-select
             id="courseTeachers"

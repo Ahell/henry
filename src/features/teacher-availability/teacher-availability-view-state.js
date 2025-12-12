@@ -10,6 +10,7 @@ export const exitDetailView = (component) => {
   component._detailSlotDate = null;
   component._detailSlotId = null;
   component._isEditingExamDate = false;
+  component._detailCourseFilter = null;
   component.requestUpdate();
 };
 
@@ -30,7 +31,11 @@ export const setExamDate = (component, dateStr) => {
   component.requestUpdate();
 };
 
-export const toggleTeachingDay = (component, dateStr) => {
-  store.toggleTeachingDay(component._detailSlotId, dateStr);
+export const toggleTeachingDay = (component, dateStr, courseId = null) => {
+  if (courseId && courseId !== "all") {
+    store.toggleCourseSlotDay(component._detailSlotId, courseId, dateStr);
+  } else {
+    store.toggleTeachingDay(component._detailSlotId, dateStr, null);
+  }
   component.requestUpdate();
 };

@@ -3,13 +3,14 @@ import { isDayUnavailableConsideringSlot } from "../../utils/teacherAvailability
 /**
  * Decide presentation for a day header in the detail view.
  * Pure function: queries `store` but does NOT mutate state.
- * @param {{slotId:number, dateStr:string, isEditingExamDate:boolean, store:object}} options
+ * @param {{slotId:number, dateStr:string, isEditingExamDate:boolean, store:object, courseId:number|null}} options
  * @returns {{className:string,title:string,clickMode:('toggleTeachingDay'|'setExamDate'|null)}}
  */
 export function getDetailDayHeaderPresentation({
   slotId,
   dateStr,
   isEditingExamDate,
+   courseId = null,
   store,
 }) {
   const isExamDate = store.isExamDate(slotId, dateStr);
@@ -50,12 +51,27 @@ export function getDetailDayHeaderPresentation({
   }
 
   // Teaching-day scenarios
-  const state = store.getTeachingDayState(slotId, dateStr);
+  const normalizedCourseDays =
+    courseId && courseId !== "all"
+      ? store.getCourseSlotDaysForCourse(slotId, courseId)
+      : [];
+  const state = store.getTeachingDayState(slotId, dateStr, courseId);
 
   if (state?.isDefault && state.active) {
     return {
       className: "teaching-day-default-header",
       title: "Standarddag (klicka för att inaktivera)",
+      clickMode: "toggleTeachingDay",
+    };
+  }
+
+  if (
+    normalizedCourseDays.length > 0 &&
+    normalizedCourseDays.includes(dateStr)
+  ) {
+    return {
+      className: "teaching-day-alt-header",
+      title: "Aktiv kursdag (klicka för att avaktivera)",
       clickMode: "toggleTeachingDay",
     };
   }
@@ -86,7 +102,7 @@ export function getDetailDayHeaderPresentation({
 /**
  * Decide presentation for a day cell in the detail view.
  * Pure function: queries `store` but does NOT mutate state.
- * @param {{slotId:number, dateStr:string, teacherId:number, slotDate:string, isEditingExamDate:boolean, store:object}} options
+ * @param {{slotId:number, dateStr:string, teacherId:number, slotDate:string, isEditingExamDate:boolean, store:object, courseId:number|null}} options
  * @returns {{className:string,title:string}}
  */
 export function getDetailDayCellPresentation({
@@ -95,9 +111,14 @@ export function getDetailDayCellPresentation({
   dateStr,
   teacherId,
   isEditingExamDate,
+  courseId = null,
   store,
 }) {
-  const state = store.getTeachingDayState(slotId, dateStr);
+  const state = store.getTeachingDayState(slotId, dateStr, courseId);
+  const normalizedCourseDays =
+    courseId && courseId !== "all"
+      ? store.getCourseSlotDaysForCourse(slotId, courseId)
+      : [];
   const isExamDate = store.isExamDate(slotId, dateStr);
   const isExamDateLocked = store.isExamDateLocked(slotId);
   const isUnavailable = isDayUnavailableConsideringSlot(
@@ -135,7 +156,19 @@ export function getDetailDayCellPresentation({
     } else if (!state.isDefault && state.active) {
       className = "teaching-day-alt";
       title += " (Alternativ undervisningsdag)";
+    } else if (
+      normalizedCourseDays.length > 0 &&
+      normalizedCourseDays.includes(dateStr)
+    ) {
+      className = "teaching-day-alt";
+      title += " (Aktiv kursdag)";
     }
+  } else if (
+    normalizedCourseDays.length > 0 &&
+    normalizedCourseDays.includes(dateStr)
+  ) {
+    className = "teaching-day-alt";
+    title += " (Aktiv kursdag)";
   }
 
   if (isUnavailable) {
@@ -188,6 +221,7 @@ export function getOverviewCellPresentation({
   let content = "";
   let title = "";
   let isLocked = false;
+  let courseIds = [];
 
   // Locking is independent from assignment; applies to any partially unavailable cell
   if (isPartiallyUnavailable) {
@@ -202,6 +236,7 @@ export function getOverviewCellPresentation({
     const names = assignedRuns
       .map((run) => store.getCourse(run.course_id)?.name)
       .filter(Boolean);
+    courseIds = assignedRuns.map((run) => run.course_id).filter(Boolean);
 
     className = appendClass(className, "assigned-course");
     content = codes.join(", ");
@@ -213,6 +248,7 @@ export function getOverviewCellPresentation({
     const names = compatibleRuns
       .map((run) => store.getCourse(run.course_id)?.name)
       .filter(Boolean);
+    courseIds = compatibleRuns.map((run) => run.course_id).filter(Boolean);
 
     className = appendClass(className, "has-course");
     content = codes.join(", ");
@@ -234,7 +270,7 @@ export function getOverviewCellPresentation({
   // Ensure leading/trailing whitespace trimmed
   className = className.trim();
 
-  return { className, title, content, isLocked };
+  return { className, title, content, isLocked, courseIds };
 }
 
 const appendClass = (current, next) => (current ? `${current} ${next}` : next);

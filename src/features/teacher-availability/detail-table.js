@@ -28,6 +28,7 @@ export class DetailTable extends LitElement {
   }
 
   render() {
+    console.log("Days for detail table:", this.days);
     let days =
       this.days && this.days.length
         ? this.days

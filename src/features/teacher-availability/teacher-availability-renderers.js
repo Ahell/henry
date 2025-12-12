@@ -26,13 +26,37 @@ export function renderDetailView(component) {
 
   // Debug logs removed
 
+  const slot = component.slots.find(
+    (s) => s.slot_id === component._detailSlotId
+  );
+  const slotRuns = slot
+    ? Array.from(
+        new Map(
+          store
+            .getCourseRuns()
+            .filter((run) => run.slot_id === slot.slot_id)
+            .map((run) => [
+              run.course_id,
+              {
+                course_id: run.course_id,
+                code: store.getCourse(run.course_id)?.code,
+                name: store.getCourse(run.course_id)?.name,
+              },
+            ])
+        ).values()
+      ).filter((c) => c.course_id && c.code)
+    : [];
+
   return html`
     <detail-view-header
       slotTitle="${formatSlotDate(component._detailSlotDate)}"
       .daysLength=${days.length}
       .isEditingExamDate=${component._isEditingExamDate}
+      .courseFilter=${component._detailCourseFilter}
+      .courses=${slotRuns}
       @toggle-edit-exam=${() => toggleExamDateEditing(component)}
       @exit-detail=${() => exitDetailView(component)}
+      @course-filter-change=${(e) => component._handleCourseFilterChange(e)}
     ></detail-view-header>
 
     <detail-table
@@ -41,9 +65,10 @@ export function renderDetailView(component) {
       .slotId=${component._detailSlotId}
       .slotDate=${component._detailSlotDate}
       .isPainting=${component.isPainting}
-      .dayHeaderRenderer=${(dateStr) => renderDayHeader(component, dateStr)}
+      .dayHeaderRenderer=${(dateStr) =>
+        renderDayHeader(component, dateStr, component._detailCourseFilter)}
       .teacherDayCellRenderer=${(teacher, dateStr) =>
-        renderDayCell(component, teacher, dateStr)}
+        renderDayCell(component, teacher, dateStr, component._detailCourseFilter)}
       @cell-mousedown=${(e) => component._handleCellMouseDown(e)}
       @cell-enter=${(e) => component._handleCellMouseEnter(e)}
       @mouseup=${(e) => component._handlePaintEnd(e)}
@@ -52,35 +77,52 @@ export function renderDetailView(component) {
   `;
 }
 
-export function renderDayHeader(component, dateStr) {
+export function renderDayHeader(component, dateStr, courseId = null) {
   const presentation = getDetailDayHeaderPresentation({
     slotId: component._detailSlotId,
     dateStr,
     isEditingExamDate: component._isEditingExamDate,
+    courseId,
     store,
   });
 
+  const anyActiveForDate = store.teachingDays.some(
+    (td) =>
+      td.slot_id === component._detailSlotId &&
+      td.date === dateStr &&
+      td.active !== false
+  );
+  const headerPresentation =
+    courseId == null && anyActiveForDate && !presentation.className
+      ? {
+          ...presentation,
+          className: "teaching-day-default-header",
+          title: presentation.title || "Aktiv dag",
+        }
+      : presentation;
+
   let clickHandler = null;
-  if (presentation.clickMode === "toggleTeachingDay") {
-    clickHandler = () => toggleTeachingDay(component, dateStr);
-  } else if (presentation.clickMode === "setExamDate") {
+  if (headerPresentation.clickMode === "toggleTeachingDay") {
+    clickHandler = () => toggleTeachingDay(component, dateStr, courseId);
+  } else if (headerPresentation.clickMode === "setExamDate") {
     clickHandler = () => setExamDate(component, dateStr);
   }
 
   return renderDayHeaderCell({
     dateStr,
-    presentation,
+    presentation: headerPresentation,
     onClick: clickHandler,
   });
 }
 
-export function renderDayCell(component, teacher, dateStr) {
+export function renderDayCell(component, teacher, dateStr, courseId = null) {
   const presentation = getDetailDayCellPresentation({
     slotId: component._detailSlotId,
     slotDate: component._detailSlotDate,
     dateStr,
     teacherId: teacher.teacher_id,
     isEditingExamDate: component._isEditingExamDate,
+    courseId,
     store,
   });
 
@@ -107,22 +149,83 @@ export function renderDayCell(component, teacher, dateStr) {
     .split(" ")
     .filter(Boolean);
   const hasAvailability = presentation.className.includes("unavailable");
-  const hasCourseContent = Boolean(
-    (overviewPresentation?.content || "").trim()
+  const selectedCourseId = component._detailCourseFilter;
+  const courseIds = overviewPresentation?.courseIds || [];
+  const genericTeachingState = store.getTeachingDayState(
+    component._detailSlotId,
+    dateStr,
+    null
   );
-  const isActiveDay =
-    presentation.className.includes("exam-date") ||
-    presentation.className.includes("teaching-day-alt") ||
-    (presentation.className.includes("teaching-day-default") &&
-      !presentation.className.includes("dimmed"));
-  const shouldShowCourse = !hasAvailability && hasCourseContent && isActiveDay;
+  const courseHasDay = (id) => {
+    const normalizeDate = (v) => (v || "").split("T")[0];
+    const courseSlot = store.getCourseSlot(id, component._detailSlotId);
+    const record =
+      courseSlot &&
+      (store.courseSlotDays || []).find(
+        (csd) =>
+          String(csd.course_slot_id) === String(courseSlot.course_slot_id) &&
+          normalizeDate(csd.date) === normalizeDate(dateStr)
+      );
+    if (record) {
+      return record.active !== false;
+    }
+
+    const normalizedDays =
+      store.getCourseSlotDaysForCourse(component._detailSlotId, id) || [];
+    if (normalizedDays.length > 0) {
+      if (normalizedDays.includes(dateStr)) return true;
+      // If other normalized days exist, fall back to teaching day state to allow defaults
+    }
+    const specificState = store.getTeachingDayState(
+      component._detailSlotId,
+      dateStr,
+      id
+    );
+    if (specificState) {
+      return specificState.active !== false;
+    }
+    const genericState = store.getTeachingDayState(
+      component._detailSlotId,
+      dateStr,
+      null
+    );
+    return genericState?.active;
+  };
+
+  const activeCourseIds = courseIds.filter((id) => courseHasDay(id));
+  const baseCourseIds =
+    selectedCourseId == null && genericTeachingState?.active
+      ? activeCourseIds
+      : activeCourseIds;
+  const filteredCourseIds =
+    selectedCourseId == null
+      ? baseCourseIds
+      : baseCourseIds.filter((id) => id === selectedCourseId);
+  const filteredContent = filteredCourseIds
+    .map((id) => store.getCourse(id)?.code)
+    .filter(Boolean)
+    .join(", ");
+
+  const hasActiveCourses = filteredCourseIds.length > 0;
+  const shouldShowCourse =
+    !hasAvailability && hasActiveCourses && filteredContent.length > 0;
   const shouldShowUnavailableCourse =
-    hasAvailability && hasCourseContent && isActiveDay;
+    hasAvailability && hasActiveCourses && filteredContent.length > 0;
   const courseTokens = overviewClassTokens.filter((token) =>
     ["assigned-course", "has-course"].includes(token)
   );
+  let effectiveClassName = presentation.className;
+  if (!hasActiveCourses) {
+    effectiveClassName = effectiveClassName
+      .split(" ")
+      .filter(
+        (cls) =>
+          !cls.startsWith("teaching-day") && !cls.startsWith("exam-date")
+      )
+      .join(" ");
+  }
   const combinedClassName = [
-    presentation.className,
+    effectiveClassName,
     shouldShowCourse ? courseTokens.join(" ") : "",
   ]
     .filter(Boolean)
@@ -139,9 +242,9 @@ export function renderDayCell(component, teacher, dateStr) {
         .classNameSuffix=${combinedClassName}
         .titleText=${presentation.title}
         .content=${shouldShowContent && (shouldShowCourse || shouldShowUnavailableCourse)
-          ? overviewPresentation?.content
+          ? filteredContent
           : shouldShowUnavailableCourse
-          ? overviewPresentation?.content
+          ? filteredContent
           : ""}
         .isLocked=${overviewPresentation?.isLocked ?? false}
       ></teacher-cell>
