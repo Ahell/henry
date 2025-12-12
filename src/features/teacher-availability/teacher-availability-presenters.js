@@ -97,6 +97,11 @@ export function getDetailDayCellPresentation({
   store,
 }) {
   const state = store.getTeachingDayState(slotId, dateStr);
+  // Only display teaching-day styles for teachers that have a course assigned in this slot
+  const assignedRuns = store.getCourseRuns().filter(
+    (r) => r.slot_id === slotId && r.teachers && r.teachers.includes(teacherId)
+  );
+  const isAssignedToSlot = assignedRuns.length > 0;
   const isExamDate = store.isExamDate(slotId, dateStr);
   const isExamDateLocked = store.isExamDateLocked(slotId);
   const isUnavailable = isDayUnavailableConsideringSlot(
@@ -124,7 +129,7 @@ export function getDetailDayCellPresentation({
   } else if (isEditingExamDate) {
     className = "exam-date-new";
     title += " (Kan väljas som tentamensdatum)";
-  } else if (state) {
+  } else if (state && isAssignedToSlot) {
     if (state.isDefault && state.active) {
       className = "teaching-day-default";
       title += " (Standarddag)";
