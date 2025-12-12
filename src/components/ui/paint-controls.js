@@ -50,19 +50,19 @@ export class PaintControls extends LitElement {
       {
         key: "paint-toggle",
         variant: this.isPainting ? "primary" : "outline",
-        label: this.isPainting ? "🎨 Sluta måla" : "🎨 Måla",
+        label: this.isPainting ? "Sluta måla" : "Måla",
         onClick: this.requestPaintToggle,
       },
       {
         key: "add",
         variant: this.paintMode === "add" ? "primary" : "outline",
-        label: "➕ Lägg till",
+        label: "Lägg till",
         onClick: this._onAddClick,
       },
       {
         key: "remove",
         variant: this.paintMode === "remove" ? "primary" : "outline",
-        label: "✖ Ta bort",
+        label: "Ta bort",
         onClick: this._onRemoveClick,
       },
     ];

@@ -4,41 +4,41 @@
  */
 
 :root {
-  /* Colors - Primary */
-  --color-primary-50: #f5f7ff;
-  --color-primary-100: #ebedff;
-  --color-primary-200: #d6dbff;
-  --color-primary-300: #b8c1ff;
-  --color-primary-400: #919dff;
-  --color-primary-500: #667eea;
-  --color-primary-600: #5568d3;
-  --color-primary-700: #4553b8;
-  --color-primary-800: #3a469e;
-  --color-primary-900: #2e3785;
+  /* Colors - Primary (Blue) */
+  --color-primary-50: #e8f0ff;
+  --color-primary-100: #d6e4ff;
+  --color-primary-200: #b7ccff;
+  --color-primary-300: #8fafff;
+  --color-primary-400: #5f8eff;
+  --color-primary-500: #3a74f6;
+  --color-primary-600: #2f63d4;
+  --color-primary-700: #264fa8;
+  --color-primary-800: #1e3f86;
+  --color-primary-900: #172f63;
 
-  /* Colors - Secondary (Purple) */
-  --color-secondary-50: #faf5ff;
-  --color-secondary-100: #f3e8ff;
-  --color-secondary-200: #e9d5ff;
-  --color-secondary-300: #d8b4fe;
-  --color-secondary-400: #c084fc;
-  --color-secondary-500: #764ba2;
-  --color-secondary-600: #6b4394;
-  --color-secondary-700: #5e3a81;
-  --color-secondary-800: #50326e;
-  --color-secondary-900: #42295b;
+  /* Colors - Secondary (Orange accent) */
+  --color-secondary-50: #fff3eb;
+  --color-secondary-100: #ffe6d6;
+  --color-secondary-200: #ffc6a3;
+  --color-secondary-300: #ffa471;
+  --color-secondary-400: #ff8246;
+  --color-secondary-500: #ff6b3d;
+  --color-secondary-600: #e2592f;
+  --color-secondary-700: #c34927;
+  --color-secondary-800: #9e3a20;
+  --color-secondary-900: #7a2c19;
 
   /* Colors - Gray Scale */
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6c757d;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
+  --color-gray-50: #f7f9fc;
+  --color-gray-100: #edf1f7;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #cfd8e3;
+  --color-gray-400: #a8b4c4;
+  --color-gray-500: #7c8899;
+  --color-gray-600: #606b7b;
+  --color-gray-700: #4a5362;
+  --color-gray-800: #353c47;
+  --color-gray-900: #242a33;
 
   /* Colors - Semantic */
   --color-success: #10b981;
@@ -59,12 +59,12 @@
 
   /* Colors - UI */
   --color-background: #ffffff;
-  --color-surface: #f9fafb;
-  --color-border: #e5e7eb;
-  --color-border-hover: #d1d5db;
-  --color-text-primary: #1f2937;
-  --color-text-secondary: #6c757d;
-  --color-text-disabled: #9ca3af;
+  --color-surface: #f7f9fc;
+  --color-border: #e2e8f0;
+  --color-border-hover: #cfd8e3;
+  --color-text-primary: #1f2733;
+  --color-text-secondary: #5b6475;
+  --color-text-disabled: #9aa3b3;
 
   /* Typography */
   --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,

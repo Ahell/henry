@@ -108,7 +108,7 @@ export class TeachersTab extends LitElement {
             variant="secondary"
             @click="${this.handleRandomizeCourses}"
           >
-            🎲 Slumpa kurser till alla lärare
+            Slumpa kurser till alla lärare
           </henry-button>
         </div>
         <henry-table
@@ -185,7 +185,7 @@ export class TeachersTab extends LitElement {
             variant="success"
             @click="${() => this.handleSaveTeacher(teacher.teacher_id)}"
           >
-            💾 Spara
+            Spara
           </henry-button>
         </div>
       </henry-modal>
@@ -242,14 +242,14 @@ export class TeachersTab extends LitElement {
               size="small"
               @click="${() => this.handleEditTeacher(teacher.teacher_id)}"
             >
-              ✏️ Redigera
+              Redigera
             </henry-button>
             <henry-button
               variant="danger"
               size="small"
               @click="${() => this.handleDeleteTeacher(teacher.teacher_id)}"
             >
-              🗑️ Ta bort
+              Ta bort
             </henry-button>
           </div>
         `;

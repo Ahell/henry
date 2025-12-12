@@ -27,12 +27,6 @@ export function renderDetailView(component) {
       @exit-detail=${() => exitDetailView(component)}
     ></detail-view-header>
 
-    <teacher-availability-toolbar
-      .isPainting=${component.isPainting}
-      .paintMode=${component._paintMode}
-      @paint-change-request=${(e) => component._handlePaintChangeRequest(e)}
-    ></teacher-availability-toolbar>
-
     <detail-table
       .teachers=${component.teachers}
       .days=${days}
@@ -128,11 +122,6 @@ export function renderTeacherCell(component, teacher, slotDate) {
 
 export function renderOverviewView(component, slotDates) {
   return html`
-    <teacher-availability-toolbar
-      .isPainting=${component.isPainting}
-      .paintMode=${component._paintMode}
-      @paint-change-request=${(e) => component._handlePaintChangeRequest(e)}
-    ></teacher-availability-toolbar>
     <overview-table
       .teachers=${component.teachers}
       .slotDates=${slotDates}

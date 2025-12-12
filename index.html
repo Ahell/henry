@@ -16,72 +16,92 @@
       body {
         font-family: var(--font-family-base);
         background: linear-gradient(
-          135deg,
-          var(--color-primary-500) 0%,
-          var(--color-secondary-500) 100%
+          180deg,
+          var(--color-primary-50) 0%,
+          var(--color-gray-50) 40%,
+          #f2f4f7 100%
         );
         min-height: 100vh;
         padding: 0;
+        color: var(--color-text-primary);
       }
 
       header {
-        background: rgba(0, 0, 0, 0.8);
+        background: var(--color-primary-900);
         color: white;
-        padding: var(--space-8);
-        box-shadow: var(--shadow-sm);
+        padding: var(--space-4) var(--space-6);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        position: sticky;
+        top: 0;
+        z-index: 10;
       }
 
-      header h1 {
-        margin-bottom: var(--space-2);
-        font-size: var(--font-size-3xl);
+      .header-inner {
+        max-width: 1800px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
       }
 
-      header p {
-        opacity: 0.8;
+      .brand h1 {
+        margin-bottom: var(--space-1);
+        font-size: var(--font-size-2xl);
+        letter-spacing: -0.01em;
+      }
+
+      .brand p {
+        opacity: 0.85;
         font-size: var(--font-size-sm);
       }
 
       .container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: var(--space-8);
+        width: 100%;
+        max-width: 1800px;
+        margin: var(--space-6) auto var(--space-10);
+        padding: 0 var(--space-6);
       }
 
       nav {
         display: flex;
         gap: var(--space-2);
-        margin-bottom: var(--space-8);
         flex-wrap: wrap;
+        align-items: center;
+        background: transparent;
+        padding: 0;
+        border: none;
       }
 
       nav button {
-        background: var(--color-background);
-        color: var(--color-text-primary);
+        background: transparent;
+        color: rgba(255, 255, 255, 0.78);
         border: none;
-        padding: var(--space-3) var(--space-6);
-        border-radius: var(--radius-base);
+        padding: var(--space-2) var(--space-4);
+        border-radius: var(--radius-md);
         cursor: pointer;
-        font-size: var(--font-size-base);
-        font-weight: var(--font-weight-bold);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
         transition: var(--transition-all);
-        box-shadow: var(--shadow-sm);
+        letter-spacing: 0.01em;
       }
 
       nav button:hover {
-        background: var(--color-gray-100);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
+        color: white;
+        background: rgba(255, 255, 255, 0.1);
       }
 
       nav button.active {
-        background: var(--color-primary-500);
         color: white;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: none;
       }
 
       main {
-        background: var(--color-background);
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-base);
+        background: white;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.08);
         padding: var(--space-8);
       }
 
@@ -95,15 +115,15 @@
 
       h2 {
         color: var(--color-text-primary);
-        margin-bottom: var(--space-6);
-        border-bottom: 3px solid var(--color-primary-500);
-        padding-bottom: var(--space-2);
+        margin-bottom: var(--space-4);
+        font-size: var(--font-size-xl);
+        letter-spacing: -0.01em;
       }
 
       footer {
         text-align: center;
-        color: white;
-        padding: var(--space-8);
+        color: var(--color-text-secondary);
+        padding: var(--space-6);
         opacity: 0.8;
         font-size: var(--font-size-sm);
       }
@@ -137,22 +157,23 @@
   </head>
   <body>
     <header>
-      <h1>🎓 Henry Course Planner</h1>
-      <p>
-        Kursplaneringsverktyg för FEI - Planera kurssekvenser, hantera resurser
-        och optimera lärarbemanning
-      </p>
+      <div class="header-inner">
+        <div class="brand">
+          <h1>Henry Course Planner</h1>
+        </div>
+        <nav>
+          <button class="nav-btn active" data-section="import-export">
+            Import/Export
+          </button>
+          <button class="nav-btn" data-section="admin">Admin Grunddata</button>
+          <button class="nav-btn" data-section="reports">
+            Rapporter & Vyer
+          </button>
+        </nav>
+      </div>
     </header>
 
     <div class="container">
-      <nav>
-        <button class="nav-btn active" data-section="import-export">
-          Import/Export
-        </button>
-        <button class="nav-btn" data-section="admin">Admin Grunddata</button>
-        <button class="nav-btn" data-section="reports">Rapporter & Vyer</button>
-      </nav>
-
       <main>
         <div id="import-export" class="section active">
           <h2>Importera och Exportera Data</h2>

@@ -10,38 +10,44 @@ export class AdminPanel extends LitElement {
 
     :host {
       display: block;
-      padding: var(--space-4);
+      padding: 0;
     }
 
     .tabs {
-      display: flex;
-      border-bottom: 2px solid var(--color-border);
-      margin-bottom: var(--space-6);
+      display: inline-flex;
       gap: var(--space-2);
+      margin: var(--space-2) 0 var(--space-5);
       flex-wrap: wrap;
+      padding: var(--space-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-gray-50);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
     }
 
     .tab-button {
-      background: none;
-      border: none;
-      padding: var(--space-4);
+      background: transparent;
+      border: 1px solid transparent;
+      padding: var(--space-2) var(--space-4);
       cursor: pointer;
       color: var(--color-text-secondary);
-      font-size: var(--font-size-base);
-      border-bottom: 3px solid transparent;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      border-radius: var(--radius-sm);
       transition: var(--transition-all);
-      font-weight: var(--font-weight-medium);
     }
 
     .tab-button.active {
-      color: var(--color-primary-500);
-      border-bottom-color: var(--color-primary-500);
-      background: var(--color-gray-50);
+      color: var(--color-primary-700);
+      background: var(--color-primary-50);
+      border-color: var(--color-primary-200);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
     }
 
     .tab-button:hover {
-      color: var(--color-primary-500);
-      background: var(--color-gray-50);
+      color: var(--color-text-primary);
+      background: var(--color-gray-100);
+      border-color: var(--color-border);
     }
   `;
 
@@ -62,31 +68,31 @@ export class AdminPanel extends LitElement {
           class="tab-button ${this.activeTab === "courses" ? "active" : ""}"
           @click="${() => (this.activeTab = "courses")}"
         >
-          📚 Kurser
+          Kurser
         </button>
         <button
           class="tab-button ${this.activeTab === "cohorts" ? "active" : ""}"
           @click="${() => (this.activeTab = "cohorts")}"
         >
-          👥 Kullar
+          Kullar
         </button>
         <button
           class="tab-button ${this.activeTab === "teachers" ? "active" : ""}"
           @click="${() => (this.activeTab = "teachers")}"
         >
-          👨‍🏫 Lärare
+          Lärare
         </button>
         <button
           class="tab-button ${this.activeTab === "teacherView" ? "active" : ""}"
           @click="${() => (this.activeTab = "teacherView")}"
         >
-          📅 Lärartillgänglighet
+          Lärartillgänglighet
         </button>
         <button
           class="tab-button ${this.activeTab === "gantt" ? "active" : ""}"
           @click="${() => (this.activeTab = "gantt")}"
         >
-          📊 Schemaläggning
+          Schemaläggning
         </button>
       </div>
 

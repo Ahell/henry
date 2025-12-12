@@ -61,7 +61,7 @@ export class CohortsTab extends LitElement {
         </div>
         <form
           @submit="${this.handleAddCohort}"
-          @click="${(e) => console.log("🟡 Form clicked:", e.target)}"
+          @click="${(e) => console.log("Form clicked:", e.target)}"
         >
           <div class="form-row">
             <henry-input
@@ -83,7 +83,7 @@ export class CohortsTab extends LitElement {
             type="submit"
             variant="primary"
             @click="${(e) =>
-              console.log("🟡 Button clicked, type:", e.target.type)}"
+              console.log("Button clicked, type:", e.target.type)}"
           >
             Lägg till Kull
           </henry-button>
@@ -164,7 +164,7 @@ export class CohortsTab extends LitElement {
             variant="success"
             @click="${() => this.handleSaveCohort(cohort.cohort_id)}"
           >
-            💾 Spara
+            Spara
           </henry-button>
         </div>
       </henry-modal>
@@ -206,14 +206,14 @@ export class CohortsTab extends LitElement {
               size="small"
               @click="${() => this.handleEditCohort(cohort.cohort_id)}"
             >
-              ✏️ Redigera
+              Redigera
             </henry-button>
             <henry-button
               variant="danger"
               size="small"
               @click="${() => this.handleDeleteCohort(cohort.cohort_id)}"
             >
-              🗑️ Ta bort
+              Ta bort
             </henry-button>
           </div>
         `;

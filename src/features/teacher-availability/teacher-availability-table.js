@@ -2,7 +2,6 @@ import { LitElement, html } from "lit";
 import { store } from "../../utils/store.js";
 import "./detail-view-header.js";
 import "./teacher-cell.js";
-import "./teacher-availability-toolbar.js";
 import {
   renderDetailView,
   renderOverviewView,
@@ -104,6 +103,13 @@ export class TeacherAvailabilityTable extends LitElement {
     const slotDates = [...new Set(this.slots.map((s) => s.start_date))].sort();
 
     return renderOverviewView(this, slotDates);
+  }
+
+  updated(changedProps) {
+    if (changedProps.has("isPainting") && !this.isPainting) {
+      this._paintMode = null;
+      this._isMouseDown = false;
+    }
   }
 
   _handleCellMouseDown(e) {

@@ -29,18 +29,18 @@ export class HenryPanel extends LitElement {
     }
 
     .panel {
-      background: var(--color-background);
+      background: white;
       border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       margin-bottom: var(--space-6);
-      box-shadow: var(--shadow-sm);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
       overflow: hidden;
     }
 
     .panel-header {
-      padding: var(--space-6);
-      padding-bottom: var(--space-3);
-      border-bottom: 2px solid var(--color-border);
+      padding: var(--space-5) var(--space-5) var(--space-3);
+      margin-bottom: 0;
+      border-bottom: none;
     }
 
     .panel-header:empty {
@@ -48,7 +48,7 @@ export class HenryPanel extends LitElement {
     }
 
     .panel-content {
-      padding: var(--space-6);
+      padding: var(--space-5);
     }
 
     :host([noPadding]) .panel-content {

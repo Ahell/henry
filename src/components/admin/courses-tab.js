@@ -71,7 +71,7 @@ export class CoursesTab extends LitElement {
 
       <henry-panel>
         <div slot="header">
-          <henry-text variant="heading-3">➕ Lägg till Ny Kurs</henry-text>
+          <henry-text variant="heading-3">Lägg till Ny Kurs</henry-text>
         </div>
         <form @submit="${this.handleAddCourse}">
           <div class="form-row two-cols">
@@ -125,7 +125,7 @@ export class CoursesTab extends LitElement {
 
           <div class="form-actions">
             <henry-button type="submit" variant="primary">
-              ➕ Lägg till kurs
+              Lägg till kurs
             </henry-button>
           </div>
         </form>
@@ -133,7 +133,7 @@ export class CoursesTab extends LitElement {
 
       <henry-panel>
         <div slot="header">
-          <henry-text variant="heading-3">📚 Befintliga Kurser</henry-text>
+          <henry-text variant="heading-3">Befintliga Kurser</henry-text>
         </div>
         <henry-table
           striped
@@ -276,14 +276,14 @@ export class CoursesTab extends LitElement {
               size="small"
               @click="${() => this.handleEditCourse(course.course_id)}"
             >
-              ✏️ Redigera
+              Redigera
             </henry-button>
             <henry-button
               variant="danger"
               size="small"
               @click="${() => this.handleDeleteCourse(course.course_id)}"
             >
-              🗑️ Ta bort
+              Ta bort
             </henry-button>
           </div>
         `;

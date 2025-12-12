@@ -5,6 +5,19 @@ import {
 } from "../../utils/teacherAvailabilityHelpers.js";
 import { removeTeacherFromRunsInSlot } from "./teacher-availability-runs.js";
 
+const dispatchPaintState = (component) => {
+  component.dispatchEvent(
+    new CustomEvent("paint-state-changed", {
+      detail: {
+        isPainting: !!component.isPainting,
+        paintMode: component._paintMode || null,
+      },
+      bubbles: true,
+      composed: true,
+    })
+  );
+};
+
 const getCellEventData = (e) => {
   const d = e.detail || {};
   const resolve = (key) =>
@@ -58,9 +71,9 @@ export function handleCellMouseDown(component, e) {
         date
       );
       if (removed) {
-        console.log("🗑️ Removing slot entry:", removed.id);
+        console.log("Removing slot entry:", removed.id);
         const days = store.getSlotDays(component._detailSlotId);
-        console.log("📅 Days in slot:", days.length, "Clicked date:", date);
+        console.log("Days in slot:", days.length, "Clicked date:", date);
       }
 
       component._paintMode = "remove";
@@ -72,6 +85,7 @@ export function handleCellMouseDown(component, e) {
           detail: { teacherId, date, unavailable: false },
         })
       );
+      dispatchPaintState(component);
       return;
     }
 
@@ -91,6 +105,7 @@ export function handleCellMouseDown(component, e) {
         detail: { teacherId, date, unavailable: !isCurrentlyUnavailable },
       })
     );
+    dispatchPaintState(component);
     return;
   }
 
@@ -130,6 +145,7 @@ export function handleCellMouseDown(component, e) {
       },
     })
   );
+  dispatchPaintState(component);
 }
 
 export function handleCellMouseEnter(component, e) {
@@ -250,6 +266,7 @@ export function handlePaintEnd(component) {
     component._isMouseDown = false;
     component._paintMode = null;
     component.dispatchEvent(new CustomEvent("paint-session-ended"));
+    dispatchPaintState(component);
   }
 }
 
@@ -268,4 +285,5 @@ export function handlePaintChangeRequest(component, e) {
   }
 
   component.requestUpdate();
+  dispatchPaintState(component);
 }

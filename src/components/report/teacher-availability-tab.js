@@ -6,6 +6,7 @@ import "../../features/teacher-availability/index.js";
 export class TeacherAvailabilityTab extends LitElement {
   static properties = {
     isPainting: { type: Boolean },
+    paintMode: { type: String },
     teachers: { type: Array },
     slots: { type: Array },
   };
@@ -17,49 +18,93 @@ export class TeacherAvailabilityTab extends LitElement {
       display: block;
     }
 
-    .description {
-      color: var(--color-text-secondary);
-      font-size: var(--font-size-sm);
-      margin-bottom: var(--space-4);
-    }
-
-    .paint-controls {
+    .panel-header {
       display: flex;
-      gap: var(--space-4);
-      align-items: center;
-      margin-bottom: var(--space-4);
-    }
-
-    .paint-hint {
-      color: var(--color-text-secondary);
-      font-size: var(--font-size-sm);
-    }
-
-    .legend {
-      display: flex;
-      gap: var(--space-4);
-      margin-bottom: var(--space-4);
+      justify-content: space-between;
+      gap: var(--space-6);
+      align-items: flex-start;
       flex-wrap: wrap;
     }
 
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: var(--font-size-sm);
+    .header-text {
+      flex: 1;
+      min-width: 260px;
     }
 
-    .legend-box {
-      width: 20px;
-      height: 20px;
-      border-radius: var(--radius-sm);
+    .description {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-base);
+      margin: var(--space-2) 0 0;
+      line-height: var(--line-height-normal);
+    }
+
+    .header-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      align-items: flex-end;
+      min-width: 240px;
+    }
+
+    .paint-status {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+      text-align: right;
+      max-width: 320px;
+    }
+
+    .layout-stack {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .legend-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .legend-chip {
+      display: inline-flex;
+      gap: var(--space-2);
+      align-items: center;
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      background: var(--color-gray-50);
       border: 1px solid var(--color-border);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-primary);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: var(--radius-full);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    }
+
+    .legend-left {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .legend-right {
+      display: inline-flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      align-items: center;
     }
   `;
 
   constructor() {
     super();
     this.isPainting = false;
+    this.paintMode = null;
     this.teachers = [];
     this.slots = [];
     this._updateData();
@@ -84,74 +129,92 @@ export class TeacherAvailabilityTab extends LitElement {
       </henry-panel>`;
     }
 
+    const slotCount = new Set(this.slots.map((s) => s.start_date)).size;
+    const slotLabel =
+      slotCount === 1 ? "1 period" : `${slotCount} perioder/tidsluckor`;
+    const paintStatus = "";
+
     return html`
       <henry-panel>
-        <div slot="header">
-          <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
-        </div>
-
-        <p class="description">
-          Klicka på "Markera upptagen" och måla sedan i cellerna för att markera
-          när en lärare är upptagen. Blå celler visar schemalagda kurser.
-        </p>
-
-        <div class="paint-controls">
-          <henry-button
-            variant="${this.isPainting ? "success" : "secondary"}"
-            @click="${this._togglePaintMode}"
-          >
-            ${this.isPainting ? "✓ Målningsläge aktivt" : "🖌️ Markera upptagen"}
-          </henry-button>
-          ${this.isPainting
-            ? html`
-                <span class="paint-hint">
-                  Klicka eller dra över celler för att markera/avmarkera. Klicka
-                  på knappen igen för att avsluta.
-                </span>
-              `
-            : ""}
-        </div>
-
-        <div class="legend">
-          <div class="legend-item">
-            <div
-              class="legend-box"
-              style="background: var(--color-success);"
-            ></div>
-            <span>Tilldelad kurs</span>
+        <div slot="header" class="panel-header">
+          <div class="header-text">
+            <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
           </div>
-          <div class="legend-item">
-            <div
-              class="legend-box"
-              style="background: var(--color-info);"
-            ></div>
-            <span>Kompatibel kurs (ej tilldelad)</span>
-          </div>
-          <div class="legend-item">
-            <div
-              class="legend-box"
-              style="background: var(--color-danger);"
-            ></div>
-            <span>Upptagen/ej tillgänglig</span>
+          <div class="header-actions">
+            <henry-button
+              variant="${this.isPainting ? "success" : "primary"}"
+              @click="${this._togglePaintMode}"
+            >
+              ${this.isPainting ? "Avsluta målningsläge" : "Starta målningsläge"}
+            </henry-button>
+            <div class="paint-status"></div>
           </div>
         </div>
 
-        <teacher-availability-table
-          .teachers="${this.teachers}"
-          .slots="${this.slots}"
-          .isPainting="${this.isPainting}"
-          @availability-changed="${this._handleAvailabilityChanged}"
-          @paint-session-ended="${this._handlePaintSessionEnded}"
-        ></teacher-availability-table>
+        <div class="layout-stack">
+          <div class="legend-row">
+            <div class="legend-left">${this._renderLegend()}</div>
+            <div class="legend-right">
+              <span class="legend-chip">${this.teachers.length} lärare</span>
+              <span class="legend-chip">${slotLabel}</span>
+            </div>
+          </div>
+
+          <teacher-availability-table
+            .teachers=${this.teachers}
+            .slots=${this.slots}
+            .isPainting=${this.isPainting}
+            @availability-changed="${this._handleAvailabilityChanged}"
+            @paint-session-ended="${this._handlePaintSessionEnded}"
+            @paint-state-changed="${this._handlePaintStateChanged}"
+          ></teacher-availability-table>
+        </div>
       </henry-panel>
     `;
   }
 
-  _togglePaintMode() {
-    this.isPainting = !this.isPainting;
+  _renderLegend() {
+    const items = [
+      {
+        label: "Tilldelad kurs",
+        meta: "Läraren har redan ett uppdrag i perioden",
+        color: "var(--color-success)",
+      },
+      {
+        label: "Kompatibel kurs",
+        meta: "Matchar lärarens kompetens men ej tilldelad",
+        color: "var(--color-info)",
+      },
+      {
+        label: "Upptagen/ej tillgänglig",
+        meta: "Markerat i målningsläget",
+        color: "var(--color-danger)",
+      },
+    ];
+
+    return items.map(
+      (item) => html`
+        <span class="legend-chip">
+          <span
+            class="legend-dot"
+            style="background:${item.color};"
+            aria-hidden="true"
+          ></span>
+          ${item.label}
+        </span>
+      `
+    );
   }
 
-  _handleAvailabilityChanged(e) {
+  _togglePaintMode() {
+    const next = !this.isPainting;
+    this.isPainting = next;
+    if (!next) {
+      this.paintMode = null;
+    }
+  }
+
+  _handleAvailabilityChanged() {
     // Table component handles the store update, we just need to refresh
     this.requestUpdate();
   }
@@ -159,6 +222,12 @@ export class TeacherAvailabilityTab extends LitElement {
   _handlePaintSessionEnded() {
     // Optional: could add auto-save or notification here
     this.requestUpdate();
+  }
+
+  _handlePaintStateChanged(e) {
+    const detail = e?.detail || {};
+    this.isPainting = !!detail.isPainting;
+    this.paintMode = detail.paintMode || null;
   }
 }
 

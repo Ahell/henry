@@ -42,9 +42,13 @@ export const teacherAvailabilityTableStyles = css`
     );
   }
 
+  .table-card {
+    display: contents;
+  }
+
   .table-container {
     overflow-x: auto;
-    margin-top: var(--space-4);
+    background: var(--color-background);
   }
 
   .table-container.painting-active {
@@ -54,18 +58,21 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-timeline-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: var(--font-size-sm);
   }
 
   .teacher-timeline-table th,
   .teacher-timeline-table td {
-    border: 1px solid var(--color-border);
-    padding: var(--space-2);
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-3) var(--space-4);
     text-align: center;
-    min-width: 80px;
+    min-width: 96px;
+    background: var(--color-background);
   }
 
   .teacher-timeline-table th {
-    background: var(--color-gray-100);
+    background: var(--color-gray-50);
     font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-sm);
     position: sticky;
@@ -75,30 +82,33 @@ export const teacherAvailabilityTableStyles = css`
 
   .teacher-timeline-table th.slot-header {
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: var(--transition-all);
+    background: var(--color-gray-100);
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
   }
 
   .teacher-timeline-table th.slot-header:hover {
     background: var(--color-gray-200);
   }
 
-  .teacher-timeline-table th.slot-header::after {
-    content: " 🔍";
-    font-size: 0.8em;
-    opacity: 0.5;
-  }
-
   .teacher-timeline-table tbody tr td:first-child {
     text-align: left;
-    font-weight: var(--font-weight-medium);
-    background: var(--color-surface);
+    font-weight: var(--font-weight-semibold);
+    background: var(--color-background);
     position: sticky;
     left: 0;
     z-index: 1;
+    min-width: 160px;
+  }
+
+  .teacher-timeline-table tr:last-child td {
+    border-bottom: none;
   }
 
   .teacher-name {
     display: block;
+    color: var(--color-text-primary);
   }
 
   .teacher-department {
@@ -108,36 +118,50 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-cell {
-    display: block;
+    display: flex;
     width: 100%;
     height: 100%;
-    min-height: 40px;
-    padding: var(--space-1);
+    min-height: 48px;
+    padding: var(--space-2);
     cursor: pointer;
     border-radius: var(--radius-sm);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     transition: var(--transition-all);
     user-select: none;
-    display: flex;
     align-items: center;
     justify-content: center;
+    border: 1px solid transparent;
+    background: var(--color-background);
   }
 
   .teacher-cell.assigned-course {
-    background: var(--color-success);
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    );
     color: white;
     font-weight: var(--font-weight-semibold);
+    border-color: transparent;
+    box-shadow: var(--shadow-success);
   }
 
   .teacher-cell.has-course {
-    background: var(--color-info);
+    background: linear-gradient(
+      135deg,
+      var(--color-info),
+      var(--color-info-hover)
+    );
     color: white;
+    border-color: transparent;
   }
 
   .teacher-cell.unavailable {
     background: var(--color-danger);
     color: white;
     position: relative;
+    border-color: transparent;
+    box-shadow: var(--shadow-danger);
   }
 
   .teacher-cell .cell-content {
@@ -163,6 +187,8 @@ export const teacherAvailabilityTableStyles = css`
   /* Default teaching day - purple/lila, active */
   .teacher-cell.teaching-day-default:not(.unavailable) {
     background-color: var(--teaching-day-default-bg);
+    color: var(--teaching-day-default-text);
+    border-color: transparent;
   }
 
   .teacher-timeline-table td:has(.teacher-cell.teaching-day-default) {
@@ -184,6 +210,7 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-cell.teaching-day-default-dimmed:not(.unavailable) {
     background-color: var(--teaching-day-default-dimmed-bg);
     opacity: var(--teaching-day-default-dimmed-opacity);
+    border-color: transparent;
   }
 
   .teacher-timeline-table td:has(.teacher-cell.teaching-day-default-dimmed) {
@@ -206,6 +233,8 @@ export const teacherAvailabilityTableStyles = css`
   /* Alternative teaching day - blue */
   .teacher-cell.teaching-day-alt:not(.unavailable) {
     background-color: var(--teaching-day-alt-bg);
+    color: var(--teaching-day-alt-text);
+    border-color: transparent;
   }
 
   .teacher-timeline-table td:has(.teacher-cell.teaching-day-alt) {
@@ -227,6 +256,7 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-cell.exam-date-locked:not(.unavailable) {
     background-color: var(--exam-date-locked-bg);
     color: var(--exam-date-locked-text);
+    border-color: transparent;
   }
 
   .teacher-timeline-table td:has(.teacher-cell.exam-date-locked) {
@@ -244,6 +274,7 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-cell.exam-date-unlocked:not(.unavailable) {
     background-color: var(--exam-date-unlocked-bg);
     opacity: var(--exam-date-unlocked-opacity);
+    border-color: transparent;
   }
 
   .teacher-timeline-table td:has(.teacher-cell.exam-date-unlocked) {
@@ -267,6 +298,7 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-cell.exam-date-new:not(.unavailable) {
     background-color: var(--exam-date-new-bg);
     color: var(--exam-date-new-text);
+    border-color: transparent;
   }
 
   .teacher-timeline-table td:has(.teacher-cell.exam-date-new) {
@@ -318,7 +350,7 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .painting-active .teacher-cell:hover {
-    opacity: 0.7;
+    opacity: 0.85;
   }
 
   .painting-active .teacher-cell.locked:hover {
@@ -330,25 +362,8 @@ export const teacherAvailabilityTableStyles = css`
     text-align: center;
     padding: var(--space-8);
     color: var(--color-text-secondary);
-  }
-
-  .detail-view-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--space-4);
-    padding: var(--space-3);
     background: var(--color-gray-50);
+    border: 1px dashed var(--color-border);
     border-radius: var(--radius-md);
-  }
-
-  .detail-view-title {
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-primary);
-  }
-
-  .detail-view-actions {
-    display: flex;
-    gap: var(--space-2);
   }
 `;

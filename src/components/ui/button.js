@@ -38,12 +38,7 @@ export class HenryButton extends LitElement {
     }
 
     button:hover:not(:disabled) {
-      transform: translateY(-1px);
       box-shadow: var(--shadow-md);
-    }
-
-    button:active:not(:disabled) {
-      transform: translateY(0);
     }
 
     button:disabled {
@@ -72,17 +67,14 @@ export class HenryButton extends LitElement {
 
     /* Variants */
     button.primary {
-      background: linear-gradient(
-        135deg,
-        var(--color-primary-500) 0%,
-        var(--color-secondary-500) 100%
-      );
+      background: var(--color-primary-600);
       color: white;
-      box-shadow: var(--shadow-primary);
+      box-shadow: var(--shadow-sm);
     }
 
     button.primary:hover:not(:disabled) {
-      box-shadow: var(--shadow-primary-hover);
+      background: var(--color-primary-700);
+      box-shadow: var(--shadow-md);
     }
 
     button.secondary {
@@ -160,7 +152,7 @@ export class HenryButton extends LitElement {
           } else if (parent) {
             const form = parent.closest ? parent.closest("form") : null;
             if (form) {
-              console.log("🟡 Found form, requesting submit");
+            console.log("Found form, requesting submit");
               form.requestSubmit();
               return;
             }
