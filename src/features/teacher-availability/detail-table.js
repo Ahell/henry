@@ -1,4 +1,5 @@
 import { LitElement, html } from "lit";
+import { store } from "../../utils/store.js";
 
 export class DetailTable extends LitElement {
   static properties = {
@@ -27,13 +28,14 @@ export class DetailTable extends LitElement {
   }
 
   render() {
+    const days = this.days && this.days.length ? this.days : store.getSlotDays(this.slotId || this.slotDate);
     return html`
       <div class="table-container ${this.isPainting ? "painting-active" : ""}">
         <table class="teacher-timeline-table">
           <thead>
             <tr>
               <th>Lärare</th>
-              ${this.days.map((day) =>
+              ${days.map((day) =>
                 this.dayHeaderRenderer
                   ? this.dayHeaderRenderer(day)
                   : html`<th>${day}</th>`
@@ -45,7 +47,7 @@ export class DetailTable extends LitElement {
               (teacher) => html`
                 <tr>
                   ${renderTeacherInfoCell(teacher)}
-                  ${this.days.map((d) =>
+                  ${days.map((d) =>
                     this.teacherDayCellRenderer
                       ? this.teacherDayCellRenderer(teacher, d)
                       : html`<td></td>`
