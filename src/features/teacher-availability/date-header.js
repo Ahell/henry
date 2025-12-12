@@ -10,9 +10,10 @@ import { html } from "lit";
  */
 export function renderDateHeader(dateStr, slotId, onEnterDetail) {
   const d = new Date(dateStr);
-  const day = d.getDate();
-  const month = d.toLocaleString("sv-SE", { month: "short" });
   const year = d.getFullYear().toString().slice(-2);
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const compact = `${year}${month}${day}`;
 
   const handler = (e) => {
     if (typeof onEnterDetail === "function") onEnterDetail(dateStr, slotId);
@@ -23,6 +24,6 @@ export function renderDateHeader(dateStr, slotId, onEnterDetail) {
     @click=${handler}
     title="Klicka för att se dag-för-dag-vy"
   >
-    ${day} ${month}<br />${year}
+    ${compact}
   </th>`;
 }

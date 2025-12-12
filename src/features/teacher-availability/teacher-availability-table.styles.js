@@ -65,10 +65,17 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-timeline-table td {
     border: none;
     border-bottom: 1px solid var(--color-border);
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-4) var(--space-2);
     text-align: center;
     min-width: 96px;
     background: var(--color-background);
+  }
+
+  .teacher-timeline-table th:not(:first-child),
+  .teacher-timeline-table td:not(:first-child) {
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
   }
 
   .teacher-timeline-table th {
@@ -78,6 +85,13 @@ export const teacherAvailabilityTableStyles = css`
     position: sticky;
     top: 0;
     z-index: 2;
+  }
+
+  .teacher-timeline-table thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--color-gray-50);
   }
 
   .teacher-timeline-table th.slot-header {
@@ -120,9 +134,11 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-cell {
     display: flex;
     width: 100%;
-    height: 100%;
-    min-height: 48px;
-    padding: var(--space-2);
+    max-width: 100%;
+    height: 64px;
+    min-height: 64px;
+    max-height: 64px;
+    padding: var(--space-4) var(--space-2);
     cursor: pointer;
     border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
@@ -132,6 +148,8 @@ export const teacherAvailabilityTableStyles = css`
     justify-content: center;
     border: 1px solid transparent;
     background: var(--color-background);
+    text-align: center;
+    box-sizing: border-box;
   }
 
   .teacher-cell.assigned-course {
@@ -169,19 +187,23 @@ export const teacherAvailabilityTableStyles = css`
     align-items: center;
     justify-content: center;
     max-width: 100%;
-    padding: 0 var(--space-1);
+    width: 100%;
+    padding: var(--space-1);
     border-radius: var(--radius-sm);
     font-weight: var(--font-weight-semibold);
     text-align: center;
     line-height: 1.2;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: clamp(10px, 0.95rem, var(--font-size-sm));
   }
 
   .teacher-cell.unavailable .cell-content,
   .teacher-cell.partially-unavailable .cell-content {
-    background: rgba(255, 255, 255, 0.9);
-    color: var(--color-text-primary);
-    box-shadow: var(--shadow-xs);
+    background: transparent;
+    color: white;
+    box-shadow: none;
   }
 
   /* Default teaching day - purple/lila, active */
@@ -316,22 +338,9 @@ export const teacherAvailabilityTableStyles = css`
     background-color: var(--exam-date-new-hover-bg);
   }
 
-  .teacher-cell.unavailable::after {
-    content: "✕";
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    font-size: 1.1rem;
-  }
-
   .teacher-cell.partially-unavailable {
-    background: repeating-linear-gradient(
-      45deg,
-      var(--color-danger),
-      var(--color-danger) 2px,
-      white 2px,
-      white 4px
-    );
+    background: var(--color-danger);
+    color: white;
     position: relative;
   }
 

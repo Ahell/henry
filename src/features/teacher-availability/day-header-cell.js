@@ -11,9 +11,10 @@ import { html } from "lit";
  */
 export function renderDayHeaderCell({ dateStr, presentation, onClick }) {
   const d = new Date(dateStr);
-  const day = d.getDate();
-  const month = d.toLocaleString("sv-SE", { month: "short" });
-  const weekday = d.toLocaleString("sv-SE", { weekday: "short" });
+  const year = d.getFullYear().toString().slice(-2);
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const compact = `${year}${month}${day}`;
 
   const clickHandler = onClick || null;
   const cursor = clickHandler ? "pointer" : "not-allowed";
@@ -24,6 +25,6 @@ export function renderDayHeaderCell({ dateStr, presentation, onClick }) {
     title="${presentation.title}"
     style="cursor: ${cursor};"
   >
-    ${weekday}<br />${day} ${month}
+    ${compact}
   </th>`;
 }
