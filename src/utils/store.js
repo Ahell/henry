@@ -1078,13 +1078,18 @@ export class DataStore {
     });
 
     const slotIndex = allSlots.findIndex((s) => s.slot_id === slot.slot_id);
-    let endDate;
-
-    if (slotIndex >= 0 && slotIndex < allSlots.length - 1) {
-      // Use next slot's start date as end date
-      endDate = new Date(allSlots[slotIndex + 1].start_date);
-    } else {
-      // Last slot: add 4 weeks
+    let endDate = null;
+    // Find the next slot whose start_date is strictly greater than this slot's start_date
+    for (let i = slotIndex + 1; i < allSlots.length; i++) {
+      const candidateDate = new Date(allSlots[i].start_date).getTime();
+      const currentStart = new Date(slot.start_date).getTime();
+      if (candidateDate > currentStart) {
+        endDate = new Date(allSlots[i].start_date);
+        break;
+      }
+    }
+    if (!endDate) {
+      // No later slot found - add 4 weeks
       endDate = new Date(slot.start_date);
       endDate.setDate(endDate.getDate() + 28);
     }

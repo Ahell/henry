@@ -40,12 +40,18 @@ export class DetailTable extends LitElement {
       if (slot) {
         const allSlots = store.slots.slice().sort((a,b)=> new Date(a.start_date)-new Date(b.start_date));
         const idx = allSlots.findIndex((s)=> s.slot_id === slot.slot_id);
-        let endDate;
-        if (idx >= 0 && idx < allSlots.length - 1) {
-          endDate = new Date(allSlots[idx+1].start_date);
-        } else {
+        let endDate = null;
+        for (let i = idx + 1; i < allSlots.length; i++) {
+          const candidate = new Date(allSlots[i].start_date).getTime();
+          const cur = new Date(slot.start_date).getTime();
+          if (candidate > cur) {
+            endDate = new Date(allSlots[i].start_date);
+            break;
+          }
+        }
+        if (!endDate) {
           endDate = new Date(slot.start_date);
-          endDate.setDate(endDate.getDate()+28);
+          endDate.setDate(endDate.getDate() + 28);
         }
         days = [];
         const current = new Date(slot.start_date);
@@ -55,17 +61,7 @@ export class DetailTable extends LitElement {
         }
       }
     }
-    if (!days || days.length === 0) {
-      const slots = (store && store.slots) || [];
-      const slotById = slots.find((s) => s.slot_id == this.slotId);
-      const normalizedDate = this.slotDate ? this.slotDate.split("T")[0] : null;
-      const slotByDate = slots.find((s) => {
-        if (!normalizedDate) return false;
-        const sDate = (s.start_date || "").split("T")[0];
-        return sDate === normalizedDate;
-      });
-      console.warn("DetailTable: computed days is empty", { slotId: this.slotId, slotDate: this.slotDate, days, slotsLength: slots.length, slotByIdExists: !!slotById, slotByDateExists: !!slotByDate, slotById, slotByDate });
-    }
+    // If days are still empty after fallback, we don't render any day columns.
     return html`
       <div class="table-container ${this.isPainting ? "painting-active" : ""}">
         <table class="teacher-timeline-table">

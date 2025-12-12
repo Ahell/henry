@@ -16,7 +16,15 @@ import {
 } from "./teacher-availability-view-state.js";
 
 export function renderDetailView(component) {
-  const days = store.getSlotDays(component._detailSlotId);
+  const daysFromStore = store.getSlotDays(
+    component._detailSlotId || component._detailSlotDate
+  );
+  const days =
+    daysFromStore && daysFromStore.length
+      ? daysFromStore
+      : computeSlotDaysFromComponent(component);
+
+  // Debug logs removed
 
   return html`
     <detail-view-header
@@ -144,6 +152,51 @@ const renderSlotDateHeader = (component, date) => {
     enterDetailView(component, slotDate, id)
   );
 };
+
+function computeSlotDaysFromComponent(component) {
+  const slots = Array.isArray(component.slots) ? [...component.slots] : [];
+  if (!slots.length) return [];
+
+  const slotId = component._detailSlotId;
+  const slotDate = component._detailSlotDate;
+
+  const targetSlot =
+    slotId != null
+      ? slots.find((s) => s.slot_id === slotId)
+      : slots.find((s) => s.start_date === slotDate);
+
+  if (!targetSlot) return [];
+
+  const sorted = slots.slice().sort((a, b) => {
+    const dateA = new Date(a.start_date).getTime();
+    const dateB = new Date(b.start_date).getTime();
+    return dateA - dateB;
+  });
+
+  const idx = sorted.findIndex((s) => s.slot_id === targetSlot.slot_id);
+  // Find the first slot after targetSlot that has a strictly greater start_date
+  let endDate = null;
+  for (let i = idx + 1; i < sorted.length; i++) {
+    const candidateStart = new Date(sorted[i].start_date).getTime();
+    const currentStart = new Date(targetSlot.start_date).getTime();
+    if (candidateStart > currentStart) {
+      endDate = new Date(sorted[i].start_date);
+      break;
+    }
+  }
+  if (!endDate) {
+    endDate = new Date(targetSlot.start_date);
+    endDate.setDate(endDate.getDate() + 28);
+  }
+
+  const days = [];
+  const currentDate = new Date(targetSlot.start_date);
+  while (currentDate < endDate) {
+    days.push(currentDate.toISOString().split("T")[0]);
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  return days;
+}
 
 const formatSlotDate = (dateStr) => {
   const d = new Date(dateStr);
