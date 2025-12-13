@@ -383,6 +383,33 @@ export const teacherAvailabilityTableStyles = css`
     box-shadow: inset 0 -3px 0 #6d28d9;
   }
 
+  /* --- Neutralize date header visuals; use pills in weekday row instead --- */
+  .teacher-timeline-table th.teaching-day-default-header,
+  .teacher-timeline-table th.teaching-day-default-dimmed-header,
+  .teacher-timeline-table th.teaching-day-alt-header {
+    background: var(--color-gray-100) !important;
+    color: #0f172a !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    border-radius: 0 !important;
+    position: static !important;
+  }
+  .teacher-timeline-table th.teaching-day-default-header:hover,
+  .teacher-timeline-table th.teaching-day-default-dimmed-header:hover,
+  .teacher-timeline-table th.teaching-day-alt-header:hover {
+    transform: none !important;
+    background: var(--color-gray-100) !important;
+    color: #0f172a !important;
+  }
+  .teacher-timeline-table th.teaching-day-default-header::before,
+  .teacher-timeline-table th.teaching-day-default-dimmed-header::before,
+  .teacher-timeline-table th.teaching-day-alt-header::before,
+  .teacher-timeline-table th.teaching-day-alt-header::after {
+    content: none !important;
+  }
+
   /* Exam date - orange (locked) */
   .teacher-cell.exam-date-locked:not(.unavailable) {
     background-color: var(--exam-date-locked-bg);
@@ -441,12 +468,24 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   /* Keep teaching/exam selections focused on headers; body cells stay neutral unless unavailable or carrying course pills */
-  .teacher-cell.teaching-day-default:not(.unavailable):not(.has-course):not(.assigned-course),
-  .teacher-cell.teaching-day-default-dimmed:not(.unavailable):not(.has-course):not(.assigned-course),
-  .teacher-cell.teaching-day-alt:not(.unavailable):not(.has-course):not(.assigned-course),
-  .teacher-cell.exam-date-locked:not(.unavailable):not(.has-course):not(.assigned-course),
-  .teacher-cell.exam-date-unlocked:not(.unavailable):not(.has-course):not(.assigned-course),
-  .teacher-cell.exam-date-new:not(.unavailable):not(.has-course):not(.assigned-course) {
+  .teacher-cell.teaching-day-default:not(.unavailable):not(.has-course):not(
+      .assigned-course
+    ),
+  .teacher-cell.teaching-day-default-dimmed:not(.unavailable):not(
+      .has-course
+    ):not(.assigned-course),
+  .teacher-cell.teaching-day-alt:not(.unavailable):not(.has-course):not(
+      .assigned-course
+    ),
+  .teacher-cell.exam-date-locked:not(.unavailable):not(.has-course):not(
+      .assigned-course
+    ),
+  .teacher-cell.exam-date-unlocked:not(.unavailable):not(.has-course):not(
+      .assigned-course
+    ),
+  .teacher-cell.exam-date-new:not(.unavailable):not(.has-course):not(
+      .assigned-course
+    ) {
     background: transparent;
     color: var(--color-text-primary);
     border-color: transparent;

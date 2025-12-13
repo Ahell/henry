@@ -16,7 +16,9 @@ export function renderDayHeaderCell({ dateStr, presentation, onClick }) {
   const day = String(d.getDate()).padStart(2, "0");
   const compact = `${year}${month}${day}`;
   const getISOWeek = (date) => {
-    const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const tmp = new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+    );
     // Thursday in current week decides the year
     tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
     const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
@@ -51,11 +53,15 @@ export function renderDayHeaderCell({ dateStr, presentation, onClick }) {
     title="${presentation.title}"
     style="cursor: ${cursor};"
     role=${clickHandler ? "button" : "columnheader"}
-    aria-pressed=${teachingState === "default-active" || teachingState === "alt" ? "true" : "false"}
+    aria-pressed=${teachingState === "default-active" || teachingState === "alt"
+      ? "true"
+      : "false"}
     data-teaching-state=${teachingState}
     tabindex=${clickHandler ? "0" : "-1"}
   >
-    <div style="display: flex; flex-direction: column; gap: 2px; align-items: center;">
+    <div
+      style="display: flex; flex-direction: column; gap: 2px; align-items: center;"
+    >
       <div style="font-weight: 700;">${compact}</div>
     </div>
   </th>`;

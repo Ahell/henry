@@ -5,6 +5,7 @@ export class DetailTable extends LitElement {
   static properties = {
     teachers: { type: Array },
     days: { type: Array },
+    dayStatuses: { type: Array },
     slotId: { type: Number },
     slotDate: { type: String },
     isPainting: { type: Boolean },
@@ -20,6 +21,7 @@ export class DetailTable extends LitElement {
     super();
     this.teachers = [];
     this.days = [];
+    this.dayStatuses = [];
     this.slotId = null;
     this.slotDate = "";
     this.isPainting = false;
@@ -74,7 +76,7 @@ export class DetailTable extends LitElement {
     // If days are still empty after fallback, we don't render any day columns.
     const weekSegments = computeWeekSegments(days);
     const firstColWidth = 220;
-    const dayColWidth = 120;
+    const dayColWidth = 150;
     const gridTemplate = `${firstColWidth}px repeat(${days.length}, ${dayColWidth}px)`;
     const weekdayLabels = days.map((d) => formatWeekday(d));
 
@@ -97,43 +99,97 @@ export class DetailTable extends LitElement {
         .teacher-timeline-table th:not(:first-child),
         .teacher-timeline-table td:not(:first-child) {
           width: var(--day-col-width);
+          min-width: var(--day-col-width);
+          max-width: var(--day-col-width);
         }
-        thead .week-row th {
-          background: var(--color-surface-muted, #f8fafc);
-          color: var(--color-primary-700, #4338ca);
+        .teacher-timeline-table thead th {
+          background: var(--color-surface-muted, #f5f6fa);
+          color: #0f172a;
           font-size: 12px;
           font-weight: 700;
           text-align: center;
           padding: 8px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        thead .week-row th {
+          text-align: left;
+          background: #ffffff;
+          color: #0f172a;
         }
         thead .weekday-row th {
-          background: var(--color-surface, #ffffff);
-          color: var(--color-text-secondary, #64748b);
-          font-size: 12px;
-          font-weight: 700;
           text-align: left;
           padding: 6px 8px;
+          background: #ffffff;
+          color: #0f172a;
         }
-        /* Override sticky first-column background so weekday-row first cell stays white */
+        thead .date-row th {
+          text-align: center;
+          background: var(--color-gray-100);
+          color: #0f172a;
+          border-radius: 0 !important;
+        }
+        /* Ensure selected/default/alt headers do not change background */
+        .teacher-timeline-table thead .date-row th.slot-header {
+          background: var(--color-gray-100) !important;
+          color: #0f172a !important;
+          border-color: #e5e7eb !important;
+        }
+        /* Keep first column sticky with matching background */
         .teacher-timeline-table thead th:first-child {
-          background: var(--color-surface, #ffffff);
-          position: static;
-          left: auto;
-          z-index: 1;
-        }
-        /* Week-row first cell should match the week-row background */
-        .teacher-timeline-table thead .week-row th:first-child {
-          background: var(--color-surface-muted, #f8fafc);
           position: sticky;
           left: 0;
           z-index: 5;
+          background: #ffffff;
         }
-        /* Weekday-row first cell matches weekday row */
-        .teacher-timeline-table thead .weekday-row th:first-child {
-          background: var(--color-surface, #ffffff);
-          position: sticky;
-          left: 0;
-          z-index: 4;
+        .teacher-timeline-table thead .date-row th:first-child {
+          background: var(--color-gray-100);
+        }
+        .teacher-timeline-table thead .weekday-row th:first-child,
+        .teacher-timeline-table thead .week-row th:first-child {
+          z-index: 5;
+          background: #ffffff;
+        }
+        /* Neutralize any legacy header class styling */
+        .teacher-timeline-table
+          thead
+          th.teaching-day-default-header,
+        .teacher-timeline-table
+          thead
+          th.teaching-day-default-dimmed-header,
+        .teacher-timeline-table thead th.teaching-day-alt-header {
+          background: var(--color-surface-muted, #f5f6fa);
+          color: #0f172a;
+          border: 1px solid #e5e7eb;
+          box-shadow: none;
+        }
+        /* Status pills */
+        .status-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 2px 8px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 700;
+          border: 1px solid transparent;
+          color: #111827;
+          background: #e5e7eb;
+          white-space: nowrap;
+        }
+        .status-pill--os {
+          background: #e6f0ff;
+          border-color: #c7d8ff;
+          color: #1d4ed8;
+        }
+        .status-pill--od {
+          background: #f3f4f6;
+          border-color: #e5e7eb;
+          color: #6b7280;
+        }
+        .status-pill--xs {
+          background: #f3e8ff;
+          border-color: #e9d5ff;
+          color: #6d28d9;
         }
       </style>
       <div class="table-container ${this.isPainting ? "painting-active" : ""}">
@@ -156,9 +212,22 @@ export class DetailTable extends LitElement {
             </tr>
             <tr class="weekday-row">
               <th></th>
-              ${weekdayLabels.map((label) => html`<th>${label}</th>`)}
+              ${weekdayLabels.map((label, idx) => {
+                const statusClass = (this.dayStatuses || [])[idx] || "";
+                const pillClass = mapStatusToPill(statusClass);
+                return html`<th>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span>${label}</span>
+                    ${pillClass
+                      ? html`<span class="status-pill ${pillClass}">
+                          ${pillLabel(pillClass)}
+                        </span>`
+                      : ""}
+                  </div>
+                </th>`;
+              })}
             </tr>
-            <tr>
+            <tr class="date-row">
               <th>Lärare</th>
               ${days.map((day) =>
                 this.dayHeaderRenderer
@@ -228,4 +297,24 @@ function formatWeekday(dateStr) {
     .toLocaleDateString("sv-SE", { weekday: "long" })
     .replace(".", "");
   return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+function mapStatusToPill(statusClass) {
+  if (statusClass?.includes("teaching-day-default-header")) return "status-pill--os";
+  if (statusClass?.includes("teaching-day-default-dimmed-header")) return "status-pill--od";
+  if (statusClass?.includes("teaching-day-alt-header")) return "status-pill--xs";
+  return "";
+}
+
+function pillLabel(pillClass) {
+  switch (pillClass) {
+    case "status-pill--os":
+      return "Ordinarie";
+    case "status-pill--od":
+      return "Bortvald";
+    case "status-pill--xs":
+      return "Extra";
+    default:
+      return "";
+  }
 }
