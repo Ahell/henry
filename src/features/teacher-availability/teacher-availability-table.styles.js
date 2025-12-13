@@ -231,34 +231,98 @@ export const teacherAvailabilityTableStyles = css`
     border-color: transparent;
   }
 
+  /* === Header markers (clean three-state model) === */
+  /* 1) Ordinarie datum aktiverat: primär underlinje + stark text */
   .teacher-timeline-table th.teaching-day-default-header {
-    background-color: var(--teaching-day-default-bg);
-    color: var(--teaching-day-default-text);
+    background: transparent;
+    color: var(--color-primary-700);
     cursor: var(--teaching-day-default-cursor);
     font-weight: var(--font-weight-bold);
+    border: none;
+    border-bottom: 3px solid var(--color-primary-500, #3b82f6);
+    box-shadow: none;
   }
 
   .teacher-timeline-table th.teaching-day-default-header:hover {
-    background-color: var(--teaching-day-default-hover-bg);
+    border-bottom-color: var(--color-primary-600, #2563eb);
   }
 
   /* Default teaching day - dimmed (inactive) */
-  .teacher-cell.teaching-day-default-dimmed:not(.unavailable) {
+  .teacher-cell.teaching-day-default-dimmed:not(.unavailable)) {
     background-color: var(--teaching-day-default-dimmed-bg);
     opacity: var(--teaching-day-default-dimmed-opacity);
     border-color: transparent;
   }
 
+  /* === Header markers (tre tydliga tillstånd) === */
+  /* 1) Ordinarie datum aktiverat */
+  .teacher-timeline-table th.teaching-day-default-header {
+    background: linear-gradient(180deg, #f4f9ff 0%, #eef5ff 100%);
+    color: #1d4ed8;
+    cursor: var(--teaching-day-default-cursor);
+    font-weight: var(--font-weight-bold);
+    border: 1px solid #d5e6ff;
+    box-shadow: inset 0 -4px 0 #3b82f6;
+    position: relative;
+    border-radius: 8px 8px 0 0;
+    padding: calc(var(--space-2) + 6px) var(--space-2);
+  }
+
+  .teacher-timeline-table th.teaching-day-default-header:hover {
+    border-color: #c3d8ff;
+    box-shadow: inset 0 -4px 0 #2563eb;
+    transform: translateY(-2px);
+  }
+
+  /* Add a subtle check icon on active default header */
+  .teacher-timeline-table th.teaching-day-default-header::before {
+    content: "✓";
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    font-size: 0.7rem;
+    color: #ffffff;
+    background: #3b82f6;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  /* 2) Ordinarie datum avmarkerat */
   .teacher-timeline-table th.teaching-day-default-dimmed-header {
-    background-color: var(--teaching-day-default-dimmed-bg);
-    color: var(--teaching-day-default-dimmed-text);
+    background: linear-gradient(180deg, #fbfbfd 0%, #f7f8fb 100%);
+    color: #6b7280;
     cursor: var(--teaching-day-default-dimmed-cursor);
     font-weight: var(--font-weight-bold);
     opacity: var(--teaching-day-default-dimmed-opacity);
+    border: 1px dashed #e5e7eb;
+    box-shadow: inset 0 -2px 0 #d1d5db;
   }
 
   .teacher-timeline-table th.teaching-day-default-dimmed-header:hover {
     opacity: var(--teaching-day-default-dimmed-hover-opacity);
+    border-color: #cbd5e1;
+  }
+
+  /* small minus icon for dimmed default header */
+  .teacher-timeline-table th.teaching-day-default-dimmed-header::before {
+    content: "—";
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    font-size: 0.8rem;
+    color: #6b7280;
+    background: transparent;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
   }
 
   /* Alternative teaching day - blue */
@@ -268,15 +332,55 @@ export const teacherAvailabilityTableStyles = css`
     border-color: transparent;
   }
 
+  /* 3) Tillagt icke-ordinarie datum */
   .teacher-timeline-table th.teaching-day-alt-header {
-    background-color: var(--teaching-day-alt-bg);
-    color: var(--teaching-day-alt-text);
-    cursor: var(--teaching-day-alt-cursor);
+    position: relative;
+    background: #ffffff;
+    color: #6d28d9;
+    border: 1px dashed #c4b5fd;
     font-weight: var(--font-weight-bold);
+    box-shadow: inset 0 -4px 0 #7c3aed;
+    cursor: pointer;
+  }
+
+  .teacher-timeline-table th.teaching-day-alt-header::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -7px;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    background: #7c3aed;
+    border-radius: 999px;
+  }
+
+  /* Use a plus icon instead of only dot for alt days */
+  .teacher-timeline-table th.teaching-day-alt-header::before {
+    content: "+";
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    background: #7c3aed;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  /* focus states for keyboard navigation */
+  .teacher-timeline-table th.slot-header:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.2);
+    outline-offset: 2px;
   }
 
   .teacher-timeline-table th.teaching-day-alt-header:hover {
-    background-color: var(--teaching-day-alt-hover-bg);
+    border-color: #a78bfa;
+    box-shadow: inset 0 -3px 0 #6d28d9;
   }
 
   /* Exam date - orange (locked) */
