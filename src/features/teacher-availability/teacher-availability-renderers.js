@@ -23,6 +23,38 @@ export function renderDetailView(component) {
     daysFromStore && daysFromStore.length
       ? daysFromStore
       : computeSlotDaysFromComponent(component);
+  const dayStatuses = days.map((day) =>
+    getDetailDayHeaderPresentation({
+      slotId: component._detailSlotId,
+      dateStr: day,
+      isEditingExamDate: component._isEditingExamDate,
+      courseId: component._detailCourseFilter,
+      store,
+    })?.className || ""
+  );
+
+  // Build week markers: {week: number, label: string, startIndex: number}
+  const buildWeekMarkers = () => {
+    const markers = [];
+    const getISOWeek = (dateStr) => {
+      const date = new Date(dateStr);
+      const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+      const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+      return Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+    };
+    let lastWeek = null;
+    days.forEach((d, idx) => {
+      const week = getISOWeek(d);
+      if (week !== lastWeek) {
+        markers.push({ week, startIndex: idx, label: `v${week}` });
+        lastWeek = week;
+      }
+    });
+    return markers;
+  };
+
+  const weekMarkers = buildWeekMarkers();
 
   // Debug logs removed
 
@@ -48,6 +80,58 @@ export function renderDetailView(component) {
     : [];
 
   return html`
+    <style>
+      .week-bar {
+        display: grid;
+        grid-template-columns: repeat(${days.length + 1}, minmax(80px, 1fr));
+        gap: 8px;
+        padding: 8px 0 4px;
+        margin: 0 12px;
+      }
+      .week-chip {
+        background: var(--color-primary-100, #e0e7ff);
+        color: var(--color-primary-700, #4338ca);
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        text-align: center;
+        align-self: center;
+      }
+    </style>
+    <div class="week-bar">
+      ${weekMarkers.map(
+        (m, idx) => html`
+          <div
+            class="week-chip"
+            style="grid-column: ${m.startIndex + 2} / span ${(() => {
+              const next = weekMarkers[idx + 1];
+              const nextStart = next ? next.startIndex + 2 : days.length + 2;
+              return Math.max(1, nextStart - (m.startIndex + 2));
+            })()}"
+          >
+            ${m.label}
+          </div>
+        `
+      )}
+    </div>
+    <div class="week-bar">
+      ${weekMarkers.map(
+        (m, idx) => html`
+          <div
+            class="week-chip"
+            style="grid-column: ${m.startIndex + 2} / span ${(() => {
+              const next = weekMarkers[idx + 1];
+              const nextStart = next ? next.startIndex : days.length;
+              return Math.max(1, nextStart - m.startIndex);
+            })()}"
+          >
+            ${m.label}
+          </div>
+        `
+      )}
+    </div>
+
     <detail-view-header
       slotTitle="${formatSlotDate(component._detailSlotDate)}"
       .daysLength=${days.length}
@@ -62,6 +146,7 @@ export function renderDetailView(component) {
     <detail-table
       .teachers=${component.teachers}
       .days=${days}
+      .dayStatuses=${dayStatuses}
       .slotId=${component._detailSlotId}
       .slotDate=${component._detailSlotDate}
       .isPainting=${component.isPainting}

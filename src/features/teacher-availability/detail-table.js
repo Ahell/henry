@@ -72,10 +72,92 @@ export class DetailTable extends LitElement {
       }
     }
     // If days are still empty after fallback, we don't render any day columns.
+    const weekSegments = computeWeekSegments(days);
+    const firstColWidth = 220;
+    const dayColWidth = 120;
+    const gridTemplate = `${firstColWidth}px repeat(${days.length}, ${dayColWidth}px)`;
+    const weekdayLabels = days.map((d) => formatWeekday(d));
+
     return html`
+      <style>
+        .table-container {
+          position: relative;
+          --first-col-width: ${firstColWidth}px;
+          --day-col-width: ${dayColWidth}px;
+        }
+        .teacher-timeline-table {
+          table-layout: fixed;
+          width: calc(var(--first-col-width) + ${days.length} * var(--day-col-width));
+          min-width: 100%;
+        }
+        .teacher-timeline-table th:first-child,
+        .teacher-timeline-table td:first-child {
+          width: var(--first-col-width);
+        }
+        .teacher-timeline-table th:not(:first-child),
+        .teacher-timeline-table td:not(:first-child) {
+          width: var(--day-col-width);
+        }
+        thead .week-row th {
+          background: var(--color-surface-muted, #f8fafc);
+          color: var(--color-primary-700, #4338ca);
+          font-size: 12px;
+          font-weight: 700;
+          text-align: center;
+          padding: 8px;
+        }
+        thead .weekday-row th {
+          background: var(--color-surface, #ffffff);
+          color: var(--color-text-secondary, #64748b);
+          font-size: 12px;
+          font-weight: 700;
+          text-align: left;
+          padding: 6px 8px;
+        }
+        /* Override sticky first-column background so weekday-row first cell stays white */
+        .teacher-timeline-table thead th:first-child {
+          background: var(--color-surface, #ffffff);
+          position: static;
+          left: auto;
+          z-index: 1;
+        }
+        /* Week-row first cell should match the week-row background */
+        .teacher-timeline-table thead .week-row th:first-child {
+          background: var(--color-surface-muted, #f8fafc);
+          position: sticky;
+          left: 0;
+          z-index: 5;
+        }
+        /* Weekday-row first cell matches weekday row */
+        .teacher-timeline-table thead .weekday-row th:first-child {
+          background: var(--color-surface, #ffffff);
+          position: sticky;
+          left: 0;
+          z-index: 4;
+        }
+      </style>
       <div class="table-container ${this.isPainting ? "painting-active" : ""}">
         <table class="teacher-timeline-table">
+          <colgroup>
+            <col style="width: ${firstColWidth}px" />
+            ${days.map(
+              () => html`<col style="width: ${dayColWidth}px" />`
+            )}
+          </colgroup>
           <thead>
+            <tr class="week-row">
+              <th></th>
+              ${weekSegments.map(
+                (seg) =>
+                  html`<th colspan=${seg.length} style="text-align: left;">
+                    v${seg.week}
+                  </th>`
+              )}
+            </tr>
+            <tr class="weekday-row">
+              <th></th>
+              ${weekdayLabels.map((label) => html`<th>${label}</th>`)}
+            </tr>
             <tr>
               <th>Lärare</th>
               ${days.map((day) =>
@@ -113,3 +195,37 @@ const renderTeacherInfoCell = (teacher) => html`
 `;
 
 customElements.define("detail-table", DetailTable);
+
+function computeWeekSegments(days) {
+  const segments = [];
+  let currentWeek = null;
+  let startIdx = 0;
+  const getISOWeek = (dateStr) => {
+    const date = new Date(dateStr);
+    const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+    return Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+  };
+  days.forEach((d, idx) => {
+    const week = getISOWeek(d);
+    if (week !== currentWeek) {
+      if (currentWeek !== null) {
+        segments.push({ week: currentWeek, start: startIdx, length: idx - startIdx });
+      }
+      currentWeek = week;
+      startIdx = idx;
+    }
+    if (idx === days.length - 1) {
+      segments.push({ week: currentWeek, start: startIdx, length: idx - startIdx + 1 });
+    }
+  });
+  return segments;
+}
+
+function formatWeekday(dateStr) {
+  const name = new Date(dateStr)
+    .toLocaleDateString("sv-SE", { weekday: "long" })
+    .replace(".", "");
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
