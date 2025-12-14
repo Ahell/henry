@@ -2460,39 +2460,15 @@ app.post("/api/admin/reset-courses", (req, res) => {
     db.transaction(() => {
       // Remove course prerequisites
       db.prepare("DELETE FROM course_prerequisites").run();
-      // Identify runs (cohort_slot_course_id) that will be removed so we can
-      // clear any course-run related tables that reference run_id.
-      const runRows = db
-        .prepare("SELECT cohort_slot_course_id FROM cohort_slot_courses")
-        .all()
-        .map((r) => r.cohort_slot_course_id);
-
       // Remove cohort slot course rows and related course_slot_days
       db.prepare("DELETE FROM course_slot_days").run();
       db.prepare("DELETE FROM cohort_slot_courses").run();
 
-      // Remove any rows in run-related tables that reference the removed runs
-      if (runRows.length > 0) {
-        const delRunSlots = db.prepare(
-          "DELETE FROM course_run_slots WHERE run_id = ?"
-        );
-        const delRunDays = db.prepare(
-          "DELETE FROM course_run_days WHERE run_id = ?"
-        );
-        const delRunCohorts = db.prepare(
-          "DELETE FROM course_run_cohorts WHERE run_id = ?"
-        );
-        const delRunTeachers = db.prepare(
-          "DELETE FROM course_run_teachers WHERE run_id = ?"
-        );
-
-        runRows.forEach((rid) => {
-          delRunSlots.run(rid);
-          delRunDays.run(rid);
-          delRunCohorts.run(rid);
-          delRunTeachers.run(rid);
-        });
-      }
+      // Clear all course-run related tables to ensure no leftover references
+      db.prepare("DELETE FROM course_run_slots").run();
+      db.prepare("DELETE FROM course_run_days").run();
+      db.prepare("DELETE FROM course_run_cohorts").run();
+      db.prepare("DELETE FROM course_run_teachers").run();
 
       // Remove teacher_course mappings for deleted courses
       db.prepare("DELETE FROM teacher_courses").run();
