@@ -38,6 +38,7 @@ export class SlotsTab extends LitElement {
     messageType: { type: String },
     startOptions: { type: Array },
     allowFreeDate: { type: Boolean },
+    selectedInsertAfter: { type: String },
   };
 
   constructor() {
@@ -62,14 +63,18 @@ export class SlotsTab extends LitElement {
 
         <form @submit="${this.handleAddSlot}">
           <div class="form-row">
-            <henry-select id="insertAfter" label="Infoga efter" .options=${this._getInsertOptions(sorted)} @change="${() => this._onInsertAfterChange()}" required></henry-select>
+            <henry-select id="insertAfter" label="Infoga efter" .options=${this._getInsertOptions(sorted)} @select-change="${(e) => this._onInsertAfterChange(e)}" required></henry-select>
             ${this.allowFreeDate
               ? html`<henry-input id="slotStartInput" type="date" label="Startdatum" required min="${this._minStartDate || ""}"></henry-input>`
-              : html`<henry-select id="slotStart" label="Startdatum" required .options=${this.startOptions}></henry-select>`}
+                : html`<henry-select id="slotStart" label="Startdatum" required .options=${this.startOptions} .placeholder=${this.selectedInsertAfter && (this.startOptions || []).length === 0 ? "Inga tillgängliga startdatum för vald position." : "Välj..."}></henry-select>`}
           </div>
 
           <div class="form-actions">
-            <henry-button type="submit" variant="primary">Lägg till Slot</henry-button>
+            <henry-button
+              type="submit"
+              variant="primary"
+              ?disabled=${!this.allowFreeDate && this.selectedInsertAfter && (this.startOptions || []).length === 0}
+            >Lägg till Slot</henry-button>
           </div>
         </form>
       </henry-panel>
@@ -104,6 +109,7 @@ export class SlotsTab extends LitElement {
     const root = this.shadowRoot;
     const insertAfterEl = root.querySelector("#insertAfter");
     const insertVal = insertAfterEl ? insertAfterEl.getSelect().value : null;
+    this.selectedInsertAfter = insertVal;
     this._computeStartOptions(insertVal);
   }
 
