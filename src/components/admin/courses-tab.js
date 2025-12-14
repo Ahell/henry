@@ -6,6 +6,7 @@ import {
   getRadioValue,
   resetForm,
   showSuccessMessage,
+  showErrorMessage,
   addCourseToTeachers,
   syncCourseToTeachers,
   initializeEditState,
@@ -131,6 +132,17 @@ export class CoursesTab extends LitElement {
             </henry-button>
           </div>
         </form>
+      </henry-panel>
+
+      <henry-panel>
+        <div slot="header">
+          <henry-text variant="heading-3">Import/Export Kurser (CSV)</henry-text>
+        </div>
+        <div style="display:flex; gap: 1rem; align-items:center;">
+          <input id="courseCsvInput" type="file" accept=".csv" style="display:none" @change="${this.handleCourseCsvUpload}" />
+          <henry-button variant="primary" @click="${() => this.shadowRoot.querySelector('#courseCsvInput').click()}">Importera CSV</henry-button>
+          <henry-button variant="secondary" @click="${this.exportCoursesCsv}">Exportera CSV</henry-button>
+        </div>
       </henry-panel>
 
       <henry-panel>
@@ -392,6 +404,115 @@ export class CoursesTab extends LitElement {
       store.deleteCourse(courseId);
       showSuccessMessage(this, `Kurs "${courseName}" borttagen!`);
     }
+  }
+
+  async handleCourseCsvUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const rows = this.parseCoursesCsv(text);
+
+      // First pass: add or update courses, keep mapping from code -> id
+      const codeToId = new Map();
+      rows.forEach((r) => {
+        const existing = store.getCourses().find((c) => c.code === r.code);
+        if (existing) {
+          store.updateCourse(existing.course_id, {
+            name: r.name,
+            credits: r.credits,
+          });
+          codeToId.set(r.code, existing.course_id);
+        } else {
+          const newCourse = store.addCourse({
+            code: r.code,
+            name: r.name,
+            credits: r.credits,
+          });
+          codeToId.set(r.code, newCourse.course_id);
+        }
+      });
+
+      // Second pass: apply prerequisites and compatible teachers
+      rows.forEach((r) => {
+        const courseId = codeToId.get(r.code);
+        if (!courseId) return;
+
+        // Prerequisites: map codes to ids
+        const prereqIds = (r.prerequisites || [])
+          .map((code) => codeToId.get(code) || store.getCourses().find((c) => c.code === code)?.course_id)
+          .filter(Boolean);
+        store.updateCourse(courseId, { prerequisites: prereqIds });
+
+        // Compatible teachers: accept numeric ids or teacher names
+        const teacherIds = (r.compatible_teachers || [])
+          .map((t) => {
+            if (!t) return null;
+            const maybeId = Number(t);
+            if (Number.isFinite(maybeId) && store.getTeacher(maybeId)) return maybeId;
+            const found = store.getTeachers().find((th) => th.name === t);
+            return found ? found.teacher_id : null;
+          })
+          .filter(Boolean);
+
+        if (teacherIds.length > 0) addCourseToTeachers(courseId, teacherIds);
+      });
+
+      showSuccessMessage(this, `Importerade ${rows.length} kurser från ${file.name}`);
+    } catch (err) {
+      showErrorMessage(this, `Fel vid import: ${err.message}`);
+    }
+  }
+
+  // CSV parser tailored for courses; supports headers: code,name,credits,prerequisites,compatible_teachers
+  parseCoursesCsv(content) {
+    const lines = content.trim().split(/\r?\n/).filter(Boolean);
+    if (lines.length === 0) return [];
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(",").map((v) => v.trim());
+      const obj = {};
+      headers.forEach((h, idx) => (obj[h] = values[idx] ?? ""));
+
+      const prerequisites = (obj.prerequisites || "").split(/[;|\\/]/).map((s) => s.trim()).filter(Boolean);
+      const compatible_teachers = (obj.compatible_teachers || "").split(/[;|\\/]/).map((s) => s.trim()).filter(Boolean);
+
+      rows.push({
+        code: obj.code || obj.kod || "",
+        name: obj.name || obj.namn || "",
+        credits: obj.credits ? Number(obj.credits) : obj.hp ? Number(obj.hp) : 0,
+        prerequisites,
+        compatible_teachers,
+      });
+    }
+    return rows;
+  }
+
+  exportCoursesCsv() {
+    const courses = store.getCourses();
+    const teachers = store.getTeachers();
+    let csv = "code,name,credits,prerequisites,compatible_teachers\n";
+    courses.forEach((c) => {
+      const prereqCodes = (c.prerequisites || [])
+        .map((pid) => store.getCourse(pid)?.code)
+        .filter(Boolean)
+        .join(";");
+      const teacherNames = teachers
+        .filter((t) => (t.compatible_courses || []).includes(c.course_id))
+        .map((t) => t.name)
+        .join(";");
+      csv += `${c.code},"${c.name}",${c.credits ?? ""},"${prereqCodes}","${teacherNames}"\n`;
+    });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "courses.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 }
 
