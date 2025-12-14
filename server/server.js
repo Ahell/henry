@@ -59,7 +59,7 @@ db.exec(`
     PRIMARY KEY (course_id, prerequisite_course_id)
   );
 
-  // Legacy `teacher_availability` table removed; use `teacher_slot_unavailability` to store explicit unavailability rows
+  -- Legacy teacher_availability table removed; use teacher_slot_unavailability to store explicit unavailability rows
   CREATE TABLE IF NOT EXISTS teacher_slot_unavailability (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     teacher_id INTEGER,
