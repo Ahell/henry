@@ -59,11 +59,11 @@ db.exec(`
     PRIMARY KEY (course_id, prerequisite_course_id)
   );
 
-  CREATE TABLE IF NOT EXISTS teacher_availability (
+  // Legacy `teacher_availability` table removed; use `teacher_slot_unavailability` to store explicit unavailability rows
+  CREATE TABLE IF NOT EXISTS teacher_slot_unavailability (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     teacher_id INTEGER,
     slot_id INTEGER,
-    available INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(teacher_id, slot_id)
   );
@@ -540,7 +540,7 @@ ensureColumn("cohort_slot_courses", "slot_span", "INTEGER DEFAULT 1");
       "UPDATE teacher_courses SET teacher_id = ? WHERE teacher_id = ?"
     );
     const updateTeacherAvailability = db.prepare(
-      "UPDATE teacher_availability SET teacher_id = ? WHERE teacher_id = ?"
+      "UPDATE teacher_slot_unavailability SET teacher_id = ? WHERE teacher_id = ?"
     );
     const updateCohortSlotTeachers = db.prepare(
       "UPDATE cohort_slot_courses SET teachers = ? WHERE cohort_slot_course_id = ?"
@@ -850,31 +850,34 @@ ensureColumn("cohort_slot_courses", "slot_span", "INTEGER DEFAULT 1");
       );
       slotIdMapping.forEach((to, from) => updateSlotDays.run(to, from));
 
-      // Remap teacher_availability while respecting UNIQUE(teacher_id, slot_id)
-      const availability = db
+      // Remap legacy teacher_availability rows (if the legacy table exists) into teacher_slot_unavailability
+      const hasOldAvailability = db
         .prepare(
-          "SELECT id, teacher_id, slot_id, available, created_at FROM teacher_availability"
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='teacher_availability'"
         )
-        .all()
-        .sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
-      db.prepare("DELETE FROM teacher_availability").run();
-      const seenAvailability = new Set();
-      const insertAvailability = db.prepare(
-        "INSERT OR IGNORE INTO teacher_availability (id, teacher_id, slot_id, available, created_at) VALUES (?, ?, ?, ?, ?)"
-      );
-      availability.forEach((a) => {
-        const slotId = remapSlotId(a.slot_id);
-        const key = `${a.teacher_id}|${slotId}`;
-        if (seenAvailability.has(key)) return;
-        seenAvailability.add(key);
-        insertAvailability.run(
-          a.id,
-          a.teacher_id,
-          slotId,
-          a.available,
-          a.created_at
+        .get();
+      if (hasOldAvailability) {
+        const availability = db
+          .prepare(
+            "SELECT id, teacher_id, slot_id, available, created_at FROM teacher_availability"
+          )
+          .all()
+          .sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+
+        // Migrate availability rows into teacher_slot_unavailability for entries that were unavailable (available===0)
+        const unavailInsert = db.prepare(
+          "INSERT OR IGNORE INTO teacher_slot_unavailability (id, teacher_id, slot_id, created_at) VALUES (?, ?, ?, ?)"
         );
-      });
+        availability.forEach((a) => {
+          const slotId = remapSlotId(a.slot_id);
+          if (a.available === 0) {
+            unavailInsert.run(a.id, a.teacher_id, slotId, a.created_at);
+          }
+        });
+
+        // Remove any legacy availability rows
+        db.prepare("DELETE FROM teacher_availability").run();
+      }
 
       // Drop duplicated slot rows
       const deleteSlot = db.prepare("DELETE FROM slots WHERE slot_id = ?");
@@ -1358,24 +1361,47 @@ app.delete("/api/course-runs/:id", (req, res) => {
 
 // TEACHER AVAILABILITY
 app.get("/api/teacher-availability", (req, res) => {
-  const availability = db.prepare("SELECT * FROM teacher_availability").all();
+  // Return map of availability per teacher-slot. We store unavailability in `teacher_slot_unavailability`.
+  const teachers = db.prepare("SELECT teacher_id FROM teachers").all();
+  const slots = db.prepare("SELECT slot_id FROM slots").all();
+  const unavailRows = db
+    .prepare(
+      "SELECT teacher_id, slot_id FROM teacher_slot_unavailability"
+    )
+    .all();
+  const unavailSet = new Set(
+    unavailRows.map((r) => `${r.teacher_id}-${r.slot_id}`)
+  );
+
   const result = {};
-  availability.forEach((a) => {
-    const key = `${a.teacher_id}-${a.slot_id}`;
-    result[key] = a.available === 1;
+  teachers.forEach((t) => {
+    slots.forEach((s) => {
+      const key = `${t.teacher_id}-${s.slot_id}`;
+      result[key] = !unavailSet.has(key);
+    });
   });
+
   res.json(result);
 });
 
 app.post("/api/teacher-availability", (req, res) => {
   const data = req.body;
-  const stmt = db.prepare(
-    "INSERT OR REPLACE INTO teacher_availability (teacher_id, slot_id, available) VALUES (?, ?, ?)"
+  // data is a map { "teacherId-slotId": boolean } where boolean indicates availability
+  const insertUnavail = db.prepare(
+    "INSERT OR IGNORE INTO teacher_slot_unavailability (teacher_id, slot_id, created_at) VALUES (?, ?, ?)"
+  );
+  const deleteUnavail = db.prepare(
+    "DELETE FROM teacher_slot_unavailability WHERE teacher_id = ? AND slot_id = ?"
   );
 
   Object.entries(data).forEach(([key, available]) => {
     const [teacher_id, slot_id] = key.split("-").map(Number);
-    stmt.run(teacher_id, slot_id, available ? 1 : 0);
+    const avail = Boolean(available);
+    if (!avail) {
+      insertUnavail.run(teacher_id, slot_id, new Date().toISOString());
+    } else {
+      deleteUnavail.run(teacher_id, slot_id);
+    }
   });
 
   res.json({ success: true });
@@ -1442,10 +1468,11 @@ app.get("/api/bulk-load", (req, res) => {
       };
     });
 
-    const availability = db.prepare("SELECT * FROM teacher_availability").all();
-    // Convert database format to application format (array of availability objects)
-    // Need to include both slot_id (for DB operations) and from_date (for app logic)
-    const teacherAvailability = availability.map((a) => {
+    // Load teacher slot unavailability rows and convert to application format
+    const unavailability = db
+      .prepare("SELECT * FROM teacher_slot_unavailability")
+      .all();
+    const teacherAvailability = unavailability.map((a) => {
       const slot = slots.find((s) => s.slot_id === a.slot_id);
       return {
         id: a.id,
@@ -1453,7 +1480,7 @@ app.get("/api/bulk-load", (req, res) => {
         from_date: slot ? slot.start_date : "",
         to_date: slot ? slot.start_date : "",
         slot_id: a.slot_id,
-        type: a.available === 1 ? "free" : "busy",
+        type: "busy",
       };
     });
 
@@ -2005,7 +2032,7 @@ app.post("/api/bulk-save", (req, res) => {
     db.prepare("DELETE FROM teachers").run();
     db.prepare("DELETE FROM teacher_courses").run();
     db.prepare("DELETE FROM slots").run();
-    db.prepare("DELETE FROM teacher_availability").run();
+    db.prepare("DELETE FROM teacher_slot_unavailability").run();
     db.prepare("DELETE FROM cohort_slot_courses").run();
     db.prepare("DELETE FROM course_run_slots").run();
     db.prepare("DELETE FROM slot_days").run();
@@ -2113,50 +2140,45 @@ app.post("/api/bulk-save", (req, res) => {
     }
 
     if (teacherAvailability) {
-      const stmt = db.prepare(
-        "INSERT OR REPLACE INTO teacher_availability (id, teacher_id, slot_id, available) VALUES (?, ?, ?, ?)"
+      const insertStmt = db.prepare(
+        "INSERT OR IGNORE INTO teacher_slot_unavailability (id, teacher_id, slot_id, created_at) VALUES (?, ?, ?, ?)"
+      );
+      const deleteStmt = db.prepare(
+        "DELETE FROM teacher_slot_unavailability WHERE teacher_id = ? AND slot_id = ?"
       );
 
       // Handle both array format (from store) and object format (legacy)
       if (Array.isArray(teacherAvailability)) {
         // Array format: { id, teacher_id, from_date, to_date, type, slot_id }
         teacherAvailability.forEach((a) => {
-          // If slot_id is present, use it directly
           if (a.slot_id) {
-            const available = a.type === "free" ? 1 : 0;
-            stmt.run(
-              a.id || null,
-              remapTeacherId(a.teacher_id),
-              remapSlotId(a.slot_id),
-              available
-            );
-          }
-          // Otherwise, find slot by from_date
-          else if (a.from_date) {
-            const slot = dedupedSlots?.find(
-              (s) => s.start_date === a.from_date
-            );
+            if (a.type === "busy") {
+              insertStmt.run(a.id || null, remapTeacherId(a.teacher_id), remapSlotId(a.slot_id), a.created_at || new Date().toISOString());
+            } else {
+              deleteStmt.run(remapTeacherId(a.teacher_id), remapSlotId(a.slot_id));
+            }
+          } else if (a.from_date) {
+            const slot = dedupedSlots?.find((s) => s.start_date === a.from_date);
             if (slot) {
-              const available = a.type === "free" ? 1 : 0;
-              stmt.run(
-                a.id || null,
-                remapTeacherId(a.teacher_id),
-                slot.slot_id,
-                available
-              );
+              if (a.type === "busy") {
+                insertStmt.run(a.id || null, remapTeacherId(a.teacher_id), slot.slot_id, a.created_at || new Date().toISOString());
+              } else {
+                deleteStmt.run(remapTeacherId(a.teacher_id), slot.slot_id);
+              }
             }
           }
         });
       } else {
-        // Object format: { "teacherId-slotId": boolean }
+        // Object format: { "teacherId-slotId": boolean } where boolean is availability
         Object.entries(teacherAvailability).forEach(([key, available]) => {
           const [teacher_id, slot_id] = key.split("-").map(Number);
-          stmt.run(
-            null,
-            remapTeacherId(teacher_id),
-            remapSlotId(slot_id),
-            available ? 1 : 0
-          );
+          if (available) {
+            // available -> ensure no unavailability row exists
+            deleteStmt.run(remapTeacherId(teacher_id), remapSlotId(slot_id));
+          } else {
+            // unavailable -> insert unavailability row
+            insertStmt.run(null, remapTeacherId(teacher_id), remapSlotId(slot_id), new Date().toISOString());
+          }
         });
       }
     }
