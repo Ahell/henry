@@ -132,14 +132,7 @@ export class GanttDepot extends LitElement {
 
   _renderDepotBlock(course) {
     const hasPrereqs = this._hasPrerequisites(course.course_id);
-    const blockClass =
-      course.default_block_length === 2
-        ? hasPrereqs
-          ? "prerequisite-course two-block-course"
-          : "normal-course two-block-course"
-        : hasPrereqs
-        ? "prerequisite-course"
-        : "normal-course";
+    const blockClass = hasPrereqs ? "prerequisite-course" : "normal-course";
 
     const shortName = this._shortenCourseName(course.name);
     const bgColor = this._getCourseColor(course);
@@ -173,8 +166,6 @@ export class GanttDepot extends LitElement {
   _handleDragStart(e) {
     const courseId = e.target.dataset.courseId;
     const cohortId = e.target.dataset.cohortId;
-    const course = store.getCourse(parseInt(courseId));
-    const isTwoBlock = course?.default_block_length === 2;
 
     e.dataTransfer.setData(
       "text/plain",
@@ -182,7 +173,6 @@ export class GanttDepot extends LitElement {
         courseId,
         cohortId,
         fromDepot: true,
-        isTwoBlock,
       })
     );
     e.dataTransfer.effectAllowed = "copyMove";
@@ -194,7 +184,6 @@ export class GanttDepot extends LitElement {
         detail: {
           courseId: parseInt(courseId),
           cohortId: parseInt(cohortId),
-          isTwoBlock,
         },
         bubbles: true,
         composed: true,

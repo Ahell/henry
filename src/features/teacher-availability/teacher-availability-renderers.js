@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { store } from "../../utils/store.js";
+import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../utils/store.js";
 import { renderDayHeaderCell } from "./day-header-cell.js";
 import {
   getDetailDayHeaderPresentation,
@@ -387,17 +387,20 @@ function computeSlotDaysFromComponent(component) {
     const currentStart = new Date(targetSlot.start_date).getTime();
     if (candidateStart > currentStart) {
       endDate = new Date(sorted[i].start_date);
+      endDate.setDate(endDate.getDate() - 1);
       break;
     }
   }
   if (!endDate) {
     endDate = new Date(targetSlot.start_date);
-    endDate.setDate(endDate.getDate() + 28);
+    endDate.setDate(
+      endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1
+    );
   }
 
   const days = [];
   const currentDate = new Date(targetSlot.start_date);
-  while (currentDate < endDate) {
+  while (currentDate <= endDate) {
     days.push(currentDate.toISOString().split("T")[0]);
     currentDate.setDate(currentDate.getDate() + 1);
   }

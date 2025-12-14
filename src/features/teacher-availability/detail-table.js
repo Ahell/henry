@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { store } from "../../utils/store.js";
+import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../utils/store.js";
 
 export class DetailTable extends LitElement {
   static properties = {
@@ -58,16 +58,19 @@ export class DetailTable extends LitElement {
           const cur = new Date(slot.start_date).getTime();
           if (candidate > cur) {
             endDate = new Date(allSlots[i].start_date);
+            endDate.setDate(endDate.getDate() - 1);
             break;
           }
         }
         if (!endDate) {
           endDate = new Date(slot.start_date);
-          endDate.setDate(endDate.getDate() + 28);
+          endDate.setDate(
+            endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1
+          );
         }
         days = [];
         const current = new Date(slot.start_date);
-        while (current < endDate) {
+        while (current <= endDate) {
           days.push(current.toISOString().split("T")[0]);
           current.setDate(current.getDate() + 1);
         }

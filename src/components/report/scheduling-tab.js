@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { store } from "../../utils/store.js";
+import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../utils/store.js";
 import "../ui/index.js";
 import "./gantt-depot.js";
 import "./gantt-cell.js";
@@ -11,7 +11,6 @@ import "./gantt-summary-row.js";
  */
 export class SchedulingTab extends LitElement {
   static properties = {
-    _draggingTwoBlock: { type: Boolean },
     _draggingFromDepot: { type: Boolean },
     _draggingFromCohortId: { type: Number },
     _draggingCourseId: { type: Number },
@@ -250,7 +249,6 @@ export class SchedulingTab extends LitElement {
 
   constructor() {
     super();
-    this._draggingTwoBlock = false;
     this._draggingFromDepot = false;
     this._draggingFromCohortId = null;
     this._draggingCourseId = null;
@@ -396,28 +394,8 @@ export class SchedulingTab extends LitElement {
     return html`
       <div class="legend">
         <div class="legend-item">
-          <div class="legend-box law-course law-order-1"></div>
-          <span>1. JÖK</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-box law-course law-order-2"></div>
-          <span>2. Allmän fast.rätt</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-box law-course law-order-3"></div>
-          <span>3. Speciell fast.rätt</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-box law-course law-order-rest"></div>
-          <span>Övrig juridik</span>
-        </div>
-        <div class="legend-item">
           <div class="legend-box normal-course"></div>
-          <span>Vanlig kurs</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-box normal-course two-block-course"></div>
-          <span>2-block (streckad)</span>
+          <span>Kurs</span>
         </div>
       </div>
     `;
@@ -425,7 +403,6 @@ export class SchedulingTab extends LitElement {
 
   _renderGanttRow(cohort, slotDates) {
     const runsByDate = {};
-    const twoBlockDates = new Set();
     const scheduledCourseIds = new Set();
 
     store
@@ -442,13 +419,6 @@ export class SchedulingTab extends LitElement {
             runsByDate[slot.start_date] = [];
           }
           runsByDate[slot.start_date].push(run);
-
-          if (course?.default_block_length === 2) {
-            const slotIndex = slotDates.indexOf(slot.start_date);
-            if (slotIndex >= 0 && slotIndex < slotDates.length - 1) {
-              twoBlockDates.add(slotDates[slotIndex + 1]);
-            }
-          }
         }
       });
 
@@ -469,7 +439,6 @@ export class SchedulingTab extends LitElement {
         <td class="cohort-cell">${cohort.name}</td>
         ${slotDates.map((dateStr, index) => {
           const runs = runsByDate[dateStr] || [];
-          const isContinuation = twoBlockDates.has(dateStr);
 
           const slotDate = new Date(dateStr);
           const cohortStartDate = new Date(cohort.start_date);
@@ -482,16 +451,6 @@ export class SchedulingTab extends LitElement {
           const isCohortStartSlot =
             cohortStartDate >= slotDate &&
             (nextSlotDate === null || cohortStartDate < nextSlotDate);
-
-          let continuationRuns = [];
-          if (isContinuation && index > 0) {
-            const prevDate = slotDates[index - 1];
-            const prevRuns = runsByDate[prevDate] || [];
-            continuationRuns = prevRuns.filter((run) => {
-              const course = store.getCourse(run.course_id);
-              return course?.default_block_length === 2;
-            });
-          }
 
           return html`
             <td
@@ -506,7 +465,7 @@ export class SchedulingTab extends LitElement {
                 .slotDate="${dateStr}"
                 .cohortId="${cohort.cohort_id}"
                 .runs="${runs}"
-                .continuationRuns="${continuationRuns}"
+                .continuationRuns="${[]}"
                 .isBeforeCohortStart="${isBeforeCohortStart}"
                 .isCohortStartSlot="${isCohortStartSlot}"
                 .cohortStartDate="${cohort.start_date}"
@@ -519,8 +478,7 @@ export class SchedulingTab extends LitElement {
   }
 
   _handleDepotDragStart(e) {
-    const { courseId, cohortId, isTwoBlock } = e.detail;
-    this._draggingTwoBlock = isTwoBlock;
+    const { courseId, cohortId } = e.detail;
     this._draggingFromDepot = true;
     this._draggingFromCohortId = cohortId;
     this._draggingCourseId = courseId;
@@ -529,8 +487,7 @@ export class SchedulingTab extends LitElement {
   }
 
   _handleCourseDragStart(e) {
-    const { courseId, cohortId, isTwoBlock } = e.detail;
-    this._draggingTwoBlock = isTwoBlock;
+    const { courseId, cohortId } = e.detail;
     this._draggingFromDepot = false;
     this._draggingFromCohortId = cohortId;
     this._draggingCourseId = courseId;
@@ -539,7 +496,6 @@ export class SchedulingTab extends LitElement {
   }
 
   _handleDragEnd() {
-    this._draggingTwoBlock = false;
     this._draggingFromDepot = false;
     this._draggingFromCohortId = null;
     this._draggingCourseId = null;
@@ -577,19 +533,6 @@ export class SchedulingTab extends LitElement {
       td.classList.add("drag-over");
     }
 
-    if (this._draggingTwoBlock) {
-      const nextTd = td.nextElementSibling;
-      if (nextTd && nextTd.classList.contains("slot-cell")) {
-        if (isInvalidCohort) {
-          nextTd.classList.remove("drag-over");
-          nextTd.classList.add("drag-over-invalid");
-        } else {
-          nextTd.classList.remove("drag-over-invalid");
-          nextTd.classList.add("drag-over");
-        }
-      }
-    }
-
     if (!this._draggedCells.includes(cell)) {
       this._draggedCells.push(cell);
     }
@@ -600,13 +543,6 @@ export class SchedulingTab extends LitElement {
     const td = cell.closest("td");
     if (td) {
       td.classList.remove("drag-over", "drag-over-invalid");
-    }
-
-    if (this._draggingTwoBlock) {
-      const nextTd = td?.nextElementSibling;
-      if (nextTd && nextTd.classList.contains("slot-cell")) {
-        nextTd.classList.remove("drag-over", "drag-over-invalid");
-      }
     }
   }
 
@@ -654,15 +590,6 @@ export class SchedulingTab extends LitElement {
       }
     }
 
-    // For 2-block courses, check teachers for both blocks
-    if (course.default_block_length === 2) {
-      if (
-        !this._checkTwoBlockTeachers(courseId, targetSlotDate, targetCohortId)
-      ) {
-        return;
-      }
-    }
-
     let targetSlot = store
       .getSlots()
       .find((s) => s.start_date === targetSlotDate);
@@ -670,13 +597,18 @@ export class SchedulingTab extends LitElement {
     if (!targetSlot) {
       const startDate = new Date(targetSlotDate);
       const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 28);
-      targetSlot = store.addSlot({
-        start_date: targetSlotDate,
-        end_date: endDate.toISOString().split("T")[0],
-        evening_pattern: "tis/tor",
-        is_placeholder: false,
-      });
+      endDate.setDate(endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
+      try {
+        targetSlot = store.addSlot({
+          start_date: targetSlotDate,
+          end_date: endDate.toISOString().split("T")[0],
+          evening_pattern: "tis/tor",
+          is_placeholder: false,
+        });
+      } catch (error) {
+        console.warn("Kunde inte skapa slot:", error);
+        return;
+      }
     }
 
     // Get teachers from existing runs if co-teaching
@@ -718,34 +650,24 @@ export class SchedulingTab extends LitElement {
     const run = store.courseRuns.find((r) => r.run_id === runId);
     if (!run) return;
 
-    const course = store.getCourse(run.course_id);
-
-    // For 2-block courses, check teachers for both blocks
-    if (course?.default_block_length === 2) {
-      if (
-        !this._checkTwoBlockTeachers(
-          course.course_id,
-          targetSlotDate,
-          targetCohortId
-        )
-      ) {
-        return;
-      }
-    }
-
     let targetSlot = store
       .getSlots()
       .find((s) => s.start_date === targetSlotDate);
     if (!targetSlot) {
       const startDate = new Date(targetSlotDate);
       const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 28);
-      targetSlot = store.addSlot({
-        start_date: targetSlotDate,
-        end_date: endDate.toISOString().split("T")[0],
-        evening_pattern: "tis/tor",
-        is_placeholder: false,
-      });
+      endDate.setDate(endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
+      try {
+        targetSlot = store.addSlot({
+          start_date: targetSlotDate,
+          end_date: endDate.toISOString().split("T")[0],
+          evening_pattern: "tis/tor",
+          is_placeholder: false,
+        });
+      } catch (error) {
+        console.warn("Kunde inte skapa slot:", error);
+        return;
+      }
     }
 
     run.slot_id = targetSlot.slot_id;
@@ -862,41 +784,6 @@ export class SchedulingTab extends LitElement {
       .getCourseRuns()
       .some((r) => r.slot_id === slot.slot_id && r.course_id === courseId);
   }
-
-  _checkTwoBlockTeachers(courseId, targetSlotDate, targetCohortId) {
-    const availableTeachersBlock1 = this._getAvailableTeachersForSlot(
-      courseId,
-      targetSlotDate,
-      targetCohortId
-    );
-
-    if (availableTeachersBlock1.length === 0) {
-      return false;
-    }
-
-    const slots = store.getSlots().sort((a, b) => {
-      const dateA = new Date(a.start_date);
-      const dateB = new Date(b.start_date);
-      return dateA.getTime() - dateB.getTime();
-    });
-
-    const currentSlotIndex = slots.findIndex(
-      (s) => s.start_date === targetSlotDate
-    );
-    if (currentSlotIndex < 0 || currentSlotIndex >= slots.length - 1) {
-      return false;
-    }
-
-    const nextSlot = slots[currentSlotIndex + 1];
-    const availableTeachersBlock2 = this._getAvailableTeachersForSlot(
-      courseId,
-      nextSlot.start_date,
-      targetCohortId
-    );
-
-    return availableTeachersBlock2.length > 0;
-  }
-
   _getAvailableTeachersForSlot(courseId, slotDate, targetCohortId) {
     const teachers = store.getTeachers();
     const compatibleTeachers = teachers.filter(

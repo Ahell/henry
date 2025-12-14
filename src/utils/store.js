@@ -1,6 +1,8 @@
 import { LitElement, html, css } from "lit";
 import { seedData } from "../data/seedData.js";
 
+export const DEFAULT_SLOT_LENGTH_DAYS = 30;
+
 // Dev-safe alert wrapper: logs as warning in dev, shows native alert in prod
 function showAlert(msg) {
   const isDev =
@@ -22,6 +24,8 @@ export class DataStore {
     this.courses = [];
     this.cohorts = [];
     this.teachers = [];
+    this.teacherCourses = [];
+    this.coursePrerequisites = [];
     this.slots = [];
     this.courseRuns = [];
     this.teacherAvailability = [];
@@ -35,6 +39,136 @@ export class DataStore {
 
     // Load data from backend asynchronously
     this.loadFromBackend();
+  }
+
+  _normalizeDateOnly(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toISOString().split("T")[0];
+  }
+
+  _defaultSlotEndDate(startDate) {
+    const start =
+      startDate instanceof Date ? new Date(startDate) : new Date(startDate);
+    if (Number.isNaN(start.getTime())) return null;
+    const end = new Date(start);
+    end.setDate(end.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
+    return end;
+  }
+
+  _normalizeCourses(rawCourses) {
+    if (!Array.isArray(rawCourses)) return [];
+
+    const courses = (rawCourses || []).map((c, idx) => {
+      const courseId =
+        c?.course_id != null && Number.isFinite(Number(c.course_id))
+          ? Number(c.course_id)
+          : idx + 1;
+      const creditsValue = Number.isFinite(Number(c?.credits ?? c?.hp))
+        ? Number(c.credits ?? c.hp)
+        : 7.5;
+      return {
+        course_id: courseId,
+        code: c?.code || "",
+        name: c?.name || "",
+        credits: creditsValue,
+        prerequisites: Array.isArray(c?.prerequisites)
+          ? [...c.prerequisites]
+          : [],
+      };
+    });
+
+    const codeToId = new Map();
+    courses.forEach((c) => {
+      if (c.code) {
+        codeToId.set(c.code, c.course_id);
+      }
+    });
+
+    rawCourses.forEach((raw, idx) => {
+      if (Array.isArray(raw?.prerequisite_codes)) {
+        const target = courses[idx];
+        target.prerequisites = raw.prerequisite_codes
+          .map((code) => codeToId.get(code))
+          .filter((id) => id != null);
+      }
+    });
+
+    return courses;
+  }
+
+  _getSlotRange(slot) {
+    if (!slot) return null;
+    const startStr = this._normalizeDateOnly(slot.start_date);
+    if (!startStr) return null;
+    const endStr =
+      this._normalizeDateOnly(slot.end_date) ||
+      this._normalizeDateOnly(this._defaultSlotEndDate(startStr));
+    if (!endStr) return null;
+    return {
+      start: new Date(startStr),
+      end: new Date(endStr),
+      startStr,
+      endStr,
+    };
+  }
+
+  _findOverlappingSlot(startDateStr, endDateStr, ignoreSlotId = null) {
+    const normalizedStart = this._normalizeDateOnly(startDateStr);
+    const normalizedEnd = this._normalizeDateOnly(endDateStr);
+    if (!normalizedStart || !normalizedEnd) return null;
+
+    const start = new Date(normalizedStart);
+    const end = new Date(normalizedEnd);
+
+    return this.slots.find((slot) => {
+      if (
+        ignoreSlotId != null &&
+        String(slot.slot_id) === String(ignoreSlotId)
+      ) {
+        return false;
+      }
+      const range = this._getSlotRange(slot);
+      if (!range) return false;
+      return start < range.end && end > range.start;
+    });
+  }
+
+  _assertAllSlotsNonOverlapping() {
+    const ranges = [];
+    for (const slot of this.slots || []) {
+      const range = this._getSlotRange(slot);
+      if (!range) {
+        const message = "Alla slots måste ha giltiga start- och slutdatum.";
+        showAlert(message);
+        throw new Error(message);
+      }
+      ranges.push({ slot, range });
+    }
+
+    ranges.sort(
+      (a, b) => a.range.start.getTime() - b.range.start.getTime()
+    );
+
+    for (let i = 1; i < ranges.length; i++) {
+      const prev = ranges[i - 1];
+      const current = ranges[i];
+      if (current.range.start < prev.range.end) {
+        const message = `Slots ${prev.range.startStr}–${prev.range.endStr} och ${current.range.startStr}–${current.range.endStr} får inte överlappa.`;
+        showAlert(message);
+        throw new Error(message);
+      }
+    }
+  }
+
+  _normalizeSlotsInPlace() {
+    this.slots = (this.slots || []).map((slot) => {
+      const range = this._getSlotRange(slot);
+      return range
+        ? { ...slot, start_date: range.startStr, end_date: range.endStr }
+        : slot;
+    });
   }
 
   // Load data from backend
@@ -69,9 +203,11 @@ export class DataStore {
       }
 
       // Load data from backend
-      this.courses = data.courses || [];
+      this.courses = this._normalizeCourses(data.courses || []);
       this.cohorts = data.cohorts || [];
       this.teachers = data.teachers || [];
+      this.teacherCourses = data.teacherCourses || [];
+      this.coursePrerequisites = data.coursePrerequisites || [];
       this.slots = data.slots || [];
       this.courseRuns = data.courseRuns || [];
       this.teacherAvailability = data.teacherAvailability || [];
@@ -80,6 +216,9 @@ export class DataStore {
       this.courseSlots = data.courseSlots || [];
       this.slotDays = data.slotDays || [];
       this.courseSlotDays = data.courseSlotDays || [];
+      this._ensureTeacherCoursesFromCompatible();
+      this._ensurePrerequisitesFromNormalized();
+      this._ensureTeacherCompatibleFromCourses();
 
       // Fallback: if backend omitted courseRuns or teacherAvailability, fall back to seed data
       if (
@@ -104,11 +243,12 @@ export class DataStore {
         this.teacherAvailability = seedData.teacherAvailability;
       }
 
-      // Initialize default teaching days for slots that don't have any
-      this.initializeAllTeachingDays();
       // Derive normalized structures if missing
       this._ensureCourseSlotsFromRuns();
       this._ensureSlotDaysFromSlots();
+      this._ensureCourseSlotDayDefaults();
+      this._normalizeSlotsInPlace();
+      this._assertAllSlotsNonOverlapping();
 
       // Validate and fix teacher assignments (ensure one course per teacher per slot)
       this.validateTeacherAssignments();
@@ -406,72 +546,11 @@ export class DataStore {
             // Check that prerequisite is completely finished before this course starts
             const prereqSlot = this.getSlot(prereqRun.slot_id);
             if (prereqSlot) {
-              const prereqStartDate = new Date(prereqSlot.start_date);
-
-              // Calculate when the prerequisite course ends
-              let prereqEndDate;
-              if (prereqCourse.default_block_length === 2) {
-                // For 2-block courses, find the next slot (second block)
-                const allSlots = this.slots.sort((a, b) => {
-                  const dateA = new Date(a.start_date);
-                  const dateB = new Date(b.start_date);
-                  return dateA.getTime() - dateB.getTime();
-                });
-
-                const prereqSlotIndex = allSlots.findIndex(
-                  (s) => s.slot_id === prereqSlot.slot_id
-                );
-
-                if (
-                  prereqSlotIndex >= 0 &&
-                  prereqSlotIndex < allSlots.length - 1
-                ) {
-                  // For 2-block courses, the course ends AFTER block 2
-                  // So we need the slot after block 2
-                  if (prereqSlotIndex + 2 < allSlots.length) {
-                    // End date is the start of the slot AFTER the second block
-                    prereqEndDate = new Date(
-                      allSlots[prereqSlotIndex + 2].start_date
-                    );
-                  } else {
-                    // Fallback: add ~8 weeks to start date
-                    prereqEndDate = new Date(prereqStartDate);
-                    prereqEndDate.setDate(prereqEndDate.getDate() + 56);
-                  }
-                } else {
-                  // Fallback: add ~8 weeks to start date
-                  prereqEndDate = new Date(prereqStartDate);
-                  prereqEndDate.setDate(prereqEndDate.getDate() + 56);
-                }
-              } else {
-                // For 1-block courses, end date is the start of next slot
-                const allSlots = this.slots.sort((a, b) => {
-                  const dateA = new Date(a.start_date);
-                  const dateB = new Date(b.start_date);
-                  return dateA.getTime() - dateB.getTime();
-                });
-
-                const prereqSlotIndex = allSlots.findIndex(
-                  (s) => s.slot_id === prereqSlot.slot_id
-                );
-
-                if (
-                  prereqSlotIndex >= 0 &&
-                  prereqSlotIndex < allSlots.length - 1
-                ) {
-                  prereqEndDate = new Date(
-                    allSlots[prereqSlotIndex + 1].start_date
-                  );
-                } else {
-                  // Fallback: add 4 weeks to start date
-                  prereqEndDate = new Date(prereqStartDate);
-                  prereqEndDate.setDate(prereqEndDate.getDate() + 28);
-                }
-              }
+              const prereqRange = this._getSlotRange(prereqSlot);
+              const prereqEndDate = prereqRange?.end;
 
               // The dependent course must start AFTER the prerequisite ends
-              if (runDate < prereqEndDate) {
-                // Course starts before prerequisite is finished
+              if (prereqEndDate && runDate <= prereqEndDate) {
                 problems.push({
                   type: "before_prerequisite",
                   cohortId: cohort.cohort_id,
@@ -594,6 +673,10 @@ export class DataStore {
 
   async saveData() {
     try {
+      this._syncTeacherCoursesFromTeachers();
+      this._syncCoursePrerequisitesFromCourses();
+      this._normalizeSlotsInPlace();
+      this._assertAllSlotsNonOverlapping();
       const response = await fetch("http://localhost:3001/api/bulk-save", {
         method: "POST",
         headers: {
@@ -603,6 +686,8 @@ export class DataStore {
           courses: this.courses,
           cohorts: this.cohorts,
           teachers: this.teachers,
+          teacherCourses: this.teacherCourses,
+          coursePrerequisites: this.coursePrerequisites,
           slots: this.slots,
           courseRuns: this.courseRuns,
           teacherAvailability: this.teacherAvailability,
@@ -647,11 +732,9 @@ export class DataStore {
       course_id: id,
       code: course.code || "",
       name: course.name || "",
-      hp: course.hp || 7.5,
-      is_law_course: course.is_law_course || false,
-      law_type: course.law_type || null,
-      default_block_length: course.default_block_length || 1,
-      preferred_order_index: course.preferred_order_index || 999,
+      credits: Number.isFinite(Number(course.credits))
+        ? Number(course.credits)
+        : 7.5,
       prerequisites: course.prerequisites || [], // Array of course_ids that must be completed before this course
     };
     this.courses.push(newCourse);
@@ -855,11 +938,50 @@ export class DataStore {
 
   // Slots
   addSlot(slot) {
+    const startStr = this._normalizeDateOnly(slot.start_date);
+    if (!startStr) {
+      const message = "Kan inte skapa slot utan giltigt startdatum.";
+      showAlert(message);
+      throw new Error(message);
+    }
+
+    const explicitEnd = this._normalizeDateOnly(slot.end_date);
+    const endDateObj = explicitEnd
+      ? new Date(explicitEnd)
+      : this._defaultSlotEndDate(startStr);
+    const endStr = this._normalizeDateOnly(endDateObj);
+
+    if (!endStr) {
+      const message = "Kan inte skapa slot utan giltigt slutdatum.";
+      showAlert(message);
+      throw new Error(message);
+    }
+
+    if (new Date(endStr) <= new Date(startStr)) {
+      const message = "Slotens slutdatum måste vara efter startdatum.";
+      showAlert(message);
+      throw new Error(message);
+    }
+
+    const overlapping = this._findOverlappingSlot(startStr, endStr);
+    if (overlapping) {
+      const overlappingRange = this._getSlotRange(overlapping);
+      const conflictEnd =
+        overlappingRange?.endStr ||
+        overlapping.end_date ||
+        this._normalizeDateOnly(
+          this._defaultSlotEndDate(overlapping.start_date)
+        );
+      const message = `Slot ${startStr}–${endStr} krockar med befintlig slot ${overlapping.start_date}–${conflictEnd}.`;
+      showAlert(message);
+      throw new Error(message);
+    }
+
     const id = Math.max(...this.slots.map((s) => s.slot_id), 0) + 1;
     const newSlot = {
       slot_id: id,
-      start_date: slot.start_date || "",
-      end_date: slot.end_date || "",
+      start_date: startStr,
+      end_date: endStr,
       evening_pattern: slot.evening_pattern || "",
       is_placeholder: slot.is_placeholder !== false,
       location: slot.location || "",
@@ -1121,6 +1243,9 @@ export class DataStore {
   _computeSlotDayRange(slot) {
     if (!slot) return [];
 
+    const slotRange = this._getSlotRange(slot);
+    if (!slotRange) return [];
+
     const allSlots = this.slots
       .slice()
       .sort(
@@ -1135,24 +1260,27 @@ export class DataStore {
         normalizeDate(s.start_date) === normalizeDate(slot.start_date)
     );
 
-    let endDate = null;
+    let endDate = new Date(slotRange.end);
     for (let i = slotIndex + 1; i < allSlots.length; i++) {
-      const candidateDate = new Date(allSlots[i].start_date).getTime();
-      const currentStart = new Date(slot.start_date).getTime();
-      if (candidateDate > currentStart) {
-        endDate = new Date(allSlots[i].start_date);
+      const candidateStart = new Date(allSlots[i].start_date);
+      if (Number.isNaN(candidateStart.getTime())) continue;
+      if (candidateStart > slotRange.start) {
+        const candidateEnd = new Date(candidateStart);
+        candidateEnd.setDate(candidateEnd.getDate() - 1);
+        if (candidateEnd < endDate) {
+          endDate = candidateEnd;
+        }
         break;
       }
     }
-    if (!endDate) {
-      endDate = new Date(slot.start_date);
-      endDate.setDate(endDate.getDate() + 28);
+    if (!endDate || Number.isNaN(endDate.getTime())) {
+      endDate = this._defaultSlotEndDate(slotRange.start);
     }
 
     const days = [];
-    const currentDate = new Date(slot.start_date);
+    const currentDate = new Date(slotRange.start);
 
-    while (currentDate < endDate) {
+    while (currentDate <= endDate) {
       days.push(currentDate.toISOString().split("T")[0]);
       currentDate.setDate(currentDate.getDate() + 1);
     }
@@ -1218,10 +1346,43 @@ export class DataStore {
     }
   }
 
+  _ensureCourseSlotDayDefaults() {
+    if (!Array.isArray(this.courseSlotDays)) {
+      this.courseSlotDays = [];
+    }
+    const normalizeDate = (v) => (v || "").split("T")[0];
+    let nextId =
+      this.courseSlotDays.reduce(
+        (max, csd) => Math.max(max, csd.course_slot_day_id || 0),
+        0
+      ) + 1;
+
+    for (const cs of this.courseSlots || []) {
+      const defaults = this.getDefaultTeachingDaysPattern(cs.slot_id);
+      defaults.forEach((d) => {
+        const exists = this.courseSlotDays.some(
+          (csd) =>
+            String(csd.course_slot_id) === String(cs.course_slot_id) &&
+            normalizeDate(csd.date) === normalizeDate(d)
+        );
+        if (!exists) {
+          this.courseSlotDays.push({
+            course_slot_day_id: nextId++,
+            course_slot_id: cs.course_slot_id,
+            date: normalizeDate(d),
+            is_default: 1,
+            active: 1,
+          });
+        }
+      });
+    }
+  }
+
   _loadSnapshot(data) {
-    this.courses = data.courses || [];
+    this.courses = this._normalizeCourses(data.courses || []);
     this.cohorts = data.cohorts || [];
     this.teachers = data.teachers || [];
+    this.teacherCourses = data.teacherCourses || [];
     this.slots = data.slots || [];
     this.courseRuns = data.courseRuns || [];
     this.teacherAvailability = data.teacherAvailability || [];
@@ -1232,9 +1393,11 @@ export class DataStore {
     this.courseSlotDays = data.courseSlotDays || [];
     this._ensureCourseSlotsFromRuns();
     this._ensureSlotDaysFromSlots();
+    this._ensureCourseSlotDayDefaults();
+    this._ensureTeacherCoursesFromCompatible();
   }
 
-  // Teaching days methods
+  // Teaching days methods (default pattern only; actual aktiva dagar finns i courseSlotDays)
   getDefaultTeachingDaysPattern(slotId) {
     const slot = this.slots.find((s) => s.slot_id === slotId);
     if (!slot) return [];
@@ -1274,35 +1437,9 @@ export class DataStore {
     return teachingDays;
   }
 
-  generateDefaultTeachingDays(slotId) {
-    const defaultDates = this.getDefaultTeachingDaysPattern(slotId);
-
-    // Remove any existing teaching days for this slot first
-    this.teachingDays = this.teachingDays.filter((td) => td.slot_id !== slotId);
-
-    // Add default teaching days with isDefault flag and active state
-    defaultDates.forEach((date) => {
-      this.teachingDays.push({
-        slot_id: slotId,
-        date,
-        isDefault: true, // This is a standard day
-        active: true, // Standard days are active by default
-      });
-    });
-  }
-
-  initializeAllTeachingDays() {
-    // Generate default teaching days for all slots that don't have any
-    this.slots.forEach((slot) => {
-      const hasTeachingDays = this.teachingDays.some(
-        (td) => td.slot_id === slot.slot_id
-      );
-      if (!hasTeachingDays) {
-        this.generateDefaultTeachingDays(slot.slot_id);
-      }
-    });
-    this.notify();
-  }
+  // No-op legacy hooks (defaults hanteras nu per kursSlot via courseSlotDays)
+  generateDefaultTeachingDays() {}
+  initializeAllTeachingDays() {}
 
   toggleTeachingDay(slotId, date, courseId = null) {
     const defaultDates = this.getDefaultTeachingDaysPattern(slotId);
@@ -1335,34 +1472,55 @@ export class DataStore {
           active: desiredActive,
         });
       }
-    } else {
-      const existingIndex = this.teachingDays.findIndex(
-        (td) =>
-          td.slot_id === slotId &&
-          td.date === date &&
-          (td.course_id === null || td.course_id === undefined)
+      this.notify();
+      this.saveData().catch((err) =>
+        console.error("Failed to save teaching day change:", err)
       );
-
-      if (existingIndex !== -1) {
-        const existing = this.teachingDays[existingIndex];
-        existing.active = !existing.active; // always keep entry, just toggle
-        existing.isDefault = existing.isDefault ?? isDefaultDate;
-      } else {
-        // Day doesn't exist - add it
-        this.teachingDays.push({
-          slot_id: slotId,
-          date,
-          isDefault: isDefaultDate,
-          active: true,
-        });
-      }
+      return;
     }
+
+    // courseId == null: applicera på alla kursSlotar i slotten (ingen generisk teachingDay)
+    const courseSlotsInSlot = (this.courseSlots || []).filter(
+      (cs) => String(cs.slot_id) === String(slotId)
+    );
+    courseSlotsInSlot.forEach((cs) => {
+      this.toggleCourseSlotDay(slotId, cs.course_id, date, {
+        skipSave: true,
+        skipNotify: true,
+      });
+    });
     this.notify();
+    this.saveData().catch((err) =>
+      console.error("Failed to save teaching day change:", err)
+    );
   }
 
   getTeachingDayState(slotId, date, courseId = null) {
-    // If courseId is provided, prefer course-specific entry; otherwise fall back to generic.
+    const normalizeDate = (v) => (v || "").split("T")[0];
+
     if (courseId != null) {
+      // First, check courseSlotDay overrides (persisted per kurs)
+      const courseSlot = this.getCourseSlot(courseId, slotId);
+      if (courseSlot) {
+        const csd = (this.courseSlotDays || []).find(
+          (csd) =>
+            String(csd.course_slot_id) === String(courseSlot.course_slot_id) &&
+            normalizeDate(csd.date) === normalizeDate(date)
+        );
+        if (csd) {
+          return {
+            isDefault: Boolean(csd.is_default),
+            active: csd.active !== false,
+          };
+        }
+        // Om inget csd men datumet ligger i defaultmönstret: anta aktiv standarddag
+        const defaultDates = this.getDefaultTeachingDaysPattern(slotId);
+        if (defaultDates.includes(normalizeDate(date))) {
+          return { isDefault: true, active: true };
+        }
+      }
+
+      // If no courseSlotDay, fall back to course-specific teachingDays entry or generic
       const td =
         this.teachingDays.find(
           (t) =>
@@ -1385,7 +1543,42 @@ export class DataStore {
       };
     }
 
-    // courseId === null: only consider the slot-level (generic) entry, if any.
+    // courseId === null: merge per-kurs data för alla kursSlotar i slotten
+    const courseSlotsInSlot = (this.courseSlots || []).filter(
+      (cs) => String(cs.slot_id) === String(slotId)
+    );
+    const matches = [];
+    courseSlotsInSlot.forEach((cs) => {
+      const hit = (this.courseSlotDays || []).find(
+        (csd) =>
+          String(csd.course_slot_id) === String(cs.course_slot_id) &&
+          normalizeDate(csd.date) === normalizeDate(date)
+      );
+      if (hit) matches.push(hit);
+    });
+
+    if (matches.length > 0) {
+      const anyActive = matches.some((m) => m.active !== false);
+      const anyDefault = matches.some((m) => m.is_default);
+      const anyDefaultInactive = matches.some(
+        (m) => m.is_default && m.active === false
+      );
+      if (anyActive) {
+        return { isDefault: anyDefault, active: true };
+      }
+      if (anyDefaultInactive) {
+        return { isDefault: true, active: false };
+      }
+      return { isDefault: false, active: false };
+    }
+
+    // Om inga per-kurs-poster men datum är del av slotens defaultmönster, visa aktiv standard
+    const defaultDates = this.getDefaultTeachingDaysPattern(slotId);
+    if (defaultDates.includes(normalizeDate(date))) {
+      return { isDefault: true, active: true };
+    }
+
+    // Fall back to generic teachingDays if no per-kurs data finns
     const generic = this.teachingDays.find(
       (t) =>
         t.slot_id === slotId &&
@@ -1465,27 +1658,23 @@ export class DataStore {
 
   // Import from Excel/JSON
   importData(data) {
-    if (data.courses) {
-      data.courses.forEach((c) => this.addCourse(c));
+    // Reset current state so repeated imports don't accumulate duplicates
+    this.courses = [];
+    this.cohorts = [];
+    this.teachers = [];
+    this.teacherCourses = [];
+    this.coursePrerequisites = [];
+    this.slots = [];
+    this.courseRuns = [];
+    this.teacherAvailability = [];
+    this.teachingDays = [];
+    this.examDates = [];
+    this.courseSlots = [];
+    this.slotDays = [];
+    this.courseSlotDays = [];
 
-      // After adding all courses, convert prerequisite_codes to prerequisite IDs
-      if (data.courses.some((c) => c.prerequisite_codes)) {
-        this.courses.forEach((course) => {
-          const seedCourse = data.courses.find((c) => c.code === course.code);
-          if (
-            seedCourse?.prerequisite_codes &&
-            seedCourse.prerequisite_codes.length > 0
-          ) {
-            // Convert codes to course_ids
-            course.prerequisites = seedCourse.prerequisite_codes
-              .map((code) => {
-                const prereqCourse = this.courses.find((c) => c.code === code);
-                return prereqCourse ? prereqCourse.course_id : null;
-              })
-              .filter((id) => id !== null);
-          }
-        });
-      }
+    if (data.courses) {
+      this.courses = this._normalizeCourses(data.courses || []);
     }
     if (data.cohorts) {
       data.cohorts.forEach((c) => this.addCohort(c));
@@ -1501,6 +1690,18 @@ export class DataStore {
     }
     if (data.teacherAvailability) {
       data.teacherAvailability.forEach((a) => this.addTeacherAvailability(a));
+    }
+    if (data.teacherCourses) {
+      this.teacherCourses = data.teacherCourses;
+    }
+    if (data.coursePrerequisites) {
+      this.coursePrerequisites = data.coursePrerequisites;
+    }
+    if (data.teachingDays) {
+      this.teachingDays = data.teachingDays;
+    }
+    if (data.examDates) {
+      this.examDates = data.examDates;
     }
     if (data.courseSlots) {
       this.courseSlots = data.courseSlots;
@@ -1537,6 +1738,7 @@ export class DataStore {
     this.courses = [];
     this.cohorts = [];
     this.teachers = [];
+    this.teacherCourses = [];
     this.slots = [];
     this.courseRuns = [];
     this.teacherAvailability = [];
@@ -1586,7 +1788,105 @@ export class DataStore {
     return this.getCourseSlotDays(courseSlot.course_slot_id);
   }
 
-  toggleCourseSlotDay(slotId, courseId, dateStr) {
+  getCompatibleCourseIds(teacherId) {
+    if (this.teacherCourses && this.teacherCourses.length > 0) {
+      return this.teacherCourses
+        .filter((tc) => String(tc.teacher_id) === String(teacherId))
+        .map((tc) => tc.course_id);
+    }
+    const teacher = this.teachers.find((t) => t.teacher_id === teacherId);
+    return teacher?.compatible_courses || [];
+  }
+
+  _ensureTeacherCoursesFromCompatible() {
+    if (!Array.isArray(this.teacherCourses)) {
+      this.teacherCourses = [];
+    }
+    const existingKeys = new Set(
+      this.teacherCourses.map((tc) => `${tc.teacher_id}-${tc.course_id}`)
+    );
+    for (const t of this.teachers || []) {
+      const compat = Array.isArray(t.compatible_courses)
+        ? t.compatible_courses
+        : [];
+      compat.forEach((cid) => {
+        const key = `${t.teacher_id}-${cid}`;
+        if (!existingKeys.has(key)) {
+          this.teacherCourses.push({ teacher_id: t.teacher_id, course_id: cid });
+          existingKeys.add(key);
+        }
+      });
+    }
+  }
+
+  _ensureTeacherCompatibleFromCourses() {
+    if (!Array.isArray(this.teachers)) return;
+    const byTeacher = new Map();
+    for (const tc of this.teacherCourses || []) {
+      const list = byTeacher.get(tc.teacher_id) || [];
+      list.push(tc.course_id);
+      byTeacher.set(tc.teacher_id, list);
+    }
+    this.teachers.forEach((t) => {
+      if (byTeacher.has(t.teacher_id)) {
+        t.compatible_courses = byTeacher.get(t.teacher_id);
+      }
+    });
+  }
+
+  _syncTeacherCoursesFromTeachers() {
+    if (!Array.isArray(this.teachers)) return;
+    const next = [];
+    const seen = new Set();
+    this.teachers.forEach((t) => {
+      (t.compatible_courses || []).forEach((cid) => {
+        const key = `${t.teacher_id}-${cid}`;
+        if (!seen.has(key)) {
+          next.push({ teacher_id: t.teacher_id, course_id: cid });
+          seen.add(key);
+        }
+      });
+    });
+    this.teacherCourses = next;
+  }
+
+  _ensurePrerequisitesFromNormalized() {
+    if (!Array.isArray(this.courses)) return;
+    const byCourse = new Map();
+    (this.coursePrerequisites || []).forEach((cp) => {
+      const list = byCourse.get(cp.course_id) || [];
+      list.push(cp.prerequisite_course_id);
+      byCourse.set(cp.course_id, list);
+    });
+    this.courses.forEach((c) => {
+      if (byCourse.has(c.course_id)) {
+        c.prerequisites = byCourse.get(c.course_id);
+      }
+    });
+  }
+
+  _syncCoursePrerequisitesFromCourses() {
+    if (!Array.isArray(this.courses)) return;
+    const next = [];
+    const seen = new Set();
+    this.courses.forEach((c) => {
+      (c.prerequisites || []).forEach((pid) => {
+        const key = `${c.course_id}-${pid}`;
+        if (!seen.has(key)) {
+          next.push({ course_id: c.course_id, prerequisite_course_id: pid });
+          seen.add(key);
+        }
+      });
+    });
+    this.coursePrerequisites = next;
+  }
+
+  toggleCourseSlotDay(
+    slotId,
+    courseId,
+    dateStr,
+    { skipSave = false, skipNotify = false } = {}
+  ) {
     const courseSlot = this.getCourseSlot(courseId, slotId);
     if (!courseSlot) {
       return;
@@ -1628,7 +1928,18 @@ export class DataStore {
         active: isDefault ? 0 : 1, // default dates start inactive when toggled, non-default start active
       });
     }
-    this.notify();
+    if (!skipNotify) this.notify();
+    if (!skipSave) {
+      // Persist course-specific day changes
+      this.saveData().catch((err) =>
+        console.error("Failed to save course slot day change:", err)
+      );
+    }
+  }
+
+  // Explicit reload helper so vyer kan dra in färska data (t.ex. vid byte av kursläge)
+  async refreshFromBackend() {
+    return this.loadFromBackend();
   }
 }
 

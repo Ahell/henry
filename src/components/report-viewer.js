@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { store } from "../utils/store.js";
+import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../utils/store.js";
 import "./ui/index.js";
 import "./report/teacher-availability-tab.js";
 import "./report/scheduling-tab.js";
@@ -1831,14 +1831,9 @@ export class ReportViewer extends LitElement {
       <div class="cohort-depot-content">
         ${sortedCourses.map((course) => {
           const hasPrereqs = this.hasPrerequisites(course.course_id);
-          const blockClass =
-            course.default_block_length === 2
-              ? hasPrereqs
-                ? "prerequisite-course two-block-course"
-                : "normal-course two-block-course"
-              : hasPrereqs
-              ? "prerequisite-course"
-              : "normal-course";
+          const blockClass = hasPrereqs
+            ? "prerequisite-course"
+            : "normal-course";
           return this.renderDepotBlock(course, blockClass, cohort.cohort_id);
         })}
       </div>
@@ -1877,8 +1872,6 @@ export class ReportViewer extends LitElement {
   handleDepotDragStart(e) {
     const courseId = e.target.dataset.courseId;
     const cohortId = e.target.dataset.cohortId;
-    const course = store.getCourse(parseInt(courseId));
-    const isTwoBlock = course?.default_block_length === 2;
 
     e.dataTransfer.setData(
       "text/plain",
@@ -1886,13 +1879,12 @@ export class ReportViewer extends LitElement {
         courseId,
         cohortId,
         fromDepot: true,
-        isTwoBlock,
       })
     );
     e.dataTransfer.effectAllowed = "copyMove";
     e.target.classList.add("dragging");
 
-    this._draggingTwoBlock = isTwoBlock;
+    this._draggingTwoBlock = false;
     this._draggingFromDepot = true;
     this._draggingFromCohortId = parseInt(cohortId);
     this._draggingCourseId = parseInt(courseId);
@@ -1986,73 +1978,6 @@ export class ReportViewer extends LitElement {
     this.requestUpdate();
   }
 
-  isSecondBlockOfJok(targetSlotDate, cohortId) {
-    // Find JÖK runs for this cohort
-    const jokRuns = store
-      .getCourseRuns()
-      .filter((r) => r.cohorts && r.cohorts.includes(cohortId))
-      .filter((r) => {
-        const course = store.getCourse(r.course_id);
-        return course?.code === "AI180U"; // JÖK
-      });
-
-    if (jokRuns.length === 0) return false;
-
-    // Get all slot dates in order
-    const slots = store
-      .getSlots()
-      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-
-    for (const run of jokRuns) {
-      const jokSlot = store.getSlot(run.slot_id);
-      if (!jokSlot) continue;
-
-      const jokCourse = store.getCourse(run.course_id);
-      if (jokCourse?.default_block_length !== 2) continue;
-
-      // Find the slot index for JÖK
-      const jokSlotIndex = slots.findIndex(
-        (s) => s.slot_id === jokSlot.slot_id
-      );
-      if (jokSlotIndex < 0 || jokSlotIndex >= slots.length - 1) continue;
-
-      // The next slot is the "second block" of JÖK
-      const nextSlot = slots[jokSlotIndex + 1];
-      if (nextSlot.start_date === targetSlotDate) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * Check if target slot is the second block of a specific 2-block course run
-   */
-  isSecondBlockOfCourse(targetSlotDate, courseRun, cohortId) {
-    const course = store.getCourse(courseRun.course_id);
-    if (!course || course.default_block_length !== 2) return false;
-
-    const courseSlot = store.getSlot(courseRun.slot_id);
-    if (!courseSlot) return false;
-
-    // Get all slot dates in order
-    const slots = store
-      .getSlots()
-      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-
-    // Find the slot index for this course
-    const courseSlotIndex = slots.findIndex(
-      (s) => s.slot_id === courseSlot.slot_id
-    );
-    if (courseSlotIndex < 0 || courseSlotIndex >= slots.length - 1)
-      return false;
-
-    // The next slot is the "second block"
-    const nextSlot = slots[courseSlotIndex + 1];
-    return nextSlot.start_date === targetSlotDate;
-  }
-
   validateCourseRemoval(course, cohortId) {
     // No validation needed - courses can always be removed from the schedule
     // Dependent courses will show visual warnings (red border) instead
@@ -2096,7 +2021,6 @@ export class ReportViewer extends LitElement {
   renderGanttTableRow(cohort, slotDates) {
     // Get course runs for this cohort, indexed by slot start_date
     const runsByDate = {};
-    const twoBlockDates = new Set(); // Track which dates are "continuation" of a 2-block course
     const scheduledCourseIds = new Set(); // Track which courses are already scheduled for this cohort
 
     store
@@ -2104,7 +2028,6 @@ export class ReportViewer extends LitElement {
       .filter((r) => r.cohorts && r.cohorts.includes(cohort.cohort_id))
       .forEach((run) => {
         const slot = store.getSlot(run.slot_id);
-        const course = store.getCourse(run.course_id);
 
         scheduledCourseIds.add(run.course_id);
 
@@ -2113,14 +2036,6 @@ export class ReportViewer extends LitElement {
             runsByDate[slot.start_date] = [];
           }
           runsByDate[slot.start_date].push(run);
-
-          // If this is a 2-block course, mark the next slot as continuation
-          if (course?.default_block_length === 2) {
-            const slotIndex = slotDates.indexOf(slot.start_date);
-            if (slotIndex >= 0 && slotIndex < slotDates.length - 1) {
-              twoBlockDates.add(slotDates[slotIndex + 1]);
-            }
-          }
         }
       });
 
@@ -2138,7 +2053,6 @@ export class ReportViewer extends LitElement {
         <td class="cohort-cell">${cohort.name}</td>
         ${slotDates.map((dateStr, index) => {
           const runs = runsByDate[dateStr] || [];
-          const isContinuation = twoBlockDates.has(dateStr);
 
           // Check if this slot is before the cohort's start date
           const slotDate = new Date(dateStr);
@@ -2153,17 +2067,6 @@ export class ReportViewer extends LitElement {
           const isCohortStartSlot =
             cohortStartDate >= slotDate &&
             (nextSlotDate === null || cohortStartDate < nextSlotDate);
-
-          // Find 2-block courses that continue into this cell
-          let continuationRuns = [];
-          if (isContinuation && index > 0) {
-            const prevDate = slotDates[index - 1];
-            const prevRuns = runsByDate[prevDate] || [];
-            continuationRuns = prevRuns.filter((run) => {
-              const course = store.getCourse(run.course_id);
-              return course?.default_block_length === 2;
-            });
-          }
 
           return html`
             <td
@@ -2185,9 +2088,6 @@ export class ReportViewer extends LitElement {
               ${runs.map((run) =>
                 this.renderGanttBlockForTable(run, cohort.cohort_id, false)
               )}
-              ${continuationRuns.map((run) =>
-                this.renderGanttBlockForTable(run, cohort.cohort_id, true)
-              )}
             </td>
           `;
         })}
@@ -2195,9 +2095,9 @@ export class ReportViewer extends LitElement {
     `;
   }
 
-  renderGanttBlockForTable(run, cohortId, isSecondBlock = false) {
+  renderGanttBlockForTable(run, cohortId) {
     const course = store.getCourse(run.course_id);
-    const isTwoBlock = course?.default_block_length === 2;
+    const isTwoBlock = false;
     const hasPrereqs = this.hasPrerequisites(course?.course_id);
 
     let blockClasses = [];
@@ -2228,13 +2128,8 @@ export class ReportViewer extends LitElement {
     } else {
       blockClasses.push("normal-course");
     }
-    if (isTwoBlock) blockClasses.push("two-block-course");
-
     // Shorten course name for display
     const shortName = this.shortenCourseName(course?.name || "");
-
-    // For 2-block courses, show block number
-    const blockLabel = isTwoBlock ? (isSecondBlock ? "2/2" : "1/2") : "";
 
     // Build tooltip with prerequisite info
     let prereqInfo = hasPrereqs
@@ -2259,26 +2154,19 @@ export class ReportViewer extends LitElement {
 
     return html`
       <div
-        class="gantt-block ${blockClasses.join(" ")} ${isSecondBlock
-          ? "second-block"
-          : ""}"
+        class="gantt-block ${blockClasses.join(" ")}"
         style="${inlineStyle}"
         draggable="true"
         data-run-id="${run.run_id}"
         data-cohort-id="${cohortId}"
-        data-is-second-block="${isSecondBlock}"
-        title="${course?.code}: ${course?.name} ${isTwoBlock
-          ? `(15 hp - Block ${isSecondBlock ? "2" : "1"}/2)`
-          : ""}${prereqInfo}"
+        title="${course?.code}: ${course?.name}${prereqInfo}"
         @dragstart="${this.handleDragStart}"
         @dragend="${this.handleDragEnd}"
       >
         ${hasMissingPrereq || hasBeforePrereqProblem
           ? html`<span class="warning-icon">⚠️</span>`
           : ""}
-        <span class="course-code"
-          >${course?.code}${blockLabel ? ` ${blockLabel}` : ""}</span
-        >
+        <span class="course-code">${course?.code}</span>
         <span class="course-name">${shortName}</span>
       </div>
     `;
@@ -2355,27 +2243,23 @@ export class ReportViewer extends LitElement {
     const runId = e.target.dataset.runId;
     const cohortId = e.target.dataset.cohortId;
 
-    // Check if this is a 2-block course
-    const run = store.courseRuns.find((r) => r.run_id === parseInt(runId));
-    const course = run ? store.getCourse(run.course_id) : null;
-    const isTwoBlock = course?.default_block_length === 2;
-
     e.dataTransfer.setData(
       "text/plain",
-      JSON.stringify({ runId, cohortId, isTwoBlock })
+      JSON.stringify({ runId, cohortId })
     );
     e.dataTransfer.effectAllowed = "move";
     e.target.classList.add("dragging");
 
     // Store isTwoBlock on the element for dragover to access
-    this._draggingTwoBlock = isTwoBlock;
+    this._draggingTwoBlock = false;
     this._draggingFromDepot = false;
     this._draggingFromCohortId = parseInt(cohortId);
-    this._draggingCourseId = course?.course_id;
+    const run = store.courseRuns.find((r) => r.run_id === parseInt(runId));
+    this._draggingCourseId = run?.course_id;
 
     // Show available teachers in all cells for this cohort
-    if (course) {
-      this.showAvailableTeachersForDrag(parseInt(cohortId), course.course_id);
+    if (run) {
+      this.showAvailableTeachersForDrag(parseInt(cohortId), run.course_id);
     }
   }
 
@@ -2574,53 +2458,6 @@ export class ReportViewer extends LitElement {
       return;
     }
 
-    // For 2-block courses, check that compatible teachers are available for BOTH blocks
-    if (course.default_block_length === 2) {
-      const availableTeachersBlock1 = this.getAvailableTeachersForSlot(
-        courseId,
-        targetSlotDate,
-        targetCohortId
-      );
-
-      if (availableTeachersBlock1.length === 0) {
-        console.log(
-          `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 1.`
-        );
-        return;
-      }
-
-      // Get next slot (block 2)
-      const slots = store.getSlots().sort((a, b) => {
-        const dateA = new Date(a.start_date);
-        const dateB = new Date(b.start_date);
-        return dateA.getTime() - dateB.getTime();
-      });
-
-      const currentSlotIndex = slots.findIndex(
-        (s) => s.start_date === targetSlotDate
-      );
-      if (currentSlotIndex < 0 || currentSlotIndex >= slots.length - 1) {
-        console.log(
-          `Kan inte placera "${course.name}" - det finns inget block 2 efter denna period.`
-        );
-        return;
-      }
-
-      const nextSlot = slots[currentSlotIndex + 1];
-      const availableTeachersBlock2 = this.getAvailableTeachersForSlot(
-        courseId,
-        nextSlot.start_date,
-        targetCohortId
-      );
-
-      if (availableTeachersBlock2.length === 0) {
-        console.log(
-          `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 2.`
-        );
-        return;
-      }
-    }
-
     // Find or create slot with target date
     let targetSlot = store
       .getSlots()
@@ -2631,14 +2468,19 @@ export class ReportViewer extends LitElement {
     if (!targetSlot) {
       const startDate = new Date(targetSlotDate);
       const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 28);
-      targetSlot = store.addSlot({
-        start_date: targetSlotDate,
-        end_date: endDate.toISOString().split("T")[0],
-        evening_pattern: "tis/tor",
-        is_placeholder: false,
-      });
-      console.log("Created new slot:", targetSlot);
+      endDate.setDate(endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
+      try {
+        targetSlot = store.addSlot({
+          start_date: targetSlotDate,
+          end_date: endDate.toISOString().split("T")[0],
+          evening_pattern: "tis/tor",
+          is_placeholder: false,
+        });
+        console.log("Created new slot:", targetSlot);
+      } catch (error) {
+        console.warn("Kunde inte skapa slot:", error);
+        return;
+      }
     }
 
     // Check if this course already exists in this slot (for another cohort)
@@ -2878,55 +2720,6 @@ export class ReportViewer extends LitElement {
       return;
     }
 
-    // For 2-block courses, check that compatible teachers are available for BOTH blocks
-    if (course.default_block_length === 2) {
-      const courseId = course.course_id;
-
-      const availableTeachersBlock1 = this.getAvailableTeachersForSlot(
-        courseId,
-        targetSlotDate,
-        targetCohortId
-      );
-
-      if (availableTeachersBlock1.length === 0) {
-        console.log(
-          `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 1.`
-        );
-        return;
-      }
-
-      // Get next slot (block 2)
-      const slots = store.getSlots().sort((a, b) => {
-        const dateA = new Date(a.start_date);
-        const dateB = new Date(b.start_date);
-        return dateA.getTime() - dateB.getTime();
-      });
-
-      const currentSlotIndex = slots.findIndex(
-        (s) => s.start_date === targetSlotDate
-      );
-      if (currentSlotIndex < 0 || currentSlotIndex >= slots.length - 1) {
-        console.log(
-          `Kan inte placera "${course.name}" - det finns inget block 2 efter denna period.`
-        );
-        return;
-      }
-
-      const nextSlot = slots[currentSlotIndex + 1];
-      const availableTeachersBlock2 = this.getAvailableTeachersForSlot(
-        courseId,
-        nextSlot.start_date,
-        targetCohortId
-      );
-
-      if (availableTeachersBlock2.length === 0) {
-        console.log(
-          `Kan inte placera "${course.name}" - ingen kompatibel lärare är tillgänglig för block 2.`
-        );
-        return;
-      }
-    }
-
     // Find or create slot with target date
     let targetSlot = store
       .getSlots()
@@ -2935,13 +2728,18 @@ export class ReportViewer extends LitElement {
       // Create a new slot if needed
       const startDate = new Date(targetSlotDate);
       const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 28);
-      targetSlot = store.addSlot({
-        start_date: targetSlotDate,
-        end_date: endDate.toISOString().split("T")[0],
-        evening_pattern: "tis/tor",
-        is_placeholder: false,
-      });
+      endDate.setDate(endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
+      try {
+        targetSlot = store.addSlot({
+          start_date: targetSlotDate,
+          end_date: endDate.toISOString().split("T")[0],
+          evening_pattern: "tis/tor",
+          is_placeholder: false,
+        });
+      } catch (error) {
+        console.warn("Kunde inte skapa slot:", error);
+        return;
+      }
     }
 
     // Update the run's slot

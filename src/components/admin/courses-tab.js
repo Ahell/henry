@@ -90,30 +90,29 @@ export class CoursesTab extends LitElement {
           </div>
 
           <div class="form-row two-cols">
-            <henry-radio-group
-              id="blockLength"
-              name="blockLength"
-              label="Blocklängd"
-              value="1"
-              .options=${[
-                { value: "1", label: "1 block (7.5 hp)" },
-                { value: "2", label: "2 block (15 hp)" },
-              ]}
-            ></henry-radio-group>
+            <henry-input
+              id="courseCredits"
+              label="Högskolepoäng"
+              type="number"
+              step="0.5"
+              min="0"
+              placeholder="T.ex. 7.5"
+              required
+            ></henry-input>
             <henry-select
-            id="prerequisites"
-            label="Spärrkurser (kurser som måste läsas före)"
-            multiple
-            size="5"
-            .options=${store
-              .getCourses()
-              .filter((c) => c && c.course_id != null)
-              .map((c) => ({
-                value: String(c.course_id),
-                label: `${c.code ?? "OKÄND"} - ${c.name ?? ""}`,
-              }))}
-          ></henry-select>
-        </div>
+              id="prerequisites"
+              label="Spärrkurser (kurser som måste läsas före)"
+              multiple
+              size="5"
+              .options=${store
+                .getCourses()
+                .filter((c) => c && c.course_id != null)
+                .map((c) => ({
+                  value: String(c.course_id),
+                  label: `${c.code ?? "OKÄND"} - ${c.name ?? ""}`,
+                }))}
+            ></henry-select>
+          </div>
 
           <henry-select
             id="courseTeachers"
@@ -192,16 +191,15 @@ export class CoursesTab extends LitElement {
                 }))}
             ></henry-select>
 
-            <henry-radio-group
-              id="edit-blockLength"
-              label="Blocklängd"
-              name="edit-blockLength"
-              value="${course.default_block_length}"
-              .options=${[
-                { value: "1", label: "1 block" },
-                { value: "2", label: "2 block" },
-              ]}
-            ></henry-radio-group>
+            <henry-input
+              id="edit-credits"
+              label="Högskolepoäng"
+              type="number"
+              step="0.5"
+              min="0"
+              .value="${course.credits ?? ""}"
+              required
+            ></henry-input>
 
             <henry-select
               id="edit-compatible-teachers"
@@ -249,7 +247,7 @@ export class CoursesTab extends LitElement {
         label: "Kompatibla lärare",
         width: "200px",
       },
-      { key: "default_block_length", label: "Blocklängd", width: "100px" },
+      { key: "credits", label: "HP", width: "80px" },
       { key: "actions", label: "Åtgärder", width: "180px" },
     ];
   }
@@ -268,8 +266,8 @@ export class CoursesTab extends LitElement {
       case "compatible_teachers":
         return this.renderCompatibleTeachersForCourse(course);
 
-      case "default_block_length":
-        return html`${course.default_block_length}`;
+      case "credits":
+        return html`${course.credits ?? ""}`;
 
       case "actions":
         return html`
@@ -332,15 +330,13 @@ export class CoursesTab extends LitElement {
   handleAddCourse(e) {
     e.preventDefault();
     const root = this.shadowRoot;
-    const blockLength = parseInt(getRadioValue(root, "blockLength"));
     const prerequisites = getSelectValues(root, "prerequisites");
     const selectedTeacherIds = getSelectValues(root, "courseTeachers");
 
     const course = {
       code: getInputValue(root, "courseCode"),
       name: getInputValue(root, "courseName"),
-      hp: blockLength * 7.5,
-      default_block_length: blockLength,
+      credits: parseFloat(getInputValue(root, "courseCredits")) || 0,
       prerequisites: prerequisites,
     };
     const newCourse = store.addCourse(course);
@@ -363,7 +359,7 @@ export class CoursesTab extends LitElement {
     const root = this.shadowRoot;
     const code = getInputValue(root, "edit-code");
     const name = getInputValue(root, "edit-name");
-    const blockLength = parseInt(getRadioValue(root, "edit-blockLength"));
+    const credits = parseFloat(getInputValue(root, "edit-credits")) || 0;
     const prerequisites = getSelectValues(root, "edit-prerequisites");
     const selectedTeacherIds = getSelectValues(
       root,
@@ -373,8 +369,7 @@ export class CoursesTab extends LitElement {
     store.updateCourse(courseId, {
       code,
       name,
-      hp: blockLength * 7.5,
-      default_block_length: blockLength,
+      credits,
       prerequisites,
     });
 

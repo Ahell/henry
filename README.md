@@ -22,9 +22,10 @@ henry/
 │   ├── admin-panel.js      # Admin-gränssnitt för grunddata
 │   ├── report-viewer.js    # Rapporter och planeringsvy
 │   ├── import-export.js    # Import/export av data
-│   ├── store.js            # Datahantering och API-integration
-│   ├── businessRules.js    # Affärslogik och valideringsregler
-│   ├── seedData.js         # Initial testdata
+│   ├── utils/              # Gemensam logik
+│   │   ├── store.js        # Datahantering och API-integration
+│   │   └── businessRules.js # Affärslogik och valideringsregler
+│   ├── data/seedData.js    # Initial testdata
 │   └── main.js             # Entry point
 ├── server/                 # Backend (Express + SQLite)
 │   ├── server.js           # API-server och databas
@@ -197,8 +198,8 @@ npm run preview
 
 ## Arkitektur
 
-- **`src/store.js`** - DataStore för global state management
-- **`src/businessRules.js`** - All affärslogik (validering, regler)
+- **`src/utils/store.js`** - DataStore för global state management
+- **`src/utils/businessRules.js`** - All affärslogik (validering, regler)
 - **`src/admin-panel.js`** - Lit-komponent för grunddata
 - **`src/course-run-planner.js`** - Lit-komponent för skapande av kursomgångar
 - **`src/report-viewer.js`** - Lit-komponent för rapporter och vyer

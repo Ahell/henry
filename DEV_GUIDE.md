@@ -50,12 +50,13 @@ npm run dev           # Startar allt med live reload
 ```
 src/
 ├── main.js              # Entry point - importerar alla komponenter
-├── store.js             # VIKTIGAST! Datahantering och API-calls
 ├── admin-panel.js       # Admin-UI för CRUD på grunddata
 ├── report-viewer.js     # Planering, drag-and-drop, Gantt
 ├── import-export.js     # Import/export JSON
-├── businessRules.js     # Valideringslogik (isolerad)
-└── seedData.js          # Testdata
+├── utils/
+│   ├── store.js         # VIKTIGAST! Datahantering och API-calls
+│   └── businessRules.js # Valideringslogik (isolerad)
+└── data/seedData.js     # Testdata
 
 server/
 └── server.js            # Hela backend i en fil!
@@ -68,8 +69,8 @@ index.html               # HTML-skal, laddar main.js
 | Vad du gör      | Var                                 | Exempel               |
 | --------------- | ----------------------------------- | --------------------- |
 | Ny UI-komponent | `src/` ny fil                       | `src/student-list.js` |
-| Ny affärsregel  | `src/businessRules.js`              | Valideringsfunktion   |
-| Ny datatyp      | `src/store.js` + `server/server.js` | Lägg till entity      |
+| Ny affärsregel  | `src/utils/businessRules.js`        | Valideringsfunktion   |
+| Ny datatyp      | `src/utils/store.js` + `server/server.js` | Lägg till entity      |
 | Ny API-endpoint | `server/server.js`                  | POST /api/courses     |
 | Styling         | Inom komponenten                    | Lit css`` template    |
 
@@ -88,7 +89,7 @@ app.get('/api/programs', (req, res) => {...});
 app.post('/api/programs', (req, res) => {...});
 ```
 
-2. **Store** (`src/store.js`):
+2. **Store** (`src/utils/store.js`):
 
 ```javascript
 constructor() {
@@ -106,7 +107,7 @@ addProgram(program) {...}
 
 ### Ändra validering
 
-Allt finns i `src/businessRules.js`. T.ex.:
+Allt finns i `src/utils/businessRules.js`. T.ex.:
 
 ```javascript
 export function validateCapacity(planned_students) {
@@ -125,7 +126,7 @@ export function validateCapacity(planned_students) {
 
 - **Frontend**: Använd `shouldUpdate()` i Lit-komponenter
 - **Backend**: Lägg till index i SQLite för ofta använda queries
-- **API**: Cacha data i `store.js` istället för att hämta varje gång
+- **API**: Cacha data i `src/utils/store.js` istället för att hämta varje gång
 
 ## 🐛 Felsökning
 
@@ -195,9 +196,9 @@ node server.js
 
 ### DRY (Don't Repeat Yourself)
 
-- Gemensamma validering → `businessRules.js`
+- Gemensamma validering → `src/utils/businessRules.js`
 - Återanvändbar UI → Skapa ny Lit-komponent
-- API-anrop → Alltid via `store.js`
+- API-anrop → Alltid via `src/utils/store.js`
 
 ### Keep It Simple
 

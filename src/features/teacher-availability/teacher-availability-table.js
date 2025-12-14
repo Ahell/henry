@@ -137,7 +137,11 @@ export class TeacherAvailabilityTable extends LitElement {
     const nextFilter =
       e?.detail?.courseId === "all" ? null : Number(e?.detail?.courseId);
     this._detailCourseFilter = Number.isNaN(nextFilter) ? null : nextFilter;
-    this.requestUpdate();
+    // Ladda om data från backend så aktuell vy reflekterar sparade ändringar
+    store
+      .refreshFromBackend()
+      .catch((err) => console.error("Failed to refresh store:", err))
+      .finally(() => this.requestUpdate());
   }
 }
 

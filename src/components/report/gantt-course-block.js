@@ -9,7 +9,6 @@ export class GanttCourseBlock extends LitElement {
   static properties = {
     run: { type: Object },
     cohortId: { type: Number },
-    isSecondBlock: { type: Boolean },
   };
 
   static styles = css`
@@ -150,7 +149,6 @@ export class GanttCourseBlock extends LitElement {
     super();
     this.run = null;
     this.cohortId = null;
-    this.isSecondBlock = false;
   }
 
   render() {
@@ -159,7 +157,6 @@ export class GanttCourseBlock extends LitElement {
     const course = store.getCourse(this.run.course_id);
     if (!course) return html``;
 
-    const isTwoBlock = course.default_block_length === 2;
     const hasPrereqs = this._hasPrerequisites(course.course_id);
 
     // Check for prerequisite problems
@@ -184,12 +181,9 @@ export class GanttCourseBlock extends LitElement {
     } else {
       blockClasses.push("normal-course");
     }
-    if (isTwoBlock) blockClasses.push("two-block-course");
-
     const bgColor = this._getCourseColor(course);
     const inlineStyle = `background-color: ${bgColor};`;
     const shortName = this._shortenCourseName(course.name);
-    const blockLabel = isTwoBlock ? (this.isSecondBlock ? "2/2" : "1/2") : "";
 
     // Build tooltip
     let prereqInfo = hasPrereqs
@@ -210,20 +204,15 @@ export class GanttCourseBlock extends LitElement {
       prereqInfo += `\n⚠️ FÖRE SPÄRRKURS: ${beforePrereqs.join(", ")}`;
     }
 
-    const title = `${course.code}: ${course.name} ${
-      isTwoBlock ? `(15 hp - Block ${this.isSecondBlock ? "2" : "1"}/2)` : ""
-    }${prereqInfo}`;
+    const title = `${course.code}: ${course.name}${prereqInfo}`;
 
     return html`
       <div
-        class="gantt-block ${blockClasses.join(" ")} ${this.isSecondBlock
-          ? "second-block"
-          : ""}"
+        class="gantt-block ${blockClasses.join(" ")}"
         style="${inlineStyle}"
         draggable="true"
         data-run-id="${this.run.run_id}"
         data-cohort-id="${this.cohortId}"
-        data-is-second-block="${this.isSecondBlock}"
         title="${title}"
         @dragstart="${this._handleDragStart}"
         @dragend="${this._handleDragEnd}"
@@ -231,9 +220,7 @@ export class GanttCourseBlock extends LitElement {
         ${hasMissingPrereq || hasBeforePrereqProblem
           ? html`<span class="warning-icon">⚠️</span>`
           : ""}
-        <span class="course-code"
-          >${course.code}${blockLabel ? ` ${blockLabel}` : ""}</span
-        >
+        <span class="course-code">${course.code}</span>
         <span class="course-name">${shortName}</span>
       </div>
     `;
@@ -243,12 +230,9 @@ export class GanttCourseBlock extends LitElement {
     const runId = e.target.dataset.runId;
     const cohortId = e.target.dataset.cohortId;
 
-    const course = store.getCourse(this.run.course_id);
-    const isTwoBlock = course?.default_block_length === 2;
-
     e.dataTransfer.setData(
       "text/plain",
-      JSON.stringify({ runId, cohortId, isTwoBlock })
+      JSON.stringify({ runId, cohortId })
     );
     e.dataTransfer.effectAllowed = "move";
     e.target.classList.add("dragging");
@@ -259,8 +243,7 @@ export class GanttCourseBlock extends LitElement {
         detail: {
           runId: parseInt(runId),
           cohortId: parseInt(cohortId),
-          courseId: course?.course_id,
-          isTwoBlock,
+          courseId: this.run?.course_id,
         },
         bubbles: true,
         composed: true,

@@ -94,8 +94,8 @@ Alla Lit-komponenter som bygger upp UI:t:
 - **theme.css** - Gemensamt tema och utility classes
 - Används i alla komponenter för konsekvent design
 
-- **store.js** (892 rader) - Central datahantering, API-integration, state management
-- **businessRules.js** (120 rader) - Valideringslogik, affärsregler
+- **utils/store.js** (1946 rader) - Central datahantering, API-integration, state management
+- **utils/businessRules.js** (82 rader) - Valideringslogik, affärsregler
 
 #### `data/` - Data & Seeds
 
@@ -223,7 +223,7 @@ Små filer (<150 rader):
 ├── src/utils/businessRules.js 120 rader ✅ OK
 └── src/main.js 22 rader ✅ OK
 
-```src/utils/store.js 892 rader  ✅  OK
+```src/utils/store.js 1946 rader  ✅  OK
 
 Medelstora filer (300-700 rader):
 ├── src/data/seedData.js                664 rader  ✅  OK

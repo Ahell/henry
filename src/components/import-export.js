@@ -225,14 +225,12 @@ export class ImportExport extends LitElement {
       });
 
       // Försök identifiera vilken typ av data detta är
-      if (row.code && row.name && row.hp) {
+      const credits = row.credits ?? row.hp;
+      if (row.code && row.name && credits) {
         data.courses.push({
           code: row.code,
           name: row.name,
-          hp: parseFloat(row.hp),
-          is_law_course: row.is_law_course === "true",
-          law_type: row.law_type || null,
-          default_block_length: parseInt(row.default_block_length || "1"),
+          credits: parseFloat(credits),
         });
       }
     }
@@ -259,11 +257,9 @@ export class ImportExport extends LitElement {
   exportAsCSV() {
     const data = store.exportData();
     let csv = "Courses\n";
-    csv += "code,name,hp,is_law_course,law_type,default_block_length\n";
+    csv += "code,name,credits\n";
     data.courses.forEach((c) => {
-      csv += `${c.code},"${c.name}",${c.hp},${c.is_law_course},${
-        c.law_type || ""
-      },${c.default_block_length}\n`;
+      csv += `${c.code},"${c.name}",${c.credits ?? ""}\n`;
     });
 
     csv += "\nCohorts\n";

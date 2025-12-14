@@ -5,17 +5,6 @@
 export const BUSINESS_RULES = {
   MAX_STUDENTS_PREFERRED: 100,
   MAX_STUDENTS_HARD: 130,
-
-  LAW_COURSES: {
-    overview: "AI180U", // Juridisk översiktskurs
-    general: "AI192U", // Allmän fastighetsrätt
-    special: "AI182U", // Speciell fastighetsrätt
-    bostadsratt: "AI191U",
-    beskattning: "AI186U",
-    qualified: "AI189U",
-  },
-
-  TWO_BLOCK_COURSES: ["AI180U", "AI184U"], // Juridisk översikt + Fastighetsförmedling intro
 };
 
 /**
@@ -28,34 +17,7 @@ export function validateLawPrerequisites(
   allCourseRuns,
   store
 ) {
-  const errors = [];
-  const course = store.getCourse(courseRun.course_id);
-
-  if (!course?.is_law_course) {
-    return { valid: true, errors: [] };
-  }
-
-  // If it's a law course but NOT the overview course, check that cohort has completed overview
-  if (course.code !== BUSINESS_RULES.LAW_COURSES.overview) {
-    const overviewCourse = store.courses.find(
-      (c) => c.code === BUSINESS_RULES.LAW_COURSES.overview
-    );
-    if (overviewCourse) {
-      const cohortHasOverview = allCourseRuns.some(
-        (r) =>
-          r.course_id === overviewCourse.course_id &&
-          r.cohorts.includes(cohort.cohort_id)
-      );
-
-      if (!cohortHasOverview) {
-        errors.push(
-          `Kull ${cohort.name} måste genomföra Juridisk översiktskurs före denna juridikkurs`
-        );
-      }
-    }
-  }
-
-  return { valid: errors.length === 0, errors };
+  return { valid: true, errors: [] };
 }
 
 /**
