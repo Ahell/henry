@@ -2411,13 +2411,8 @@ app.post("/api/admin/reset-teachers", (req, res) => {
 
       // Remove teacher-course mappings and teachers
       db.prepare("DELETE FROM teacher_courses").run();
-      // Remove competency mappings referencing deleted teachers
-      if (toRemove.length > 0) {
-        const delComp = db.prepare(
-          "DELETE FROM teacher_course_competency WHERE teacher_id = ?"
-        );
-        toRemove.forEach((tid) => delComp.run(tid));
-      }
+      // Remove competency mappings referencing deleted teachers (clear all)
+      db.prepare("DELETE FROM teacher_course_competency").run();
       db.prepare("DELETE FROM teachers").run();
 
       // Remove occurrences of the deleted teacher ids from cohort_slot_courses.teachers
