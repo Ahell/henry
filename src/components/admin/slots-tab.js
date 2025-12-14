@@ -29,12 +29,7 @@ export class SlotsTab extends LitElement {
       margin-top: var(--space-4);
     }
 
-    .computed-end {
-      padding: var(--space-1) var(--space-2);
-      background: var(--color-gray-50);
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--color-border);
-    }
+    /* end date is always 28 days - not editable or shown in admin tab */
   `;
 
   static properties = {
@@ -64,15 +59,7 @@ export class SlotsTab extends LitElement {
         <form @submit="${this.handleAddSlot}">
           <div class="form-row">
             <henry-input id="slotStart" type="date" label="Startdatum" required></henry-input>
-            <div>
-              <label>Slutdatum (beräknat 28 dagar)</label>
-              <div id="computedEnd" class="computed-end">-</div>
-            </div>
-          </div>
-
-          <div class="form-row">
             <henry-select id="insertAfter" label="Infoga efter" .options=${this._getInsertOptions(sorted)}></henry-select>
-            <henry-input id="location" label="Plats" placeholder="T.ex. FEI Campus"></henry-input>
           </div>
 
           <div class="form-actions">
@@ -94,13 +81,7 @@ export class SlotsTab extends LitElement {
     `;
   }
 
-  firstUpdated() {
-    const startInput = this.shadowRoot.querySelector("#slotStart");
-    if (startInput) {
-      startInput.addEventListener("change", () => this._updateComputedEnd());
-    }
-    this._updateComputedEnd();
-  }
+  // no lifecycle work needed: end date and location are fixed/hidden
 
   _getInsertOptions(sorted) {
     const opts = [];
@@ -113,25 +94,12 @@ export class SlotsTab extends LitElement {
     return opts;
   }
 
-  _updateComputedEnd() {
-    const root = this.shadowRoot;
-    const startVal = getInputValue(root, "slotStart");
-    const endEl = root.querySelector("#computedEnd");
-    if (!startVal) {
-      endEl.textContent = "-";
-      return;
-    }
-    const endDate = store._defaultSlotEndDate(startVal);
-    const endStr = store._normalizeDateOnly(endDate);
-    endEl.textContent = endStr || "-";
-  }
+  // end date is derived by the store and not shown here
 
   _getTableColumns() {
     return [
       { key: "number", label: "#", width: "60px" },
       { key: "start_date", label: "Startdatum", width: "150px" },
-      { key: "end_date", label: "Slutdatum", width: "150px" },
-      { key: "location", label: "Plats", width: "200px" },
       { key: "actions", label: "Åtgärder", width: "180px" },
     ];
   }
@@ -147,11 +115,7 @@ export class SlotsTab extends LitElement {
       case "start_date":
         return html`${slot.start_date}`;
 
-      case "end_date":
-        return html`${slot.end_date}`;
-
-      case "location":
-        return html`${slot.location || "-"}`;
+      // end_date and location intentionally hidden from admin slot list
 
       case "actions":
         return html`
@@ -195,10 +159,8 @@ export class SlotsTab extends LitElement {
     }
 
     try {
-      const location = getInputValue(root, "location");
-      const newSlot = store.addSlot({ start_date: start, end_date: endStr, location });
+      const newSlot = store.addSlot({ start_date: start });
       resetForm(root);
-      this._updateComputedEnd();
       showSuccessMessage(this, "Slot tillagd!");
     } catch (err) {
       showErrorMessage(this, err.message || "Kunde inte lägga till slot.");
