@@ -6,6 +6,7 @@ import {
   getRadioValue,
   resetForm,
   showSuccessMessage,
+  showErrorMessage,
   initializeEditState,
   subscribeToStore,
 } from "../../utils/admin-helpers.js";
@@ -103,13 +104,17 @@ export class TeachersTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">Befintliga Lärare</henry-text>
         </div>
-        <div style="margin-bottom: 1rem;">
+        <div style="margin-bottom: 1rem; display:flex; gap: 1rem; align-items:center;">
           <henry-button
             variant="secondary"
             @click="${this.handleRandomizeCourses}"
           >
             Slumpa kurser till alla lärare
           </henry-button>
+          <input id="teacherCsvInput" type="file" accept=".csv" style="display:none" @change="${this.handleTeacherCsvUpload}" />
+          <henry-button variant="primary" @click="${() => this.shadowRoot.querySelector('#teacherCsvInput').click()}">Importera Lärare (CSV)</henry-button>
+          <henry-button variant="secondary" @click="${this.exportTeachersCsv}">Exportera Lärare (CSV)</henry-button>
+          <henry-button variant="danger" @click="${this.handleResetTeachersClick}">Återställ lärare (DB)</henry-button>
         </div>
         <henry-table
           striped
@@ -319,6 +324,112 @@ export class TeachersTab extends LitElement {
     ) {
       store.deleteTeacher(teacherId);
       showSuccessMessage(this, `Lärare "${teacherName}" borttagen!`);
+    }
+  }
+
+  async handleTeacherCsvUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const rows = this.parseTeachersCsv(text);
+
+      // Map course codes to ids
+      const courses = store.getCourses();
+      const codeToId = new Map(courses.map((c) => [c.code, c.course_id]));
+
+      rows.forEach((r) => {
+        // Try to find existing teacher by id or exact name
+        let teacher = null;
+        if (r.teacher_id) {
+          teacher = store.getTeacher(Number(r.teacher_id));
+        }
+        if (!teacher && r.name) {
+          teacher = store.getTeachers().find((t) => t.name === r.name);
+        }
+
+        const compatIds = (r.compatible_courses || [])
+          .map((v) => {
+            const maybeNum = Number(v);
+            if (Number.isFinite(maybeNum) && store.getCourse(maybeNum)) return maybeNum;
+            return codeToId.get(v) ?? null;
+          })
+          .filter(Boolean);
+
+        if (teacher) {
+          store.updateTeacher(teacher.teacher_id, {
+            name: r.name || teacher.name,
+            home_department: r.home_department || teacher.home_department,
+            compatible_courses: compatIds.length ? compatIds : teacher.compatible_courses,
+          });
+        } else {
+          store.addTeacher({
+            name: r.name,
+            home_department: r.home_department || "",
+            compatible_courses: compatIds,
+          });
+        }
+      });
+
+      showSuccessMessage(this, `Importerade ${rows.length} lärare från ${file.name}`);
+    } catch (err) {
+      showErrorMessage(this, `Fel vid import: ${err.message}`);
+    }
+  }
+
+  parseTeachersCsv(content) {
+    const lines = content.trim().split(/\r?\n/).filter(Boolean);
+    if (lines.length === 0) return [];
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(",").map((v) => v.trim());
+      const obj = {};
+      headers.forEach((h, idx) => (obj[h] = values[idx] ?? ""));
+      const compat = (obj.compatible_courses || "").split(/[;|\\/]/).map((s) => s.trim()).filter(Boolean);
+      rows.push({
+        teacher_id: obj.teacher_id ? Number(obj.teacher_id) : null,
+        name: obj.name || "",
+        home_department: obj.home_department || "",
+        compatible_courses: compat,
+      });
+    }
+    return rows;
+  }
+
+  exportTeachersCsv() {
+    const teachers = store.getTeachers();
+    const courses = store.getCourses();
+    let csv = "teacher_id,name,home_department,compatible_courses\n";
+    teachers.forEach((t) => {
+      const compat = (t.compatible_courses || [])
+        .map((cid) => store.getCourse(cid)?.code || cid)
+        .join(";");
+      csv += `${t.teacher_id},"${t.name}","${t.home_department}","${compat}"\n`;
+    });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "teachers.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async handleResetTeachersClick() {
+    if (!confirm("Är du säker? Detta kommer att radera alla lärare och ta bort deras kopplingar i DB.")) return;
+    try {
+      const res = await fetch("/api/admin/reset-teachers", { method: "POST" });
+      if (!res.ok) {
+        const js = await res.json().catch(() => ({}));
+        throw new Error(js.error || "Serverfel");
+      }
+      await store.loadFromBackend();
+      showSuccessMessage(this, "Lärare återställda och referenser rensade i DB");
+    } catch (err) {
+      showErrorMessage(this, `Kunde inte återställa lärare: ${err.message}`);
     }
   }
 }
