@@ -83,6 +83,12 @@ export class AdminPanel extends LitElement {
           Lärare
         </button>
         <button
+          class="tab-button ${this.activeTab === "slots" ? "active" : ""}"
+          @click="${() => (this.activeTab = "slots")}"
+        >
+          Slots
+        </button>
+        <button
           class="tab-button ${this.activeTab === "teacherView" ? "active" : ""}"
           @click="${() => (this.activeTab = "teacherView")}"
         >
@@ -101,6 +107,7 @@ export class AdminPanel extends LitElement {
       ${this.activeTab === "teachers"
         ? html`<teachers-tab></teachers-tab>`
         : ""}
+      ${this.activeTab === "slots" ? html`<slots-tab></slots-tab>` : ""}
       ${this.activeTab === "teacherView"
         ? html`<report-viewer
             .activeTab=${"teacher"}

@@ -132,7 +132,7 @@ export class DataStore {
       }
       const range = this._getSlotRange(slot);
       if (!range) return false;
-      return start < range.end && end > range.start;
+      return start <= range.end && end >= range.start;
     });
   }
 
@@ -155,7 +155,7 @@ export class DataStore {
     for (let i = 1; i < ranges.length; i++) {
       const prev = ranges[i - 1];
       const current = ranges[i];
-      if (current.range.start < prev.range.end) {
+      if (current.range.start <= prev.range.end) {
         const message = `Slots ${prev.range.startStr}–${prev.range.endStr} och ${current.range.startStr}–${current.range.endStr} får inte överlappa.`;
         showAlert(message);
         throw new Error(message);
@@ -1038,6 +1038,34 @@ export class DataStore {
 
   getCourseRunsBySlot(slotId) {
     return this.courseRuns.filter((r) => r.slot_id === slotId);
+  }
+
+  deleteSlot(slotId) {
+    // Prevent removal if there are course runs in the slot
+    const runs = this.getCourseRunsBySlot(slotId);
+    if (runs && runs.length > 0) {
+      const message = "Kan inte ta bort slot som har tilldelade kurskörningar.";
+      showAlert(message);
+      throw new Error(message);
+    }
+
+    const idx = this.slots.findIndex((s) => String(s.slot_id) === String(slotId));
+    if (idx === -1) return false;
+
+    // Remove slot
+    this.slots.splice(idx, 1);
+
+    // Remove any slotDays for this slot
+    this.slotDays = this.slotDays.filter((sd) => String(sd.slot_id) !== String(slotId));
+
+    // Remove any cohort_slot_courses / courseSlots referencing slot
+    this.courseSlots = (this.courseSlots || []).filter((cs) => String(cs.slot_id) !== String(slotId));
+
+    // Recompute derived data
+    this._ensureCourseSlotsFromRuns();
+    this._ensureSlotDaysFromSlots();
+    this.notify();
+    return true;
   }
 
   // Teacher Availability
