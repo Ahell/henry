@@ -71,6 +71,10 @@ export class TeacherAvailabilityTable extends LitElement {
     // Subscribe to store changes and initialize values
     store.subscribe(this._onStoreChange);
     this._onStoreChange();
+
+    // Listen for availability changes dispatched by paint handlers
+    this._onAvailabilityChanged = this._onAvailabilityChanged.bind(this);
+    this.addEventListener("availability-changed", this._onAvailabilityChanged);
   }
 
   disconnectedCallback() {
@@ -80,6 +84,37 @@ export class TeacherAvailabilityTable extends LitElement {
       const idx = store.listeners.indexOf(this._onStoreChange);
       if (idx !== -1) store.listeners.splice(idx, 1);
       this._onStoreChange = null;
+    }
+    // Remove availability listener
+    this.removeEventListener("availability-changed", this._onAvailabilityChanged);
+  }
+
+  async _onAvailabilityChanged(e) {
+    try {
+      const detail = e?.detail || {};
+      const teacherId = detail.teacherId;
+      const slotDate = detail.slotDate || detail.date;
+      const unavailable = Boolean(detail.unavailable);
+
+      if (!teacherId || !slotDate) return; // nothing we can persist
+
+      // Map slotDate (start_date) to slot_id
+      const slot = this.slots.find((s) => String(s.start_date) === String(slotDate) || String(s.slot_id) === String(slotDate));
+      if (!slot) return;
+
+      const slotId = slot.slot_id;
+      const available = unavailable ? false : true;
+
+      const payload = {};
+      payload[`${teacherId}-${slotId}`] = available;
+
+      await fetch("/api/teacher-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.error("Failed to persist teacher availability:", err);
     }
   }
 
