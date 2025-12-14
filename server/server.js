@@ -2394,6 +2394,45 @@ app.post("/api/bulk-save", (req, res) => {
   }
 });
 
+// Admin: reset teachers and all teacher-related references
+app.post("/api/admin/reset-teachers", (req, res) => {
+  try {
+    db.transaction(() => {
+      // Remove day and slot unavailability
+      db.prepare("DELETE FROM teacher_day_unavailability").run();
+      db.prepare("DELETE FROM teacher_slot_unavailability").run();
+
+      // Remove teacher-course mappings and teachers
+      db.prepare("DELETE FROM teacher_courses").run();
+      db.prepare("DELETE FROM teachers").run();
+
+      // Clear teacher assignments in cohort_slot_courses (teachers JSON)
+      const rows = db
+        .prepare("SELECT cohort_slot_course_id, teachers FROM cohort_slot_courses")
+        .all();
+      const update = db.prepare(
+        "UPDATE cohort_slot_courses SET teachers = ? WHERE cohort_slot_course_id = ?"
+      );
+      rows.forEach((r) => {
+        try {
+          const arr = JSON.parse(r.teachers || "[]");
+          if (Array.isArray(arr) && arr.length > 0) {
+            update.run(JSON.stringify([]), r.cohort_slot_course_id);
+          }
+        } catch (e) {
+          update.run(JSON.stringify([]), r.cohort_slot_course_id);
+        }
+      });
+    })();
+
+    console.log("Admin: reset teachers and cleared references");
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to reset teachers:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);

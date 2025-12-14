@@ -142,6 +142,7 @@ export class CoursesTab extends LitElement {
           <input id="courseCsvInput" type="file" accept=".csv" style="display:none" @change="${this.handleCourseCsvUpload}" />
           <henry-button variant="primary" @click="${() => this.shadowRoot.querySelector('#courseCsvInput').click()}">Importera CSV</henry-button>
           <henry-button variant="secondary" @click="${this.exportCoursesCsv}">Exportera CSV</henry-button>
+          <henry-button variant="danger" @click="${this.handleResetTeachersClick}">Återställ lärare (DB)</henry-button>
         </div>
       </henry-panel>
 
@@ -513,6 +514,28 @@ export class CoursesTab extends LitElement {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  async handleResetTeachersClick() {
+    if (
+      !confirm(
+        "Är du säker? Detta kommer att radera alla lärare och ta bort referenser till dem i kursomgångar och tillgänglighetsdata."
+      )
+    )
+      return;
+
+    try {
+      const res = await fetch("/api/admin/reset-teachers", { method: "POST" });
+      if (!res.ok) {
+        const js = await res.json().catch(() => ({}));
+        throw new Error(js.error || "Serverfel");
+      }
+      // Reload data from backend
+      await store.loadFromBackend();
+      showSuccessMessage(this, "Lärare återställda och referenser rensade i DB");
+    } catch (err) {
+      showErrorMessage(this, `Kunde inte återställa lärare: ${err.message}`);
+    }
   }
 }
 
