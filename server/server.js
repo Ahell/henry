@@ -146,6 +146,26 @@ const getConsecutiveSlotIds = (primarySlotId, span, sortedSlots = null) => {
   return ids.length > 0 ? ids : [primarySlotId];
 };
 
+// Helper: insert slot_days rows for a slot (inclusive range). Uses INSERT OR IGNORE.
+const ensureSlotDaysForSlot = (slot) => {
+  if (!slot || !slot.slot_id || !slot.start_date || !slot.end_date) return;
+  const start = new Date(slot.start_date);
+  const end = new Date(slot.end_date);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+
+  const insert = db.prepare(
+    "INSERT OR IGNORE INTO slot_days (slot_id, date) VALUES (?, ?)"
+  );
+
+  db.transaction(() => {
+    const d = new Date(start);
+    while (d <= end) {
+      insert.run(slot.slot_id, d.toISOString().split("T")[0]);
+      d.setDate(d.getDate() + 1);
+    }
+  })();
+};
+
 const upsertRunSlots = (runId, primarySlotId, span) => {
   const slotIds = getConsecutiveSlotIds(primarySlotId, span);
   const deleteStmt = db.prepare(
@@ -791,6 +811,27 @@ ensureColumn("cohort_slot_courses", "slot_span", "INTEGER DEFAULT 1");
   console.log(`Populated slot_days for ${slots.length} slots`);
 })();
 
+// Migration: deduplicate slot_days and enforce uniqueness on (slot_id, date)
+(() => {
+  const info = db
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='slot_days' AND sql LIKE '%slot_id, date%'"
+    )
+    .get();
+  // If index already exists (or is present), skip
+  if (info) return;
+
+  // Remove duplicate slot_days, keeping the lowest rowid
+  db.prepare(
+    "DELETE FROM slot_days WHERE rowid NOT IN (SELECT MIN(rowid) FROM slot_days GROUP BY slot_id, date)"
+  ).run();
+
+  db.prepare(
+    "CREATE UNIQUE INDEX IF NOT EXISTS slot_days_slot_date_unique ON slot_days(slot_id, date)"
+  ).run();
+  console.log("Deduplicated slot_days and created unique index on (slot_id, date)");
+})();
+
 // Migration: deduplicate slots and enforce uniqueness on slot signature
 (() => {
   const slots = db
@@ -1255,6 +1296,12 @@ app.post("/api/slots", (req, res) => {
     "INSERT INTO slots (slot_id, start_date, end_date) VALUES (?, ?, ?)"
   );
   stmt.run(slot.slot_id, slot.start_date, slot.end_date);
+  // Ensure the slot_days rows are created for this slot (28-day range)
+  try {
+    ensureSlotDaysForSlot(slot);
+  } catch (e) {
+    console.warn("Failed to ensure slot_days for new slot:", e);
+  }
   res.json(slot);
 });
 
@@ -2173,6 +2220,14 @@ app.post("/api/bulk-save", (req, res) => {
       dedupedSlots.forEach((s) => {
         stmt.run(s.slot_id, s.start_date, s.end_date);
       });
+      // Ensure slot_days exist for any newly inserted slots
+      dedupedSlots.forEach((s) => {
+        try {
+          ensureSlotDaysForSlot(s);
+        } catch (e) {
+          console.warn(`Failed to ensure slot_days for slot ${s.slot_id}:`, e);
+        }
+      });
     }
 
     // Insert any provided slotDays *before* we process teacher availability
@@ -2205,27 +2260,39 @@ app.post("/api/bulk-save", (req, res) => {
       if (Array.isArray(teacherAvailability)) {
         // Array format: { id, teacher_id, from_date, to_date, type, slot_id }
         teacherAvailability.forEach((a) => {
-          if (a.slot_id) {
-            if (a.type === "busy") {
-              insertStmt.run(a.id || null, remapTeacherId(a.teacher_id), remapSlotId(a.slot_id), a.created_at || new Date().toISOString());
-            } else {
-              deleteStmt.run(remapTeacherId(a.teacher_id), remapSlotId(a.slot_id));
-            }
+            if (a.slot_id) {
+              if (a.type === "busy") {
+                insertStmt.run(a.id || null, remapTeacherId(a.teacher_id), remapSlotId(a.slot_id), a.created_at || new Date().toISOString());
+              } else {
+                deleteStmt.run(remapTeacherId(a.teacher_id), remapSlotId(a.slot_id));
+              }
             } else if (a.from_date) {
-              // First try to map to a slot with that start_date (slot-level)
-              const slot = dedupedSlots?.find((s) => s.start_date === a.from_date);
-              if (slot) {
+              // Decide whether this is intended as a slot-level entry or day-level.
+              // If the client explicitly provided a slot_id, prefer slot-level.
+              // Otherwise only treat as slot-level if the provided range equals the slot's full range.
+              const startStr = (a.from_date || "").split("T")[0];
+              const endStr = (a.to_date || a.from_date || "").split("T")[0];
+              if (!startStr) return;
+
+              const slot = dedupedSlots?.find((s) => s.start_date === startStr);
+              const isFullSlotRange =
+                slot && endStr && slot.end_date === endStr;
+
+              if (a.slot_id || isFullSlotRange) {
+                console.log(`teacherAvailability: treating as slot-level for teacher ${a.teacher_id} (${startStr} - ${endStr}), slot_id=${slot ? slot.slot_id : a.slot_id}, slotRangeMatch=${isFullSlotRange}`);
+                // Treat as slot-level availability
                 if (a.type === "busy") {
-                  insertStmt.run(a.id || null, remapTeacherId(a.teacher_id), slot.slot_id, a.created_at || new Date().toISOString());
+                  insertStmt.run(
+                    a.id || null,
+                    remapTeacherId(a.teacher_id),
+                    slot ? slot.slot_id : remapSlotId(a.slot_id),
+                    a.created_at || new Date().toISOString()
+                  );
                 } else {
-                  deleteStmt.run(remapTeacherId(a.teacher_id), slot.slot_id);
+                  deleteStmt.run(remapTeacherId(a.teacher_id), slot ? slot.slot_id : remapSlotId(a.slot_id));
                 }
               } else {
                 // Treat as day-level unavailability (single date or range)
-                const startStr = (a.from_date || "").split("T")[0];
-                const endStr = (a.to_date || a.from_date || "").split("T")[0];
-                if (!startStr) return;
-
                 const dayRows = db
                   .prepare(
                     "SELECT slot_day_id, date FROM slot_days WHERE date >= ? AND date <= ?"
@@ -2235,19 +2302,23 @@ app.post("/api/bulk-save", (req, res) => {
                 if (dayRows && dayRows.length > 0) {
                   dayRows.forEach((dr) => {
                     if (a.type === "busy") {
-                      insertDayStmt.run(a.id || null, remapTeacherId(a.teacher_id), dr.slot_day_id, a.created_at || new Date().toISOString());
+                      insertDayStmt.run(
+                        a.id || null,
+                        remapTeacherId(a.teacher_id),
+                        dr.slot_day_id,
+                        a.created_at || new Date().toISOString()
+                      );
                     } else {
                       deleteDayStmt.run(remapTeacherId(a.teacher_id), dr.slot_day_id);
                     }
                   });
                 } else {
-                  // No matching slot_days (warn for debugging)
                   console.warn(
                     `No slot_days found for teacher day unavailability ${startStr} - ${endStr}`
                   );
                 }
               }
-          }
+            }
         });
       } else {
         // Object format: { "teacherId-slotId": boolean } where boolean is availability
