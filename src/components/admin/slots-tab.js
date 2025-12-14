@@ -101,7 +101,6 @@ export class SlotsTab extends LitElement {
       const s = sorted[i];
       opts.push({ value: String(s.slot_id), label: `Efter slot ${i + 1} — ${s.start_date}` });
     }
-    opts.push({ value: "last", label: "Efter sista slot" });
     return opts;
   }
 
@@ -129,10 +128,9 @@ export class SlotsTab extends LitElement {
       return;
     }
 
-    if (insertVal === "last") {
-      // allow any date after last slot end; show date input with min
+    // If the selected insert position is the last slot, allow free date after last end
+    if (idx === slots.length - 1) {
       if (slots.length === 0) {
-        // no slots yet, allow today onwards
         const min = new Date();
         this._minStartDate = this._formatDate(min);
       } else {
