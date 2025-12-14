@@ -2398,6 +2398,13 @@ app.post("/api/bulk-save", (req, res) => {
 app.post("/api/admin/reset-teachers", (req, res) => {
   try {
     db.transaction(() => {
+      // Capture all teacher IDs that will be removed so we can strip
+      // references to them from other tables.
+      const toRemove = db
+        .prepare("SELECT teacher_id FROM teachers")
+        .all()
+        .map((t) => Number(t.teacher_id));
+
       // Remove day and slot unavailability
       db.prepare("DELETE FROM teacher_day_unavailability").run();
       db.prepare("DELETE FROM teacher_slot_unavailability").run();
@@ -2406,7 +2413,7 @@ app.post("/api/admin/reset-teachers", (req, res) => {
       db.prepare("DELETE FROM teacher_courses").run();
       db.prepare("DELETE FROM teachers").run();
 
-      // Clear teacher assignments in cohort_slot_courses (teachers JSON)
+      // Remove occurrences of the deleted teacher ids from cohort_slot_courses.teachers
       const rows = db
         .prepare("SELECT cohort_slot_course_id, teachers FROM cohort_slot_courses")
         .all();
@@ -2417,9 +2424,16 @@ app.post("/api/admin/reset-teachers", (req, res) => {
         try {
           const arr = JSON.parse(r.teachers || "[]");
           if (Array.isArray(arr) && arr.length > 0) {
-            update.run(JSON.stringify([]), r.cohort_slot_course_id);
+            const filtered = arr
+              .map((x) => (typeof x === "string" ? Number(x) : x))
+              .filter((id) => !toRemove.includes(Number(id)));
+            // Only update if changed
+            if (filtered.length !== arr.length) {
+              update.run(JSON.stringify(filtered), r.cohort_slot_course_id);
+            }
           }
         } catch (e) {
+          // If parsing failed, clear the field to be safe
           update.run(JSON.stringify([]), r.cohort_slot_course_id);
         }
       });
@@ -2429,6 +2443,40 @@ app.post("/api/admin/reset-teachers", (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Failed to reset teachers:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: reset courses and clear course-related references
+app.post("/api/admin/reset-courses", (req, res) => {
+  try {
+    db.transaction(() => {
+      // Remove course prerequisites
+      db.prepare("DELETE FROM course_prerequisites").run();
+
+      // Remove cohort slot course rows and related course_slot_days and course_run_slots
+      db.prepare("DELETE FROM course_slot_days").run();
+      db.prepare("DELETE FROM course_run_slots").run();
+      db.prepare("DELETE FROM cohort_slot_courses").run();
+
+      // Remove teacher_course mappings for deleted courses
+      db.prepare("DELETE FROM teacher_courses").run();
+
+      // The canonical mapping between teachers and courses is stored in
+      // `teacher_courses`. We intentionally do not attempt to modify any
+      // optional/legacy columns on the `teachers` table (such as
+      // `compatible_courses`) because the DB schema is the source of truth.
+      // Deleting rows from `teacher_courses` is sufficient to remove
+      // course associations. Frontend reload will reflect the updated state.
+
+      // Finally remove courses
+      db.prepare("DELETE FROM courses").run();
+    })();
+
+    console.log("Admin: reset courses and cleared references");
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to reset courses:", error);
     res.status(500).json({ error: error.message });
   }
 });
