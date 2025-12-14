@@ -51,10 +51,14 @@ export class SlotsTab extends LitElement {
   }
 
   render() {
-    const sorted = (this.slots || []).slice().sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+    const sorted = (this.slots || [])
+      .slice()
+      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
     return html`
-      ${this.message ? html`<div class="${this.messageType}">${this.message}</div>` : ""}
+      ${this.message
+        ? html`<div class="${this.messageType}">${this.message}</div>`
+        : ""}
 
       <henry-panel>
         <div slot="header">
@@ -63,22 +67,42 @@ export class SlotsTab extends LitElement {
 
         <form @submit="${this.handleAddSlot}">
           <div class="form-row">
-            <henry-select id="insertAfter" label="Infoga efter" .options=${this._getInsertOptions(sorted)} @select-change="${(e) => this._onInsertAfterChange(e)}" required></henry-select>
-            <henry-select id="slotStart" label="Startdatum" required .options=${this.startOptions} .placeholder=${this.selectedInsertAfter && (this.startOptions || []).length === 0 ? "Inga tillgängliga startdatum för vald position." : "Välj..."}></henry-select>
+            <henry-select
+              id="insertAfter"
+              label="Infoga efter"
+              .options=${this._getInsertOptions(sorted)}
+              @select-change="${(e) => this._onInsertAfterChange(e)}"
+              required
+            ></henry-select>
+            <henry-select
+              id="slotStart"
+              label="Startdatum"
+              required
+              .options=${this.startOptions}
+              .placeholder=${this.selectedInsertAfter &&
+              (this.startOptions || []).length === 0
+                ? "Inga tillgängliga startdatum för vald position."
+                : "Välj..."}
+            ></henry-select>
           </div>
 
           <div class="form-actions">
             <henry-button
               type="submit"
               variant="primary"
-              ?disabled=${!this.allowFreeDate && this.selectedInsertAfter && (this.startOptions || []).length === 0}
-            >Lägg till Slot</henry-button>
+              ?disabled=${!this.allowFreeDate &&
+              this.selectedInsertAfter &&
+              (this.startOptions || []).length === 0}
+              >Lägg till Slot</henry-button
+            >
           </div>
         </form>
       </henry-panel>
 
       <henry-panel>
-        <div slot="header"><henry-text variant="heading-3">Befintliga Slots</henry-text></div>
+        <div slot="header">
+          <henry-text variant="heading-3">Befintliga Slots</henry-text>
+        </div>
         <henry-table
           striped
           hoverable
@@ -97,7 +121,10 @@ export class SlotsTab extends LitElement {
     // User cannot insert before first slot; options are after slot 1..N and after last
     for (let i = 0; i < sorted.length; i++) {
       const s = sorted[i];
-      opts.push({ value: String(s.slot_id), label: `Efter slot ${i + 1} — ${s.start_date}` });
+      opts.push({
+        value: String(s.slot_id),
+        label: `Efter slot ${i + 1} — ${s.start_date}`,
+      });
     }
     return opts;
   }
@@ -118,7 +145,9 @@ export class SlotsTab extends LitElement {
   }
 
   _computeStartOptions(insertVal) {
-    const slots = (this.slots || []).slice().sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+    const slots = (this.slots || [])
+      .slice()
+      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
     if (!insertVal) {
       this.startOptions = [];
       this.allowFreeDate = false;
@@ -208,7 +237,9 @@ export class SlotsTab extends LitElement {
     switch (column.key) {
       case "number":
         // derive numbering by start_date ordering
-        const sorted = (this.slots || []).slice().sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+        const sorted = (this.slots || [])
+          .slice()
+          .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
         const idx = sorted.findIndex((s) => s.slot_id === slot.slot_id);
         return html`${idx + 1}`;
 
@@ -220,7 +251,12 @@ export class SlotsTab extends LitElement {
       case "actions":
         return html`
           <div style="display:flex;gap:var(--space-2);">
-            <henry-button variant="danger" size="small" @click="${() => this.handleDeleteSlot(slot.slot_id)}">Ta bort</henry-button>
+            <henry-button
+              variant="danger"
+              size="small"
+              @click="${() => this.handleDeleteSlot(slot.slot_id)}"
+              >Ta bort</henry-button
+            >
           </div>
         `;
 
@@ -243,11 +279,16 @@ export class SlotsTab extends LitElement {
     const endStr = store._normalizeDateOnly(endDate);
 
     // Basic validation: can't add before first slot
-    const current = (store.getSlots() || []).slice().sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+    const current = (store.getSlots() || [])
+      .slice()
+      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
     if (current.length > 0) {
       const firstStart = current[0].start_date;
       if (new Date(start) < new Date(firstStart)) {
-        showErrorMessage(this, "Slot får inte läggas före den första befintliga slotten.");
+        showErrorMessage(
+          this,
+          "Slot får inte läggas före den första befintliga slotten."
+        );
         return;
       }
     }
@@ -255,7 +296,17 @@ export class SlotsTab extends LitElement {
     // Check for overlap
     const overlapping = store._findOverlappingSlot(start, endStr);
     if (overlapping) {
-      showErrorMessage(this, `Slot ${start}–${endStr} överlappar med befintlig slot ${overlapping.start_date}–${overlapping.end_date || store._normalizeDateOnly(store._defaultSlotEndDate(overlapping.start_date))}`);
+      showErrorMessage(
+        this,
+        `Slot ${start}–${endStr} överlappar med befintlig slot ${
+          overlapping.start_date
+        }–${
+          overlapping.end_date ||
+          store._normalizeDateOnly(
+            store._defaultSlotEndDate(overlapping.start_date)
+          )
+        }`
+      );
       return;
     }
 
@@ -271,7 +322,10 @@ export class SlotsTab extends LitElement {
   handleDeleteSlot(slotId) {
     const runs = store.getCourseRunsBySlot(slotId);
     if (runs && runs.length > 0) {
-      showErrorMessage(this, "Kan inte ta bort slot som har tilldelade kurskörningar.");
+      showErrorMessage(
+        this,
+        "Kan inte ta bort slot som har tilldelade kurskörningar."
+      );
       return;
     }
     if (confirm("Är du säker på att du vill ta bort denna slot?")) {

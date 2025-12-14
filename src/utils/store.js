@@ -148,9 +148,7 @@ export class DataStore {
       ranges.push({ slot, range });
     }
 
-    ranges.sort(
-      (a, b) => a.range.start.getTime() - b.range.start.getTime()
-    );
+    ranges.sort((a, b) => a.range.start.getTime() - b.range.start.getTime());
 
     for (let i = 1; i < ranges.length; i++) {
       const prev = ranges[i - 1];
@@ -737,8 +735,7 @@ export class DataStore {
       code: course.code || "",
       name: course.name || "",
       credits:
-        Number.isFinite(Number(course.credits)) &&
-        Number(course.credits) === 15
+        Number.isFinite(Number(course.credits)) && Number(course.credits) === 15
           ? 15
           : 7.5,
       prerequisites: course.prerequisites || [], // Array of course_ids that must be completed before this course
@@ -1049,17 +1046,23 @@ export class DataStore {
       throw new Error(message);
     }
 
-    const idx = this.slots.findIndex((s) => String(s.slot_id) === String(slotId));
+    const idx = this.slots.findIndex(
+      (s) => String(s.slot_id) === String(slotId)
+    );
     if (idx === -1) return false;
 
     // Remove slot
     this.slots.splice(idx, 1);
 
     // Remove any slotDays for this slot
-    this.slotDays = this.slotDays.filter((sd) => String(sd.slot_id) !== String(slotId));
+    this.slotDays = this.slotDays.filter(
+      (sd) => String(sd.slot_id) !== String(slotId)
+    );
 
     // Remove any cohort_slot_courses / courseSlots referencing slot
-    this.courseSlots = (this.courseSlots || []).filter((cs) => String(cs.slot_id) !== String(slotId));
+    this.courseSlots = (this.courseSlots || []).filter(
+      (cs) => String(cs.slot_id) !== String(slotId)
+    );
 
     // Recompute derived data
     this._ensureCourseSlotsFromRuns();
@@ -1250,23 +1253,17 @@ export class DataStore {
     // Support both slot_id (number/string) and start_date (string)
     const slot =
       this.slots.find((s) => String(s.slot_id) === String(slotDateOrId)) ||
-      this.slots.find(
-        (s) => normalizeDate(s.start_date) === normalizedDate
-      );
+      this.slots.find((s) => normalizeDate(s.start_date) === normalizedDate);
 
     // Prefer normalized slotDays if they exist
     if (
       slot?.slot_id &&
       Array.isArray(this.slotDays) &&
-      this.slotDays.some(
-        (sd) => String(sd.slot_id) === String(slot.slot_id)
-      )
+      this.slotDays.some((sd) => String(sd.slot_id) === String(slot.slot_id))
     ) {
       return this.slotDays
         .filter((sd) => String(sd.slot_id) === String(slot.slot_id))
-        .sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        )
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .map((sd) => normalizeDate(sd.date));
     }
 
@@ -1358,10 +1355,8 @@ export class DataStore {
 
     const normalizeDate = (value) => (value || "").split("T")[0];
     let nextId =
-      this.slotDays.reduce(
-        (max, sd) => Math.max(max, sd.slot_day_id || 0),
-        0
-      ) + 1;
+      this.slotDays.reduce((max, sd) => Math.max(max, sd.slot_day_id || 0), 0) +
+      1;
 
     for (const slot of this.slots || []) {
       const hasDays = this.slotDays.some(
@@ -1482,15 +1477,12 @@ export class DataStore {
     if (courseId != null) {
       const specificIndex = this.teachingDays.findIndex(
         (td) =>
-          td.slot_id === slotId &&
-          td.date === date &&
-          td.course_id === courseId
+          td.slot_id === slotId && td.date === date && td.course_id === courseId
       );
-      const baseState =
-        this.getTeachingDayState(slotId, date, courseId) || {
-          isDefault: isDefaultDate,
-          active: false,
-        };
+      const baseState = this.getTeachingDayState(slotId, date, courseId) || {
+        isDefault: isDefaultDate,
+        active: false,
+      };
       const desiredActive = !(baseState.active ?? false);
 
       if (specificIndex !== -1) {
@@ -1558,9 +1550,7 @@ export class DataStore {
       const td =
         this.teachingDays.find(
           (t) =>
-            t.slot_id === slotId &&
-            t.date === date &&
-            t.course_id === courseId
+            t.slot_id === slotId && t.date === date && t.course_id === courseId
         ) ||
         this.teachingDays.find(
           (t) =>
@@ -1846,7 +1836,10 @@ export class DataStore {
       compat.forEach((cid) => {
         const key = `${t.teacher_id}-${cid}`;
         if (!existingKeys.has(key)) {
-          this.teacherCourses.push({ teacher_id: t.teacher_id, course_id: cid });
+          this.teacherCourses.push({
+            teacher_id: t.teacher_id,
+            course_id: cid,
+          });
           existingKeys.add(key);
         }
       });
