@@ -45,7 +45,17 @@ export function showErrorMessage(component, message, duration = 5000) {
  * @returns {string} The input value
  */
 export function getInputValue(root, id) {
-  return root.querySelector(`#${id}`).getInput().value;
+  const el = root.querySelector(`#${id}`);
+  if (!el) return "";
+  if (typeof el.getInput === "function") {
+    const input = el.getInput();
+    return input ? input.value : "";
+  }
+  if (typeof el.getSelect === "function") {
+    const select = el.getSelect();
+    return select ? select.value : "";
+  }
+  return el.value ?? "";
 }
 
 /**

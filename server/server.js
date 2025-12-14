@@ -9,6 +9,8 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const db = new Database(join(__dirname, "henry.db"));
+db.pragma("busy_timeout = 5000");
+const DEFAULT_SLOT_LENGTH_DAYS = 28;
 
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
@@ -72,6 +74,7 @@ db.exec(`
     slot_id INTEGER NOT NULL,
     cohort_id INTEGER,
     teachers TEXT,
+    slot_span INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(course_id, slot_id, cohort_id)
   );
@@ -89,7 +92,74 @@ db.exec(`
     is_default INTEGER DEFAULT 0,
     active INTEGER DEFAULT 1
   );
+
+  CREATE TABLE IF NOT EXISTS course_run_slots (
+    run_slot_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id INTEGER NOT NULL,
+    slot_id INTEGER NOT NULL,
+    sequence INTEGER DEFAULT 1,
+    UNIQUE(run_id, slot_id)
+  );
 `);
+
+// Helpers
+const normalizeCourseCode = (code) => {
+  if (typeof code !== "string") return null;
+  const normalized = code.trim().toUpperCase();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const normalizeCredits = (value) => {
+  const num = Number(value);
+  return num === 15 ? 15 : 7.5;
+};
+
+const getSortedSlots = () =>
+  db
+    .prepare(
+      "SELECT slot_id, start_date FROM slots ORDER BY date(start_date), slot_id"
+    )
+    .all();
+
+const computeCourseSlotSpan = (courseId) => {
+  const course = db
+    .prepare("SELECT credits FROM courses WHERE course_id = ?")
+    .get(courseId);
+  return course && normalizeCredits(course.credits) === 15 ? 2 : 1;
+};
+
+const getConsecutiveSlotIds = (primarySlotId, span, sortedSlots = null) => {
+  const orderedSlots = sortedSlots || getSortedSlots();
+  const index = orderedSlots.findIndex(
+    (s) => String(s.slot_id) === String(primarySlotId)
+  );
+  if (index === -1) {
+    return [primarySlotId];
+  }
+
+  const ids = [];
+  for (let i = 0; i < span; i++) {
+    const slot = orderedSlots[index + i];
+    if (!slot) break;
+    ids.push(slot.slot_id);
+  }
+  return ids.length > 0 ? ids : [primarySlotId];
+};
+
+const upsertRunSlots = (runId, primarySlotId, span) => {
+  const slotIds = getConsecutiveSlotIds(primarySlotId, span);
+  const deleteStmt = db.prepare(
+    "DELETE FROM course_run_slots WHERE run_id = ?"
+  );
+  const insertStmt = db.prepare(
+    "INSERT OR IGNORE INTO course_run_slots (run_id, slot_id, sequence) VALUES (?, ?, ?)"
+  );
+  db.transaction(() => {
+    deleteStmt.run(runId);
+    slotIds.forEach((slotId, idx) => insertStmt.run(runId, slotId, idx + 1));
+  })();
+  return slotIds;
+};
 
 // Migration: deduplicate teacher_courses to fix UNIQUE constraint
 (() => {
@@ -121,6 +191,49 @@ const ensureColumn = (table, column, typeWithDefault) => {
 
 ensureColumn("course_slot_days", "is_default", "INTEGER DEFAULT 0");
 ensureColumn("course_slot_days", "active", "INTEGER DEFAULT 1");
+ensureColumn("cohort_slot_courses", "slot_span", "INTEGER DEFAULT 1");
+
+// Migration: backfill slot_span and populate course_run_slots for existing runs
+(() => {
+  const runs = db
+    .prepare(
+      "SELECT cohort_slot_course_id, course_id, slot_id, slot_span FROM cohort_slot_courses"
+    )
+    .all();
+  if (runs.length === 0) return;
+
+  const sortedSlots = getSortedSlots();
+  const updateSpan = db.prepare(
+    "UPDATE cohort_slot_courses SET slot_span = ? WHERE cohort_slot_course_id = ?"
+  );
+  const insertRunSlot = db.prepare(
+    "INSERT OR IGNORE INTO course_run_slots (run_id, slot_id, sequence) VALUES (?, ?, ?)"
+  );
+
+  try {
+    db.transaction(() => {
+      runs.forEach((run) => {
+        const spanFromCourse = computeCourseSlotSpan(run.course_id);
+        const span =
+          Number(run.slot_span) >= 2 ? Number(run.slot_span) : spanFromCourse;
+        updateSpan.run(span, run.cohort_slot_course_id);
+
+        const slotIds = getConsecutiveSlotIds(run.slot_id, span, sortedSlots);
+        slotIds.forEach((slotId, idx) =>
+          insertRunSlot.run(run.cohort_slot_course_id, slotId, idx + 1)
+        );
+      });
+    })();
+  } catch (err) {
+    if (err && err.code === "SQLITE_BUSY") {
+      console.warn(
+        "Skipping slot_span backfill due to locked database; will retry on next start"
+      );
+    } else {
+      throw err;
+    }
+  }
+})();
 
 // Migration: drop legacy course_runs table (schedule now lives in cohort_slot_courses)
 (() => {
@@ -181,13 +294,6 @@ ensureColumn("course_slot_days", "active", "INTEGER DEFAULT 1");
     `Migrated ${existing.length} rows from course_slots to cohort_slot_courses`
   );
 })();
-
-// Normalize course codes to avoid duplicates caused by spacing/casing
-const normalizeCourseCode = (code) => {
-  if (typeof code !== "string") return null;
-  const normalized = code.trim().toUpperCase();
-  return normalized.length > 0 ? normalized : null;
-};
 
 // Migration: drop legacy compatible_courses column from teachers
 (() => {
@@ -528,14 +634,11 @@ const normalizeCourseCode = (code) => {
   let changes = 0;
 
   courses.forEach((c) => {
-    const normalizedCode = normalizeCourseCode(c.code);
-    const expectedCredits = normalizedCode === "AI180U" ? 15 : 7.5;
-    const current =
-      typeof c.credits === "number" ? c.credits : Number(c.credits);
+    const normalized = normalizeCredits(c.credits);
     const needsUpdate =
-      !Number.isFinite(current) || current !== expectedCredits;
+      !Number.isFinite(Number(c.credits)) || c.credits !== normalized;
     if (needsUpdate) {
-      const result = update.run(expectedCredits, c.course_id);
+      const result = update.run(normalized, c.course_id);
       changes += result.changes ?? 0;
     }
   });
@@ -623,6 +726,38 @@ const normalizeCourseCode = (code) => {
   })();
 
   console.log("Rebuilt slots table without year/term/period columns");
+})();
+
+// Migration: normalize slot end_date to DEFAULT_SLOT_LENGTH_DAYS (28 days)
+(() => {
+  const slots = db
+    .prepare("SELECT slot_id, start_date, end_date FROM slots")
+    .all();
+  if (slots.length === 0) return;
+
+  const update = db.prepare(
+    "UPDATE slots SET end_date = ? WHERE slot_id = ?"
+  );
+  let changes = 0;
+
+  slots.forEach((s) => {
+    if (!s.start_date) return;
+    const start = new Date(s.start_date);
+    if (Number.isNaN(start.getTime())) return;
+    const end = new Date(start);
+    end.setDate(end.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
+    const endStr = end.toISOString().split("T")[0];
+    if (s.end_date !== endStr) {
+      const result = update.run(endStr, s.slot_id);
+      changes += result.changes ?? 0;
+    }
+  });
+
+  if (changes > 0) {
+    console.log(
+      `Normalized slot end_date to ${DEFAULT_SLOT_LENGTH_DAYS} days for ${changes} slots`
+    );
+  }
 })();
 
 // Migration: deduplicate slots and enforce uniqueness on slot signature
@@ -976,20 +1111,22 @@ app.get("/api/courses", (req, res) => {
 
 app.post("/api/courses", (req, res) => {
   const course = req.body;
+  const credits = normalizeCredits(course.credits);
   const stmt = db.prepare(
     "INSERT INTO courses (course_id, name, code, credits) VALUES (?, ?, ?, ?)"
   );
-  stmt.run(course.course_id, course.name, course.code, course.credits);
-  res.json(course);
+  stmt.run(course.course_id, course.name, course.code, credits);
+  res.json({ ...course, credits });
 });
 
 app.put("/api/courses/:id", (req, res) => {
   const course = req.body;
+  const credits = normalizeCredits(course.credits);
   const stmt = db.prepare(
     "UPDATE courses SET name = ?, code = ?, credits = ? WHERE course_id = ?"
   );
-  stmt.run(course.name, course.code, course.credits, req.params.id);
-  res.json(course);
+  stmt.run(course.name, course.code, credits, req.params.id);
+  res.json({ ...course, credits });
 });
 
 app.delete("/api/courses/:id", (req, res) => {
@@ -1093,13 +1230,43 @@ app.get("/api/course-runs", (req, res) => {
     .prepare("SELECT * FROM cohort_slot_courses")
     .all()
     .map((cs) => deserializeArrayFields(cs, ["teachers"]));
-  const runs = courseSlots.map((cs) => ({
-    run_id: cs.cohort_slot_course_id,
-    course_id: cs.course_id,
-    slot_id: cs.slot_id,
-    cohorts: cs.cohort_id != null ? [cs.cohort_id] : [],
-    teachers: cs.teachers || [],
-  }));
+
+  const runSlotRows = db
+    .prepare("SELECT run_id, slot_id, sequence FROM course_run_slots")
+    .all();
+  const slotsByRun = new Map();
+  runSlotRows.forEach((row) => {
+    const list = slotsByRun.get(row.run_id) || [];
+    list.push(row);
+    slotsByRun.set(row.run_id, list);
+  });
+  const sortedSlots = getSortedSlots();
+
+  const runs = courseSlots.map((cs) => {
+    const rawSlots = slotsByRun.get(cs.cohort_slot_course_id) || [];
+    const slotIds =
+      rawSlots.length > 0
+        ? rawSlots
+            .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
+            .map((r) => r.slot_id)
+        : getConsecutiveSlotIds(
+            cs.slot_id,
+            Number(cs.slot_span) >= 2
+              ? Number(cs.slot_span)
+              : computeCourseSlotSpan(cs.course_id),
+            sortedSlots
+          );
+
+    return {
+      run_id: cs.cohort_slot_course_id,
+      course_id: cs.course_id,
+      slot_id: slotIds[0] ?? cs.slot_id,
+      slot_ids: slotIds,
+      slot_span: slotIds.length || Number(cs.slot_span) || 1,
+      cohorts: cs.cohort_id != null ? [cs.cohort_id] : [],
+      teachers: cs.teachers || [],
+    };
+  });
   res.json(runs);
 });
 
@@ -1110,8 +1277,9 @@ app.post("/api/course-runs", (req, res) => {
       ? payload.cohorts
       : [null];
   const teachers = Array.isArray(payload.teachers) ? payload.teachers : [];
+  const slotSpan = computeCourseSlotSpan(payload.course_id);
   const insert = db.prepare(
-    "INSERT INTO cohort_slot_courses (course_id, slot_id, cohort_id, teachers) VALUES (?, ?, ?, ?)"
+    "INSERT INTO cohort_slot_courses (course_id, slot_id, cohort_id, teachers, slot_span) VALUES (?, ?, ?, ?, ?)"
   );
   const created = [];
   db.transaction(() => {
@@ -1120,12 +1288,20 @@ app.post("/api/course-runs", (req, res) => {
         payload.course_id,
         payload.slot_id,
         cohortId,
-        JSON.stringify(teachers)
+        JSON.stringify(teachers),
+        slotSpan
+      );
+      const slotIds = upsertRunSlots(
+        Number(result.lastInsertRowid),
+        payload.slot_id,
+        slotSpan
       );
       created.push({
         run_id: result.lastInsertRowid,
         course_id: payload.course_id,
         slot_id: payload.slot_id,
+        slot_ids: slotIds,
+        slot_span: slotSpan,
         cohorts: cohortId != null ? [cohortId] : [],
         teachers,
       });
@@ -1137,8 +1313,9 @@ app.post("/api/course-runs", (req, res) => {
 app.put("/api/course-runs/:id", (req, res) => {
   const payload = req.body;
   const teachers = Array.isArray(payload.teachers) ? payload.teachers : [];
+  const slotSpan = computeCourseSlotSpan(payload.course_id);
   const stmt = db.prepare(
-    "UPDATE cohort_slot_courses SET course_id = ?, slot_id = ?, cohort_id = ?, teachers = ? WHERE cohort_slot_course_id = ?"
+    "UPDATE cohort_slot_courses SET course_id = ?, slot_id = ?, cohort_id = ?, teachers = ?, slot_span = ? WHERE cohort_slot_course_id = ?"
   );
   stmt.run(
     payload.course_id,
@@ -1147,12 +1324,20 @@ app.put("/api/course-runs/:id", (req, res) => {
       ? payload.cohorts[0]
       : null,
     JSON.stringify(teachers),
+    slotSpan,
     req.params.id
+  );
+  const slotIds = upsertRunSlots(
+    Number(req.params.id),
+    payload.slot_id,
+    slotSpan
   );
   res.json({
     run_id: Number(req.params.id),
     course_id: payload.course_id,
     slot_id: payload.slot_id,
+    slot_ids: slotIds,
+    slot_span: slotSpan,
     cohorts:
       Array.isArray(payload.cohorts) && payload.cohorts.length > 0
         ? payload.cohorts
@@ -1162,6 +1347,9 @@ app.put("/api/course-runs/:id", (req, res) => {
 });
 
 app.delete("/api/course-runs/:id", (req, res) => {
+  db.prepare("DELETE FROM course_run_slots WHERE run_id = ?").run(
+    req.params.id
+  );
   db.prepare(
     "DELETE FROM cohort_slot_courses WHERE cohort_slot_course_id = ?"
   ).run(req.params.id);
@@ -1209,6 +1397,15 @@ app.get("/api/bulk-load", (req, res) => {
     const cohortSlotCoursesRaw = db
       .prepare("SELECT * FROM cohort_slot_courses")
       .all();
+    const courseRunSlots = db.prepare("SELECT * FROM course_run_slots").all();
+    const slotsByRun = new Map();
+    courseRunSlots.forEach((row) => {
+      const list = slotsByRun.get(row.run_id) || [];
+      list.push(row);
+      slotsByRun.set(row.run_id, list);
+    });
+    const sortedSlots = getSortedSlots();
+
     const courseSlots = cohortSlotCoursesRaw.map((cs) => {
       const parsed = deserializeArrayFields(cs, ["teachers"]);
       return {
@@ -1219,13 +1416,31 @@ app.get("/api/bulk-load", (req, res) => {
     });
 
     // Build courseRuns from cohort_slot_courses (one run per cohort-slot-course)
-    const courseRuns = courseSlots.map((cs) => ({
-      run_id: cs.cohort_slot_course_id,
-      course_id: cs.course_id,
-      slot_id: cs.slot_id,
-      cohorts: cs.cohort_id != null ? [cs.cohort_id] : [],
-      teachers: cs.teachers || [],
-    }));
+    const courseRuns = courseSlots.map((cs) => {
+      const rawSlots = slotsByRun.get(cs.cohort_slot_course_id) || [];
+      const slotIds =
+        rawSlots.length > 0
+          ? rawSlots
+              .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
+              .map((r) => r.slot_id)
+          : getConsecutiveSlotIds(
+              cs.slot_id,
+              Number(cs.slot_span) >= 2
+                ? Number(cs.slot_span)
+                : computeCourseSlotSpan(cs.course_id),
+              sortedSlots
+            );
+
+      return {
+        run_id: cs.cohort_slot_course_id,
+        course_id: cs.course_id,
+        slot_id: slotIds[0] ?? cs.slot_id,
+        slot_ids: slotIds,
+        slot_span: slotIds.length || Number(cs.slot_span) || 1,
+        cohorts: cs.cohort_id != null ? [cs.cohort_id] : [],
+        teachers: cs.teachers || [],
+      };
+    });
 
     const availability = db.prepare("SELECT * FROM teacher_availability").all();
     // Convert database format to application format (array of availability objects)
@@ -1248,6 +1463,7 @@ app.get("/api/bulk-load", (req, res) => {
       teachers: teachers.length,
       slots: slots.length,
       courseRuns: courseRuns.length,
+      courseRunSlots: courseRunSlots.length,
       teacherAvailability: Object.keys(teacherAvailability).length,
     });
 
@@ -1293,6 +1509,7 @@ app.get("/api/bulk-load", (req, res) => {
       teacherAvailability,
       courseSlots,
       cohortSlotCourses: courseSlots,
+      courseRunSlots,
       slotDays,
       courseSlotDays,
       coursePrerequisites,
@@ -1376,6 +1593,14 @@ app.post("/api/bulk-save", (req, res) => {
     if (id == null) return id;
     return courseIdMapping.get(id) ?? id;
   };
+  const creditsByCourseId = new Map(
+    (dedupedCourses || []).map((c) => [
+      remapCourseId(c.course_id),
+      normalizeCredits(c.credits),
+    ])
+  );
+  const spanForCourse = (courseId) =>
+    creditsByCourseId.get(courseId) === 15 ? 2 : 1;
 
   const normalizeId = (value) => {
     if (value === null || value === undefined) return value;
@@ -1593,6 +1818,10 @@ app.post("/api/bulk-save", (req, res) => {
         course_id: normalizeId(remapCourseId(cs.course_id)),
         slot_id: normalizeId(remapSlotId(cs.slot_id)),
         cohort_id: normalizeId(remapCohortId(cs.cohort_id ?? null)),
+        slot_span:
+          Number(cs.slot_span) >= 2
+            ? Number(cs.slot_span)
+            : spanForCourse(normalizeId(remapCourseId(cs.course_id))),
         teachers: Array.isArray(cs.teachers)
           ? Array.from(
               new Set(
@@ -1667,11 +1896,18 @@ app.post("/api/bulk-save", (req, res) => {
             Array.isArray(r.cohorts) && r.cohorts.length > 0
               ? r.cohorts
               : [null];
+          const runSpan =
+            Number(r.slot_span) >= 2
+              ? Number(r.slot_span)
+              : Array.isArray(r.slot_ids) && r.slot_ids.length > 1
+              ? r.slot_ids.length
+              : spanForCourse(remapCourseId(r.course_id));
           return cohortsArr.map((cohortId) => ({
             course_id: r.course_id,
             slot_id: r.slot_id,
             cohort_id: cohortId,
             teachers: Array.isArray(r.teachers) ? r.teachers : [],
+            slot_span: runSpan,
           }));
         })
       : null;
@@ -1685,6 +1921,72 @@ app.post("/api/bulk-save", (req, res) => {
     if (id == null) return id;
     return courseSlotIdMapping.get(id) ?? id;
   };
+
+  const courseRunSlotsInput = Array.isArray(req.body.courseRunSlots)
+    ? req.body.courseRunSlots
+    : [];
+  const runSlotOverrides = new Map(); // run_id -> [slot_id]
+  courseRunSlotsInput.forEach((rs) => {
+    if (rs.run_id == null || rs.slot_id == null) return;
+    const list = runSlotOverrides.get(rs.run_id) || [];
+    list.push(remapSlotId(rs.slot_id));
+    runSlotOverrides.set(rs.run_id, list);
+  });
+
+  const orderedSlotsForSpan = (dedupedSlots || [])
+    .map((s) => ({
+      slot_id: s.slot_id,
+      start_date: s.start_date,
+    }))
+    .sort(
+      (a, b) =>
+        new Date(a.start_date) - new Date(b.start_date) ||
+        Number(a.slot_id) - Number(b.slot_id)
+    );
+  const computeSlotIdsForRun = (primarySlotId, span, runId) => {
+    const overrides = runSlotOverrides.get(runId);
+    if (overrides && overrides.length > 0) {
+      return Array.from(
+        new Set(
+          overrides
+            .filter((sid) => sid !== null && sid !== undefined)
+            .map((sid) => remapSlotId(sid))
+            .filter((sid) => sid !== null && sid !== undefined)
+        )
+      );
+    }
+    return getConsecutiveSlotIds(
+      remapSlotId(primarySlotId),
+      span,
+      orderedSlotsForSpan
+    );
+  };
+
+  const courseRunSlotsRows = [];
+  (dedupedCourseSlots || []).forEach((cs) => {
+    if (cs.cohort_slot_course_id == null) return;
+    const spanRaw = Number(cs.slot_span);
+    const span =
+      Number.isFinite(spanRaw) && spanRaw >= 2
+        ? spanRaw
+        : spanForCourse(cs.course_id);
+    const primarySlotId = remapSlotId(cs.slot_id);
+    if (primarySlotId == null) return;
+    const slotIds = computeSlotIdsForRun(
+      primarySlotId,
+      span,
+      cs.cohort_slot_course_id
+    );
+    slotIds
+      .filter((slotId) => slotId !== null && slotId !== undefined)
+      .forEach((slotId, idx) =>
+        courseRunSlotsRows.push({
+          run_id: cs.cohort_slot_course_id,
+          slot_id: slotId,
+          sequence: idx + 1,
+        })
+      );
+  });
 
   console.log("Bulk save received:", {
     courses: dedupedCourses?.length,
@@ -1705,6 +2007,7 @@ app.post("/api/bulk-save", (req, res) => {
     db.prepare("DELETE FROM slots").run();
     db.prepare("DELETE FROM teacher_availability").run();
     db.prepare("DELETE FROM cohort_slot_courses").run();
+    db.prepare("DELETE FROM course_run_slots").run();
     db.prepare("DELETE FROM slot_days").run();
     db.prepare("DELETE FROM course_slot_days").run();
     db.prepare("DELETE FROM course_prerequisites").run();
@@ -1718,7 +2021,7 @@ app.post("/api/bulk-save", (req, res) => {
           c.course_id,
           c.name,
           normalizeCourseCode(c.code),
-          c.credits,
+          normalizeCredits(c.credits),
           c.created_at || new Date().toISOString()
         );
       });
@@ -1860,7 +2163,7 @@ app.post("/api/bulk-save", (req, res) => {
 
     if (dedupedCourseSlots && dedupedCourseSlots.length > 0) {
       const stmt = db.prepare(
-        "INSERT OR IGNORE INTO cohort_slot_courses (cohort_slot_course_id, course_id, slot_id, cohort_id, teachers, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+        "INSERT OR IGNORE INTO cohort_slot_courses (cohort_slot_course_id, course_id, slot_id, cohort_id, teachers, slot_span, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
       );
       dedupedCourseSlots.forEach((cs) => {
         stmt.run(
@@ -1869,6 +2172,9 @@ app.post("/api/bulk-save", (req, res) => {
           cs.slot_id,
           cs.cohort_id ?? null,
           JSON.stringify(cs.teachers || []),
+          Number(cs.slot_span) >= 2
+            ? Number(cs.slot_span)
+            : spanForCourse(cs.course_id),
           cs.created_at || new Date().toISOString()
         );
       });
@@ -1900,11 +2206,23 @@ app.post("/api/bulk-save", (req, res) => {
       });
     }
 
+    if (courseRunSlotsRows.length > 0) {
+      const stmt = db.prepare(
+        "INSERT OR IGNORE INTO course_run_slots (run_id, slot_id, sequence) VALUES (?, ?, ?)"
+      );
+      courseRunSlotsRows.forEach((rs) => {
+        stmt.run(rs.run_id, rs.slot_id, rs.sequence || 1);
+      });
+    }
+
     console.log("Bulk save completed successfully");
     res.json({ success: true });
   } catch (error) {
     console.error("Bulk save error:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack,
+    });
   }
 });
 

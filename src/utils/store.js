@@ -1,7 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { seedData } from "../data/seedData.js";
 
-export const DEFAULT_SLOT_LENGTH_DAYS = 30;
+export const DEFAULT_SLOT_LENGTH_DAYS = 28;
 
 // Dev-safe alert wrapper: logs as warning in dev, shows native alert in prod
 function showAlert(msg) {
@@ -65,9 +65,10 @@ export class DataStore {
         c?.course_id != null && Number.isFinite(Number(c.course_id))
           ? Number(c.course_id)
           : idx + 1;
-      const creditsValue = Number.isFinite(Number(c?.credits ?? c?.hp))
+      const creditsValueRaw = Number.isFinite(Number(c?.credits ?? c?.hp))
         ? Number(c.credits ?? c.hp)
         : 7.5;
+      const creditsValue = creditsValueRaw === 15 ? 15 : 7.5;
       return {
         course_id: courseId,
         code: c?.code || "",
@@ -164,10 +165,13 @@ export class DataStore {
 
   _normalizeSlotsInPlace() {
     this.slots = (this.slots || []).map((slot) => {
-      const range = this._getSlotRange(slot);
-      return range
-        ? { ...slot, start_date: range.startStr, end_date: range.endStr }
-        : slot;
+      const startStr = this._normalizeDateOnly(slot.start_date);
+      if (!startStr) return slot;
+      const expectedEnd = this._defaultSlotEndDate(startStr);
+      const endStr = this._normalizeDateOnly(expectedEnd);
+      return endStr
+        ? { ...slot, start_date: startStr, end_date: endStr }
+        : { ...slot, start_date: startStr };
     });
   }
 
@@ -732,9 +736,11 @@ export class DataStore {
       course_id: id,
       code: course.code || "",
       name: course.name || "",
-      credits: Number.isFinite(Number(course.credits))
-        ? Number(course.credits)
-        : 7.5,
+      credits:
+        Number.isFinite(Number(course.credits)) &&
+        Number(course.credits) === 15
+          ? 15
+          : 7.5,
       prerequisites: course.prerequisites || [], // Array of course_ids that must be completed before this course
     };
     this.courses.push(newCourse);

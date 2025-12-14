@@ -90,15 +90,15 @@ export class CoursesTab extends LitElement {
           </div>
 
           <div class="form-row two-cols">
-            <henry-input
+            <henry-select
               id="courseCredits"
               label="Högskolepoäng"
-              type="number"
-              step="0.5"
-              min="0"
-              placeholder="T.ex. 7.5"
               required
-            ></henry-input>
+              .options=${[
+                { value: "7.5", label: "7,5 hp" },
+                { value: "15", label: "15 hp" },
+              ]}
+            ></henry-select>
             <henry-select
               id="prerequisites"
               label="Spärrkurser (kurser som måste läsas före)"
@@ -191,15 +191,23 @@ export class CoursesTab extends LitElement {
                 }))}
             ></henry-select>
 
-            <henry-input
+            <henry-select
               id="edit-credits"
               label="Högskolepoäng"
-              type="number"
-              step="0.5"
-              min="0"
-              .value="${course.credits ?? ""}"
               required
-            ></henry-input>
+              .options=${[
+                {
+                  value: "7.5",
+                  label: "7,5 hp",
+                  selected: (course.credits ?? 7.5) === 7.5,
+                },
+                {
+                  value: "15",
+                  label: "15 hp",
+                  selected: course.credits === 15,
+                },
+              ]}
+            ></henry-select>
 
             <henry-select
               id="edit-compatible-teachers"
