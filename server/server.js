@@ -198,6 +198,20 @@ const upsertRunSlots = (runId, primarySlotId, span) => {
   console.log("Deduplicated teacher_courses");
 })();
 
+// Migration: rename legacy `teacher_courses` -> `teacher_courses_staff` if present
+(() => {
+  const hasOld = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='teacher_courses'")
+    .get();
+  const hasNew = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='teacher_courses_staff'")
+    .get();
+  if (hasOld && !hasNew) {
+    db.prepare("ALTER TABLE teacher_courses RENAME TO teacher_courses_staff").run();
+    console.log("Renamed teacher_courses -> teacher_courses_staff");
+  }
+})();
+
 // Ensure new columns exist after deploy (SQLite lacks IF NOT EXISTS for columns)
 const ensureColumn = (table, column, typeWithDefault) => {
   const info = db.prepare(`PRAGMA table_info(${table})`).all();
@@ -473,7 +487,7 @@ ensureColumn("cohort_slot_courses", "slot_span", "INTEGER DEFAULT 1");
 
     // Deduplicate teacher_courses after course_id remapping
     db.prepare(
-      "DELETE FROM teacher_courses WHERE rowid NOT IN (SELECT MIN(rowid) FROM teacher_courses GROUP BY teacher_id, course_id)"
+      "DELETE FROM teacher_courses_staff WHERE rowid NOT IN (SELECT MIN(rowid) FROM teacher_courses_staff GROUP BY teacher_id, course_id)"
     ).run();
 
     // Rebuild courses with UNIQUE(code) (case-insensitive)
@@ -598,14 +612,15 @@ ensureColumn("cohort_slot_courses", "slot_span", "INTEGER DEFAULT 1");
       // Remap teacher_courses and teacher_availability
       mapping.forEach((to, from) => {
         if (to !== from) {
-          updateTeacherCourse.run(to, from);
+          updateTeacherCourseCompetency.run(to, from);
+          if (updateTeacherCourseStaff) updateTeacherCourseStaff.run(to, from);
           updateTeacherAvailability.run(to, from);
         }
       });
 
       // Deduplicate teacher_courses after teacher_id remapping
       db.prepare(
-        "DELETE FROM teacher_courses WHERE rowid NOT IN (SELECT MIN(rowid) FROM teacher_courses GROUP BY teacher_id, course_id)"
+        "DELETE FROM teacher_courses_staff WHERE rowid NOT IN (SELECT MIN(rowid) FROM teacher_courses_staff GROUP BY teacher_id, course_id)"
       ).run();
 
       // Drop duplicate teacher rows
@@ -1494,7 +1509,10 @@ app.get("/api/bulk-load", (req, res) => {
 
     const teachers = db.prepare("SELECT * FROM teachers").all();
 
-    const teacherCourses = db.prepare("SELECT * FROM teacher_courses").all();
+    // Compatibility mapping is stored in `teacher_course_competency`
+    const teacherCourses = db
+      .prepare("SELECT teacher_id, course_id FROM teacher_course_competency")
+      .all();
 
     const slots = db.prepare("SELECT * FROM slots").all();
 
@@ -2112,7 +2130,7 @@ app.post("/api/bulk-save", (req, res) => {
     db.prepare("DELETE FROM courses").run();
     db.prepare("DELETE FROM cohorts").run();
     db.prepare("DELETE FROM teachers").run();
-    db.prepare("DELETE FROM teacher_courses").run();
+    db.prepare("DELETE FROM teacher_courses_staff").run();
     db.prepare("DELETE FROM slots").run();
     db.prepare("DELETE FROM teacher_slot_unavailability").run();
     db.prepare("DELETE FROM teacher_day_unavailability").run();
@@ -2205,8 +2223,9 @@ app.post("/api/bulk-save", (req, res) => {
       });
     }
     if (teacherCoursesToInsert.length > 0) {
+      // Persist compatibility into `teacher_course_competency` (canonical mapping)
       const stmt = db.prepare(
-        "INSERT OR IGNORE INTO teacher_courses (teacher_id, course_id) VALUES (?, ?)"
+        "INSERT OR IGNORE INTO teacher_course_competency (teacher_id, course_id) VALUES (?, ?)"
       );
       teacherCoursesToInsert.forEach((tc) => {
         stmt.run(tc.teacher_id, tc.course_id);
@@ -2410,7 +2429,7 @@ app.post("/api/admin/reset-teachers", (req, res) => {
       db.prepare("DELETE FROM teacher_slot_unavailability").run();
 
       // Remove teacher-course mappings and teachers
-      db.prepare("DELETE FROM teacher_courses").run();
+      db.prepare("DELETE FROM teacher_courses_staff").run();
       // Remove competency mappings referencing deleted teachers (clear all)
       db.prepare("DELETE FROM teacher_course_competency").run();
       db.prepare("DELETE FROM teachers").run();
@@ -2466,7 +2485,9 @@ app.post("/api/admin/reset-courses", (req, res) => {
       db.prepare("DELETE FROM course_run_teachers").run();
 
       // Remove teacher_course mappings for deleted courses
-      db.prepare("DELETE FROM teacher_courses").run();
+      db.prepare("DELETE FROM teacher_courses_staff").run();
+      // Remove compatibility mappings referencing courses
+      db.prepare("DELETE FROM teacher_course_competency").run();
 
       // The canonical mapping between teachers and courses is stored in
       // `teacher_courses`. We intentionally do not attempt to modify any
