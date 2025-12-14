@@ -760,6 +760,37 @@ ensureColumn("cohort_slot_courses", "slot_span", "INTEGER DEFAULT 1");
   }
 })();
 
+// Migration: populate slot_days from slots if empty
+(() => {
+  const cnt = db.prepare("SELECT COUNT(*) as c FROM slot_days").get().c;
+  if (cnt > 0) return;
+
+  const slots = db
+    .prepare("SELECT slot_id, start_date, end_date FROM slots")
+    .all();
+  if (!slots || slots.length === 0) return;
+
+  const insert = db.prepare(
+    "INSERT INTO slot_days (slot_id, date) VALUES (?, ?)"
+  );
+
+  db.transaction(() => {
+    slots.forEach((s) => {
+      if (!s.start_date || !s.end_date) return;
+      const start = new Date(s.start_date);
+      const end = new Date(s.end_date);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+      const d = new Date(start);
+      while (d <= end) {
+        insert.run(s.slot_id, d.toISOString().split("T")[0]);
+        d.setDate(d.getDate() + 1);
+      }
+    });
+  })();
+
+  console.log(`Populated slot_days for ${slots.length} slots`);
+})();
+
 // Migration: deduplicate slots and enforce uniqueness on slot signature
 (() => {
   const slots = db
@@ -1496,6 +1527,9 @@ app.get("/api/bulk-load", (req, res) => {
 
     const slotDays = db.prepare("SELECT * FROM slot_days").all();
     const courseSlotDays = db.prepare("SELECT * FROM course_slot_days").all();
+    const teacherDayUnavailability = db
+      .prepare("SELECT * FROM teacher_day_unavailability")
+      .all();
     let coursePrerequisites = db
       .prepare("SELECT * FROM course_prerequisites")
       .all();
@@ -1538,6 +1572,7 @@ app.get("/api/bulk-load", (req, res) => {
       cohortSlotCourses: courseSlots,
       courseRunSlots,
       slotDays,
+      teacherDayUnavailability,
       courseSlotDays,
       coursePrerequisites,
     });
@@ -2033,6 +2068,7 @@ app.post("/api/bulk-save", (req, res) => {
     db.prepare("DELETE FROM teacher_courses").run();
     db.prepare("DELETE FROM slots").run();
     db.prepare("DELETE FROM teacher_slot_unavailability").run();
+    db.prepare("DELETE FROM teacher_day_unavailability").run();
     db.prepare("DELETE FROM cohort_slot_courses").run();
     db.prepare("DELETE FROM course_run_slots").run();
     db.prepare("DELETE FROM slot_days").run();
@@ -2139,12 +2175,30 @@ app.post("/api/bulk-save", (req, res) => {
       });
     }
 
+    // Insert any provided slotDays *before* we process teacher availability
+    if (slotDays) {
+      // Use INSERT OR IGNORE to avoid primary key conflicts with auto-populated slot_days
+      const stmt = db.prepare(
+        "INSERT OR IGNORE INTO slot_days (slot_day_id, slot_id, date) VALUES (?, ?, ?)"
+      );
+      slotDays.forEach((sd) => {
+        stmt.run(sd.slot_day_id || null, remapSlotId(sd.slot_id), sd.date);
+      });
+    }
+
     if (teacherAvailability) {
       const insertStmt = db.prepare(
         "INSERT OR IGNORE INTO teacher_slot_unavailability (id, teacher_id, slot_id, created_at) VALUES (?, ?, ?, ?)"
       );
       const deleteStmt = db.prepare(
         "DELETE FROM teacher_slot_unavailability WHERE teacher_id = ? AND slot_id = ?"
+      );
+
+      const insertDayStmt = db.prepare(
+        "INSERT OR IGNORE INTO teacher_day_unavailability (id, teacher_id, slot_day_id, created_at) VALUES (?, ?, ?, ?)"
+      );
+      const deleteDayStmt = db.prepare(
+        "DELETE FROM teacher_day_unavailability WHERE teacher_id = ? AND slot_day_id = ?"
       );
 
       // Handle both array format (from store) and object format (legacy)
@@ -2157,15 +2211,42 @@ app.post("/api/bulk-save", (req, res) => {
             } else {
               deleteStmt.run(remapTeacherId(a.teacher_id), remapSlotId(a.slot_id));
             }
-          } else if (a.from_date) {
-            const slot = dedupedSlots?.find((s) => s.start_date === a.from_date);
-            if (slot) {
-              if (a.type === "busy") {
-                insertStmt.run(a.id || null, remapTeacherId(a.teacher_id), slot.slot_id, a.created_at || new Date().toISOString());
+            } else if (a.from_date) {
+              // First try to map to a slot with that start_date (slot-level)
+              const slot = dedupedSlots?.find((s) => s.start_date === a.from_date);
+              if (slot) {
+                if (a.type === "busy") {
+                  insertStmt.run(a.id || null, remapTeacherId(a.teacher_id), slot.slot_id, a.created_at || new Date().toISOString());
+                } else {
+                  deleteStmt.run(remapTeacherId(a.teacher_id), slot.slot_id);
+                }
               } else {
-                deleteStmt.run(remapTeacherId(a.teacher_id), slot.slot_id);
+                // Treat as day-level unavailability (single date or range)
+                const startStr = (a.from_date || "").split("T")[0];
+                const endStr = (a.to_date || a.from_date || "").split("T")[0];
+                if (!startStr) return;
+
+                const dayRows = db
+                  .prepare(
+                    "SELECT slot_day_id, date FROM slot_days WHERE date >= ? AND date <= ?"
+                  )
+                  .all(startStr, endStr || startStr);
+
+                if (dayRows && dayRows.length > 0) {
+                  dayRows.forEach((dr) => {
+                    if (a.type === "busy") {
+                      insertDayStmt.run(a.id || null, remapTeacherId(a.teacher_id), dr.slot_day_id, a.created_at || new Date().toISOString());
+                    } else {
+                      deleteDayStmt.run(remapTeacherId(a.teacher_id), dr.slot_day_id);
+                    }
+                  });
+                } else {
+                  // No matching slot_days (warn for debugging)
+                  console.warn(
+                    `No slot_days found for teacher day unavailability ${startStr} - ${endStr}`
+                  );
+                }
               }
-            }
           }
         });
       } else {
@@ -2202,14 +2283,8 @@ app.post("/api/bulk-save", (req, res) => {
       });
     }
 
-    if (slotDays) {
-      const stmt = db.prepare(
-        "INSERT INTO slot_days (slot_day_id, slot_id, date) VALUES (?, ?, ?)"
-      );
-      slotDays.forEach((sd) => {
-        stmt.run(sd.slot_day_id || null, remapSlotId(sd.slot_id), sd.date);
-      });
-    }
+    // `slotDays` are handled earlier (inserted just after slots) to avoid
+    // duplicate inserts here. No-op.
 
     if (courseSlotDays) {
       const stmt = db.prepare(
