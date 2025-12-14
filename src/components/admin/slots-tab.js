@@ -64,9 +64,7 @@ export class SlotsTab extends LitElement {
         <form @submit="${this.handleAddSlot}">
           <div class="form-row">
             <henry-select id="insertAfter" label="Infoga efter" .options=${this._getInsertOptions(sorted)} @select-change="${(e) => this._onInsertAfterChange(e)}" required></henry-select>
-            ${this.allowFreeDate
-              ? html`<henry-input id="slotStartInput" type="date" label="Startdatum" required min="${this._minStartDate || ""}"></henry-input>`
-                : html`<henry-select id="slotStart" label="Startdatum" required .options=${this.startOptions} .placeholder=${this.selectedInsertAfter && (this.startOptions || []).length === 0 ? "Inga tillgängliga startdatum för vald position." : "Välj..."}></henry-select>`}
+            <henry-select id="slotStart" label="Startdatum" required .options=${this.startOptions} .placeholder=${this.selectedInsertAfter && (this.startOptions || []).length === 0 ? "Inga tillgängliga startdatum för vald position." : "Välj..."}></henry-select>
           </div>
 
           <div class="form-actions">
@@ -128,26 +126,37 @@ export class SlotsTab extends LitElement {
       return;
     }
 
-    // If the selected insert position is the last slot, allow free date after last end
-    if (idx === slots.length - 1) {
-      if (slots.length === 0) {
-        const min = new Date();
-        this._minStartDate = this._formatDate(min);
-      } else {
-        const last = slots[slots.length - 1];
-        const lastEnd = new Date(store._defaultSlotEndDate(last.start_date));
-        const min = new Date(lastEnd);
-        min.setDate(min.getDate() + 1);
-        this._minStartDate = this._formatDate(min);
-      }
-      this.allowFreeDate = true;
+    const idx = slots.findIndex((s) => String(s.slot_id) === String(insertVal));
+    if (idx === -1) {
       this.startOptions = [];
       this.requestUpdate();
       return;
     }
 
+    // If the selected insert position is the last slot, show 90 possible start dates
+    if (idx === slots.length - 1) {
+      let min;
+      if (slots.length === 0) {
+        min = new Date();
+      } else {
+        const last = slots[slots.length - 1];
+        const lastEnd = new Date(store._defaultSlotEndDate(last.start_date));
+        min = new Date(lastEnd);
+        min.setDate(min.getDate() + 1);
+      }
+      const opts = [];
+      for (let k = 0; k < 90; k++) {
+        const d = new Date(min);
+        d.setDate(d.getDate() + k);
+        const dateStr = this._formatDate(d);
+        opts.push({ value: dateStr, label: dateStr });
+      }
+      this.startOptions = opts;
+      this.requestUpdate();
+      return;
+    }
+
     // inserting after a specific slot - compute allowed start date range
-    const idx = slots.findIndex((s) => String(s.slot_id) === String(insertVal));
     const prev = slots[idx];
     const next = slots[idx + 1];
 
@@ -223,14 +232,8 @@ export class SlotsTab extends LitElement {
   handleAddSlot(e) {
     e.preventDefault();
     const root = this.shadowRoot;
-    // read start either from select or from date input
-    let start = null;
-    if (this.allowFreeDate) {
-      start = getInputValue(root, "slotStartInput");
-    } else {
-      const sel = root.querySelector("#slotStart");
-      start = sel ? sel.getSelect().value : null;
-    }
+    const sel = root.querySelector("#slotStart");
+    const start = sel ? sel.getSelect().value : null;
     if (!start) {
       showErrorMessage(this, "Fyll i startdatum för slot.");
       return;
