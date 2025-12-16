@@ -1,0 +1,14 @@
+-- Post-course-reset counts: 20251214T162711Z
+teachers: 0
+teacher_slot_unavailability: 0
+teacher_day_unavailability: 0
+teacher_courses_staff: 0
+teacher_course_competency: 0
+cohort_slot_courses: 0
+course_prerequisites: 0
+course_slot_days: 0
+course_run_slots: 0
+course_run_days: 0
+course_run_cohorts: 0
+course_run_teachers: 0
+courses: 0

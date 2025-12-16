@@ -1,0 +1,14 @@
+-- Pre-reset counts: 20251214T162621Z
+teachers: 1
+teacher_slot_unavailability: 0
+teacher_day_unavailability: 0
+teacher_courses_staff: 0
+teacher_course_competency: 2
+cohort_slot_courses: 32
+course_prerequisites: 1
+course_slot_days: 256
+course_run_slots: 35
+course_run_days: 0
+course_run_cohorts: 0
+course_run_teachers: 0
+courses: 2

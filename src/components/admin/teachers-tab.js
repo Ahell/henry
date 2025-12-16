@@ -111,10 +111,19 @@ export class TeachersTab extends LitElement {
           >
             Slumpa kurser till alla lärare
           </henry-button>
-          <input id="teacherCsvInput" type="file" accept=".csv" style="display:none" @change="${this.handleTeacherCsvUpload}" />
-          <henry-button variant="primary" @click="${() => this.shadowRoot.querySelector('#teacherCsvInput').click()}">Importera Lärare (CSV)</henry-button>
-          <henry-button variant="secondary" @click="${this.exportTeachersCsv}">Exportera Lärare (CSV)</henry-button>
-          <henry-button variant="danger" @click="${this.handleResetTeachersClick}">Återställ lärare (DB)</henry-button>
+          <input id="teacherCsvInput" type="file" accept=".csv" style="display:none" @change="${
+            this.handleTeacherCsvUpload
+          }" />
+          <henry-button variant="primary" @click="${() =>
+            this.shadowRoot
+              .querySelector("#teacherCsvInput")
+              .click()}">Importera Lärare (CSV)</henry-button>
+          <henry-button variant="secondary" @click="${
+            this.exportTeachersCsv
+          }">Exportera Lärare (CSV)</henry-button>
+          <henry-button variant="danger" @click="${
+            this.handleResetTeachersClick
+          }">Återställ lärare (DB)</henry-button>
         </div>
         <henry-table
           striped
@@ -266,17 +275,83 @@ export class TeachersTab extends LitElement {
 
   handleAddTeacher(e) {
     e.preventDefault();
-    const root = this.shadowRoot;
-    const selectedCourses = getSelectValues(root, "teacherCourses");
 
-    const teacher = {
-      name: getInputValue(root, "teacherName"),
-      home_department: getRadioValue(root, "teacherDepartment"),
-      compatible_courses: selectedCourses,
-    };
-    store.addTeacher(teacher);
-    resetForm(root);
-    showSuccessMessage(this, "Lärare tillagd!");
+    (async () => {
+      const root = this.shadowRoot;
+      const selectedCourses = getSelectValues(root, "teacherCourses");
+
+      const teacher = {
+        name: getInputValue(root, "teacherName"),
+        home_department: getRadioValue(root, "teacherDepartment"),
+        compatible_courses: selectedCourses,
+      };
+
+      const newTeacher = store.addTeacher(teacher);
+
+      try {
+        // Wait for persistence before clearing the form so the UI
+        // doesn't lose state if save fails
+        await store.saveData();
+
+        // Reset the native form
+        resetForm(root);
+
+        // Clear custom henry-select (teacherCourses)
+        const clearCustomSelect = (id) => {
+          const el = root.querySelector(`#${id}`);
+          if (!el || typeof el.getSelect !== "function") return;
+          const sel = el.getSelect();
+          if (!sel) return;
+          Array.from(sel.options).forEach((o) => (o.selected = false));
+          sel.value = "";
+          sel.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+
+        clearCustomSelect("teacherCourses");
+
+        // Ensure custom inputs are cleared as well (some components don't
+        // respond to form.reset()). Clear name input and reset department.
+        try {
+          const nameEl = root.querySelector("#teacherName");
+          if (nameEl && typeof nameEl.getInput === "function") {
+            const input = nameEl.getInput();
+            if (input) input.value = "";
+          }
+
+          const deptEl = root.querySelector("#teacherDepartment");
+          if (deptEl) {
+            // Prefer an API method if available
+            if (typeof deptEl.setValue === "function") {
+              deptEl.setValue("AIJ");
+            } else if (typeof deptEl.value !== "undefined") {
+              deptEl.value = "AIJ";
+              deptEl.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          }
+        } catch (e) {
+          // Non-critical, swallow
+          console.warn("Failed to fully clear teacher form fields:", e);
+        }
+
+        // Notify other components that a teacher was added so they can
+        // react (e.g., CoursesTab may want to clear or refresh its form)
+        try {
+          window.dispatchEvent(
+            new CustomEvent("henry:teacher-added", { detail: newTeacher })
+          );
+        } catch (e) {
+          // ignore if window is not available
+        }
+
+        showSuccessMessage(this, "Lärare tillagd!");
+      } catch (err) {
+        showErrorMessage(this, `Kunde inte lägga till lärare: ${err.message}`);
+        // If save failed, remove the optimistic teacher we added earlier
+        if (newTeacher && newTeacher.teacher_id) {
+          store.deleteTeacher(newTeacher.teacher_id);
+        }
+      }
+    })();
   }
 
   handleEditTeacher(teacherId) {
@@ -319,12 +394,30 @@ export class TeachersTab extends LitElement {
   }
 
   handleDeleteTeacher(teacherId, teacherName) {
-    if (
-      confirm(`Är du säker på att du vill ta bort läraren "${teacherName}"?`)
-    ) {
-      store.deleteTeacher(teacherId);
-      showSuccessMessage(this, `Lärare "${teacherName}" borttagen!`);
-    }
+    (async () => {
+      if (
+        !confirm(`Är du säker på att du vill ta bort läraren "${teacherName}"?`)
+      ) {
+        return;
+      }
+
+      // Optimistically remove from client state
+      const removed = store.deleteTeacher(teacherId);
+      if (!removed) return;
+
+      try {
+        await store.saveData();
+        showSuccessMessage(this, `Lärare "${teacherName}" borttagen!`);
+      } catch (err) {
+        // If save failed, reload from backend to restore state
+        try {
+          await store.loadFromBackend();
+        } catch (e) {
+          console.error("Failed to reload data after failed delete:", e);
+        }
+        showErrorMessage(this, `Kunde inte ta bort läraren: ${err.message}`);
+      }
+    })();
   }
 
   async handleTeacherCsvUpload(e) {
@@ -351,7 +444,8 @@ export class TeachersTab extends LitElement {
         const compatIds = (r.compatible_courses || [])
           .map((v) => {
             const maybeNum = Number(v);
-            if (Number.isFinite(maybeNum) && store.getCourse(maybeNum)) return maybeNum;
+            if (Number.isFinite(maybeNum) && store.getCourse(maybeNum))
+              return maybeNum;
             return codeToId.get(v) ?? null;
           })
           .filter(Boolean);
@@ -360,7 +454,9 @@ export class TeachersTab extends LitElement {
           store.updateTeacher(teacher.teacher_id, {
             name: r.name || teacher.name,
             home_department: r.home_department || teacher.home_department,
-            compatible_courses: compatIds.length ? compatIds : teacher.compatible_courses,
+            compatible_courses: compatIds.length
+              ? compatIds
+              : teacher.compatible_courses,
           });
         } else {
           store.addTeacher({
@@ -371,7 +467,10 @@ export class TeachersTab extends LitElement {
         }
       });
 
-      showSuccessMessage(this, `Importerade ${rows.length} lärare från ${file.name}`);
+      showSuccessMessage(
+        this,
+        `Importerade ${rows.length} lärare från ${file.name}`
+      );
     } catch (err) {
       showErrorMessage(this, `Fel vid import: ${err.message}`);
     }
@@ -386,7 +485,10 @@ export class TeachersTab extends LitElement {
       const values = lines[i].split(",").map((v) => v.trim());
       const obj = {};
       headers.forEach((h, idx) => (obj[h] = values[idx] ?? ""));
-      const compat = (obj.compatible_courses || "").split(/[;|\\/]/).map((s) => s.trim()).filter(Boolean);
+      const compat = (obj.compatible_courses || "")
+        .split(/[;|\\/]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       rows.push({
         teacher_id: obj.teacher_id ? Number(obj.teacher_id) : null,
         name: obj.name || "",
@@ -419,7 +521,12 @@ export class TeachersTab extends LitElement {
   }
 
   async handleResetTeachersClick() {
-    if (!confirm("Är du säker? Detta kommer att radera alla lärare och ta bort deras kopplingar i DB.")) return;
+    if (
+      !confirm(
+        "Är du säker? Detta kommer att radera alla lärare och ta bort deras kopplingar i DB."
+      )
+    )
+      return;
     try {
       const res = await fetch("/api/admin/reset-teachers", { method: "POST" });
       if (!res.ok) {
@@ -427,7 +534,10 @@ export class TeachersTab extends LitElement {
         throw new Error(js.error || "Serverfel");
       }
       await store.loadFromBackend();
-      showSuccessMessage(this, "Lärare återställda och referenser rensade i DB");
+      showSuccessMessage(
+        this,
+        "Lärare återställda och referenser rensade i DB"
+      );
     } catch (err) {
       showErrorMessage(this, `Kunde inte återställa lärare: ${err.message}`);
     }

@@ -1,0 +1,77 @@
+Verification Summary
+Backing up prefix: 20251214T162549Z
+
+PRE-RESET COUNTS:
+-- Pre-reset counts: 20251214T162621Z
+teachers: 1
+teacher_slot_unavailability: 0
+teacher_day_unavailability: 0
+teacher_courses_staff: 0
+teacher_course_competency: 2
+cohort_slot_courses: 32
+course_prerequisites: 1
+course_slot_days: 256
+course_run_slots: 35
+course_run_days: 0
+course_run_cohorts: 0
+course_run_teachers: 0
+courses: 2
+
+POST-TEACHER-RESET COUNTS:
+-- Post-teacher-reset counts: 20251214T162645Z
+teachers: 0
+teacher_slot_unavailability: 0
+teacher_day_unavailability: 0
+teacher_courses_staff: 0
+teacher_course_competency: 0
+cohort_slot_courses: 32
+course_prerequisites: 1
+course_slot_days: 256
+course_run_slots: 35
+course_run_days: 0
+course_run_cohorts: 0
+course_run_teachers: 0
+courses: 2
+
+POST-COURSE-RESET COUNTS:
+-- Post-course-reset counts: 20251214T162711Z
+teachers: 0
+teacher_slot_unavailability: 0
+teacher_day_unavailability: 0
+teacher_courses_staff: 0
+teacher_course_competency: 0
+cohort_slot_courses: 0
+course_prerequisites: 0
+course_slot_days: 0
+course_run_slots: 0
+course_run_days: 0
+course_run_cohorts: 0
+course_run_teachers: 0
+courses: 0
+
+Artifacts:
+20251214T162549Z-cohort_slot_courses.csv
+20251214T162549Z-cohort_slot_courses.schema.sql
+20251214T162549Z-course_prerequisites.csv
+20251214T162549Z-course_prerequisites.schema.sql
+20251214T162549Z-course_run_slots.csv
+20251214T162549Z-course_run_slots.schema.sql
+20251214T162549Z-courses.csv
+20251214T162549Z-courses.schema.sql
+20251214T162549Z-full-dump.sql
+20251214T162549Z-slot_days.csv
+20251214T162549Z-slot_days.schema.sql
+20251214T162549Z-teacher_course_competency.csv
+20251214T162549Z-teacher_course_competency.schema.sql
+20251214T162549Z-teacher_courses_staff.csv
+20251214T162549Z-teacher_courses_staff.schema.sql
+20251214T162549Z-teacher_day_unavailability.csv
+20251214T162549Z-teacher_day_unavailability.schema.sql
+20251214T162549Z-teacher_slot_unavailability.csv
+20251214T162549Z-teacher_slot_unavailability.schema.sql
+20251214T162549Z-teachers.csv
+20251214T162549Z-teachers.schema.sql
+post-course-reset-counts.txt
+post-teacher-reset-counts.txt
+pre-reset-counts.txt
+verification-summary-20251214T182902Z.txt

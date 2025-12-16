@@ -86,50 +86,27 @@ export class TeacherAvailabilityTable extends LitElement {
       this._onStoreChange = null;
     }
     // Remove availability listener
-    this.removeEventListener("availability-changed", this._onAvailabilityChanged);
+    this.removeEventListener(
+      "availability-changed",
+      this._onAvailabilityChanged
+    );
   }
 
   async _onAvailabilityChanged(e) {
     try {
       const detail = e?.detail || {};
       const teacherId = detail.teacherId;
+      const slotDate = detail.slotDate || detail.date;
       const unavailable = Boolean(detail.unavailable);
 
-      if (!teacherId) return; // nothing we can persist
-
-      // Detail view (day-level) persistence
-      if (detail.date && !detail.slotDate) {
-        const normalizedDate = (detail.date || "").toString().split("T")[0];
-        if (!normalizedDate) return;
-        await fetch("/api/teacher-day-availability", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            teacherId,
-            slotId: this._detailSlotId ?? null,
-            date: normalizedDate,
-            unavailable,
-          }),
-        });
-        return;
-      }
-
-      const slotDate = detail.slotDate || detail.date;
-      if (!slotDate) return; // nothing we can persist
+      if (!teacherId || !slotDate) return; // nothing we can persist
 
       // Map slotDate (start_date) to slot_id
-      const normalizedSlotDate = slotDate.toString().split("T")[0];
-      const slot =
-        this.slots.find(
-          (s) =>
-            String(s.start_date) === String(normalizedSlotDate) ||
-            String(s.slot_id) === String(slotDate)
-        ) ||
-        this.slots.find((s) =>
-          store
-            .getSlotDays(s.slot_id)
-            .includes(normalizedSlotDate)
-        );
+      const slot = this.slots.find(
+        (s) =>
+          String(s.start_date) === String(slotDate) ||
+          String(s.slot_id) === String(slotDate)
+      );
       if (!slot) return;
 
       const slotId = slot.slot_id;

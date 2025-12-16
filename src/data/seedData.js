@@ -331,8 +331,8 @@ export const seedData = {
       location: "FEI Campus",
     },
     {
-      start_date: "2027-09-20",
-      end_date: "2027-10-17",
+      start_date: "2027-10-04",
+      end_date: "2027-11-01",
       evening_pattern: "tis/tor",
       is_placeholder: false,
       location: "FEI Campus",
@@ -582,7 +582,7 @@ export const seedData = {
     }, // AI183U
     {
       course_id: 10,
-      slot_id: 26,
+      slot_id: 29,
       teacher_id: 5,
       cohorts: [],
       planned_students: 0,
@@ -590,7 +590,7 @@ export const seedData = {
     }, // AI182U
     {
       course_id: 3,
-      slot_id: 26,
+      slot_id: 29,
       teacher_id: 11,
       cohorts: [],
       planned_students: 0,
@@ -598,7 +598,7 @@ export const seedData = {
     }, // AI184U
     {
       course_id: 8,
-      slot_id: 27,
+      slot_id: 30,
       teacher_id: 4,
       cohorts: [],
       planned_students: 0,

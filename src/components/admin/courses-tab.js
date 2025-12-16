@@ -62,6 +62,48 @@ export class CoursesTab extends LitElement {
     super();
     initializeEditState(this, "editingCourseId");
     subscribeToStore(this);
+    // Clear add-course form when a teacher has been added elsewhere
+    this._onTeacherAdded = (e) => {
+      try {
+        const root = this.shadowRoot;
+        // Only clear code/name inputs (user asked these specifically)
+        const clearInput = (id) => {
+          const el = root.querySelector(`#${id}`);
+          if (!el) return;
+          if (typeof el.getInput === "function") {
+            const input = el.getInput();
+            if (input) input.value = "";
+          } else {
+            el.value = "";
+          }
+        };
+
+        clearInput("courseCode");
+        clearInput("courseName");
+
+        // Also clear any selections on custom selects to keep state consistent
+        const selectEl = root.querySelector(`#courseTeachers`);
+        if (selectEl && typeof selectEl.getSelect === "function") {
+          const sel = selectEl.getSelect();
+          if (sel) {
+            Array.from(sel.options).forEach((o) => (o.selected = false));
+            sel.value = "";
+            sel.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }
+      } catch (err) {
+        // swallow errors; non-critical
+        console.warn("Failed to clear course form after teacher added:", err);
+      }
+    };
+    window.addEventListener("henry:teacher-added", this._onTeacherAdded);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback && super.disconnectedCallback();
+    if (this._onTeacherAdded) {
+      window.removeEventListener("henry:teacher-added", this._onTeacherAdded);
+    }
   }
 
   render() {
@@ -136,13 +178,32 @@ export class CoursesTab extends LitElement {
 
       <henry-panel>
         <div slot="header">
-          <henry-text variant="heading-3">Import/Export Kurser (CSV)</henry-text>
+          <henry-text variant="heading-3"
+            >Import/Export Kurser (CSV)</henry-text
+          >
         </div>
         <div style="display:flex; gap: 1rem; align-items:center;">
-          <input id="courseCsvInput" type="file" accept=".csv" style="display:none" @change="${this.handleCourseCsvUpload}" />
-          <henry-button variant="primary" @click="${() => this.shadowRoot.querySelector('#courseCsvInput').click()}">Importera CSV</henry-button>
-          <henry-button variant="secondary" @click="${this.exportCoursesCsv}">Exportera CSV</henry-button>
-          <henry-button variant="danger" @click="${this.handleResetTeachersClick}">Återställ lärare (DB)</henry-button>
+          <input
+            id="courseCsvInput"
+            type="file"
+            accept=".csv"
+            style="display:none"
+            @change="${this.handleCourseCsvUpload}"
+          />
+          <henry-button
+            variant="primary"
+            @click="${() =>
+              this.shadowRoot.querySelector("#courseCsvInput").click()}"
+            >Importera CSV</henry-button
+          >
+          <henry-button variant="secondary" @click="${this.exportCoursesCsv}"
+            >Exportera CSV</henry-button
+          >
+          <henry-button
+            variant="danger"
+            @click="${this.handleResetCoursesClick}"
+            >Återställ kurser (DB)</henry-button
+          >
         </div>
       </henry-panel>
 
@@ -350,22 +411,90 @@ export class CoursesTab extends LitElement {
 
   handleAddCourse(e) {
     e.preventDefault();
-    const root = this.shadowRoot;
-    const prerequisites = getSelectValues(root, "prerequisites");
-    const selectedTeacherIds = getSelectValues(root, "courseTeachers");
+    // Ensure we wait for persistence before clearing the form
+    (async () => {
+      const root = this.shadowRoot;
+      const prerequisites = getSelectValues(root, "prerequisites");
+      const selectedTeacherIds = getSelectValues(root, "courseTeachers");
 
-    const course = {
-      code: getInputValue(root, "courseCode"),
-      name: getInputValue(root, "courseName"),
-      credits: parseFloat(getInputValue(root, "courseCredits")) || 0,
-      prerequisites: prerequisites,
-    };
-    const newCourse = store.addCourse(course);
+      const course = {
+        code: getInputValue(root, "courseCode"),
+        name: getInputValue(root, "courseName"),
+        credits: parseFloat(getInputValue(root, "courseCredits")) || 0,
+        prerequisites: prerequisites,
+      };
 
-    addCourseToTeachers(newCourse.course_id, selectedTeacherIds);
+      const newCourse = store.addCourse(course);
+      addCourseToTeachers(newCourse.course_id, selectedTeacherIds);
 
-    resetForm(root);
-    showSuccessMessage(this, "Kurs tillagd!");
+      try {
+        await store.saveData();
+
+        // Reset native form
+        resetForm(root);
+
+        // Clear any custom select components (henry-select) since form.reset may not
+        const clearCustomSelect = (id) => {
+          const el = root.querySelector(`#${id}`);
+          if (!el || typeof el.getSelect !== "function") return;
+          const sel = el.getSelect();
+          if (!sel) return;
+          Array.from(sel.options).forEach((o) => (o.selected = false));
+          sel.value = "";
+          sel.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+
+        clearCustomSelect("prerequisites");
+        clearCustomSelect("courseTeachers");
+
+        // Explicitly clear inputs that may not be affected by form.reset()
+        try {
+          const clearInput = (id) => {
+            const el = root.querySelector(`#${id}`);
+            if (!el) return;
+            if (typeof el.getInput === "function") {
+              const input = el.getInput();
+              if (input) input.value = "";
+            } else if (typeof el.value !== "undefined") {
+              el.value = "";
+            }
+          };
+
+          clearInput("courseCode");
+          clearInput("courseName");
+
+          // Reset credits select to default (7.5)
+          const creditsEl = root.querySelector(`#courseCredits`);
+          if (creditsEl && typeof creditsEl.getSelect === "function") {
+            const sel = creditsEl.getSelect();
+            if (sel) {
+              sel.value = "7.5";
+              sel.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to fully clear course form fields:", e);
+        }
+
+        // Notify other components a course was added
+        try {
+          window.dispatchEvent(
+            new CustomEvent("henry:course-added", { detail: newCourse })
+          );
+        } catch (e) {}
+
+        showSuccessMessage(this, "Kurs tillagd!");
+      } catch (err) {
+        showErrorMessage(this, `Kunde inte lägga till kurs: ${err.message}`);
+        // Roll back optimistic add
+        try {
+          if (newCourse && newCourse.course_id)
+            store.deleteCourse(newCourse.course_id);
+        } catch (e) {
+          console.warn("Failed to roll back new course after save error:", e);
+        }
+      }
+    })();
   }
 
   handleEditCourse(courseId) {
@@ -401,10 +530,30 @@ export class CoursesTab extends LitElement {
   }
 
   handleDeleteCourse(courseId, courseName) {
-    if (confirm(`Är du säker på att du vill ta bort kursen "${courseName}"?`)) {
-      store.deleteCourse(courseId);
-      showSuccessMessage(this, `Kurs "${courseName}" borttagen!`);
-    }
+    (async () => {
+      if (
+        !confirm(`Är du säker på att du vill ta bort kursen "${courseName}"?`)
+      ) {
+        return;
+      }
+
+      // Optimistically remove from client state
+      const removed = store.deleteCourse(courseId);
+      if (!removed) return;
+
+      try {
+        await store.saveData();
+        showSuccessMessage(this, `Kurs "${courseName}" borttagen!`);
+      } catch (err) {
+        // If save failed, reload from backend to restore state
+        try {
+          await store.loadFromBackend();
+        } catch (e) {
+          console.error("Failed to reload data after failed delete:", e);
+        }
+        showErrorMessage(this, `Kunde inte ta bort kursen: ${err.message}`);
+      }
+    })();
   }
 
   async handleCourseCsvUpload(e) {
@@ -441,7 +590,11 @@ export class CoursesTab extends LitElement {
 
         // Prerequisites: map codes to ids
         const prereqIds = (r.prerequisites || [])
-          .map((code) => codeToId.get(code) || store.getCourses().find((c) => c.code === code)?.course_id)
+          .map(
+            (code) =>
+              codeToId.get(code) ||
+              store.getCourses().find((c) => c.code === code)?.course_id
+          )
           .filter(Boolean);
         store.updateCourse(courseId, { prerequisites: prereqIds });
 
@@ -450,7 +603,8 @@ export class CoursesTab extends LitElement {
           .map((t) => {
             if (!t) return null;
             const maybeId = Number(t);
-            if (Number.isFinite(maybeId) && store.getTeacher(maybeId)) return maybeId;
+            if (Number.isFinite(maybeId) && store.getTeacher(maybeId))
+              return maybeId;
             const found = store.getTeachers().find((th) => th.name === t);
             return found ? found.teacher_id : null;
           })
@@ -459,7 +613,10 @@ export class CoursesTab extends LitElement {
         if (teacherIds.length > 0) addCourseToTeachers(courseId, teacherIds);
       });
 
-      showSuccessMessage(this, `Importerade ${rows.length} kurser från ${file.name}`);
+      showSuccessMessage(
+        this,
+        `Importerade ${rows.length} kurser från ${file.name}`
+      );
     } catch (err) {
       showErrorMessage(this, `Fel vid import: ${err.message}`);
     }
@@ -476,13 +633,23 @@ export class CoursesTab extends LitElement {
       const obj = {};
       headers.forEach((h, idx) => (obj[h] = values[idx] ?? ""));
 
-      const prerequisites = (obj.prerequisites || "").split(/[;|\\/]/).map((s) => s.trim()).filter(Boolean);
-      const compatible_teachers = (obj.compatible_teachers || "").split(/[;|\\/]/).map((s) => s.trim()).filter(Boolean);
+      const prerequisites = (obj.prerequisites || "")
+        .split(/[;|\\/]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const compatible_teachers = (obj.compatible_teachers || "")
+        .split(/[;|\\/]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
 
       rows.push({
         code: obj.code || obj.kod || "",
         name: obj.name || obj.namn || "",
-        credits: obj.credits ? Number(obj.credits) : obj.hp ? Number(obj.hp) : 0,
+        credits: obj.credits
+          ? Number(obj.credits)
+          : obj.hp
+          ? Number(obj.hp)
+          : 0,
         prerequisites,
         compatible_teachers,
       });
@@ -503,7 +670,9 @@ export class CoursesTab extends LitElement {
         .filter((t) => (t.compatible_courses || []).includes(c.course_id))
         .map((t) => t.name)
         .join(";");
-      csv += `${c.code},"${c.name}",${c.credits ?? ""},"${prereqCodes}","${teacherNames}"\n`;
+      csv += `${c.code},"${c.name}",${
+        c.credits ?? ""
+      },"${prereqCodes}","${teacherNames}"\n`;
     });
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -516,25 +685,28 @@ export class CoursesTab extends LitElement {
     URL.revokeObjectURL(url);
   }
 
-  async handleResetTeachersClick() {
+  async handleResetCoursesClick() {
     if (
       !confirm(
-        "Är du säker? Detta kommer att radera alla lärare och ta bort referenser till dem i kursomgångar och tillgänglighetsdata."
+        "Är du säker? Detta kommer att radera alla kurser och ta bort referenser till dem i schemat."
       )
     )
       return;
 
     try {
-      const res = await fetch("/api/admin/reset-teachers", { method: "POST" });
+      const res = await fetch("/api/admin/reset-courses", { method: "POST" });
       if (!res.ok) {
         const js = await res.json().catch(() => ({}));
         throw new Error(js.error || "Serverfel");
       }
       // Reload data from backend
       await store.loadFromBackend();
-      showSuccessMessage(this, "Lärare återställda och referenser rensade i DB");
+      showSuccessMessage(
+        this,
+        "Kurser återställda och referenser rensade i DB"
+      );
     } catch (err) {
-      showErrorMessage(this, `Kunde inte återställa lärare: ${err.message}`);
+      showErrorMessage(this, `Kunde inte återställa kurser: ${err.message}`);
     }
   }
 }
