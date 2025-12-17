@@ -26,7 +26,6 @@ export class DataService {
       this.store.slots = this.store.normalizer.normalizeSlotsInPlace(
         this.store.slots
       );
-      this.store.validator.assertAllSlotsNonOverlapping();
 
       await this.api.saveData(this.store.getDataSnapshot());
 

@@ -12,7 +12,6 @@ import {
 } from "../../../utils/message-helpers.js";
 import {
   addCourseToTeachers,
-  syncCourseToTeachers,
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
@@ -20,6 +19,8 @@ import {
   parseCoursesCsv,
   exportCoursesToFile,
 } from "../../../platform/services/csv.service.js";
+import { CourseFormService } from "../services/course-form.service.js";
+import "./course-modal.component.js";
 import "../../../components/ui/index.js";
 import { coursesTabStyles } from "../styles/courses-tab.styles.js";
 
@@ -189,103 +190,29 @@ export class CoursesTab extends LitElement {
         ></henry-table>
       </henry-panel>
 
-      ${this._renderEditModal()}
+      <course-modal
+        .courseId="${this.editingCourseId}"
+        .open="${!!this.editingCourseId}"
+        @modal-close="${this.handleCancelEdit}"
+        @modal-save="${this._handleModalSave}"
+      ></course-modal>
     `;
   }
 
-  _renderEditModal() {
-    if (!this.editingCourseId) return html``;
-
-    const course = store.getCourse(this.editingCourseId);
-    if (!course) return html``;
-
-    return html`
-      <henry-modal open title="Redigera Kurs" @close="${this.handleCancelEdit}">
-        <form @submit="${(e) => this._handleSaveFromModal(e)}">
-          <div
-            style="display: flex; flex-direction: column; gap: var(--space-4);"
-          >
-            <henry-input
-              id="edit-code"
-              label="Kurskod"
-              .value="${course.code}"
-              required
-            ></henry-input>
-
-            <henry-input
-              id="edit-name"
-              label="Kursnamn"
-              .value="${course.name}"
-              required
-            ></henry-input>
-
-            <henry-select
-              id="edit-prerequisites"
-              label="Spärrkurser"
-              multiple
-              size="5"
-              .options=${store
-                .getCourses()
-                .filter((c) => c.course_id !== course.course_id)
-                .map((c) => ({
-                  value: c.course_id.toString(),
-                  label: c.code,
-                  selected: course.prerequisites?.includes(c.course_id),
-                }))}
-            ></henry-select>
-
-            <henry-select
-              id="edit-credits"
-              label="Högskolepoäng"
-              required
-              .options=${[
-                {
-                  value: "7.5",
-                  label: "7,5 hp",
-                  selected: (course.credits ?? 7.5) === 7.5,
-                },
-                {
-                  value: "15",
-                  label: "15 hp",
-                  selected: course.credits === 15,
-                },
-              ]}
-            ></henry-select>
-
-            <henry-select
-              id="edit-compatible-teachers"
-              label="Kompatibla lärare"
-              multiple
-              size="5"
-              .options=${store.getTeachers().map((t) => ({
-                value: t.teacher_id.toString(),
-                label: t.name,
-                selected: t.compatible_courses?.includes(course.course_id),
-              }))}
-            ></henry-select>
-          </div>
-        </form>
-
-        <div slot="footer">
-          <henry-button variant="secondary" @click="${this.handleCancelEdit}">
-            Avbryt
-          </henry-button>
-          <henry-button
-            variant="success"
-            @click="${() => this.handleSaveCourse(course.course_id)}"
-          >
-            💾 Spara
-          </henry-button>
-        </div>
-      </henry-modal>
-    `;
-  }
-
-  _handleSaveFromModal(e) {
-    e.preventDefault();
-    if (this.editingCourseId) {
-      this.handleSaveCourse(this.editingCourseId);
-    }
+  _handleModalSave(e) {
+    const { courseId, formData } = e.detail;
+    CourseFormService.updateCourse(
+      courseId,
+      {
+        code: formData.code,
+        name: formData.name,
+        credits: formData.credits,
+        prerequisites: formData.prerequisites,
+      },
+      formData.selectedTeacherIds
+    );
+    this.editingCourseId = null;
+    showSuccessMessage(this, "Kurs uppdaterad!");
   }
 
   _getTableColumns() {
@@ -393,18 +320,10 @@ export class CoursesTab extends LitElement {
         prerequisites: prerequisites,
       };
 
-      let newCourse = null;
-      const mutationId = store.applyOptimistic({
-        label: "add-course",
-        rollback: () => {
-          if (newCourse && newCourse.course_id) {
-            store.deleteCourse(newCourse.course_id);
-          }
-        },
-      });
-
-      newCourse = store.addCourse(course);
-      addCourseToTeachers(newCourse.course_id, selectedTeacherIds);
+      const { course: newCourse, mutationId } = CourseFormService.createCourse(
+        course,
+        selectedTeacherIds
+      );
 
       try {
         await store.saveData({ mutationId });
@@ -477,30 +396,6 @@ export class CoursesTab extends LitElement {
     this.editingCourseId = null;
   }
 
-  handleSaveCourse(courseId) {
-    const root = this.shadowRoot;
-    const code = getInputValue(root, "edit-code");
-    const name = getInputValue(root, "edit-name");
-    const credits = parseFloat(getInputValue(root, "edit-credits")) || 0;
-    const prerequisites = getSelectValues(root, "edit-prerequisites");
-    const selectedTeacherIds = getSelectValues(
-      root,
-      "edit-compatible-teachers"
-    );
-
-    store.updateCourse(courseId, {
-      code,
-      name,
-      credits,
-      prerequisites,
-    });
-
-    syncCourseToTeachers(courseId, selectedTeacherIds);
-
-    this.editingCourseId = null;
-    showSuccessMessage(this, "Kurs uppdaterad!");
-  }
-
   handleDeleteCourse(courseId) {
     (async () => {
       const course = store.getCourse(courseId);
@@ -511,11 +406,7 @@ export class CoursesTab extends LitElement {
         return;
       }
 
-      // Optimistically remove from client state
-      const mutationId = store.applyOptimistic({
-        label: "delete-course",
-      });
-      const removed = store.deleteCourse(courseId);
+      const { removed, mutationId } = CourseFormService.deleteCourse(courseId);
       if (!removed) return;
 
       try {

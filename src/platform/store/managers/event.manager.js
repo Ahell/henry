@@ -30,6 +30,23 @@ export class EventManager {
     }
   }
 
+  /**
+   * Notify all subscribers of a data change
+   *
+   * Validation Flow (happens automatically before notifying listeners):
+   * 1. Teacher assignments - ensures one course per teacher per slot
+   * 2. Course availability - removes courses with no available teachers
+   * 3. Prerequisites - checks for missing/misordered prerequisites
+   *
+   * Note: Slot overlap validation happens proactively in slots.manager.js
+   * before slots are added (not reactively here). Slots are validated and
+   * rejected at creation time if they would overlap.
+   *
+   * After validation, triggers auto-save unless reconciling with backend.
+   *
+   * @param {string} eventName - Optional named event for targeted subscriptions
+   * @param {...any} args - Event arguments passed to named event listeners
+   */
   notify(eventName, ...args) {
     // If this is a named event notification, call those listeners
     if (eventName && this.eventListeners[eventName]) {

@@ -18,6 +18,8 @@ import {
   parseTeachersCsv,
   exportTeachersToFile,
 } from "../../../platform/services/csv.service.js";
+import { TeacherFormService } from "../services/teacher-form.service.js";
+import "./teacher-modal.component.js";
 import "../../../components/ui/index.js";
 import { teachersTabStyles } from "../styles/teachers-tab.styles.js";
 
@@ -121,83 +123,20 @@ export class TeachersTab extends LitElement {
         </henry-table>
       </henry-panel>
 
-      ${this._renderEditModal()}
+      <teacher-modal
+        .teacherId="${this.editingTeacherId}"
+        .open="${!!this.editingTeacherId}"
+        @modal-close="${this.handleCancelTeacherEdit}"
+        @modal-save="${this._handleModalSave}"
+      ></teacher-modal>
     `;
   }
 
-  _renderEditModal() {
-    if (!this.editingTeacherId) return html``;
-
-    const teacher = store.getTeacher(this.editingTeacherId);
-    if (!teacher) return html``;
-
-    const departments = ["AIJ", "AIE", "AF"];
-
-    return html`
-      <henry-modal
-        open
-        title="Redigera Lärare"
-        @close="${this.handleCancelTeacherEdit}"
-      >
-        <form @submit="${(e) => this._handleSaveFromModal(e)}">
-          <div
-            style="display: flex; flex-direction: column; gap: var(--space-4);"
-          >
-            <henry-input
-              id="edit-name"
-              label="Namn"
-              .value="${teacher.name}"
-              required
-            ></henry-input>
-
-            <henry-radio-group
-              id="edit-department"
-              label="Avdelning"
-              name="edit-department"
-              value="${teacher.home_department}"
-              .options=${departments.map((dept) => ({
-                value: dept,
-                label: dept,
-              }))}
-            ></henry-radio-group>
-
-            <henry-select
-              id="edit-courses"
-              label="Kompatibla kurser"
-              multiple
-              size="8"
-              .options=${store.getCourses().map((c) => ({
-                value: c.course_id.toString(),
-                label: `${c.code} - ${c.name}`,
-                selected: teacher.compatible_courses?.includes(c.course_id),
-              }))}
-            ></henry-select>
-          </div>
-        </form>
-
-        <div slot="footer">
-          <henry-button
-            variant="secondary"
-            @click="${this.handleCancelTeacherEdit}"
-          >
-            Avbryt
-          </henry-button>
-          <henry-button
-            variant="success"
-            @click="${() => this.handleSaveTeacher(teacher.teacher_id)}"
-          >
-            Spara
-          </henry-button>
-        </div>
-      </henry-modal>
-    `;
-  }
-
-  _handleSaveFromModal(e) {
-    e.preventDefault();
-    if (this.editingTeacherId) {
-      this.handleSaveTeacher(this.editingTeacherId);
-    }
+  _handleModalSave(e) {
+    const { teacherId, formData } = e.detail;
+    TeacherFormService.updateTeacher(teacherId, formData);
+    this.editingTeacherId = null;
+    showSuccessMessage(this, "Lärare uppdaterad!");
   }
 
   _getTeacherTableColumns() {
@@ -273,17 +212,7 @@ export class TeachersTab extends LitElement {
         compatible_courses: selectedCourses,
       };
 
-      let newTeacher = null;
-      const mutationId = store.applyOptimistic({
-        label: "add-teacher",
-        rollback: () => {
-          if (newTeacher && newTeacher.teacher_id) {
-            store.deleteTeacher(newTeacher.teacher_id);
-          }
-        },
-      });
-
-      newTeacher = store.addTeacher(teacher);
+      const { teacher: newTeacher, mutationId } = TeacherFormService.createTeacher(teacher);
 
       try {
         await store.saveData({ mutationId });
@@ -353,22 +282,6 @@ export class TeachersTab extends LitElement {
     this.editingTeacherId = null;
   }
 
-  handleSaveTeacher(teacherId) {
-    const root = this.shadowRoot;
-    const name = getInputValue(root, "edit-name");
-    const home_department = getRadioValue(root, "edit-department");
-    const compatible_courses = getSelectValues(root, "edit-courses");
-
-    store.updateTeacher(teacherId, {
-      name,
-      home_department,
-      compatible_courses,
-    });
-
-    this.editingTeacherId = null;
-    showSuccessMessage(this, "Lärare uppdaterad!");
-  }
-
   handleRandomizeCourses() {
     if (
       confirm(
@@ -392,11 +305,7 @@ export class TeachersTab extends LitElement {
         return;
       }
 
-      // Optimistically remove from client state
-      const mutationId = store.applyOptimistic({
-        label: "delete-teacher",
-      });
-      const removed = store.deleteTeacher(teacherId);
+      const { removed, mutationId } = TeacherFormService.deleteTeacher(teacherId);
       if (!removed) return;
 
       try {
