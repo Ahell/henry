@@ -48,7 +48,6 @@ export class TeachingDaysManager {
     }
   }
 
-  // No-op legacy hooks (defaults hanteras nu per kursSlot via courseSlotDays)
   generateDefaultTeachingDays() {}
   initializeAllTeachingDays() {}
 
@@ -68,10 +67,8 @@ export class TeachingDaysManager {
       const desiredActive = !(baseState.active ?? false);
 
       if (specificIndex !== -1) {
-        // Toggle the course-specific entry directly
         this.store.teachingDays[specificIndex].active = desiredActive;
       } else {
-        // Create a course-specific override (active or inactive) without touching generic
         this.store.teachingDays.push({
           slot_id: slotId,
           date,
@@ -87,7 +84,6 @@ export class TeachingDaysManager {
       return;
     }
 
-    // courseId == null: applicera på alla kursSlotar i slotten (ingen generisk teachingDay)
     const courseSlotsInSlot = (this.store.courseRunsManager.courseSlots || []).filter(
       (cs) => String(cs.slot_id) === String(slotId)
     );
@@ -107,7 +103,6 @@ export class TeachingDaysManager {
     const normalizeDate = (v) => (v || "").split("T")[0];
 
     if (courseId != null) {
-      // First, check courseSlotDay overrides (persisted per kurs)
       const courseSlot = this.getCourseSlot(courseId, slotId);
       if (courseSlot) {
         const csd = (this.store.courseSlotDays || []).find(
@@ -121,14 +116,12 @@ export class TeachingDaysManager {
             active: csd.active !== false,
           };
         }
-        // Om inget csd men datumet ligger i defaultmönstret: anta aktiv standarddag
         const defaultDates = this.store.slotsManager.getDefaultTeachingDaysPattern(slotId);
         if (defaultDates.includes(normalizeDate(date))) {
           return { isDefault: true, active: true };
         }
       }
 
-      // If no courseSlotDay, fall back to course-specific teachingDays entry or generic
       const td =
         this.store.teachingDays.find(
           (t) =>
@@ -149,7 +142,6 @@ export class TeachingDaysManager {
       };
     }
 
-    // courseId === null: merge per-kurs data för alla kursSlotar i slotten
     const courseSlotsInSlot = (this.store.courseRunsManager.courseSlots || []).filter(
       (cs) => String(cs.slot_id) === String(slotId)
     );
@@ -178,13 +170,11 @@ export class TeachingDaysManager {
       return { isDefault: false, active: false };
     }
 
-    // Om inga per-kurs-poster men datum är del av slotens defaultmönster, visa aktiv standard
     const defaultDates = this.store.slotsManager.getDefaultTeachingDaysPattern(slotId);
     if (defaultDates.includes(normalizeDate(date))) {
       return { isDefault: true, active: true };
     }
 
-    // Fall back to generic teachingDays if no per-kurs data finns
     const generic = this.store.teachingDays.find(
       (t) =>
         t.slot_id === slotId &&
@@ -262,10 +252,8 @@ export class TeachingDaysManager {
     if (existingIdx >= 0) {
       const record = this.store.courseSlotDays[existingIdx];
       if (record.is_default) {
-        // Default days toggle active/inactive but stay in DB
         record.active = record.active === false;
       } else {
-        // Non-default days are removed when toggled off
         this.store.courseSlotDays.splice(existingIdx, 1);
       }
     } else {
@@ -279,12 +267,11 @@ export class TeachingDaysManager {
         course_slot_id: courseSlot.course_slot_id,
         date: normalizedDate,
         is_default: isDefault ? 1 : 0,
-        active: isDefault ? 0 : 1, // default dates start inactive when toggled, non-default start active
+        active: isDefault ? 0 : 1,
       });
     }
     if (!skipNotify) this.store.notify();
     if (!skipSave) {
-      // Persist course-specific day changes
       this.store.saveData().catch((err) =>
         console.error("Failed to save course slot day change:", err)
       );

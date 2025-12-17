@@ -16,7 +16,7 @@ export { HenryText } from "./text.js";
 export { HenryPanel } from "./panel.js";
 export { HenryTable } from "./table.js";
 export { HenryModal } from "./modal.js";
-export { TeacherAvailabilityTable } from "../../features/teacher-availability/index.js";
+// export { TeacherAvailabilityTable } from "../../features/teacher-availability/index.js";
 
 // Import all components to ensure they're registered
 import "./button.js";
@@ -31,4 +31,4 @@ import "./text.js";
 import "./panel.js";
 import "./table.js";
 import "./modal.js";
-import "../../features/teacher-availability/index.js";
+// import "../../features/teacher-availability/index.js";

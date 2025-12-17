@@ -230,10 +230,7 @@ export class GanttCourseBlock extends LitElement {
     const runId = e.target.dataset.runId;
     const cohortId = e.target.dataset.cohortId;
 
-    e.dataTransfer.setData(
-      "text/plain",
-      JSON.stringify({ runId, cohortId })
-    );
+    e.dataTransfer.setData("text/plain", JSON.stringify({ runId, cohortId }));
     e.dataTransfer.effectAllowed = "move";
     e.target.classList.add("dragging");
 

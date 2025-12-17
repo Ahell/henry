@@ -5,7 +5,10 @@ import {
   PrerequisiteManager,
   DataServiceManager,
 } from "./services/index.js";
-import { CoursesManager, CourseRunsManager } from "../../features/courses/index.js";
+import {
+  CoursesManager,
+  CourseRunsManager,
+} from "../../features/courses/index.js";
 import { TeachersManager } from "../../features/teachers/index.js";
 import { CohortsManager } from "../../features/cohorts/index.js";
 import { SlotsManager } from "../../features/slots/index.js";
@@ -13,13 +16,13 @@ import { AvailabilityManager } from "./availability.js";
 import { ExamDatesManager } from "./examDates.js";
 import { TeachingDaysManager } from "./teachingDays.js";
 
-import { showAlert } from "../../shared/utils/ui.js";
+import { showAlert } from "../../utils/ui.js";
 
 export const DEFAULT_SLOT_LENGTH_DAYS = 28;
 
 // Dev-safe alert wrapper: logs as warning in dev, shows native alert in prod
 
-export class DataStore {
+  export class DataStore {
   constructor() {
     this.cohorts = [];
     this.slots = [];
@@ -36,19 +39,33 @@ export class DataStore {
     this.prerequisites = new PrerequisiteManager(this);
     this.dataServiceManager = new DataServiceManager(this);
 
-
     // Initialize managers
     this.coursesManager = new CoursesManager(this.events);
-    this.teachersManager = new TeachersManager(this.events, this.coursesManager);
+    this.teachersManager = new TeachersManager(
+      this.events,
+      this.coursesManager
+    );
     this.courseRunsManager = new CourseRunsManager(this.events);
-    this.slotsManager = new SlotsManager(this.events, this.normalizer, this.courseRunsManager);
-    this.cohortsManager = new CohortsManager(this.events, this.courseRunsManager);
+    this.slotsManager = new SlotsManager(
+      this.events,
+      this.normalizer,
+      this.courseRunsManager
+    );
+    this.cohortsManager = new CohortsManager(
+      this.events,
+      this.courseRunsManager
+    );
     this.availabilityManager = new AvailabilityManager(this);
     this.examDatesManager = new ExamDatesManager(this.events);
     this.teachingDaysManager = new TeachingDaysManager(this);
 
     // Load data from backend asynchronously
-    this.dataServiceManager.loadFromBackend();
+    this.dataServiceManager.loadFromBackend().catch((error) => {
+      console.error("Data load failed:", error);
+      showAlert(
+        `Kunde inte läsa data från backend: ${error.message}. Kontrollera att backend-servern körs.`
+      );
+    });
 
     this.events.subscribe("course-deleted", (courseId) => {
       // Delegate course run cleanup to CourseRunsManager
@@ -81,8 +98,6 @@ export class DataStore {
     });
   }
 
-
-
   hydrate(data) {
     this.dataServiceManager.hydrate(data);
   }
@@ -91,9 +106,9 @@ export class DataStore {
     return this.dataServiceManager.loadFromBackend();
   }
 
-    _handleLoadAlerts(removedCourses) {
-      this.dataServiceManager._handleLoadAlerts(removedCourses);
-    }
+  _handleLoadAlerts(removedCourses) {
+    this.dataServiceManager._handleLoadAlerts(removedCourses);
+  }
   // Subscribe to changes
   subscribe(listener) {
     this.events.subscribe(listener);
@@ -291,7 +306,7 @@ export class DataStore {
   }
 
   deleteSlot(slotId) {
-    return this.slotsManager.deleteSlot(slotId)
+    return this.slotsManager.deleteSlot(slotId);
   }
 
   // Teacher Availability
@@ -312,23 +327,41 @@ export class DataStore {
   }
 
   toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId) {
-    return this.availabilityManager.toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId);
+    return this.availabilityManager.toggleTeacherAvailabilityForSlot(
+      teacherId,
+      slotDate,
+      slotId
+    );
   }
 
   toggleTeacherAvailabilityForDay(teacherId, dateStr) {
-    return this.availabilityManager.toggleTeacherAvailabilityForDay(teacherId, dateStr);
+    return this.availabilityManager.toggleTeacherAvailabilityForDay(
+      teacherId,
+      dateStr
+    );
   }
 
   isTeacherUnavailable(teacherId, slotDate, slotId = null) {
-    return this.availabilityManager.isTeacherUnavailable(teacherId, slotDate, slotId);
+    return this.availabilityManager.isTeacherUnavailable(
+      teacherId,
+      slotDate,
+      slotId
+    );
   }
 
   isTeacherUnavailableOnDay(teacherId, dateStr) {
-    return this.availabilityManager.isTeacherUnavailableOnDay(teacherId, dateStr);
+    return this.availabilityManager.isTeacherUnavailableOnDay(
+      teacherId,
+      dateStr
+    );
   }
 
   getTeacherUnavailablePercentageForSlot(teacherId, slotDate, slotId = null) {
-    return this.availabilityManager.getTeacherUnavailablePercentageForSlot(teacherId, slotDate, slotId);
+    return this.availabilityManager.getTeacherUnavailablePercentageForSlot(
+      teacherId,
+      slotDate,
+      slotId
+    );
   }
 
   // Get all individual days within a slot (for detail view)
@@ -369,7 +402,6 @@ export class DataStore {
     return this.teachingDaysManager.isTeachingDay(slotId, date);
   }
 
-
   importData(data) {
     this.dataServiceManager.importData(data);
   }
@@ -380,6 +412,10 @@ export class DataStore {
 
   async resetToSeedData() {
     return this.dataServiceManager.resetToSeedData();
+  }
+
+  async loadSeedDataToDatabase() {
+    return this.dataServiceManager.loadSeedDataToDatabase();
   }
 
   getCourseSlots() {
@@ -395,7 +431,10 @@ export class DataStore {
   }
 
   getCourseSlotDaysForCourse(slotId, courseId) {
-    return this.teachingDaysManager.getCourseSlotDaysForCourse(slotId, courseId);
+    return this.teachingDaysManager.getCourseSlotDaysForCourse(
+      slotId,
+      courseId
+    );
   }
 
   toggleCourseSlotDay(
@@ -420,8 +459,6 @@ export class DataStore {
   defaultSlotEndDate(startDate) {
     return this.dataServiceManager.defaultSlotEndDate(startDate);
   }
-
-
 }
 
 export const store = new DataStore();

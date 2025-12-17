@@ -1,10 +1,13 @@
 import { LitElement, html, css } from "lit";
 import { repeat } from "lit/directives/repeat.js";
-import { store } from "../core/store/DataStore.js";
-import "./ui/index.js";
-import "./admin/index.js";
-import "./report/teacher-availability-tab.js";
-import "./report/scheduling-tab.js";
+import { store } from "../../../core/store/DataStore.js";
+import "../../../components/ui/index.js";
+import "../../teacher-availability/teacher-availability-tab.js";
+import "../../scheduling/scheduling-tab.js";
+import "../../courses/components/courses-tab.js";
+import "../../teachers/components/teachers-tab.js";
+import "../../cohorts/components/cohorts-tab.js";
+import "../../slots/components/slots-tab.js";
 
 export class AdminPanel extends LitElement {
   static styles = css`
@@ -105,8 +108,8 @@ export class AdminPanel extends LitElement {
     super();
     this.activeTab = "courses";
     this.loading = false;
-    this.message = '';
-    this.messageType = '';
+    this.message = "";
+    this.messageType = "";
     this.tabs = [
       {
         key: "courses",
@@ -143,56 +146,65 @@ export class AdminPanel extends LitElement {
   }
 
   async handleLoadSeedData() {
-    if (!confirm('Detta kommer att ERSÄTTA ALL data i databasen med testdata från seedData.js.\n\nVill du fortsätta?')) {
+    if (
+      !confirm(
+        "Detta kommer att ERSÄTTA ALL data i databasen med testdata.\n\nVill du fortsätta?"
+      )
+    ) {
       return;
     }
 
     this.loading = true;
-    this.message = '';
+    this.message = "";
     this.requestUpdate();
 
     try {
       await store.dataServiceManager.loadSeedDataToDatabase();
-      this.message = 'Testdata laddad till databasen!';
-      this.messageType = 'success';
+      this.message = "Testdata laddad till databasen!";
+      this.messageType = "success";
     } catch (error) {
       this.message = `Fel vid laddning av testdata: ${error.message}`;
-      this.messageType = 'error';
+      this.messageType = "error";
     } finally {
       this.loading = false;
       this.requestUpdate();
 
       // Clear message after 5 seconds
       setTimeout(() => {
-        this.message = '';
+        this.message = "";
         this.requestUpdate();
       }, 5000);
     }
   }
 
   async handleResetDatabase() {
-    if (!confirm('Detta kommer att RADERA ALL DATA från databasen.\n\nDenna åtgärd kan inte ångras!\n\nVill du fortsätta?')) {
+    if (
+      !confirm(
+        "Detta kommer att RADERA ALL DATA från databasen.\n\nDenna åtgärd kan inte ångras!\n\nVill du fortsätta?"
+      )
+    ) {
       return;
     }
 
     this.loading = true;
-    this.message = '';
+    this.message = "";
     this.requestUpdate();
 
     try {
       await store.dataServiceManager.resetDatabase();
-      this.message = 'Databas återställd. Klicka "Ladda Testdata" om du vill fylla den.';
-      this.messageType = 'success';
+      this.message =
+        'Databas återställd. Klicka "Ladda Testdata" om du vill fylla den.';
+      this.messageType = "success";
     } catch (error) {
       this.message = `Fel vid återställning: ${error.message}`;
-      this.messageType = 'error';
+      this.messageType = "error";
     } finally {
       this.loading = false;
       this.requestUpdate();
 
       // Clear message after 5 seconds
       setTimeout(() => {
-        this.message = '';
+        this.message = "";
         this.requestUpdate();
       }, 5000);
     }
@@ -210,7 +222,7 @@ export class AdminPanel extends LitElement {
             ?disabled=${this.loading}
             @click=${this.handleLoadSeedData}
           >
-            ${this.loading ? 'Laddar...' : 'Ladda Testdata'}
+            ${this.loading ? "Laddar..." : "Ladda Testdata"}
           </henry-button>
           <henry-button
             variant="danger"
@@ -218,14 +230,14 @@ export class AdminPanel extends LitElement {
             ?disabled=${this.loading}
             @click=${this.handleResetDatabase}
           >
-            ${this.loading ? 'Återställer...' : 'Återställ Databas'}
+            ${this.loading ? "Återställer..." : "Återställ Databas"}
           </henry-button>
         </div>
-        ${this.message ? html`
-          <div class="message ${this.messageType}">
-            ${this.message}
-          </div>
-        ` : ''}
+        ${this.message
+          ? html`
+              <div class="message ${this.messageType}">${this.message}</div>
+            `
+          : ""}
       </div>
 
       <!-- Tabs -->

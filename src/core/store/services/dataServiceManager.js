@@ -1,6 +1,5 @@
-import { seedData } from "../../../data/seedData.js";
 import { DataService } from "./data.service.js"; // Moved import inside
-import { showAlert } from "../../../shared/utils/ui.js";
+import { showAlert } from "../../../utils/ui.js";
 
 export class DataServiceManager {
   constructor(store) {
@@ -18,46 +17,30 @@ export class DataServiceManager {
     this.store.coursesManager.load(data.courses, data.coursePrerequisites);
     this.store.teachersManager.load(data.teachers, data.teacherCourses);
     this.store.examDatesManager.load(data.examDates || []);
-    this.store.courseRunsManager.load(data.courseRuns || [], data.courseSlots || []);
+    this.store.courseRunsManager.load(
+      data.courseRuns || [],
+      data.courseSlots || []
+    );
     this.store.cohortsManager.load(data.cohorts || []);
     this.store.slotsManager.load(data.slots || []);
     this.store.availabilityManager.load(data.teacherAvailability || []);
     this.store.teachingDaysManager.loadTeachingDays(data.teachingDays || []);
     this.store.teachingDaysManager.loadSlotDays(data.slotDays || []);
-    this.store.teachingDaysManager.loadCourseSlotDays(data.courseSlotDays || []);
+    this.store.teachingDaysManager.loadCourseSlotDays(
+      data.courseSlotDays || []
+    );
     this.store.teachersManager.ensureTeacherCoursesFromCompatible();
     this.store.coursesManager.ensurePrerequisitesFromNormalized();
     this.store.teachersManager.ensureTeacherCompatibleFromCourses();
-
-    // Fallback: if backend omitted courseRuns or teacherAvailability, fall back to seed data
-    if (
-      (!this.store.courseRunsManager.courseRuns || this.store.courseRunsManager.courseRuns.length === 0) &&
-      seedData.courseRuns &&
-      seedData.courseRuns.length > 0
-    ) {
-      console.warn(
-        "Backend returned no courseRuns - falling back to seed data courseRuns"
-      );
-      this.store.courseRunsManager.load(seedData.courseRuns, seedData.courseSlots || []);
-    }
-
-    if (
-      (!this.store.teacherAvailability || this.store.availabilityManager.getAllTeacherAvailability().length === 0) &&
-      seedData.teacherAvailability &&
-      seedData.teacherAvailability.length > 0
-    ) {
-      console.warn(
-        "Backend returned no teacherAvailability - falling back to seed data teacherAvailability"
-      );
-      this.store.availabilityManager.load(seedData.teacherAvailability);
-    }
 
     // Derive normalized structures if missing
     this.store.courseRunsManager.ensureCourseSlotsFromRuns();
     this.store.slotsManager.ensureSlotDaysFromSlots();
     this._syncStoreCollections();
     this.store.teachingDaysManager._ensureCourseSlotDayDefaults();
-    this.store.slots = this.store.normalizer.normalizeSlotsInPlace(this.store.slots);
+    this.store.slots = this.store.normalizer.normalizeSlotsInPlace(
+      this.store.slots
+    );
     this.store.validator.assertAllSlotsNonOverlapping();
 
     // Validate and fix teacher assignments (ensure one course per teacher per slot)
@@ -70,9 +53,11 @@ export class DataServiceManager {
     // try to infer from assigned runs or fall back to a random assignment.
     const teachersMissingCompat =
       this.store.teachersManager.getTeachers().length > 0 &&
-      this.store.teachersManager.getTeachers().every(
-        (t) => !t.compatible_courses || t.compatible_courses.length === 0
-      );
+      this.store.teachersManager
+        .getTeachers()
+        .every(
+          (t) => !t.compatible_courses || t.compatible_courses.length === 0
+        );
 
     if (teachersMissingCompat) {
       // Infer from assigned runs where possible
@@ -92,9 +77,11 @@ export class DataServiceManager {
       }
 
       // If still missing, assign random compatible courses so the UI can show options
-      const stillMissing = this.store.teachersManager.getTeachers().some(
-        (t) => !t.compatible_courses || t.compatible_courses.length === 0
-      );
+      const stillMissing = this.store.teachersManager
+        .getTeachers()
+        .some(
+          (t) => !t.compatible_courses || t.compatible_courses.length === 0
+        );
       if (stillMissing) {
         this.store.teachersManager.randomizeTeacherCourses(2, 5);
       }
@@ -149,7 +136,9 @@ export class DataServiceManager {
           message += Array.from(problemsByCourseCohort.values())
             .map(
               (p) =>
-                `${p.cohortName}: "${p.courseName}" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
+                `${p.cohortName}: "${
+                  p.courseName
+                }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
             )
             .join("\n");
         }
@@ -178,7 +167,9 @@ export class DataServiceManager {
         message += Array.from(problemsByCourseCohort.values())
           .map(
             (p) =>
-              `${p.cohortName}: "${p.courseName}" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
+              `${p.cohortName}: "${
+                p.courseName
+              }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
           )
           .join("\n");
 
@@ -225,29 +216,35 @@ export class DataServiceManager {
     this.store.teachingDaysManager.loadCourseSlotDays([]); // Clear courseSlotDays
 
     if (data.courses) {
-      this.store.coursesManager.load(null, null, this.store.normalizer.normalizeCourses(data.courses || []));
+      this.store.coursesManager.load(
+        null,
+        null,
+        this.store.normalizer.normalizeCourses(data.courses || [])
+      );
     }
     if (data.cohorts) {
       this.store.cohortsManager.load(data.cohorts);
     }
     if (data.teachers) {
-      this.store.teachersManager.load(
-        data.teachers,
-        data.teacherCourses || []
-      );
+      this.store.teachersManager.load(data.teachers, data.teacherCourses || []);
     }
     if (data.slots) {
       // Need to add slots one by one to trigger validation and default teaching day generation
       data.slots.forEach((s) => this.store.slotsManager.addSlot(s));
     }
     if (data.courseRuns) {
-      data.courseRuns.forEach((r) => this.store.courseRunsManager.addCourseRun(r));
+      data.courseRuns.forEach((r) =>
+        this.store.courseRunsManager.addCourseRun(r)
+      );
     }
     if (data.teacherAvailability) {
       this.store.availabilityManager.load(data.teacherAvailability);
     }
     if (data.coursePrerequisites) {
-      this.store.coursesManager.load(this.store.coursesManager.getCourses(), data.coursePrerequisites);
+      this.store.coursesManager.load(
+        this.store.coursesManager.getCourses(),
+        data.coursePrerequisites
+      );
     }
     if (data.teachingDays) {
       this.store.teachingDaysManager.loadTeachingDays(data.teachingDays);
@@ -256,7 +253,10 @@ export class DataServiceManager {
       this.store.examDatesManager.load(data.examDates);
     }
     if (data.courseSlots) {
-      this.store.courseRunsManager.load(this.store.courseRunsManager.getCourseRuns(), data.courseSlots);
+      this.store.courseRunsManager.load(
+        this.store.courseRunsManager.getCourseRuns(),
+        data.courseSlots
+      );
     }
     if (data.slotDays) {
       this.store.teachingDaysManager.loadSlotDays(data.slotDays);
@@ -285,50 +285,15 @@ export class DataServiceManager {
     };
   }
 
-  // Reset to seed data
   async resetToSeedData() {
-    // Clear current data using manager load methods
-    this.store.coursesManager.load([], []);
-    this.store.cohortsManager.load([]);
-    this.store.teachersManager.load([], []);
-    this.store.slotsManager.load([]);
-    this.store.courseRunsManager.load([], []);
-    this.store.availabilityManager.load([]);
-    this.store.teachingDaysManager.loadTeachingDays([]);
-    this.store.examDatesManager.load([]);
-    this.store.teachingDaysManager.loadSlotDays([]);
-    this.store.teachingDaysManager.loadCourseSlotDays([]);
-
-    // Reload seed data WITHOUT courseRuns - cohorts should start with empty sequences
-    const seedDataWithoutRuns = {
-      courses: seedData.courses,
-      cohorts: seedData.cohorts,
-      teachers: seedData.teachers,
-      slots: seedData.slots,
-      // courseRuns intentionally omitted - each cohort starts fresh
-      teacherAvailability: seedData.teacherAvailability,
-      courseSlots: seedData.courseSlots || [],
-      slotDays: seedData.slotDays || [],
-      courseSlotDays: seedData.courseSlotDays || [],
-    };
-    this.importData(seedDataWithoutRuns);
+    return this.loadSeedDataToDatabase();
   }
 
-  // Load seed data into database
+  // Load seed data into database via backend
   async loadSeedDataToDatabase() {
     try {
-      // Load seedData into frontend store using importData
-      this.importData(seedData);
-
-      // Notify listeners
-      this.store.events.notify();
-
-      // Save to backend (will replace all existing data via bulk-save)
-      await this.saveData();
-
-      // Reload from backend to confirm persistence
+      await this.dataService.loadTestData();
       await this.loadFromBackend();
-
       return { success: true, message: "Seed data loaded successfully" };
     } catch (error) {
       console.error("Failed to load seed data:", error);
@@ -340,10 +305,13 @@ export class DataServiceManager {
   async resetDatabase() {
     try {
       // 1. Call backend reset-all endpoint to clear all tables
-      const response = await fetch('http://localhost:3001/api/admin/reset-all', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const response = await fetch(
+        `${this.dataService.api.baseUrl}/api/admin/reset-all`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Reset failed: ${response.statusText}`);

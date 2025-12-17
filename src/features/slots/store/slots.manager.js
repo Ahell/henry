@@ -1,5 +1,5 @@
 // src/features/slots/store/slots.manager.js
-import { showAlert } from "../../../shared/utils/ui.js";
+import { showAlert } from "../../../utils/ui.js";
 
 export class SlotsManager {
   constructor(events, normalizer, courseRunsManager) {
@@ -149,7 +149,9 @@ export class SlotsManager {
     // Support both slot_id (number/string) and start_date (string)
     const slot =
       this.getSlots().find((s) => String(s.slot_id) === String(slotDateOrId)) ||
-      this.getSlots().find((s) => normalizeDate(s.start_date) === normalizedDate);
+      this.getSlots().find(
+        (s) => normalizeDate(s.start_date) === normalizedDate
+      );
 
     // Prefer normalized slotDays if they exist
     if (
@@ -222,10 +224,8 @@ export class SlotsManager {
 
     const normalizeDate = (value) => (value || "").split("T")[0];
     let nextId =
-      this.slotDays.reduce(
-        (max, sd) => Math.max(max, sd.slot_day_id || 0),
-        0
-      ) + 1;
+      this.slotDays.reduce((max, sd) => Math.max(max, sd.slot_day_id || 0), 0) +
+      1;
 
     for (const slot of this.getSlots() || []) {
       const hasDays = this.slotDays.some(

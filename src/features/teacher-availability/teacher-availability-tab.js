@@ -1,7 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { store } from "../../core/store/DataStore.js";
-import "../ui/index.js";
-import "../../features/teacher-availability/index.js";
+import "../../components/ui/index.js";
+import "./index.js";
 
 export class TeacherAvailabilityTab extends LitElement {
   static properties = {
@@ -145,7 +145,9 @@ export class TeacherAvailabilityTab extends LitElement {
               variant="${this.isPainting ? "success" : "primary"}"
               @click="${this._togglePaintMode}"
             >
-              ${this.isPainting ? "Avsluta målningsläge" : "Starta målningsläge"}
+              ${this.isPainting
+                ? "Avsluta målningsläge"
+                : "Starta målningsläge"}
             </henry-button>
             <div class="paint-status"></div>
           </div>

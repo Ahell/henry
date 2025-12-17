@@ -2,7 +2,7 @@
 export class ExamDatesManager {
   constructor(events) {
     this.events = events;
-    this.examDates = []; // Array of { slot_id, date, locked }
+    this.examDates = [];
   }
 
   load(examDates) {
@@ -10,16 +10,12 @@ export class ExamDatesManager {
   }
 
   setExamDate(slotId, date) {
-    // Remove any existing exam date for this slot (radio button behavior)
     this.examDates = this.examDates.filter((ed) => ed.slot_id !== slotId);
-
-    // Add the new exam date
     this.examDates.push({
       slot_id: slotId,
       date,
-      locked: true, // Exam dates are locked by default
+      locked: true,
     });
-
     this.events.notify();
   }
 

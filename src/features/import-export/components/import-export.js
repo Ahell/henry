@@ -1,7 +1,6 @@
 import { LitElement, html, css } from "lit";
-import { store } from "../core/store/DataStore.js";
-import { seedData } from "../data/seedData.js";
-import "./ui/index.js";
+import { store } from "../../../core/store/DataStore.js";
+import "../../../components/ui/index.js";
 
 export class ImportExport extends LitElement {
   static styles = css`
@@ -238,13 +237,20 @@ export class ImportExport extends LitElement {
     return data;
   }
 
-  loadSampleData() {
-    store.importData(seedData);
-    this.message =
-      "Fullständig testdata laddad (14 kurser, 10 kullar, 12 lärare, alla slots och kursomgångar)!";
-    this.messageType = "success";
+  async loadSampleData() {
+    try {
+      await store.loadSeedDataToDatabase();
+      this.message =
+        "Fullständig testdata laddad (14 kurser, 10 kullar, 12 lärare, alla slots och kursomgångar)!";
+      this.messageType = "success";
+    } catch (error) {
+      this.message = `Fel vid laddning av testdata: ${error.message}`;
+      this.messageType = "error";
+    }
+    this.requestUpdate();
     setTimeout(() => {
       this.message = "";
+      this.requestUpdate();
     }, 4000);
   }
 
@@ -283,18 +289,24 @@ export class ImportExport extends LitElement {
     URL.revokeObjectURL(url);
   }
 
-  resetData() {
+  async resetData() {
     if (
       confirm(
         "Är du säker? Detta raderar alla ändringar och återställer till ursprungsdata."
       )
     ) {
-      store.resetToSeedData();
-      this.message = "Data återställd till ursprungsdata!";
-      this.messageType = "success";
+      try {
+        await store.resetToSeedData();
+        this.message = "Data återställd till ursprungsdata!";
+        this.messageType = "success";
+      } catch (error) {
+        this.message = `Fel vid återställning: ${error.message}`;
+        this.messageType = "error";
+      }
       this.requestUpdate();
       setTimeout(() => {
         this.message = "";
+        this.requestUpdate();
       }, 4000);
     }
   }

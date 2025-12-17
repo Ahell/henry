@@ -19,12 +19,12 @@ npm run dev
 ```
 henry/
 ├── src/                    # Frontend (Lit components)
-│   ├── admin-panel.js      # Admin-gränssnitt för grunddata
-│   ├── import-export.js    # Import/export av data
+│   ├── features/admin/components/admin-panel.js      # Admin-gränssnitt för grunddata
+│   ├── features/import-export/components/import-export.js    # Import/export av data
 │   ├── utils/              # Gemensam logik
 │   │   ├── store.js        # Datahantering och API-integration
 │   │   └── businessRules.js # Affärslogik och valideringsregler
-│   ├── data/seedData.js    # Initial testdata
+│   ├── server/data/seedData.js    # Initial testdata
 │   └── main.js             # Entry point
 ├── server/                 # Backend (Express + SQLite)
 │   ├── server.js           # API-server och databas
@@ -174,9 +174,9 @@ npm run preview
 
 - **`src/utils/store.js`** - DataStore för global state management
 - **`src/utils/businessRules.js`** - All affärslogik (validering, regler)
-- **`src/admin-panel.js`** - Lit-komponent för grunddata
+- **`src/features/admin/components/admin-panel.js`** - Lit-komponent för grunddata
 - **`src/course-run-planner.js`** - Lit-komponent för skapande av kursomgångar
-- **`src/import-export.js`** - Lit-komponent för import/export
+- **`src/features/import-export/components/import-export.js`** - Lit-komponent för import/export
 - **`src/main.js`** - Huvudentry-point och navigation
 
 ## Framtida Utökningar

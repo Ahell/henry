@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../core/store/DataStore.js";
-import "../ui/index.js";
+import "../../components/ui/index.js";
 import "./gantt-depot.js";
 import "./gantt-cell.js";
 import "./gantt-summary-row.js";

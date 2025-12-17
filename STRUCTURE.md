@@ -17,7 +17,7 @@ henry/
 ├── 🎨 Frontend (src/)
 │   ├── main.js                     # 🚪 Entry point
 │   ├── components/                 # ⚡ Web Components (Lit)
-│   │   ├── admin-panel.js          # Admin tab router (~110 rader)
+│   │   ├── features/admin/components/admin-panel.js          # Admin tab router (~110 rader)
 │   │   ├── admin/                  # 📁 Admin tab components
 │   │   │   ├── courses-tab.js      # CRUD för kurser
 │   │   │   ├── cohorts-tab.js      # CRUD för kullar
@@ -32,12 +32,12 @@ henry/
 │   │   │   ├── heading.js          # Henry heading
 │   │   │   ├── card.js             # Henry card
 │   │   │   └── index.js            # Export alla UI
-│   │   └── import-export.js        # Import/export-funktioner
+│   │   └── features/import-export/components/import-export.js        # Import/export-funktioner
 │   ├── utils/                      # 🛠️ Utilities & Logic
 │   │   ├── store.js                # Datahantering & API
 │   │   └── businessRules.js        # Validering & affärslogik
 │   ├── data/                       # 📊 Data & Seeds
-│   │   └── seedData.js             # Testdata
+│   │   └── seedData.js             # Testdata (migrated to backend)
 │   └── styles/                     # 🎨 Gemensamma stilar
 │       ├── tokens.css              # Design tokens
 │       └── theme.css               # Gemensamt tema
@@ -73,7 +73,7 @@ henry/
 
 Alla Lit-komponenter som bygger upp UI:t:
 
-- **admin-panel.js** (~110 rader) - Tab router för admin-funktioner
+- **`features/admin/components/admin-panel.js`** (~110 rader) - Tab router för admin-funktioner
 - **admin/** - Separata tab-komponenter för bättre underhåll
   - **courses-tab.js** (~400 rader) - CRUD för kurser
   - **cohorts-tab.js** (~350 rader) - CRUD för kullar
@@ -98,7 +98,7 @@ Alla Lit-komponenter som bygger upp UI:t:
 
 #### `data/` - Data & Seeds
 
-- **seedData.js** (664 rader) - Testdata för kurser, kullar, lärare, etc.
+- **server/data/seedData.js** (664 rader) - Testdata för kurser, kullar, lärare, etc. (migrerad till backend)
 
 #### `styles/` - Gemensamma Stilar
 
@@ -198,7 +198,7 @@ export const colors = {
 | Ändra validering          | `src/utils/businessRules.js`                |
 | Ändra hur data sparas     | `src/utils/store.js`                        |
 | Ändra API endpoints       | `server/server.js`                          |
-| Ändra testdata            | `src/data/seedData.js`                      |
+| Ändra testdata            | `server/data/seedData.js`                    |
 | Ändra design tokens       | `src/styles/tokens.css`                     |
 ## 📏 Storlek på filer
 
@@ -207,15 +207,15 @@ Stora filer (>1000 rader):
 └── src/utils/store.js 1946 rader ✅ OK
 
 Medelstora filer (300-700 rader):
-├── src/data/seedData.js 664 rader ✅ OK
+├── server/data/seedData.js 664 rader ✅ OK
 ├── server/server.js 419 rader ✅ OK
 ├── src/components/admin/courses-tab.js 400 rader ✅ OK
 ├── src/components/admin/teachers-tab.js 380 rader ✅ OK
 ├── src/components/admin/cohorts-tab.js 350 rader ✅ OK
-└── src/components/import-export.js 302 rader ✅ OK
+└── src/features/import-export/components/import-export.js 302 rader ✅ OK
 
 Små filer (<150 rader):
-├── src/components/admin-panel.js 110 rader ✅ Perfect!
+├── src/features/admin/components/admin-panel.js 110 rader ✅ Perfect!
 ├── src/components/ui/*.js ~100 rader ✅ OK
 ├── src/utils/businessRules.js 120 rader ✅ OK
 └── src/main.js 22 rader ✅ OK

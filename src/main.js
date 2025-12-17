@@ -1,5 +1,5 @@
-import "./components/admin-panel.js";
-import "./components/import-export.js";
+import "./features/admin/index.js";
+import "./features/import-export/index.js";
 
 // Handle navigation
 document.querySelectorAll(".nav-btn").forEach((btn) => {

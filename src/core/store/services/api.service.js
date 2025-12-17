@@ -14,6 +14,21 @@ export class ApiService {
     return await response.json();
   }
 
+  async loadTestData() {
+    const response = await fetch(`${this.baseUrl}/api/admin/load-test-data`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Seed data load failed: ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
   async saveData(data) {
     const response = await fetch(`${this.baseUrl}/api/bulk-save`, {
       method: "POST",

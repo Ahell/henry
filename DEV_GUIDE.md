@@ -50,12 +50,12 @@ npm run dev           # Startar allt med live reload
 ```
 src/
 ├── main.js              # Entry point - importerar alla komponenter
-├── admin-panel.js       # Admin-UI för CRUD på grunddata
-├── import-export.js     # Import/export JSON
+├── features/admin/components/admin-panel.js       # Admin-UI för CRUD på grunddata
+├── features/import-export/components/import-export.js     # Import/export JSON
 ├── utils/
 │   ├── store.js         # VIKTIGAST! Datahantering och API-calls
 │   └── businessRules.js # Valideringslogik (isolerad)
-└── data/seedData.js     # Testdata
+└── server/data/seedData.js     # Testdata (backend)
 
 server/
 └── server.js            # Hela backend i en fil!
@@ -102,7 +102,7 @@ async loadData() {
 addProgram(program) {...}
 ```
 
-3. **UI** (skapa `src/program-panel.js` eller uppdatera `admin-panel.js`)
+3. **UI** (skapa `src/program-panel.js` eller uppdatera `features/admin/components/admin-panel.js`)
 
 ### Ändra validering
 
