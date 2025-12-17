@@ -1,4 +1,4 @@
-import { store } from "../../utils/store.js";
+import { store } from "../../core/store/DataStore.js";
 
 export const removeTeacherFromRunsInSlot = (teacherId, slotDate, slots) => {
   const slot = slots.find((s) => s.start_date === slotDate);

@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { store } from "../../utils/store.js";
+import { store } from "../../../core/store/DataStore.js";
 import {
   getInputValue,
   resetForm,
@@ -7,8 +7,8 @@ import {
   showErrorMessage,
   initializeEditState,
   subscribeToStore,
-} from "../../utils/admin-helpers.js";
-import "../ui/index.js";
+} from "../../../utils/admin-helpers.js";
+import "../../../components/ui/index.js";
 
 export class SlotsTab extends LitElement {
   static styles = css`

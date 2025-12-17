@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { store } from "../../utils/store.js";
+import { store } from "../../core/store/DataStore.js";
 import "./detail-view-header.js";
 import "./teacher-cell.js";
 import {

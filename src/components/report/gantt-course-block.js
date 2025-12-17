@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { store } from "../../utils/store.js";
+import { store } from "../../core/store/DataStore.js";
 
 /**
  * Gantt Course Block Component - Displays a course in the Gantt chart

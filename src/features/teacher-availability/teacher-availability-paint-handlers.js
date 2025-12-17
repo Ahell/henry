@@ -1,8 +1,8 @@
-import { store } from "../../utils/store.js";
+import { store } from "../../core/store/DataStore.js";
 import {
   hasBusySlotEntry,
   convertSlotEntryToDayEntriesAndRemove,
-} from "../../utils/teacherAvailabilityHelpers.js";
+} from "./helpers.js";
 import { removeTeacherFromRunsInSlot } from "./teacher-availability-runs.js";
 
 const dispatchPaintState = (component) => {

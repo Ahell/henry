@@ -1,4 +1,4 @@
-import { isDayUnavailableConsideringSlot } from "../../utils/teacherAvailabilityHelpers.js";
+import { isDayUnavailableConsideringSlot } from "./helpers.js";
 
 /**
  * Decide presentation for a day header in the detail view.

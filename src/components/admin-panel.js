@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { repeat } from "lit/directives/repeat.js";
-import { store } from "../utils/store.js";
+import { store } from "../core/store/DataStore.js";
 import "./report-viewer.js";
 import "./ui/index.js";
 import "./admin/index.js";
@@ -50,15 +50,62 @@ export class AdminPanel extends LitElement {
       background: var(--color-gray-100);
       border-color: var(--color-border);
     }
+
+    .data-management {
+      margin-bottom: var(--space-4);
+      padding: var(--space-3);
+      background: var(--color-gray-50);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .data-management-label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-secondary);
+    }
+
+    .button-group {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .message {
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      margin-left: auto;
+    }
+
+    .message.success {
+      background: var(--color-success-light, #d4edda);
+      color: var(--color-success-dark, #155724);
+      border: 1px solid var(--color-success, #28a745);
+    }
+
+    .message.error {
+      background: var(--color-error-light, #f8d7da);
+      color: var(--color-error-dark, #721c24);
+      border: 1px solid var(--color-error, #dc3545);
+    }
   `;
 
   static properties = {
     activeTab: { type: String },
+    loading: { type: Boolean },
+    message: { type: String },
+    messageType: { type: String },
   };
 
   constructor() {
     super();
     this.activeTab = "courses";
+    this.loading = false;
+    this.message = '';
+    this.messageType = '';
     this.tabs = [
       {
         key: "courses",
@@ -100,8 +147,93 @@ export class AdminPanel extends LitElement {
     store.subscribe(() => this.requestUpdate());
   }
 
+  async handleLoadSeedData() {
+    if (!confirm('Detta kommer att ERSÄTTA ALL data i databasen med testdata från seedData.js.\n\nVill du fortsätta?')) {
+      return;
+    }
+
+    this.loading = true;
+    this.message = '';
+    this.requestUpdate();
+
+    try {
+      await store.dataServiceManager.loadSeedDataToDatabase();
+      this.message = 'Testdata laddad till databasen!';
+      this.messageType = 'success';
+    } catch (error) {
+      this.message = `Fel vid laddning av testdata: ${error.message}`;
+      this.messageType = 'error';
+    } finally {
+      this.loading = false;
+      this.requestUpdate();
+
+      // Clear message after 5 seconds
+      setTimeout(() => {
+        this.message = '';
+        this.requestUpdate();
+      }, 5000);
+    }
+  }
+
+  async handleResetDatabase() {
+    if (!confirm('Detta kommer att RADERA ALL DATA från databasen och ladda testdata.\n\nDenna åtgärd kan inte ångras!\n\nVill du fortsätta?')) {
+      return;
+    }
+
+    this.loading = true;
+    this.message = '';
+    this.requestUpdate();
+
+    try {
+      await store.dataServiceManager.resetDatabaseAndLoadSeed();
+      this.message = 'Databas återställd och testdata laddad!';
+      this.messageType = 'success';
+    } catch (error) {
+      this.message = `Fel vid återställning: ${error.message}`;
+      this.messageType = 'error';
+    } finally {
+      this.loading = false;
+      this.requestUpdate();
+
+      // Clear message after 5 seconds
+      setTimeout(() => {
+        this.message = '';
+        this.requestUpdate();
+      }, 5000);
+    }
+  }
+
   render() {
     return html`
+      <!-- Data Management Panel -->
+      <div class="data-management">
+        <span class="data-management-label">Testdata:</span>
+        <div class="button-group">
+          <henry-button
+            variant="primary"
+            size="small"
+            ?disabled=${this.loading}
+            @click=${this.handleLoadSeedData}
+          >
+            ${this.loading ? 'Laddar...' : 'Ladda Testdata'}
+          </henry-button>
+          <henry-button
+            variant="danger"
+            size="small"
+            ?disabled=${this.loading}
+            @click=${this.handleResetDatabase}
+          >
+            ${this.loading ? 'Återställer...' : 'Återställ Databas'}
+          </henry-button>
+        </div>
+        ${this.message ? html`
+          <div class="message ${this.messageType}">
+            ${this.message}
+          </div>
+        ` : ''}
+      </div>
+
+      <!-- Tabs -->
       <div class="tabs">
         ${repeat(
           this.tabs,

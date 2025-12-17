@@ -1,5 +1,5 @@
-// src/utils/store/slots.js
-import { showAlert } from "../ui.js";
+// src/core/store/slots.js
+import { showAlert } from "../../shared/utils/ui.js";
 
 export class SlotsManager {
   constructor(store) {

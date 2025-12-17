@@ -71,4 +71,34 @@ router.post("/reset-courses", (req, res) => {
   }
 });
 
+router.post("/reset-all", (req, res) => {
+  try {
+    db.transaction(() => {
+      // Delete all data in correct order to handle foreign key constraints
+      db.prepare("DELETE FROM course_run_days").run();
+      db.prepare("DELETE FROM course_run_teachers").run();
+      db.prepare("DELETE FROM course_run_cohorts").run();
+      db.prepare("DELETE FROM course_run_slots").run();
+      db.prepare("DELETE FROM teacher_day_unavailability").run();
+      db.prepare("DELETE FROM teacher_slot_unavailability").run();
+      db.prepare("DELETE FROM course_slot_days").run();
+      db.prepare("DELETE FROM slot_days").run();
+      db.prepare("DELETE FROM cohort_slot_courses").run();
+      db.prepare("DELETE FROM teacher_course_competency").run();
+      db.prepare("DELETE FROM teacher_courses_staff").run();
+      db.prepare("DELETE FROM course_prerequisites").run();
+      db.prepare("DELETE FROM slots").run();
+      db.prepare("DELETE FROM cohorts").run();
+      db.prepare("DELETE FROM teachers").run();
+      db.prepare("DELETE FROM courses").run();
+    })();
+
+    console.log("Admin: reset all database tables");
+    res.json({ success: true, message: "All database tables cleared" });
+  } catch (error) {
+    console.error("Failed to reset database:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

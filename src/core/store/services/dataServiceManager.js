@@ -1,6 +1,6 @@
 import { seedData } from "../../../data/seedData.js";
 import { DataService } from "./data.service.js"; // Moved import inside
-import { showAlert } from "../../ui.js";
+import { showAlert } from "../../../shared/utils/ui.js";
 
 export class DataServiceManager {
   constructor(store) {
@@ -299,6 +299,60 @@ export class DataServiceManager {
       courseSlotDays: seedData.courseSlotDays || [],
     };
     this.importData(seedDataWithoutRuns);
+  }
+
+  // Load seed data into database
+  async loadSeedDataToDatabase() {
+    try {
+      // Load seedData into frontend store using importData
+      this.importData(seedData);
+
+      // Notify listeners
+      this.store.events.notify();
+
+      // Save to backend (will replace all existing data via bulk-save)
+      await this.saveData();
+
+      // Reload from backend to confirm persistence
+      await this.loadFromBackend();
+
+      return { success: true, message: "Seed data loaded successfully" };
+    } catch (error) {
+      console.error("Failed to load seed data:", error);
+      throw error;
+    }
+  }
+
+  // Reset database and reload seed data
+  async resetDatabaseAndLoadSeed() {
+    try {
+      // 1. Call backend reset-all endpoint to clear all tables
+      const response = await fetch('http://localhost:3001/api/admin/reset-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Reset failed: ${response.statusText}`);
+      }
+
+      // 2. Load seedData into frontend store using importData
+      this.importData(seedData);
+
+      // 3. Notify listeners
+      this.store.events.notify();
+
+      // 4. Persist to backend database
+      await this.saveData();
+
+      // 5. Reload from backend to confirm
+      await this.loadFromBackend();
+
+      return { success: true, message: "Database reset and seed data loaded" };
+    } catch (error) {
+      console.error("Failed to reset database and load seed:", error);
+      throw error;
+    }
   }
 
   // Public utility methods (delegate to services)

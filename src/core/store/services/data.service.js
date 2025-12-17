@@ -19,7 +19,7 @@ export class DataService {
         (!data.slots || data.slots.length === 0)
       ) {
         console.log("No data in backend, loading seed data");
-        this.store._loadSnapshot(seedData);
+        this.store.dataServiceManager.importData(seedData);
         this.store.events.notify();
         // Persist seed to backend so subsequent loads have data
         this.api
@@ -32,7 +32,7 @@ export class DataService {
     } catch (error) {
       console.error("Failed to load from backend:", error);
       console.log("Loading seed data as fallback");
-      this.store.importData(seedData);
+      this.store.dataServiceManager.importData(seedData);
     }
   }
 

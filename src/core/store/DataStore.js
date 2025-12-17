@@ -4,17 +4,16 @@ import {
   EventManager,
   PrerequisiteManager,
   DataServiceManager,
-} from "./store/services/index.js";
-import { CoursesManager } from "./store/courses.js";
-import { CohortsManager } from "./store/cohorts.js";
-import { TeachersManager } from "./store/teachers.js";
-import { SlotsManager } from "./store/slots.js";
-import { CourseRunsManager } from "./store/courseRuns.js";
-import { AvailabilityManager } from "./store/availability.js";
-import { ExamDatesManager } from "./store/examDates.js";
-import { TeachingDaysManager } from "./store/teachingDays.js";
+} from "./services/index.js";
+import { CoursesManager, CourseRunsManager } from "../../features/courses/index.js";
+import { TeachersManager } from "../../features/teachers/index.js";
+import { CohortsManager } from "../../features/cohorts/index.js";
+import { SlotsManager } from "../../features/slots/index.js";
+import { AvailabilityManager } from "./availability.js";
+import { ExamDatesManager } from "./examDates.js";
+import { TeachingDaysManager } from "./teachingDays.js";
 
-import { showAlert } from "./ui.js";
+import { showAlert } from "../../shared/utils/ui.js";
 
 export const DEFAULT_SLOT_LENGTH_DAYS = 28;
 
@@ -40,10 +39,10 @@ export class DataStore {
 
     // Initialize managers
     this.coursesManager = new CoursesManager(this.events);
-    this.cohortsManager = new CohortsManager(this);
     this.teachersManager = new TeachersManager(this.events, this.coursesManager);
-    this.slotsManager = new SlotsManager(this);
     this.courseRunsManager = new CourseRunsManager(this.events);
+    this.slotsManager = new SlotsManager(this.events, this.normalizer, this.courseRunsManager);
+    this.cohortsManager = new CohortsManager(this.events, this.courseRunsManager);
     this.availabilityManager = new AvailabilityManager(this);
     this.examDatesManager = new ExamDatesManager(this.events);
     this.teachingDaysManager = new TeachingDaysManager(this);

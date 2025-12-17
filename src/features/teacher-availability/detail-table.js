@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../utils/store.js";
+import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../core/store/DataStore.js";
 
 export class DetailTable extends LitElement {
   static properties = {

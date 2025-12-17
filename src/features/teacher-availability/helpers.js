@@ -1,4 +1,4 @@
-import { store } from "./store.js";
+import { store } from "../../core/store/DataStore.js";
 
 /**
  * Check if there is a slot-level "busy" entry for a teacher.
