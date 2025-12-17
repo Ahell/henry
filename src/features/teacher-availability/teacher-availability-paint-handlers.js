@@ -1,4 +1,4 @@
-import { store } from "../../core/store/DataStore.js";
+import { store } from "../../platform/store/DataStore.js";
 import {
   hasBusySlotEntry,
   convertSlotEntryToDayEntriesAndRemove,

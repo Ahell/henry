@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { store } from "../../../core/store/DataStore.js";
+import { store } from "../../../platform/store/DataStore.js";
 import "../../../components/ui/index.js";
 
 export class ImportExport extends LitElement {

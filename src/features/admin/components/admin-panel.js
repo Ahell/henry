@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { repeat } from "lit/directives/repeat.js";
-import { store } from "../../../core/store/DataStore.js";
+import { store } from "../../../platform/store/DataStore.js";
 import "../../../components/ui/index.js";
 import "../../teacher-availability/teacher-availability-tab.js";
 import "../../scheduling/scheduling-tab.js";

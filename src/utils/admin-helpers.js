@@ -8,7 +8,7 @@
  * - Teacher-course synchronization
  */
 
-import { store } from "../core/store/DataStore.js";
+import { store } from "../platform/store/DataStore.js";
 
 /**
  * Show a temporary success message in a component
