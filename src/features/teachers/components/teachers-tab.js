@@ -5,11 +5,15 @@ import {
   getSelectValues,
   getRadioValue,
   resetForm,
+} from "../../../utils/form-helpers.js";
+import {
   showSuccessMessage,
   showErrorMessage,
+} from "../../../utils/message-helpers.js";
+import {
   initializeEditState,
   subscribeToStore,
-} from "../../../utils/admin-helpers.js";
+} from "../../admin/utils/admin-helpers.js";
 import "../../../components/ui/index.js";
 import { teachersTabStyles } from "../styles/teachers-tab.styles.js";
 

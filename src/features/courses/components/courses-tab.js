@@ -5,13 +5,17 @@ import {
   getSelectValues,
   getRadioValue,
   resetForm,
+} from "../../../utils/form-helpers.js";
+import {
   showSuccessMessage,
   showErrorMessage,
+} from "../../../utils/message-helpers.js";
+import {
   addCourseToTeachers,
   syncCourseToTeachers,
   initializeEditState,
   subscribeToStore,
-} from "../../../utils/admin-helpers.js";
+} from "../../admin/utils/admin-helpers.js";
 import "../../../components/ui/index.js";
 import { coursesTabStyles } from "../styles/courses-tab.styles.js";
 
@@ -164,11 +168,6 @@ export class CoursesTab extends LitElement {
           >
           <henry-button variant="secondary" @click="${this.exportCoursesCsv}"
             >Exportera CSV</henry-button
-          >
-          <henry-button
-            variant="danger"
-            @click="${this.handleResetCoursesClick}"
-            >Återställ kurser (DB)</henry-button
           >
         </div>
       </henry-panel>
@@ -498,8 +497,10 @@ export class CoursesTab extends LitElement {
     showSuccessMessage(this, "Kurs uppdaterad!");
   }
 
-  handleDeleteCourse(courseId, courseName) {
+  handleDeleteCourse(courseId) {
     (async () => {
+      const course = store.getCourse(courseId);
+      const courseName = course ? course.name : "Okänd kurs";
       if (
         !confirm(`Är du säker på att du vill ta bort kursen "${courseName}"?`)
       ) {
@@ -649,31 +650,6 @@ export class CoursesTab extends LitElement {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }
-
-  async handleResetCoursesClick() {
-    if (
-      !confirm(
-        "Är du säker? Detta kommer att radera alla kurser och ta bort referenser till dem i schemat."
-      )
-    )
-      return;
-
-    try {
-      const res = await fetch("/api/admin/reset-courses", { method: "POST" });
-      if (!res.ok) {
-        const js = await res.json().catch(() => ({}));
-        throw new Error(js.error || "Serverfel");
-      }
-      // Reload data from backend
-      await store.loadFromBackend();
-      showSuccessMessage(
-        this,
-        "Kurser återställda och referenser rensade i DB"
-      );
-    } catch (err) {
-      showErrorMessage(this, `Kunde inte återställa kurser: ${err.message}`);
-    }
   }
 }
 

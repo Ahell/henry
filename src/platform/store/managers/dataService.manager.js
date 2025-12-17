@@ -1,5 +1,5 @@
-import { DataService } from "./data.service.js"; // Moved import inside
-import { showAlert } from "../../utils/ui.js";
+import { DataService } from "../../services/data.service.js"; // Moved import inside
+import { showAlert } from "../../../utils/ui.js";
 
 export class DataServiceManager {
   constructor(store) {

@@ -1,5 +1,5 @@
 // Public API for slots feature
-export { SlotsManager } from './store/slots.manager.js';
+export { SlotsManager } from '../../platform/store/managers/slots.manager.js';
 export { SlotsTab } from './components/slots-tab.js';
 
 // Optional: Create hooks for easier consumption

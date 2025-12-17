@@ -1,6 +1,6 @@
 // Public API for courses feature
-export { CoursesManager } from './store/courses.manager.js';
-export { CourseRunsManager } from './store/courseRuns.manager.js';
+export { CoursesManager } from '../../platform/store/managers/courses.manager.js';
+export { CourseRunsManager } from '../../platform/store/managers/courseRuns.manager.js';
 export { CoursesTab } from './components/courses-tab.js';
 
 // Optional: Create hooks for easier consumption

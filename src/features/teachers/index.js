@@ -1,5 +1,5 @@
 // Public API for teachers feature
-export { TeachersManager } from './store/teachers.manager.js';
+export { TeachersManager } from '../../platform/store/managers/teachers.manager.js';
 export { TeachersTab } from './components/teachers-tab.js';
 
 // Optional: Create hooks for easier consumption

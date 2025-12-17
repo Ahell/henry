@@ -1,4 +1,4 @@
-export { AvailabilityManager } from "./store/availability.manager.js";
+export { AvailabilityManager } from "../../platform/store/managers/availability.manager.js";
 export { TeacherAvailabilityTab } from "./components/teacher-availability-tab.js";
 export { TeacherAvailabilityTable } from "./components/teacher-availability-table.js";
 

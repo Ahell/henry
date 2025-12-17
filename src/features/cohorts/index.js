@@ -1,5 +1,5 @@
 // Public API for cohorts feature
-export { CohortsManager } from './store/cohorts.manager.js';
+export { CohortsManager } from '../../platform/store/managers/cohorts.manager.js';
 export { CohortsTab } from './components/cohorts-tab.js';
 
 // Optional: Create hooks for easier consumption

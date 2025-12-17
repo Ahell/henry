@@ -1,22 +1,18 @@
 import {
   DataValidator,
   DataNormalizer,
-  EventManager,
   PrerequisiteManager,
-  DataServiceManager,
 } from "../services/index.js";
-import {
-  CoursesManager,
-  CourseRunsManager,
-} from "../../features/courses/index.js";
-import { TeachersManager } from "../../features/teachers/index.js";
-import { CohortsManager } from "../../features/cohorts/index.js";
-import { SlotsManager } from "../../features/slots/index.js";
-import { AvailabilityManager } from "../../features/teacher-availability/index.js";
-import {
-  ExamDatesManager,
-  TeachingDaysManager,
-} from "../../features/scheduling/index.js";
+import { EventManager } from "./managers/event.manager.js";
+import { DataServiceManager } from "./managers/dataService.manager.js";
+import { CoursesManager } from "./managers/courses.manager.js";
+import { CourseRunsManager } from "./managers/courseRuns.manager.js";
+import { TeachersManager } from "./managers/teachers.manager.js";
+import { CohortsManager } from "./managers/cohorts.manager.js";
+import { SlotsManager } from "./managers/slots.manager.js";
+import { AvailabilityManager } from "./managers/availability.manager.js";
+import { ExamDatesManager } from "./managers/examDates.manager.js";
+import { TeachingDaysManager } from "./managers/teachingDays.manager.js";
 
 import { showAlert } from "../../utils/ui.js";
 
