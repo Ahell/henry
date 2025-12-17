@@ -16,6 +16,10 @@ import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
+import {
+  parseCoursesCsv,
+  exportCoursesToFile,
+} from "../../../platform/services/csv.service.js";
 import "../../../components/ui/index.js";
 import { coursesTabStyles } from "../styles/courses-tab.styles.js";
 
@@ -528,7 +532,7 @@ export class CoursesTab extends LitElement {
     if (!file) return;
     try {
       const text = await file.text();
-      const rows = this.parseCoursesCsv(text);
+      const rows = parseCoursesCsv(text);
 
       // First pass: add or update courses, keep mapping from code -> id
       const codeToId = new Map();
@@ -589,67 +593,8 @@ export class CoursesTab extends LitElement {
     }
   }
 
-  // CSV parser tailored for courses; supports headers: code,name,credits,prerequisites,compatible_teachers
-  parseCoursesCsv(content) {
-    const lines = content.trim().split(/\r?\n/).filter(Boolean);
-    if (lines.length === 0) return [];
-    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-    const rows = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",").map((v) => v.trim());
-      const obj = {};
-      headers.forEach((h, idx) => (obj[h] = values[idx] ?? ""));
-
-      const prerequisites = (obj.prerequisites || "")
-        .split(/[;|\\/]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-      const compatible_teachers = (obj.compatible_teachers || "")
-        .split(/[;|\\/]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      rows.push({
-        code: obj.code || obj.kod || "",
-        name: obj.name || obj.namn || "",
-        credits: obj.credits
-          ? Number(obj.credits)
-          : obj.hp
-          ? Number(obj.hp)
-          : 0,
-        prerequisites,
-        compatible_teachers,
-      });
-    }
-    return rows;
-  }
-
   exportCoursesCsv() {
-    const courses = store.getCourses();
-    const teachers = store.getTeachers();
-    let csv = "code,name,credits,prerequisites,compatible_teachers\n";
-    courses.forEach((c) => {
-      const prereqCodes = (c.prerequisites || [])
-        .map((pid) => store.getCourse(pid)?.code)
-        .filter(Boolean)
-        .join(";");
-      const teacherNames = teachers
-        .filter((t) => (t.compatible_courses || []).includes(c.course_id))
-        .map((t) => t.name)
-        .join(";");
-      csv += `${c.code},"${c.name}",${
-        c.credits ?? ""
-      },"${prereqCodes}","${teacherNames}"\n`;
-    });
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "courses.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    exportCoursesToFile();
   }
 }
 

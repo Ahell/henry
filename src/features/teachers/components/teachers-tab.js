@@ -14,6 +14,10 @@ import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
+import {
+  parseTeachersCsv,
+  exportTeachersToFile,
+} from "../../../platform/services/csv.service.js";
 import "../../../components/ui/index.js";
 import { teachersTabStyles } from "../styles/teachers-tab.styles.js";
 
@@ -409,7 +413,7 @@ export class TeachersTab extends LitElement {
     if (!file) return;
     try {
       const text = await file.text();
-      const rows = this.parseTeachersCsv(text);
+      const rows = parseTeachersCsv(text);
 
       // Map course codes to ids
       const courses = store.getCourses();
@@ -460,48 +464,8 @@ export class TeachersTab extends LitElement {
     }
   }
 
-  parseTeachersCsv(content) {
-    const lines = content.trim().split(/\r?\n/).filter(Boolean);
-    if (lines.length === 0) return [];
-    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-    const rows = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",").map((v) => v.trim());
-      const obj = {};
-      headers.forEach((h, idx) => (obj[h] = values[idx] ?? ""));
-      const compat = (obj.compatible_courses || "")
-        .split(/[;|\\/]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-      rows.push({
-        teacher_id: obj.teacher_id ? Number(obj.teacher_id) : null,
-        name: obj.name || "",
-        home_department: obj.home_department || "",
-        compatible_courses: compat,
-      });
-    }
-    return rows;
-  }
-
   exportTeachersCsv() {
-    const teachers = store.getTeachers();
-    const courses = store.getCourses();
-    let csv = "teacher_id,name,home_department,compatible_courses\n";
-    teachers.forEach((t) => {
-      const compat = (t.compatible_courses || [])
-        .map((cid) => store.getCourse(cid)?.code || cid)
-        .join(";");
-      csv += `${t.teacher_id},"${t.name}","${t.home_department}","${compat}"\n`;
-    });
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "teachers.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    exportTeachersToFile();
   }
 
   async handleResetTeachersClick() {
