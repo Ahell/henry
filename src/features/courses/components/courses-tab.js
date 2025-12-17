@@ -390,11 +390,21 @@ export class CoursesTab extends LitElement {
         prerequisites: prerequisites,
       };
 
-      const newCourse = store.addCourse(course);
+      let newCourse = null;
+      const mutationId = store.applyOptimistic({
+        label: "add-course",
+        rollback: () => {
+          if (newCourse && newCourse.course_id) {
+            store.deleteCourse(newCourse.course_id);
+          }
+        },
+      });
+
+      newCourse = store.addCourse(course);
       addCourseToTeachers(newCourse.course_id, selectedTeacherIds);
 
       try {
-        await store.saveData();
+        await store.saveData({ mutationId });
 
         // Reset native form
         resetForm(root);
@@ -452,13 +462,6 @@ export class CoursesTab extends LitElement {
         showSuccessMessage(this, "Kurs tillagd!");
       } catch (err) {
         showErrorMessage(this, `Kunde inte lägga till kurs: ${err.message}`);
-        // Roll back optimistic add
-        try {
-          if (newCourse && newCourse.course_id)
-            store.deleteCourse(newCourse.course_id);
-        } catch (e) {
-          console.warn("Failed to roll back new course after save error:", e);
-        }
       }
     })();
   }
@@ -504,19 +507,16 @@ export class CoursesTab extends LitElement {
       }
 
       // Optimistically remove from client state
+      const mutationId = store.applyOptimistic({
+        label: "delete-course",
+      });
       const removed = store.deleteCourse(courseId);
       if (!removed) return;
 
       try {
-        await store.saveData();
+        await store.saveData({ mutationId });
         showSuccessMessage(this, `Kurs "${courseName}" borttagen!`);
       } catch (err) {
-        // If save failed, reload from backend to restore state
-        try {
-          await store.loadFromBackend();
-        } catch (e) {
-          console.error("Failed to reload data after failed delete:", e);
-        }
         showErrorMessage(this, `Kunde inte ta bort kursen: ${err.message}`);
       }
     })();

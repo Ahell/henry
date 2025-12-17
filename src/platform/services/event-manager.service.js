@@ -62,8 +62,10 @@ export class EventManager {
     // Notify all listeners
     this.listeners.forEach((l) => l());
 
-    // Auto-save after notifications
-    this.store.saveData().catch((err) => console.error("Auto-save failed:", err));
+    // Auto-save after notifications unless we are reconciling with backend
+    if (!this.store.isReconciling) {
+      this.store.saveData().catch((err) => console.error("Auto-save failed:", err));
+    }
 
     // Show alert if courses were removed
     if (removedCourses.length > 0) {

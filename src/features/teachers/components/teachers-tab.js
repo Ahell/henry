@@ -265,12 +265,20 @@ export class TeachersTab extends LitElement {
         compatible_courses: selectedCourses,
       };
 
-      const newTeacher = store.addTeacher(teacher);
+      let newTeacher = null;
+      const mutationId = store.applyOptimistic({
+        label: "add-teacher",
+        rollback: () => {
+          if (newTeacher && newTeacher.teacher_id) {
+            store.deleteTeacher(newTeacher.teacher_id);
+          }
+        },
+      });
+
+      newTeacher = store.addTeacher(teacher);
 
       try {
-        // Wait for persistence before clearing the form so the UI
-        // doesn't lose state if save fails
-        await store.saveData();
+        await store.saveData({ mutationId });
 
         // Reset the native form
         resetForm(root);
@@ -325,10 +333,6 @@ export class TeachersTab extends LitElement {
         showSuccessMessage(this, "Lärare tillagd!");
       } catch (err) {
         showErrorMessage(this, `Kunde inte lägga till lärare: ${err.message}`);
-        // If save failed, remove the optimistic teacher we added earlier
-        if (newTeacher && newTeacher.teacher_id) {
-          store.deleteTeacher(newTeacher.teacher_id);
-        }
       }
     })();
   }
@@ -381,19 +385,16 @@ export class TeachersTab extends LitElement {
       }
 
       // Optimistically remove from client state
+      const mutationId = store.applyOptimistic({
+        label: "delete-teacher",
+      });
       const removed = store.deleteTeacher(teacherId);
       if (!removed) return;
 
       try {
-        await store.saveData();
+        await store.saveData({ mutationId });
         showSuccessMessage(this, `Lärare "${teacherName}" borttagen!`);
       } catch (err) {
-        // If save failed, reload from backend to restore state
-        try {
-          await store.loadFromBackend();
-        } catch (e) {
-          console.error("Failed to reload data after failed delete:", e);
-        }
         showErrorMessage(this, `Kunde inte ta bort läraren: ${err.message}`);
       }
     })();

@@ -28,7 +28,11 @@ export class DataService {
       );
       this.store.validator.assertAllSlotsNonOverlapping();
 
-      return await this.api.saveData(this.store.getDataSnapshot());
+      await this.api.saveData(this.store.getDataSnapshot());
+
+      // After saving, reload the canonical dataset so the client can reconcile with server state
+      const canonicalData = await this.api.loadData();
+      return canonicalData;
     } catch (error) {
       console.error("Failed to save to backend:", error);
       throw error;

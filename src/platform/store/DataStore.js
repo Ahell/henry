@@ -33,6 +33,10 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
     this.courseSlotDays = [];
     this.teachingDays = []; // Array of {slot_id, date} objects marking teaching days
     this.prerequisiteProblems = [];
+    this._nextMutationId = 1;
+    this._pendingMutations = new Map();
+    this._lastCommittedMutationId = 0;
+    this._isReconciling = false;
 
     // Initialize services
     this.validator = new DataValidator(this);
@@ -105,7 +109,12 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
   }
 
   async loadFromBackend() {
-    return this.dataServiceManager.loadFromBackend();
+    this._beginReconciling();
+    try {
+      return await this.dataServiceManager.loadFromBackend();
+    } finally {
+      this._endReconciling();
+    }
   }
 
   _handleLoadAlerts(removedCourses) {
@@ -120,8 +129,100 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
     this.events.notify();
   }
 
-  async saveData() {
-    return this.dataServiceManager.saveData();
+  async saveData({ mutationId, label } = {}) {
+    // Track the mutation id so we can reconcile with canonical server data on success or rollback on failure.
+    const id = this._ensureMutationId(mutationId);
+    const entry =
+      this._pendingMutations.get(id) || {
+        label: label || `mutation-${id}`,
+        rollback: null,
+      };
+    if (!this._pendingMutations.has(id)) {
+      this._pendingMutations.set(id, entry);
+    }
+
+    try {
+      const serverPayload = await this.dataServiceManager.saveData();
+      this.commitReconcile(serverPayload, id);
+      return serverPayload;
+    } catch (error) {
+      await this.rollback(id);
+      throw error;
+    }
+  }
+
+  _ensureMutationId(explicitId) {
+    if (typeof explicitId === "number") {
+      this._nextMutationId = Math.max(this._nextMutationId, explicitId + 1);
+      return explicitId;
+    }
+    return this._nextMutationId++;
+  }
+
+  /**
+   * Track a pending optimistic mutation by assigning it a monotonically increasing ID.
+   * Optional rollback hooks can be supplied if the mutation can be reverted locally.
+   */
+  applyOptimistic({ label = "optimistic", rollback = null } = {}) {
+    const mutationId = this._ensureMutationId();
+    this._pendingMutations.set(mutationId, { label, rollback });
+    return mutationId;
+  }
+
+  _beginReconciling() {
+    this._isReconciling = true;
+  }
+
+  _endReconciling() {
+    this._isReconciling = false;
+  }
+
+  get isReconciling() {
+    return this._isReconciling;
+  }
+
+  /**
+   * Replace the local store with the canonical server payload once the mutation
+   * finishes; ignore any stale responses that arrive out of order.
+   */
+  commitReconcile(serverPayload, mutationId) {
+    if (!serverPayload || mutationId <= this._lastCommittedMutationId) {
+      return;
+    }
+
+    this._lastCommittedMutationId = mutationId;
+    for (const id of Array.from(this._pendingMutations.keys())) {
+      if (id <= mutationId) {
+        this._pendingMutations.delete(id);
+      }
+    }
+
+    this._beginReconciling();
+    try {
+      this.dataServiceManager.hydrate(serverPayload);
+    } finally {
+      this._endReconciling();
+    }
+  }
+
+  /**
+   * Revert a mutation that failed to persist. If a custom rollback hook exists it
+   * runs; otherwise we reload from the backend to stay server-authoritative.
+   */
+  async rollback(mutationId) {
+    const entry = this._pendingMutations.get(mutationId);
+    this._pendingMutations.delete(mutationId);
+
+    if (entry?.rollback) {
+      entry.rollback();
+      return;
+    }
+
+    try {
+      await this.loadFromBackend();
+    } catch (error) {
+      console.error("Rollback failed to reload backend data:", error);
+    }
   }
 
   getDataSnapshot() {
