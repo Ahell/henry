@@ -1,5 +1,4 @@
 import "./components/admin-panel.js";
-import "./components/report-viewer.js";
 import "./components/import-export.js";
 
 // Handle navigation

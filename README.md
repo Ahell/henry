@@ -20,7 +20,6 @@ npm run dev
 henry/
 ├── src/                    # Frontend (Lit components)
 │   ├── admin-panel.js      # Admin-gränssnitt för grunddata
-│   ├── report-viewer.js    # Rapporter och planeringsvy
 │   ├── import-export.js    # Import/export av data
 │   ├── utils/              # Gemensam logik
 │   │   ├── store.js        # Datahantering och API-integration
@@ -74,31 +73,6 @@ npm run clean            # Rensa alla dependencies och builds
 - Välj kurs, lärare och kullar som ska delta
 - Automatisk kapacitetsvalidering
 - Föreslå samläsning för befintliga kursomgångar
-
-### 4. **Rapporter & Vyer**
-
-#### 4.1 Avdelningschef-vy
-
-- Bemanning per år/termin
-- Filtrera på år och avdelning
-- Se alla kurskoder, examinator, start/slut, antal studenter
-
-#### 4.2 Lärar-vy
-
-- Per lärare: vilka FEI-kursomgångar undervisar de?
-- Möjlighet att detektera krockar med busy-perioder (KTH)
-
-#### 4.3 Kull-vy
-
-- Per kull: sekvens av 14 kurser i kronologisk ordning
-- Markering av juridikkurser
-- Framgång/status för varje kurs
-
-#### 4.4 Gantt-vy (Planeringsöversikt)
-
-- Tidsaxel för alla kullar och kurser
-- Färgkodning: juridik (lila), normal (blå), 2-block (grön)
-- Visar studieverlauf per kull
 
 ## Affärsregler
 
@@ -202,7 +176,6 @@ npm run preview
 - **`src/utils/businessRules.js`** - All affärslogik (validering, regler)
 - **`src/admin-panel.js`** - Lit-komponent för grunddata
 - **`src/course-run-planner.js`** - Lit-komponent för skapande av kursomgångar
-- **`src/report-viewer.js`** - Lit-komponent för rapporter och vyer
 - **`src/import-export.js`** - Lit-komponent för import/export
 - **`src/main.js`** - Huvudentry-point och navigation
 

@@ -1,9 +1,10 @@
 import { LitElement, html, css } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 import { store } from "../core/store/DataStore.js";
-import "./report-viewer.js";
 import "./ui/index.js";
 import "./admin/index.js";
+import "./report/teacher-availability-tab.js";
+import "./report/scheduling-tab.js";
 
 export class AdminPanel extends LitElement {
   static styles = css`
@@ -128,20 +129,14 @@ export class AdminPanel extends LitElement {
         component: html`<slots-tab></slots-tab>`,
       },
       {
-        key: "teacherView",
+        key: "teacherAvailability",
         label: "Lärartillgänglighet",
-        component: html`<report-viewer
-          .activeTab=${"teacher"}
-          .hideTabs=${true}
-        ></report-viewer>`,
+        component: html`<teacher-availability-tab></teacher-availability-tab>`,
       },
       {
-        key: "gantt",
+        key: "scheduling",
         label: "Schemaläggning",
-        component: html`<report-viewer
-          .activeTab=${"gantt"}
-          .hideTabs=${true}
-        ></report-viewer>`,
+        component: html`<scheduling-tab></scheduling-tab>`,
       },
     ];
     store.subscribe(() => this.requestUpdate());
@@ -176,7 +171,7 @@ export class AdminPanel extends LitElement {
   }
 
   async handleResetDatabase() {
-    if (!confirm('Detta kommer att RADERA ALL DATA från databasen och ladda testdata.\n\nDenna åtgärd kan inte ångras!\n\nVill du fortsätta?')) {
+    if (!confirm('Detta kommer att RADERA ALL DATA från databasen.\n\nDenna åtgärd kan inte ångras!\n\nVill du fortsätta?')) {
       return;
     }
 
@@ -185,8 +180,8 @@ export class AdminPanel extends LitElement {
     this.requestUpdate();
 
     try {
-      await store.dataServiceManager.resetDatabaseAndLoadSeed();
-      this.message = 'Databas återställd och testdata laddad!';
+      await store.dataServiceManager.resetDatabase();
+      this.message = 'Databas återställd. Klicka "Ladda Testdata" om du vill fylla den.';
       this.messageType = 'success';
     } catch (error) {
       this.message = `Fel vid återställning: ${error.message}`;

@@ -8,6 +8,11 @@ export class DataServiceManager {
     this.dataService = new DataService(store);
   }
 
+  _syncStoreCollections() {
+    this.store.cohorts = this.store.cohortsManager.getCohorts();
+    this.store.slots = this.store.slotsManager.getSlots();
+  }
+
   hydrate(data) {
     // Load data from backend
     this.store.coursesManager.load(data.courses, data.coursePrerequisites);
@@ -50,6 +55,7 @@ export class DataServiceManager {
     // Derive normalized structures if missing
     this.store.courseRunsManager.ensureCourseSlotsFromRuns();
     this.store.slotsManager.ensureSlotDaysFromSlots();
+    this._syncStoreCollections();
     this.store.teachingDaysManager._ensureCourseSlotDayDefaults();
     this.store.slots = this.store.normalizer.normalizeSlotsInPlace(this.store.slots);
     this.store.validator.assertAllSlotsNonOverlapping();
@@ -190,11 +196,11 @@ export class DataServiceManager {
   getDataSnapshot() {
     return {
       courses: this.store.coursesManager.getCourses(),
-      cohorts: this.store.cohorts,
+      cohorts: this.store.cohortsManager.getCohorts(),
       teachers: this.store.teachersManager.getTeachers(),
       teacherCourses: this.store.teachersManager.teacherCourses,
       coursePrerequisites: this.store.coursesManager.coursePrerequisites,
-      slots: this.store.slots,
+      slots: this.store.slotsManager.getSlots(),
       courseRuns: this.store.courseRunsManager.courseRuns,
       teacherAvailability: this.store.teacherAvailability,
       teachingDays: this.store.teachingDays,
@@ -223,6 +229,12 @@ export class DataServiceManager {
     }
     if (data.cohorts) {
       this.store.cohortsManager.load(data.cohorts);
+    }
+    if (data.teachers) {
+      this.store.teachersManager.load(
+        data.teachers,
+        data.teacherCourses || []
+      );
     }
     if (data.slots) {
       // Need to add slots one by one to trigger validation and default teaching day generation
@@ -254,6 +266,7 @@ export class DataServiceManager {
     }
     this.store.courseRunsManager.ensureCourseSlotsFromRuns();
     this.store.slotsManager.ensureSlotDaysFromSlots();
+    this._syncStoreCollections();
     this.store.events.notify();
   }
 
@@ -261,9 +274,9 @@ export class DataServiceManager {
   exportData() {
     return {
       courses: this.store.coursesManager.getCourses(),
-      cohorts: this.store.cohorts,
+      cohorts: this.store.cohortsManager.getCohorts(),
       teachers: this.store.teachersManager.getTeachers(),
-      slots: this.store.slots,
+      slots: this.store.slotsManager.getSlots(),
       courseRuns: this.store.courseRunsManager.courseRuns,
       teacherAvailability: this.store.teacherAvailability,
       courseSlots: this.store.courseRunsManager.courseSlots,
@@ -323,8 +336,8 @@ export class DataServiceManager {
     }
   }
 
-  // Reset database and reload seed data
-  async resetDatabaseAndLoadSeed() {
+  // Reset database without loading seed data
+  async resetDatabase() {
     try {
       // 1. Call backend reset-all endpoint to clear all tables
       const response = await fetch('http://localhost:3001/api/admin/reset-all', {
@@ -336,21 +349,12 @@ export class DataServiceManager {
         throw new Error(`Reset failed: ${response.statusText}`);
       }
 
-      // 2. Load seedData into frontend store using importData
-      this.importData(seedData);
+      // Clear frontend data (without seeding) so UI reflects the empty database
+      this.importData({});
 
-      // 3. Notify listeners
-      this.store.events.notify();
-
-      // 4. Persist to backend database
-      await this.saveData();
-
-      // 5. Reload from backend to confirm
-      await this.loadFromBackend();
-
-      return { success: true, message: "Database reset and seed data loaded" };
+      return { success: true, message: "Database reset" };
     } catch (error) {
-      console.error("Failed to reset database and load seed:", error);
+      console.error("Failed to reset database:", error);
       throw error;
     }
   }

@@ -51,7 +51,6 @@ npm run dev           # Startar allt med live reload
 src/
 ├── main.js              # Entry point - importerar alla komponenter
 ├── admin-panel.js       # Admin-UI för CRUD på grunddata
-├── report-viewer.js     # Planering, drag-and-drop, Gantt
 ├── import-export.js     # Import/export JSON
 ├── utils/
 │   ├── store.js         # VIKTIGAST! Datahantering och API-calls

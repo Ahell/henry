@@ -32,7 +32,6 @@ henry/
 │   │   │   ├── heading.js          # Henry heading
 │   │   │   ├── card.js             # Henry card
 │   │   │   └── index.js            # Export alla UI
-│   │   ├── report-viewer.js        # Planering & rapporter
 │   │   └── import-export.js        # Import/export-funktioner
 │   ├── utils/                      # 🛠️ Utilities & Logic
 │   │   ├── store.js                # Datahantering & API
@@ -196,7 +195,6 @@ export const colors = {
 | Ändra hur kullar visas    | `src/components/admin/cohorts-tab.js`       |
 | Ändra hur kurser visas    | `src/components/admin/courses-tab.js`       |
 | Ändra hur lärare visas    | `src/components/admin/teachers-tab.js`      |
-| Ändra drag-and-drop logik | `src/components/report-viewer.js`           |
 | Ändra validering          | `src/utils/businessRules.js`                |
 | Ändra hur data sparas     | `src/utils/store.js`                        |
 | Ändra API endpoints       | `server/server.js`                          |
@@ -204,10 +202,9 @@ export const colors = {
 | Ändra design tokens       | `src/styles/tokens.css`                     |
 ## 📏 Storlek på filer
 
-````
-
+```
 Stora filer (>1000 rader):
-└── src/components/report-viewer.js 2995 rader ⚠️ Överväg split
+└── src/utils/store.js 1946 rader ✅ OK
 
 Medelstora filer (300-700 rader):
 ├── src/data/seedData.js 664 rader ✅ OK
@@ -219,36 +216,14 @@ Medelstora filer (300-700 rader):
 
 Små filer (<150 rader):
 ├── src/components/admin-panel.js 110 rader ✅ Perfect!
-├── src/components/ui/\*.js ~100 rader ✅ OK
+├── src/components/ui/*.js ~100 rader ✅ OK
 ├── src/utils/businessRules.js 120 rader ✅ OK
 └── src/main.js 22 rader ✅ OK
-
-```src/utils/store.js 1946 rader  ✅  OK
-
-Medelstora filer (300-700 rader):
-├── src/data/seedData.js                664 rader  ✅  OK
-├── server/server.js                    419 rader  ✅  OK
-└── src/components/import-export.js     302 rader  ✅  OK
-
-Små filer (<100 rader):
-├── src/utils/businessRules.js          120 rader  ✅  OK
-└── src/main.js                          22 rader  ✅  OK
 ```
 
 ## 🚀 Framtida Refactoring
 
 När projektet växer:
-
-1. **Split report-viewer.js** (~3000 rader)
-
-   ```
-   components/
-   ├── report-viewer/
-   │   ├── index.js
-   │   ├── gantt-view.js
-   │   ├── drag-drop-handler.js
-   │   └── validation.js
-   ```
 
 2. **Split server.js**
 
