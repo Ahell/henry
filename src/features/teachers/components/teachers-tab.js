@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import {
   getInputValue,
@@ -11,31 +11,10 @@ import {
   subscribeToStore,
 } from "../../../utils/admin-helpers.js";
 import "../../../components/ui/index.js";
+import { teachersTabStyles } from "../styles/teachers-tab.styles.js";
 
 export class TeachersTab extends LitElement {
-  static styles = css`
-    @import url("/src/styles/tokens.css");
-
-    :host {
-      display: block;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: var(--space-4);
-      margin-bottom: var(--space-4);
-    }
-
-    henry-table {
-      margin-top: var(--space-4);
-    }
-
-    .edit-input {
-      padding: var(--space-1) var(--space-2);
-      font-size: var(--font-size-sm);
-    }
-  `;
+  static styles = teachersTabStyles;
 
   static properties = {
     editingTeacherId: { type: Number },

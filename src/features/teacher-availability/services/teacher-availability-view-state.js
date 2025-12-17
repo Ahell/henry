@@ -1,4 +1,4 @@
-import { store } from "../../platform/store/DataStore.js";
+import { store } from "../../../platform/store/DataStore.js";
 
 export const enterDetailView = (component, slotDate, slotId) => {
   component._detailSlotDate = slotDate;

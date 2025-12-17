@@ -4,7 +4,7 @@ import {
   EventManager,
   PrerequisiteManager,
   DataServiceManager,
-} from "./services/index.js";
+} from "../services/index.js";
 import {
   CoursesManager,
   CourseRunsManager,
@@ -12,9 +12,11 @@ import {
 import { TeachersManager } from "../../features/teachers/index.js";
 import { CohortsManager } from "../../features/cohorts/index.js";
 import { SlotsManager } from "../../features/slots/index.js";
-import { AvailabilityManager } from "./availability.js";
-import { ExamDatesManager } from "./examDates.js";
-import { TeachingDaysManager } from "./teachingDays.js";
+import { AvailabilityManager } from "../../features/teacher-availability/index.js";
+import {
+  ExamDatesManager,
+  TeachingDaysManager,
+} from "../../features/scheduling/index.js";
 
 import { showAlert } from "../../utils/ui.js";
 

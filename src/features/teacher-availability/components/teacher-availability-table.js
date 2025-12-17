@@ -1,18 +1,18 @@
 import { LitElement, html } from "lit";
-import { store } from "../../platform/store/DataStore.js";
+import { store } from "../../../platform/store/DataStore.js";
 import "./detail-view-header.js";
 import "./teacher-cell.js";
 import {
   renderDetailView,
   renderOverviewView,
-} from "./teacher-availability-renderers.js";
+} from "../services/teacher-availability-renderers.js";
 import {
   handleCellMouseDown,
   handleCellMouseEnter,
   handlePaintEnd,
   handlePaintChangeRequest,
-} from "./teacher-availability-paint-handlers.js";
-import { teacherAvailabilityTableStyles } from "./teacher-availability-table.styles.js";
+} from "../services/teacher-availability-paint-handlers.js";
+import { teacherAvailabilityTableStyles } from "../styles/teacher-availability-table.styles.js";
 import "./overview-table.js";
 import "./detail-table.js";
 import "./availability-empty-state.js";

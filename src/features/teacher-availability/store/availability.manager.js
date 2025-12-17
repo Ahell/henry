@@ -1,4 +1,4 @@
-// src/utils/store/availability.js
+// Teacher availability store manager
 export class AvailabilityManager {
   constructor(store) {
     this.store = store;

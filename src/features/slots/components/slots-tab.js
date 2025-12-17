@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import {
   getInputValue,
@@ -9,28 +9,10 @@ import {
   subscribeToStore,
 } from "../../../utils/admin-helpers.js";
 import "../../../components/ui/index.js";
+import { slotsTabStyles } from "../styles/slots-tab.styles.js";
 
 export class SlotsTab extends LitElement {
-  static styles = css`
-    @import url("/src/styles/tokens.css");
-
-    :host {
-      display: block;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: var(--space-4);
-      margin-bottom: var(--space-4);
-    }
-
-    henry-table {
-      margin-top: var(--space-4);
-    }
-
-    /* end date is always 28 days - not editable or shown in admin tab */
-  `;
+  static styles = slotsTabStyles;
 
   static properties = {
     slots: { type: Array },

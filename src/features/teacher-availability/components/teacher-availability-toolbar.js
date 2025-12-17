@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import "../../components/ui/paint-controls.js";
+import "../../../components/ui/paint-controls.js";
 
 export class TeacherAvailabilityToolbar extends LitElement {
   static properties = {

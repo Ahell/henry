@@ -1,4 +1,4 @@
-// src/utils/store/teachingDays.js
+// Teaching days store manager
 export class TeachingDaysManager {
   constructor(store) {
     this.store = store;

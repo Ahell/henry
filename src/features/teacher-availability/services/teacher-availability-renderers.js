@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../platform/store/DataStore.js";
+import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
 import { renderDayHeaderCell } from "./day-header-cell.js";
 import {
   getDetailDayHeaderPresentation,
