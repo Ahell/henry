@@ -11,7 +11,7 @@ export class PrerequisiteManager {
     // Get all cohorts
     for (const cohort of this.store.cohorts) {
       // Get all runs for this cohort
-      const cohortRuns = this.store.courseRuns.filter(
+      const cohortRuns = this.store.courseRunsManager.courseRuns.filter(
         (r) => r.cohorts && r.cohorts.includes(cohort.cohort_id)
       );
 

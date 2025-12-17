@@ -1,4 +1,5 @@
 import { LitElement, html, css } from "lit";
+import { repeat } from "lit/directives/repeat.js";
 import { store } from "../utils/store.js";
 import "./report-viewer.js";
 import "./ui/index.js";
@@ -58,68 +59,65 @@ export class AdminPanel extends LitElement {
   constructor() {
     super();
     this.activeTab = "courses";
+    this.tabs = [
+      {
+        key: "courses",
+        label: "Kurser",
+        component: html`<courses-tab></courses-tab>`,
+      },
+      {
+        key: "cohorts",
+        label: "Kullar",
+        component: html`<cohorts-tab></cohorts-tab>`,
+      },
+      {
+        key: "teachers",
+        label: "Lärare",
+        component: html`<teachers-tab></teachers-tab>`,
+      },
+      {
+        key: "slots",
+        label: "Slots",
+        component: html`<slots-tab></slots-tab>`,
+      },
+      {
+        key: "teacherView",
+        label: "Lärartillgänglighet",
+        component: html`<report-viewer
+          .activeTab=${"teacher"}
+          .hideTabs=${true}
+        ></report-viewer>`,
+      },
+      {
+        key: "gantt",
+        label: "Schemaläggning",
+        component: html`<report-viewer
+          .activeTab=${"gantt"}
+          .hideTabs=${true}
+        ></report-viewer>`,
+      },
+    ];
     store.subscribe(() => this.requestUpdate());
   }
 
   render() {
     return html`
       <div class="tabs">
-        <button
-          class="tab-button ${this.activeTab === "courses" ? "active" : ""}"
-          @click="${() => (this.activeTab = "courses")}"
-        >
-          Kurser
-        </button>
-        <button
-          class="tab-button ${this.activeTab === "cohorts" ? "active" : ""}"
-          @click="${() => (this.activeTab = "cohorts")}"
-        >
-          Kullar
-        </button>
-        <button
-          class="tab-button ${this.activeTab === "teachers" ? "active" : ""}"
-          @click="${() => (this.activeTab = "teachers")}"
-        >
-          Lärare
-        </button>
-        <button
-          class="tab-button ${this.activeTab === "slots" ? "active" : ""}"
-          @click="${() => (this.activeTab = "slots")}"
-        >
-          Slots
-        </button>
-        <button
-          class="tab-button ${this.activeTab === "teacherView" ? "active" : ""}"
-          @click="${() => (this.activeTab = "teacherView")}"
-        >
-          Lärartillgänglighet
-        </button>
-        <button
-          class="tab-button ${this.activeTab === "gantt" ? "active" : ""}"
-          @click="${() => (this.activeTab = "gantt")}"
-        >
-          Schemaläggning
-        </button>
+        ${repeat(
+          this.tabs,
+          (tab) => tab.key,
+          (tab) => html`
+            <button
+              class="tab-button ${this.activeTab === tab.key ? "active" : ""}"
+              @click="${() => (this.activeTab = tab.key)}"
+            >
+              ${tab.label}
+            </button>
+          `
+        )}
       </div>
 
-      ${this.activeTab === "courses" ? html`<courses-tab></courses-tab>` : ""}
-      ${this.activeTab === "cohorts" ? html`<cohorts-tab></cohorts-tab>` : ""}
-      ${this.activeTab === "teachers"
-        ? html`<teachers-tab></teachers-tab>`
-        : ""}
-      ${this.activeTab === "slots" ? html`<slots-tab></slots-tab>` : ""}
-      ${this.activeTab === "teacherView"
-        ? html`<report-viewer
-            .activeTab=${"teacher"}
-            .hideTabs=${true}
-          ></report-viewer>`
-        : ""}
-      ${this.activeTab === "gantt"
-        ? html`<report-viewer
-            .activeTab=${"gantt"}
-            .hideTabs=${true}
-          ></report-viewer>`
-        : ""}
+      ${this.tabs.find((tab) => tab.key === this.activeTab)?.component || ""}
     `;
   }
 }

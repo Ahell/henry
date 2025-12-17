@@ -32,7 +32,7 @@ export class DataValidator {
   validateTeacherAssignments() {
     // Group runs by slot
     const runsBySlot = new Map();
-    for (const run of this.store.courseRuns) {
+    for (const run of this.store.courseRunsManager.courseRuns) {
       if (!runsBySlot.has(run.slot_id)) {
         runsBySlot.set(run.slot_id, []);
       }
@@ -68,7 +68,7 @@ export class DataValidator {
 
     // Group runs by slot and course
     const slotCourseRuns = new Map(); // "slotId-courseId" -> runs[]
-    for (const run of this.store.courseRuns) {
+    for (const run of this.store.courseRunsManager.courseRuns) {
       const key = `${run.slot_id}-${run.course_id}`;
       if (!slotCourseRuns.has(key)) {
         slotCourseRuns.set(key, []);
@@ -101,7 +101,7 @@ export class DataValidator {
         }
       });
 
-      const availableTeachers = this.store.teachers.filter((t) => {
+      const availableTeachers = this.store.teachersManager.getTeachers().filter((t) => {
         if (!t.compatible_courses || !t.compatible_courses.includes(courseId)) {
           return false;
         }
@@ -133,11 +133,11 @@ export class DataValidator {
 
         // Remove the runs
         for (const run of runs) {
-          const index = this.store.courseRuns.findIndex(
+          const index = this.store.courseRunsManager.courseRuns.findIndex(
             (r) => r.run_id === run.run_id
           );
           if (index !== -1) {
-            this.store.courseRuns.splice(index, 1);
+            this.store.courseRunsManager.courseRuns.splice(index, 1);
           }
         }
       }

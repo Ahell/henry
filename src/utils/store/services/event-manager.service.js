@@ -3,10 +3,24 @@ export class EventManager {
   constructor(store) {
     this.store = store;
     this.listeners = [];
+    this.eventListeners = {}; // For named events like "course-deleted"
   }
 
-  subscribe(listener) {
-    this.listeners.push(listener);
+  subscribe(eventNameOrListener, callback) {
+    // Support two patterns:
+    // 1. subscribe(callback) - general subscription
+    // 2. subscribe("event-name", callback) - named event subscription
+    if (typeof eventNameOrListener === "function") {
+      // Pattern 1: General subscription
+      this.listeners.push(eventNameOrListener);
+    } else if (typeof eventNameOrListener === "string" && typeof callback === "function") {
+      // Pattern 2: Named event subscription
+      const eventName = eventNameOrListener;
+      if (!this.eventListeners[eventName]) {
+        this.eventListeners[eventName] = [];
+      }
+      this.eventListeners[eventName].push(callback);
+    }
   }
 
   unsubscribe(listener) {
@@ -16,7 +30,14 @@ export class EventManager {
     }
   }
 
-  notify() {
+  notify(eventName, ...args) {
+    // If this is a named event notification, call those listeners
+    if (eventName && this.eventListeners[eventName]) {
+      this.eventListeners[eventName].forEach((callback) => callback(...args));
+      return; // Don't run the validation/notification logic for named events
+    }
+
+    // Otherwise, this is a general notification
     // Run validations before notifying listeners
     this.store.validator.validateTeacherAssignments();
     const removedCourses = this.store.validator.validateCoursesHaveTeachers();
@@ -42,7 +63,7 @@ export class EventManager {
     this.listeners.forEach((l) => l());
 
     // Auto-save after notifications
-    this.store.api.saveData(this.store.getDataSnapshot());
+    this.store.saveData().catch((err) => console.error("Auto-save failed:", err));
 
     // Show alert if courses were removed
     if (removedCourses.length > 0) {
