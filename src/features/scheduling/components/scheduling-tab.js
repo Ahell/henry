@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
+import { store } from "../../../platform/store/DataStore.js";
 import { DragDropManager } from "../services/drag-drop-manager.service.js";
 import { TeacherAvailabilityOverlay } from "../services/teacher-availability-overlay.service.js";
 import { CourseRunManager } from "../services/course-run-manager.service.js";
@@ -263,17 +263,25 @@ export class SchedulingTab extends LitElement {
     this._dragDropManager.handleCellDragLeave(e);
   }
 
-  _handleCellDrop(e) {
+  async _handleCellDrop(e) {
     const dropResult = this._dragDropManager.handleCellDrop(e);
 
     if (dropResult) {
-      const { type, data, slotDate, cohortId } = dropResult;
-      if (type === "depot") {
-        CourseRunManager.createRunFromDepot(data, slotDate, cohortId);
-      } else if (type === "existing") {
-        CourseRunManager.moveExistingRun(data, slotDate, cohortId);
+      try {
+        const { type, data, slotDate, cohortId } = dropResult;
+        if (type === "depot") {
+          await CourseRunManager.createRunFromDepot(
+            data,
+            slotDate,
+            cohortId
+          );
+        } else if (type === "existing") {
+          await CourseRunManager.moveExistingRun(data, slotDate, cohortId);
+        }
+        this.requestUpdate();
+      } catch (error) {
+        console.error("Kunde inte spara förändringen i schemat:", error);
       }
-      this.requestUpdate();
     }
   }
 
@@ -285,20 +293,36 @@ export class SchedulingTab extends LitElement {
     this._dragDropManager.handleDepotDragLeave(e);
   }
 
-  _handleDepotDrop(e) {
+  async _handleDepotDrop(e) {
     const dropResult = this._dragDropManager.handleDepotDrop(e);
 
     if (dropResult) {
-      const { runId, targetCohortId } = dropResult;
-      CourseRunManager.removeCourseRunFromCohort(runId, targetCohortId);
-      this.requestUpdate();
+      try {
+        const { runId, targetCohortId } = dropResult;
+        await CourseRunManager.removeCourseRunFromCohort(
+          runId,
+          targetCohortId
+        );
+        this.requestUpdate();
+      } catch (error) {
+        console.error("Kunde inte ta bort kurstillfälle:", error);
+      }
     }
   }
 
-  _handleTeacherToggle(e) {
+  async _handleTeacherToggle(e) {
     const { runs, teacherId, checked, slotDate } = e.detail;
-    CourseRunManager.toggleTeacherAssignment(runs, teacherId, checked, slotDate);
-    this.requestUpdate();
+    try {
+      await CourseRunManager.toggleTeacherAssignment(
+        runs,
+        teacherId,
+        checked,
+        slotDate
+      );
+      this.requestUpdate();
+    } catch (error) {
+      console.error("Kunde inte uppdatera lärarplacering:", error);
+    }
   }
 
   _showAvailableTeachersForDrag(cohortId, courseId) {

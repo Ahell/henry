@@ -1,6 +1,5 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
-import { ApiService } from "../../../platform/services/api.service.js";
 import "./detail-view-header.js";
 import "./teacher-cell.js";
 import {
@@ -17,8 +16,6 @@ import { teacherAvailabilityTableStyles } from "../styles/teacher-availability-t
 import "./overview-table.js";
 import "./detail-table.js";
 import "./availability-empty-state.js";
-
-const apiService = new ApiService();
 
 /**
  * TeacherAvailabilityTable - A specialized table component for displaying and managing teacher availability.
@@ -57,6 +54,7 @@ export class TeacherAvailabilityTable extends LitElement {
     this._detailSlotId = null;
     this._isEditingExamDate = false;
     this._detailCourseFilter = null;
+    this._availabilityMutationId = null;
   }
 
   static styles = teacherAvailabilityTableStyles;
@@ -76,8 +74,6 @@ export class TeacherAvailabilityTable extends LitElement {
     this._onStoreChange();
 
     // Listen for availability changes dispatched by paint handlers
-    this._onAvailabilityChanged = this._onAvailabilityChanged.bind(this);
-    this.addEventListener("availability-changed", this._onAvailabilityChanged);
   }
 
   disconnectedCallback() {
@@ -86,40 +82,6 @@ export class TeacherAvailabilityTable extends LitElement {
     if (this._onStoreChange) {
       store.unsubscribe(this._onStoreChange);
       this._onStoreChange = null;
-    }
-    // Remove availability listener
-    this.removeEventListener(
-      "availability-changed",
-      this._onAvailabilityChanged
-    );
-  }
-
-  async _onAvailabilityChanged(e) {
-    try {
-      const detail = e?.detail || {};
-      const teacherId = detail.teacherId;
-      const slotDate = detail.slotDate || detail.date;
-      const unavailable = Boolean(detail.unavailable);
-
-      if (!teacherId || !slotDate) return; // nothing we can persist
-
-      // Map slotDate (start_date) to slot_id
-      const slot = this.slots.find(
-        (s) =>
-          String(s.start_date) === String(slotDate) ||
-          String(s.slot_id) === String(slotDate)
-      );
-      if (!slot) return;
-
-      const slotId = slot.slot_id;
-      const available = unavailable ? false : true;
-
-      const payload = {};
-      payload[`${teacherId}-${slotId}`] = available;
-
-      await apiService.updateTeacherAvailability(payload);
-    } catch (err) {
-      console.error("Failed to persist teacher availability:", err);
     }
   }
 
@@ -162,8 +124,8 @@ export class TeacherAvailabilityTable extends LitElement {
     handleCellMouseEnter(this, e);
   }
 
-  _handlePaintEnd() {
-    handlePaintEnd(this);
+  async _handlePaintEnd() {
+    await handlePaintEnd(this);
   }
 
   // Handler for the `paint-change-request` event emitted by `paint-controls`.

@@ -1,6 +1,5 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
-import { getInputValue, resetForm } from "../../../utils/form-helpers.js";
 import {
   showSuccessMessage,
   showErrorMessage,
@@ -11,6 +10,12 @@ import {
 } from "../../admin/utils/admin-helpers.js";
 import "../../../components/ui/index.js";
 import { cohortsTabStyles } from "../styles/cohorts-tab.styles.js";
+import {
+  createCohortFromForm,
+  deleteCohortById,
+  resetCohortForm,
+  updateCohortFromForm,
+} from "../services/cohort-tab.service.js";
 
 export class CohortsTab extends LitElement {
   static styles = cohortsTabStyles;
@@ -41,7 +46,6 @@ export class CohortsTab extends LitElement {
         </div>
         <form
           @submit="${this.handleAddCohort}"
-          @click="${(e) => console.log("Form clicked:", e.target)}"
         >
           <div class="form-row">
             <henry-input
@@ -62,8 +66,6 @@ export class CohortsTab extends LitElement {
           <henry-button
             type="submit"
             variant="primary"
-            @click="${(e) =>
-              console.log("Button clicked, type:", e.target.type)}"
           >
             Lägg till Kull
           </henry-button>
@@ -205,25 +207,12 @@ export class CohortsTab extends LitElement {
 
   async handleAddCohort(e) {
     e.preventDefault();
-    console.log("🔴 handleAddCohort called");
     const root = this.shadowRoot;
-    const startDate = getInputValue(root, "cohortStartDate");
-    const plannedSize = parseInt(getInputValue(root, "cohortSize"));
-    console.log("🔴 Form values:", { startDate, plannedSize });
-
-    const cohort = {
-      start_date: startDate,
-      planned_size: plannedSize,
-    };
-
     try {
-      console.log("🔴 Calling store.addCohort");
-      await store.addCohort(cohort);
-      console.log("🔴 store.addCohort completed");
-      resetForm(root);
+      await createCohortFromForm(root);
+      resetCohortForm(root);
       showSuccessMessage(this, "Kull tillagd!");
     } catch (error) {
-      console.error("🔴 Error in handleAddCohort:", error);
       showErrorMessage(this, `Fel: ${error.message}`);
     }
   }
@@ -236,18 +225,15 @@ export class CohortsTab extends LitElement {
     this.editingCohortId = null;
   }
 
-  handleSaveCohort(cohortId) {
+  async handleSaveCohort(cohortId) {
     const root = this.shadowRoot;
-    const startDate = getInputValue(root, "edit-date");
-    const plannedSize = parseInt(getInputValue(root, "edit-size"));
-
-    store.updateCohort(cohortId, {
-      start_date: startDate,
-      planned_size: plannedSize,
-    });
-
-    this.editingCohortId = null;
-    showSuccessMessage(this, "Kull uppdaterad!");
+    try {
+      await updateCohortFromForm(root, cohortId);
+      this.editingCohortId = null;
+      showSuccessMessage(this, "Kull uppdaterad!");
+    } catch (error) {
+      showErrorMessage(this, `Fel: ${error.message}`);
+    }
   }
 
   async handleDeleteCohort(cohortId) {
@@ -257,16 +243,20 @@ export class CohortsTab extends LitElement {
     const cohortName = cohort.name;
 
     if (
-      confirm(
+      !confirm(
         `Är du säker på att du vill ta bort kullen "${cohortName}"?\n\nDetta kommer också ta bort alla schemalagda kurstillfällen för denna kull.`
       )
     ) {
-      try {
-        await store.deleteCohort(cohortId);
+      return;
+    }
+
+    try {
+      const removed = await deleteCohortById(cohortId);
+      if (removed) {
         showSuccessMessage(this, `Kull "${cohortName}" borttagen!`);
-      } catch (error) {
-        showErrorMessage(this, `Fel: ${error.message}`);
       }
+    } catch (error) {
+      showErrorMessage(this, `Fel: ${error.message}`);
     }
   }
 }

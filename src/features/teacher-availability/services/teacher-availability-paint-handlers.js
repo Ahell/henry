@@ -4,6 +4,7 @@ import {
   convertSlotEntryToDayEntriesAndRemove,
 } from "./helpers.js";
 import { removeTeacherFromRunsInSlot } from "./teacher-availability-runs.js";
+import { beginOptimisticMutation } from "../../../utils/mutation-helpers.js";
 
 const dispatchPaintState = (component) => {
   component.dispatchEvent(
@@ -45,8 +46,31 @@ const getCellEventData = (e) => {
   };
 };
 
+const ensureAvailabilityMutation = (component) => {
+  if (component._availabilityMutationId) {
+    return component._availabilityMutationId;
+  }
+  component._availabilityMutationId = beginOptimisticMutation(
+    "teacher-availability"
+  );
+  return component._availabilityMutationId;
+};
+
+const persistAvailabilityMutation = async (component) => {
+  if (!component._availabilityMutationId) return;
+  const mutationId = component._availabilityMutationId;
+  component._availabilityMutationId = null;
+  try {
+    await store.saveData({ mutationId });
+  } catch (err) {
+    await store.rollback(mutationId);
+    console.error("Failed to spara lärartillgänglighet:", err);
+  }
+};
+
 export function handleCellMouseDown(component, e) {
   if (!component.isPainting) return;
+  ensureAvailabilityMutation(component);
 
   const {
     isDetailView,
@@ -151,6 +175,7 @@ export function handleCellMouseDown(component, e) {
 export function handleCellMouseEnter(component, e) {
   if (!component.isPainting || !component._isMouseDown || !component._paintMode)
     return;
+  ensureAvailabilityMutation(component);
 
   const {
     isDetailView,
@@ -261,13 +286,14 @@ export function handleCellMouseEnter(component, e) {
   }
 }
 
-export function handlePaintEnd(component) {
+export async function handlePaintEnd(component) {
   if (component._isMouseDown) {
     component._isMouseDown = false;
     component._paintMode = null;
     component.dispatchEvent(new CustomEvent("paint-session-ended"));
     dispatchPaintState(component);
   }
+  await persistAvailabilityMutation(component);
 }
 
 export function handlePaintChangeRequest(component, e) {

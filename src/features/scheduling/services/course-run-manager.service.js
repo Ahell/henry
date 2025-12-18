@@ -1,4 +1,5 @@
 import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
+import { beginOptimisticMutation } from "../../../utils/mutation-helpers.js";
 
 /**
  * Course Run Manager Service
@@ -11,7 +12,7 @@ export class CourseRunManager {
    * @param {string} targetSlotDate - Target slot date
    * @param {number} targetCohortId - Target cohort ID
    */
-  static createRunFromDepot(data, targetSlotDate, targetCohortId) {
+  static async createRunFromDepot(data, targetSlotDate, targetCohortId) {
     const courseId = parseInt(data.courseId);
     const fromCohortId = parseInt(data.cohortId);
     const course = store.getCourse(courseId);
@@ -39,22 +40,20 @@ export class CourseRunManager {
       .getSlots()
       .find((s) => s.start_date === targetSlotDate);
 
-    if (!targetSlot) {
-      const startDate = new Date(targetSlotDate);
-      const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
-      try {
+    const mutationId = beginOptimisticMutation("create-course-run");
+
+    try {
+      if (!targetSlot) {
+        const startDate = new Date(targetSlotDate);
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
         targetSlot = store.addSlot({
           start_date: targetSlotDate,
           end_date: endDate.toISOString().split("T")[0],
           evening_pattern: "tis/tor",
           is_placeholder: false,
         });
-      } catch (error) {
-        console.warn("Kunde inte skapa slot:", error);
-        return;
       }
-    }
 
     // Get teachers from existing runs if co-teaching
     const existingRunsForCourse = store
@@ -74,13 +73,20 @@ export class CourseRunManager {
       teachersToAssign = Array.from(existingTeachers);
     }
 
-    // Create the course run
-    store.addCourseRun({
-      course_id: courseId,
-      slot_id: targetSlot.slot_id,
-      cohorts: [targetCohortId],
-      teachers: teachersToAssign,
-    });
+      // Create the course run
+      store.addCourseRun({
+        course_id: courseId,
+        slot_id: targetSlot.slot_id,
+        cohorts: [targetCohortId],
+        teachers: teachersToAssign,
+      });
+
+      await store.saveData({ mutationId });
+      return { mutationId };
+    } catch (error) {
+      await store.rollback(mutationId);
+      throw error;
+    }
   }
 
   /**
@@ -89,7 +95,7 @@ export class CourseRunManager {
    * @param {string} targetSlotDate - Target slot date
    * @param {number} targetCohortId - Target cohort ID
    */
-  static moveExistingRun(data, targetSlotDate, targetCohortId) {
+  static async moveExistingRun(data, targetSlotDate, targetCohortId) {
     const runId = parseInt(data.runId);
     const fromCohortId = parseInt(data.cohortId);
 
@@ -101,32 +107,36 @@ export class CourseRunManager {
     const run = store.courseRuns.find((r) => r.run_id === runId);
     if (!run) return;
 
-    // Find or create target slot
-    let targetSlot = store
-      .getSlots()
-      .find((s) => s.start_date === targetSlotDate);
+    const mutationId = beginOptimisticMutation("move-course-run");
 
-    if (!targetSlot) {
-      const startDate = new Date(targetSlotDate);
-      const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
-      try {
+    try {
+      // Find or create target slot
+      let targetSlot = store
+        .getSlots()
+        .find((s) => s.start_date === targetSlotDate);
+
+      if (!targetSlot) {
+        const startDate = new Date(targetSlotDate);
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
         targetSlot = store.addSlot({
           start_date: targetSlotDate,
           end_date: endDate.toISOString().split("T")[0],
           evening_pattern: "tis/tor",
           is_placeholder: false,
         });
-      } catch (error) {
-        console.warn("Kunde inte skapa slot:", error);
-        return;
       }
+
+      // Update run's slot
+      run.slot_id = targetSlot.slot_id;
+
+      store.notify();
+      await store.saveData({ mutationId });
+      return { mutationId };
+    } catch (error) {
+      await store.rollback(mutationId);
+      throw error;
     }
-
-    // Update run's slot
-    run.slot_id = targetSlot.slot_id;
-
-    store.notify();
   }
 
   /**
@@ -136,59 +146,69 @@ export class CourseRunManager {
    * @param {boolean} checked - Whether to assign or unassign
    * @param {string} slotDate - Slot date
    */
-  static toggleTeacherAssignment(runs, teacherId, checked, slotDate) {
-    if (checked) {
-      // When assigning a teacher, remove them from other courses in same slot
-      const slot = store.getSlots().find((s) => s.start_date === slotDate);
-      if (slot) {
-        const allRunsInSlot = store
-          .getCourseRuns()
-          .filter((r) => r.slot_id === slot.slot_id);
+  static async toggleTeacherAssignment(runs, teacherId, checked, slotDate) {
+    const mutationId = beginOptimisticMutation("toggle-teacher-assignment");
 
-        const targetCourseId = runs.length > 0 ? runs[0].course_id : null;
+    try {
+      if (checked) {
+        // When assigning a teacher, remove them from other courses in same slot
+        const slot = store.getSlots().find((s) => s.start_date === slotDate);
+        if (slot) {
+          const allRunsInSlot = store
+            .getCourseRuns()
+            .filter((r) => r.slot_id === slot.slot_id);
 
-        for (const otherRun of allRunsInSlot) {
-          if (otherRun.course_id !== targetCourseId && otherRun.teachers) {
-            const wasAssigned = otherRun.teachers.includes(teacherId);
-            otherRun.teachers = otherRun.teachers.filter(
-              (id) => id !== teacherId
-            );
+          const targetCourseId = runs.length > 0 ? runs[0].course_id : null;
 
-            if (wasAssigned) {
-              this.checkAndRemoveCourseIfNoTeachersAvailable(
-                otherRun.course_id,
-                slotDate
+          for (const otherRun of allRunsInSlot) {
+            if (otherRun.course_id !== targetCourseId && otherRun.teachers) {
+              const wasAssigned = otherRun.teachers.includes(teacherId);
+              otherRun.teachers = otherRun.teachers.filter(
+                (id) => id !== teacherId
               );
+
+              if (wasAssigned) {
+                this.checkAndRemoveCourseIfNoTeachersAvailable(
+                  otherRun.course_id,
+                  slotDate
+                );
+              }
             }
           }
         }
       }
-    }
 
-    // Toggle teacher in target runs
-    for (const run of runs) {
-      if (!run.teachers) {
-        run.teachers = [];
-      }
-
-      if (checked) {
-        if (!run.teachers.includes(teacherId)) {
-          run.teachers.push(teacherId);
+      // Toggle teacher in target runs
+      for (const run of runs) {
+        if (!run.teachers) {
+          run.teachers = [];
         }
-      } else {
-        run.teachers = run.teachers.filter((id) => id !== teacherId);
+
+        if (checked) {
+          if (!run.teachers.includes(teacherId)) {
+            run.teachers.push(teacherId);
+          }
+        } else {
+          run.teachers = run.teachers.filter((id) => id !== teacherId);
+        }
       }
-    }
 
-    // Check if course should be removed when unchecking
-    if (!checked && runs.length > 0) {
-      this.checkAndRemoveCourseIfNoTeachersAvailable(
-        runs[0].course_id,
-        slotDate
-      );
-    }
+      // Check if course should be removed when unchecking
+      if (!checked && runs.length > 0) {
+        this.checkAndRemoveCourseIfNoTeachersAvailable(
+          runs[0].course_id,
+          slotDate
+        );
+      }
 
-    store.notify();
+      store.notify();
+
+      await store.saveData({ mutationId });
+      return { mutationId };
+    } catch (error) {
+      await store.rollback(mutationId);
+      throw error;
+    }
   }
 
   /**
@@ -249,21 +269,30 @@ export class CourseRunManager {
    * @param {number} runId - Run ID
    * @param {number} targetCohortId - Cohort ID to remove from
    */
-  static removeCourseRunFromCohort(runId, targetCohortId) {
+  static async removeCourseRunFromCohort(runId, targetCohortId) {
     const run = store.courseRuns.find((r) => r.run_id === runId);
-    if (!run) return;
+    if (!run) return { mutationId: null };
 
-    // Remove cohort from run
-    run.cohorts = run.cohorts.filter((id) => id !== targetCohortId);
+    const mutationId = beginOptimisticMutation("remove-course-run");
 
-    // If no cohorts left, remove the run entirely
-    if (run.cohorts.length === 0) {
-      const index = store.courseRuns.indexOf(run);
-      if (index > -1) {
-        store.courseRuns.splice(index, 1);
+    try {
+      // Remove cohort from run
+      run.cohorts = run.cohorts.filter((id) => id !== targetCohortId);
+
+      // If no cohorts left, remove the run entirely
+      if (run.cohorts.length === 0) {
+        const index = store.courseRuns.indexOf(run);
+        if (index > -1) {
+          store.courseRuns.splice(index, 1);
+        }
       }
-    }
 
-    store.notify();
+      store.notify();
+      await store.saveData({ mutationId });
+      return { mutationId };
+    } catch (error) {
+      await store.rollback(mutationId);
+      throw error;
+    }
   }
 }

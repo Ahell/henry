@@ -1,6 +1,6 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
-import { getInputValue, resetForm } from "../../../utils/form-helpers.js";
+import { resetForm } from "../../../utils/form-helpers.js";
 import {
   showSuccessMessage,
   showErrorMessage,
@@ -13,6 +13,7 @@ import {
   DEFAULT_SLOT_LENGTH_DAYS,
   defaultSlotEndDate,
 } from "../../../utils/date-utils.js";
+import { createSlot, deleteSlot } from "../services/slot-tab.service.js";
 import "../../../components/ui/index.js";
 import { slotsTabStyles } from "../styles/slots-tab.styles.js";
 
@@ -225,7 +226,7 @@ export class SlotsTab extends LitElement {
     }
   }
 
-  handleAddSlot(e) {
+  async handleAddSlot(e) {
     e.preventDefault();
     const root = this.shadowRoot;
     const sel = root.querySelector("#slotStart");
@@ -236,7 +237,8 @@ export class SlotsTab extends LitElement {
     }
 
     try {
-      const newSlot = store.addSlot({ start_date: start });
+      const { mutationId } = await createSlot({ start_date: start });
+      await store.saveData({ mutationId });
       resetForm(root);
       showSuccessMessage(this, "Slot tillagd!");
     } catch (err) {
@@ -244,7 +246,7 @@ export class SlotsTab extends LitElement {
     }
   }
 
-  handleDeleteSlot(slotId) {
+  async handleDeleteSlot(slotId) {
     const runs = store.getCourseRunsBySlot(slotId);
     if (runs && runs.length > 0) {
       showErrorMessage(
@@ -253,9 +255,16 @@ export class SlotsTab extends LitElement {
       );
       return;
     }
-    if (confirm("Är du säker på att du vill ta bort denna slot?")) {
-      store.deleteSlot(slotId);
+    if (!confirm("Är du säker på att du vill ta bort denna slot?")) {
+      return;
+    }
+
+    try {
+      const { mutationId } = await deleteSlot(slotId);
+      await store.saveData({ mutationId });
       showSuccessMessage(this, "Slot borttagen.");
+    } catch (err) {
+      showErrorMessage(this, err.message || "Kunde inte ta bort slot.");
     }
   }
 }
