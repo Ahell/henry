@@ -14,17 +14,10 @@ import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
-import {
-  parseTeachersCsv,
-  exportTeachersToFile,
-} from "../../../platform/services/csv.service.js";
-import { ApiService } from "../../../platform/services/api.service.js";
 import { TeacherFormService } from "../services/teacher-form.service.js";
 import "./teacher-modal.component.js";
 import "../../../components/ui/index.js";
 import { teachersTabStyles } from "../styles/teachers-tab.styles.js";
-
-const apiService = new ApiService();
 
 export class TeachersTab extends LitElement {
   static styles = teachersTabStyles;
@@ -46,11 +39,9 @@ export class TeachersTab extends LitElement {
     const courses = store.getCourses();
 
     return html`
-      ${
-        this.message
-          ? html`<div class="${this.messageType}">${this.message}</div>`
-          : ""
-      }
+      ${this.message
+        ? html`<div class="${this.messageType}">${this.message}</div>`
+        : ""}
 
       <henry-panel>
         <div slot="header">
@@ -96,34 +87,13 @@ export class TeachersTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">Befintliga Lärare</henry-text>
         </div>
-        <div style="margin-bottom: 1rem; display:flex; gap: 1rem; align-items:center;">
-          <henry-button
-            variant="secondary"
-            @click="${this.handleRandomizeCourses}"
-          >
-            Slumpa kurser till alla lärare
-          </henry-button>
-          <input id="teacherCsvInput" type="file" accept=".csv" style="display:none" @change="${
-            this.handleTeacherCsvUpload
-          }" />
-          <henry-button variant="primary" @click="${() =>
-            this.shadowRoot
-              .querySelector("#teacherCsvInput")
-              .click()}">Importera Lärare (CSV)</henry-button>
-          <henry-button variant="secondary" @click="${
-            this.exportTeachersCsv
-          }">Exportera Lärare (CSV)</henry-button>
-          <henry-button variant="danger" @click="${
-            this.handleResetTeachersClick
-          }">Återställ lärare (DB)</henry-button>
-        </div>
         <henry-table
           striped
           hoverable
           .columns="${this._getTeacherTableColumns()}"
           .data="${store.getTeachers()}"
           .renderCell="${(row, col) => this._renderTeacherTableCell(row, col)}"
-        </henry-table>
+        ></henry-table>
       </henry-panel>
 
       <teacher-modal
@@ -286,21 +256,6 @@ export class TeachersTab extends LitElement {
     this.editingTeacherId = null;
   }
 
-  handleRandomizeCourses() {
-    if (
-      confirm(
-        "Detta kommer att ersätta alla lärares nuvarande kurser med slumpade kurser. Fortsätta?"
-      )
-    ) {
-      store.randomizeTeacherCourses(2, 5);
-      this.message = "Kurser slumpade till alla lärare!";
-      this.messageType = "success";
-      setTimeout(() => {
-        this.message = "";
-      }, 3000);
-    }
-  }
-
   handleDeleteTeacher(teacherId, teacherName) {
     (async () => {
       if (
@@ -320,85 +275,6 @@ export class TeachersTab extends LitElement {
         showErrorMessage(this, `Kunde inte ta bort läraren: ${err.message}`);
       }
     })();
-  }
-
-  async handleTeacherCsvUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const rows = parseTeachersCsv(text);
-
-      // Map course codes to ids
-      const courses = store.getCourses();
-      const codeToId = new Map(courses.map((c) => [c.code, c.course_id]));
-
-      rows.forEach((r) => {
-        // Try to find existing teacher by id or exact name
-        let teacher = null;
-        if (r.teacher_id) {
-          teacher = store.getTeacher(Number(r.teacher_id));
-        }
-        if (!teacher && r.name) {
-          teacher = store.getTeachers().find((t) => t.name === r.name);
-        }
-
-        const compatIds = (r.compatible_courses || [])
-          .map((v) => {
-            const maybeNum = Number(v);
-            if (Number.isFinite(maybeNum) && store.getCourse(maybeNum))
-              return maybeNum;
-            return codeToId.get(v) ?? null;
-          })
-          .filter(Boolean);
-
-        if (teacher) {
-          store.updateTeacher(teacher.teacher_id, {
-            name: r.name || teacher.name,
-            home_department: r.home_department || teacher.home_department,
-            compatible_courses: compatIds.length
-              ? compatIds
-              : teacher.compatible_courses,
-          });
-        } else {
-          store.addTeacher({
-            name: r.name,
-            home_department: r.home_department || "",
-            compatible_courses: compatIds,
-          });
-        }
-      });
-
-      showSuccessMessage(
-        this,
-        `Importerade ${rows.length} lärare från ${file.name}`
-      );
-    } catch (err) {
-      showErrorMessage(this, `Fel vid import: ${err.message}`);
-    }
-  }
-
-  exportTeachersCsv() {
-    exportTeachersToFile();
-  }
-
-  async handleResetTeachersClick() {
-    if (
-      !confirm(
-        "Är du säker? Detta kommer att radera alla lärare och ta bort deras kopplingar i DB."
-      )
-    )
-      return;
-    try {
-      await apiService.resetTeachers();
-      await store.loadData();
-      showSuccessMessage(
-        this,
-        "Lärare återställda och referenser rensade i DB"
-      );
-    } catch (err) {
-      showErrorMessage(this, `Kunde inte återställa lärare: ${err.message}`);
-    }
   }
 }
 

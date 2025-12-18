@@ -132,36 +132,4 @@ export function parseTeachersCsv(content) {
  * @param {Array} courses - Course objects from store
  * @returns {string} CSV content
  */
-export function exportTeachersCsv(teachers, courses) {
-  let csv = "teacher_id,name,home_department,compatible_courses\n";
-
-  teachers.forEach((t) => {
-    // Get compatible course codes
-    const compat = (t.compatible_courses || [])
-      .map((cid) => store.getCourse(cid)?.code || cid)
-      .join(";");
-
-    csv += `${t.teacher_id},"${t.name}","${t.home_department}","${compat}"\n`;
-  });
-
-  return csv;
-}
-
-/**
- * Export teachers and trigger download
- */
-export function exportTeachersToFile() {
-  const teachers = store.getTeachers();
-  const courses = store.getCourses();
-  const csv = exportTeachersCsv(teachers, courses);
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "teachers.csv";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
+// (Teacher CSV export removed along with UI; add back if needed)
