@@ -11,14 +11,9 @@ import {
   showErrorMessage,
 } from "../../../utils/message-helpers.js";
 import {
-  addCourseToTeachers,
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
-import {
-  parseCoursesCsv,
-  exportCoursesToFile,
-} from "../../../platform/services/csv.service.js";
 import { CourseFormService } from "../services/course-form.service.js";
 import "./course-modal.component.js";
 import "../../../components/ui/index.js";
@@ -149,32 +144,6 @@ export class CoursesTab extends LitElement {
             </henry-button>
           </div>
         </form>
-      </henry-panel>
-
-      <henry-panel>
-        <div slot="header">
-          <henry-text variant="heading-3"
-            >Import/Export Kurser (CSV)</henry-text
-          >
-        </div>
-        <div style="display:flex; gap: 1rem; align-items:center;">
-          <input
-            id="courseCsvInput"
-            type="file"
-            accept=".csv"
-            style="display:none"
-            @change="${this.handleCourseCsvUpload}"
-          />
-          <henry-button
-            variant="primary"
-            @click="${() =>
-              this.shadowRoot.querySelector("#courseCsvInput").click()}"
-            >Importera CSV</henry-button
-          >
-          <henry-button variant="secondary" @click="${this.exportCoursesCsv}"
-            >Exportera CSV</henry-button
-          >
-        </div>
       </henry-panel>
 
       <henry-panel>
@@ -416,76 +385,6 @@ export class CoursesTab extends LitElement {
         showErrorMessage(this, `Kunde inte ta bort kursen: ${err.message}`);
       }
     })();
-  }
-
-  async handleCourseCsvUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const rows = parseCoursesCsv(text);
-
-      // First pass: add or update courses, keep mapping from code -> id
-      const codeToId = new Map();
-      rows.forEach((r) => {
-        const existing = store.getCourses().find((c) => c.code === r.code);
-        if (existing) {
-          store.updateCourse(existing.course_id, {
-            name: r.name,
-            credits: r.credits,
-          });
-          codeToId.set(r.code, existing.course_id);
-        } else {
-          const newCourse = store.addCourse({
-            code: r.code,
-            name: r.name,
-            credits: r.credits,
-          });
-          codeToId.set(r.code, newCourse.course_id);
-        }
-      });
-
-      // Second pass: apply prerequisites and compatible teachers
-      rows.forEach((r) => {
-        const courseId = codeToId.get(r.code);
-        if (!courseId) return;
-
-        // Prerequisites: map codes to ids
-        const prereqIds = (r.prerequisites || [])
-          .map(
-            (code) =>
-              codeToId.get(code) ||
-              store.getCourses().find((c) => c.code === code)?.course_id
-          )
-          .filter(Boolean);
-        store.updateCourse(courseId, { prerequisites: prereqIds });
-
-        // Compatible teachers: accept numeric ids or teacher names
-        const teacherIds = (r.compatible_teachers || [])
-          .map((t) => {
-            if (!t) return null;
-            const maybeId = Number(t);
-            if (Number.isFinite(maybeId) && store.getTeacher(maybeId))
-              return maybeId;
-            const found = store.getTeachers().find((th) => th.name === t);
-            return found ? found.teacher_id : null;
-          })
-          .filter(Boolean);
-
-        if (teacherIds.length > 0) addCourseToTeachers(courseId, teacherIds);
-      });
-
-      showSuccessMessage(
-        this,
-        `Importerade ${rows.length} kurser från ${file.name}`
-      );
-    } catch (err) {
-      showErrorMessage(this, `Fel vid import: ${err.message}`);
-    }
-  }
-
-  exportCoursesCsv() {
-    exportCoursesToFile();
   }
 }
 
