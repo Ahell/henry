@@ -78,9 +78,7 @@ export class TeachingDaysManager {
         });
       }
       this.store.notify();
-      this.store.saveData().catch((err) =>
-        console.error("Failed to save teaching day change:", err)
-      );
+      // Auto-save happens in notify() - no manual save needed
       return;
     }
 
@@ -94,9 +92,7 @@ export class TeachingDaysManager {
       });
     });
     this.store.notify();
-    this.store.saveData().catch((err) =>
-      console.error("Failed to save teaching day change:", err)
-    );
+    // Auto-save happens in notify() - no manual save needed
   }
 
   getTeachingDayState(slotId, date, courseId = null) {
@@ -271,10 +267,6 @@ export class TeachingDaysManager {
       });
     }
     if (!skipNotify) this.store.notify();
-    if (!skipSave) {
-      this.store.saveData().catch((err) =>
-        console.error("Failed to save course slot day change:", err)
-      );
-    }
+    // Auto-save happens in notify() - no manual save needed
   }
 }

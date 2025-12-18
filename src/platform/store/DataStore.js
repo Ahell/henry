@@ -89,6 +89,16 @@ export class DataStore {
         (a) => String(a.teacher_id) !== String(teacherId)
       );
     });
+
+    // Automatic synchronization handlers
+    // These ensure derived data stays in sync with source data
+    this.events.subscribe(() => {
+      // Sync teacher_courses junction table from teacher.compatible_courses
+      this.teachersManager.syncTeacherCoursesFromTeachers();
+
+      // Sync course_prerequisites junction table from course.prerequisites
+      this.coursesManager.syncCoursePrerequisitesFromCourses();
+    });
   }
 
   hydrate(data) {
@@ -302,14 +312,6 @@ export class DataStore {
 
   getAllPrerequisites(courseId, visited) {
     return this.coursesManager.getAllPrerequisites(courseId, visited);
-  }
-
-  _syncCoursePrerequisitesFromCourses() {
-    this.coursesManager.syncCoursePrerequisitesFromCourses();
-  }
-
-  _syncTeacherCoursesFromTeachers() {
-    this.teachersManager.syncTeacherCoursesFromTeachers();
   }
 
   // Exam Dates - delegate to ExamDatesManager

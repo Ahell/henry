@@ -16,6 +16,7 @@ import {
   resetCohortForm,
   updateCohortFromForm,
 } from "../services/cohort-tab.service.js";
+import "./cohort-modal.component.js";
 
 export class CohortsTab extends LitElement {
   static styles = cohortsTabStyles;
@@ -24,13 +25,11 @@ export class CohortsTab extends LitElement {
     editingCohortId: { type: Number },
     message: { type: String },
     messageType: { type: String },
-    cohorts: { type: Array },
   };
 
   constructor() {
     super();
     initializeEditState(this, "editingCohortId");
-    this.cohorts = store.getCohorts();
     subscribeToStore(this);
   }
 
@@ -80,84 +79,20 @@ export class CohortsTab extends LitElement {
           striped
           hoverable
           .columns="${this._getCohortTableColumns()}"
-          .data="${this.cohorts
+          .data="${store.getCohorts()
             .slice()
             .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))}"
           .renderCell="${(row, col) => this._renderCohortTableCell(row, col)}"
         ></henry-table>
       </henry-panel>
 
-      ${this._renderEditModal()}
+      <cohort-modal
+        .cohortId="${this.editingCohortId}"
+        .open="${!!this.editingCohortId}"
+        @modal-close="${this.handleCancelEdit}"
+        @modal-save="${this._handleModalSave}"
+      ></cohort-modal>
     `;
-  }
-
-  _renderEditModal() {
-    if (!this.editingCohortId) return html``;
-
-    const cohort = store.getCohort(this.editingCohortId);
-    if (!cohort) return html``;
-
-    return html`
-      <henry-modal
-        open
-        title="Redigera Kull"
-        @close="${this.handleCancelCohortEdit}"
-      >
-        <form @submit="${(e) => this._handleSaveFromModal(e)}">
-          <div
-            style="display: flex; flex-direction: column; gap: var(--space-4);"
-          >
-            <henry-input
-              id="edit-name"
-              label="Namn"
-              .value="${cohort.name}"
-              readonly
-              disabled
-              style="background-color: #e9ecef; cursor: not-allowed;"
-            ></henry-input>
-
-            <henry-input
-              id="edit-date"
-              label="Startdatum"
-              type="date"
-              .value="${cohort.start_date}"
-              required
-            ></henry-input>
-
-            <henry-input
-              id="edit-size"
-              label="Antal Studenter"
-              type="number"
-              min="1"
-              .value="${cohort.planned_size}"
-              required
-            ></henry-input>
-          </div>
-        </form>
-
-        <div slot="footer">
-          <henry-button
-            variant="secondary"
-            @click="${this.handleCancelCohortEdit}"
-          >
-            Avbryt
-          </henry-button>
-          <henry-button
-            variant="success"
-            @click="${() => this.handleSaveCohort(cohort.cohort_id)}"
-          >
-            Spara
-          </henry-button>
-        </div>
-      </henry-modal>
-    `;
-  }
-
-  _handleSaveFromModal(e) {
-    e.preventDefault();
-    if (this.editingCohortId) {
-      this.handleSaveCohort(this.editingCohortId);
-    }
   }
 
   _getCohortTableColumns() {
@@ -221,14 +156,14 @@ export class CohortsTab extends LitElement {
     this.editingCohortId = cohortId;
   }
 
-  handleCancelCohortEdit() {
+  handleCancelEdit() {
     this.editingCohortId = null;
   }
 
-  async handleSaveCohort(cohortId) {
-    const root = this.shadowRoot;
+  async _handleModalSave(e) {
+    const { cohortId, formData } = e.detail;
     try {
-      await updateCohortFromForm(root, cohortId);
+      await updateCohortFromForm(this.shadowRoot, cohortId);
       this.editingCohortId = null;
       showSuccessMessage(this, "Kull uppdaterad!");
     } catch (error) {

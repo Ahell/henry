@@ -1,6 +1,6 @@
 import { store } from "../../../platform/store/DataStore.js";
 import { defaultSlotEndDate, normalizeDateOnly } from "../../../utils/date-utils.js";
-import { beginOptimisticMutation } from "../../../utils/mutation-helpers.js";
+import { SlotsFormService } from "./slots-form.service.js";
 
 export async function createSlot(slotData) {
   // Ensure the slot has both start and end dates before persisting.
@@ -12,33 +12,29 @@ export async function createSlot(slotData) {
     throw new Error("Slot behöver giltigt start- och slutdatum.");
   }
 
-  const mutationId = beginOptimisticMutation("add-slot");
-  try {
-    const newSlot = store.addSlot({
-      ...slotData,
-      start_date: startStr,
-      end_date: endStr,
-    });
-    return { slot: newSlot, mutationId };
-  } catch (error) {
-    await store.rollback(mutationId);
-    throw error;
-  }
+  const { slot, mutationId } = SlotsFormService.createSlot({
+    ...slotData,
+    start_date: startStr,
+    end_date: endStr,
+  });
+
+  await store.saveData({ mutationId });
+  return slot;
 }
 
 export async function deleteSlot(slotId) {
   const existing = store.getSlot(slotId);
   if (!existing) {
-    return { removed: false, mutationId: null };
+    return false;
   }
 
-  const mutationId = beginOptimisticMutation("delete-slot");
+  const { removed, mutationId } = SlotsFormService.deleteSlot(slotId);
 
-  try {
-    const removed = store.deleteSlot(slotId);
-    return { removed, mutationId };
-  } catch (error) {
+  if (!removed) {
     await store.rollback(mutationId);
-    throw error;
+    return false;
   }
+
+  await store.saveData({ mutationId });
+  return true;
 }

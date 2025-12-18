@@ -237,8 +237,7 @@ export class SlotsTab extends LitElement {
     }
 
     try {
-      const { mutationId } = await createSlot({ start_date: start });
-      await store.saveData({ mutationId });
+      await createSlot({ start_date: start });
       resetForm(root);
       showSuccessMessage(this, "Slot tillagd!");
     } catch (err) {
@@ -260,9 +259,10 @@ export class SlotsTab extends LitElement {
     }
 
     try {
-      const { mutationId } = await deleteSlot(slotId);
-      await store.saveData({ mutationId });
-      showSuccessMessage(this, "Slot borttagen.");
+      const removed = await deleteSlot(slotId);
+      if (removed) {
+        showSuccessMessage(this, "Slot borttagen.");
+      }
     } catch (err) {
       showErrorMessage(this, err.message || "Kunde inte ta bort slot.");
     }

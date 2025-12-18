@@ -1,6 +1,6 @@
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
-import { beginOptimisticMutation } from "../../../utils/mutation-helpers.js";
+import { CohortFormService } from "./cohort-form.service.js";
 
 const DEFAULT_SIZE = 30;
 
@@ -20,18 +20,13 @@ export async function createCohortFromForm(root) {
     throw new Error("Planerat antal studenter måste vara ett positivt tal.");
   }
 
-  const mutationId = beginOptimisticMutation("add-cohort");
-  try {
-    const cohort = await store.addCohort({
-      start_date: formData.start_date,
-      planned_size: formData.planned_size,
-    });
-    await store.saveData({ mutationId });
-    return cohort;
-  } catch (error) {
-    await store.rollback(mutationId);
-    throw error;
-  }
+  const { cohort, mutationId } = CohortFormService.createCohort({
+    start_date: formData.start_date,
+    planned_size: formData.planned_size,
+  });
+
+  await store.saveData({ mutationId });
+  return cohort;
 }
 
 export async function updateCohortFromForm(root, cohortId) {
@@ -50,33 +45,24 @@ export async function updateCohortFromForm(root, cohortId) {
     throw new Error("Planerat antal studenter måste vara ett positivt tal.");
   }
 
-  const mutationId = beginOptimisticMutation("update-cohort");
-  try {
-    await store.updateCohort(cohortId, {
-      start_date: formData.start_date,
-      planned_size: formData.planned_size,
-    });
-    await store.saveData({ mutationId });
-  } catch (error) {
-    await store.rollback(mutationId);
-    throw error;
-  }
+  const { mutationId } = CohortFormService.updateCohort(cohortId, {
+    start_date: formData.start_date,
+    planned_size: formData.planned_size,
+  });
+
+  await store.saveData({ mutationId });
 }
 
 export async function deleteCohortById(cohortId) {
-  const mutationId = beginOptimisticMutation("delete-cohort");
-  try {
-    const removed = await store.deleteCohort(cohortId);
-    if (!removed) {
-      await store.rollback(mutationId);
-      return false;
-    }
-    await store.saveData({ mutationId });
-    return true;
-  } catch (error) {
+  const { removed, mutationId } = CohortFormService.deleteCohort(cohortId);
+
+  if (!removed) {
     await store.rollback(mutationId);
-    throw error;
+    return false;
   }
+
+  await store.saveData({ mutationId });
+  return true;
 }
 
 export function resetCohortForm(root) {
