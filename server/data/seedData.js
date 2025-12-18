@@ -97,18 +97,62 @@ export const seedData = {
 
   // Teachers
   teachers: [
-    { name: "Annina Persson", home_department: "AIJ" },
-    { name: "Anna Broback", home_department: "AIE" },
-    { name: "Annika Gram", home_department: "AF" },
-    { name: "Henry Muyingo", home_department: "AIJ" },
-    { name: "Jonny Flodin", home_department: "AIJ" },
-    { name: "Ny adjunkt", home_department: "AIE" },
-    { name: "Tim", home_department: "AIJ" },
-    { name: "Rickard Engström", home_department: "AIE" },
-    { name: "Torun Widström", home_department: "AF" },
-    { name: "Inga-Lill Söderberg", home_department: "AIE" },
-    { name: "Ulrika Myślinski", home_department: "AIJ" },
-    { name: "Jenny Paulsson", home_department: "AIJ" },
+    {
+      name: "Annina Persson",
+      home_department: "AIJ",
+      compatible_courses: [4, 5, 6, 7, 10],
+    },
+    {
+      name: "Anna Broback",
+      home_department: "AIE",
+      compatible_courses: [9, 13],
+    },
+    {
+      name: "Annika Gram",
+      home_department: "AF",
+      compatible_courses: [4, 6, 10],
+    },
+    {
+      name: "Henry Muyingo",
+      home_department: "AIJ",
+      compatible_courses: [5, 6],
+    },
+    {
+      name: "Jonny Flodin",
+      home_department: "AIJ",
+      compatible_courses: [3, 5, 7, 12],
+    },
+    {
+      name: "Ny adjunkt",
+      home_department: "AIE",
+      compatible_courses: [3, 5, 7],
+    },
+    { name: "Tim", home_department: "AIJ", compatible_courses: [3, 5, 7, 8, 12] },
+    {
+      name: "Rickard Engström",
+      home_department: "AIE",
+      compatible_courses: [2, 4, 10],
+    },
+    {
+      name: "Torun Widström",
+      home_department: "AF",
+      compatible_courses: [3, 4, 5, 6, 7],
+    },
+    {
+      name: "Inga-Lill Söderberg",
+      home_department: "AIE",
+      compatible_courses: [4, 5, 6, 7],
+    },
+    {
+      name: "Ulrika Myślinski",
+      home_department: "AIJ",
+      compatible_courses: [3, 4, 5, 6, 7],
+    },
+    {
+      name: "Jenny Paulsson",
+      home_department: "AIJ",
+      compatible_courses: [1, 9],
+    },
   ],
 
   // Time slots - calculate end dates (each slot is ~4-5 weeks)
