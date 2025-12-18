@@ -314,11 +314,4 @@ export class DataServiceManager {
   }
 
   // Public utility methods (delegate to services)
-  normalizeDateOnly(value) {
-    return this.store.normalizer.normalizeDateOnly(value);
-  }
-
-  defaultSlotEndDate(startDate) {
-    return this.store.normalizer.defaultSlotEndDate(startDate);
-  }
 }

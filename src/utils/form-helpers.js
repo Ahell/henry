@@ -54,3 +54,14 @@ export function resetForm(root, selector = "form") {
     form.reset();
   }
 }
+
+/**
+ * Normalize a date input to YYYY-MM-DD or return null on invalid input.
+ * Intended to be used in forms to validate before sending to the store/API.
+ */
+export function normalizeDateOnly(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().split("T")[0];
+}

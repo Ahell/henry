@@ -2,10 +2,6 @@
 const DEFAULT_SLOT_LENGTH_DAYS = 28;
 
 export class DataNormalizer {
-  constructor() {
-    // No store dependency needed for normalization
-  }
-
   normalizeDateOnly(value) {
     if (!value) return null;
     const date = new Date(value);

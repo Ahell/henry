@@ -550,13 +550,6 @@ export class DataStore {
   }
 
   // Public utility methods (delegate to services)
-  normalizeDateOnly(value) {
-    return this.normalizer.normalizeDateOnly(value);
-  }
-
-  defaultSlotEndDate(startDate) {
-    return this.normalizer.defaultSlotEndDate(startDate);
-  }
 }
 
 export const store = new DataStore();
