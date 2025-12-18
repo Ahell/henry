@@ -4,7 +4,7 @@ import { showAlert } from "../../../utils/ui.js";
 export class DataServiceManager {
   constructor(store) {
     this.store = store;
-    this.dataService = new DataService(store);
+    this.dataService = new DataService();
   }
 
   _syncStoreCollections() {
@@ -99,8 +99,12 @@ export class DataServiceManager {
   }
 
   // Load data from backend
-  async loadFromBackend() {
-    return this.dataService.loadFromBackend();
+  async loadData() {
+    const data = await this.dataService.loadData();
+    if (data) {
+      this.hydrate(data);
+    }
+    return data;
   }
 
   _handleLoadAlerts(removedCourses) {
@@ -181,7 +185,10 @@ export class DataServiceManager {
   async saveData() {
     this.store.teachersManager.syncTeacherCoursesFromTeachers();
     this.store.coursesManager.syncCoursePrerequisitesFromCourses();
-    return this.dataService.saveData();
+    this.store.slots = this.store.normalizer.normalizeSlotsInPlace(
+      this.store.slots
+    );
+    return this.dataService.saveData(this.getDataSnapshot());
   }
 
   getDataSnapshot() {
@@ -285,15 +292,11 @@ export class DataServiceManager {
     };
   }
 
-  async resetToSeedData() {
-    return this.loadSeedDataToDatabase();
-  }
-
   // Load seed data into database via backend
   async loadSeedDataToDatabase() {
     try {
       await this.dataService.loadTestData();
-      await this.loadFromBackend();
+      await this.loadData();
       return { success: true, message: "Seed data loaded successfully" };
     } catch (error) {
       console.error("Failed to load seed data:", error);
@@ -304,18 +307,8 @@ export class DataServiceManager {
   // Reset database without loading seed data
   async resetDatabase() {
     try {
-      // 1. Call backend reset-all endpoint to clear all tables
-      const response = await fetch(
-        `${this.dataService.api.baseUrl}/api/admin/reset-all`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Reset failed: ${response.statusText}`);
-      }
+      // Clear all tables via backend
+      await this.dataService.api.resetAllData();
 
       // Clear frontend data (without seeding) so UI reflects the empty database
       this.importData({});

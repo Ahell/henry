@@ -1,5 +1,6 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
+import { ApiService } from "../../../platform/services/api.service.js";
 import "./detail-view-header.js";
 import "./teacher-cell.js";
 import {
@@ -16,6 +17,8 @@ import { teacherAvailabilityTableStyles } from "../styles/teacher-availability-t
 import "./overview-table.js";
 import "./detail-table.js";
 import "./availability-empty-state.js";
+
+const apiService = new ApiService();
 
 /**
  * TeacherAvailabilityTable - A specialized table component for displaying and managing teacher availability.
@@ -81,8 +84,7 @@ export class TeacherAvailabilityTable extends LitElement {
     super.disconnectedCallback();
     // Unsubscribe our listener from the store (store exposes listeners array)
     if (this._onStoreChange) {
-      const idx = store.listeners.indexOf(this._onStoreChange);
-      if (idx !== -1) store.listeners.splice(idx, 1);
+      store.unsubscribe(this._onStoreChange);
       this._onStoreChange = null;
     }
     // Remove availability listener
@@ -115,11 +117,7 @@ export class TeacherAvailabilityTable extends LitElement {
       const payload = {};
       payload[`${teacherId}-${slotId}`] = available;
 
-      await fetch("/api/teacher-availability", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      await apiService.updateTeacherAvailability(payload);
     } catch (err) {
       console.error("Failed to persist teacher availability:", err);
     }

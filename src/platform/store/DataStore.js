@@ -20,7 +20,7 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
 
 // Dev-safe alert wrapper: logs as warning in dev, shows native alert in prod
 
-  export class DataStore {
+export class DataStore {
   constructor() {
     this.cohorts = [];
     this.slots = [];
@@ -62,7 +62,7 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
     this.teachingDaysManager = new TeachingDaysManager(this);
 
     // Load data from backend asynchronously
-    this.dataServiceManager.loadFromBackend().catch((error) => {
+    this.dataServiceManager.loadData().catch((error) => {
       console.error("Data load failed:", error);
       showAlert(
         `Kunde inte läsa data från backend: ${error.message}. Kontrollera att backend-servern körs.`
@@ -104,10 +104,10 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
     this.dataServiceManager.hydrate(data);
   }
 
-  async loadFromBackend() {
+  async loadData() {
     this._beginReconciling();
     try {
-      return await this.dataServiceManager.loadFromBackend();
+      return await this.dataServiceManager.loadData();
     } finally {
       this._endReconciling();
     }
@@ -121,6 +121,10 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
     this.events.subscribe(listener);
   }
 
+  unsubscribe(listener) {
+    this.events.unsubscribe(listener);
+  }
+
   notify() {
     this.events.notify();
   }
@@ -128,11 +132,10 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
   async saveData({ mutationId, label } = {}) {
     // Track the mutation id so we can reconcile with canonical server data on success or rollback on failure.
     const id = this._ensureMutationId(mutationId);
-    const entry =
-      this._pendingMutations.get(id) || {
-        label: label || `mutation-${id}`,
-        rollback: null,
-      };
+    const entry = this._pendingMutations.get(id) || {
+      label: label || `mutation-${id}`,
+      rollback: null,
+    };
     if (!this._pendingMutations.has(id)) {
       this._pendingMutations.set(id, entry);
     }
@@ -215,7 +218,7 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
     }
 
     try {
-      await this.loadFromBackend();
+      await this.loadData();
     } catch (error) {
       console.error("Rollback failed to reload backend data:", error);
     }
@@ -507,10 +510,6 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
 
   exportData() {
     return this.dataServiceManager.exportData();
-  }
-
-  async resetToSeedData() {
-    return this.dataServiceManager.resetToSeedData();
   }
 
   async loadSeedDataToDatabase() {

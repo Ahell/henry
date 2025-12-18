@@ -1,33 +1,26 @@
 import { ApiService } from "./api.service.js";
 
 export class DataService {
-  constructor(store) {
-    this.store = store;
-    this.api = new ApiService();
+  constructor(api = new ApiService()) {
+    this.api = api;
   }
 
-  async loadFromBackend() {
+  async loadData() {
     try {
       const data = await this.api.loadData();
       if (!data) {
         throw new Error("Backend returned no data");
       }
-      this.store.hydrate(data);
+      return data;
     } catch (error) {
       console.error("Failed to load from backend:", error);
       throw error;
     }
   }
 
-  async saveData() {
+  async saveData(payload) {
     try {
-      this.store._syncTeacherCoursesFromTeachers();
-      this.store._syncCoursePrerequisitesFromCourses();
-      this.store.slots = this.store.normalizer.normalizeSlotsInPlace(
-        this.store.slots
-      );
-
-      await this.api.saveData(this.store.getDataSnapshot());
+      await this.api.saveData(payload);
 
       // After saving, reload the canonical dataset so the client can reconcile with server state
       const canonicalData = await this.api.loadData();

@@ -18,10 +18,13 @@ import {
   parseTeachersCsv,
   exportTeachersToFile,
 } from "../../../platform/services/csv.service.js";
+import { ApiService } from "../../../platform/services/api.service.js";
 import { TeacherFormService } from "../services/teacher-form.service.js";
 import "./teacher-modal.component.js";
 import "../../../components/ui/index.js";
 import { teachersTabStyles } from "../styles/teachers-tab.styles.js";
+
+const apiService = new ApiService();
 
 export class TeachersTab extends LitElement {
   static styles = teachersTabStyles;
@@ -212,7 +215,8 @@ export class TeachersTab extends LitElement {
         compatible_courses: selectedCourses,
       };
 
-      const { teacher: newTeacher, mutationId } = TeacherFormService.createTeacher(teacher);
+      const { teacher: newTeacher, mutationId } =
+        TeacherFormService.createTeacher(teacher);
 
       try {
         await store.saveData({ mutationId });
@@ -305,7 +309,8 @@ export class TeachersTab extends LitElement {
         return;
       }
 
-      const { removed, mutationId } = TeacherFormService.deleteTeacher(teacherId);
+      const { removed, mutationId } =
+        TeacherFormService.deleteTeacher(teacherId);
       if (!removed) return;
 
       try {
@@ -385,12 +390,8 @@ export class TeachersTab extends LitElement {
     )
       return;
     try {
-      const res = await fetch("/api/admin/reset-teachers", { method: "POST" });
-      if (!res.ok) {
-        const js = await res.json().catch(() => ({}));
-        throw new Error(js.error || "Serverfel");
-      }
-      await store.loadFromBackend();
+      await apiService.resetTeachers();
+      await store.loadData();
       showSuccessMessage(
         this,
         "Lärare återställda och referenser rensade i DB"

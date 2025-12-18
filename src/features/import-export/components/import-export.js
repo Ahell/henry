@@ -62,19 +62,6 @@ export class ImportExport extends LitElement {
           </henry-button>
         </div>
       </div>
-
-      <div class="panel">
-        <h3>Återställ Data</h3>
-        <p>
-          Återställ all data till ursprunglig seeddata. Detta raderar alla
-          ändringar du gjort.
-        </p>
-        <div class="button-group">
-          <henry-button variant="danger" @click="${this.resetData}">
-            Återställ till Grunddata
-          </henry-button>
-        </div>
-      </div>
     `;
   }
 
@@ -195,28 +182,6 @@ export class ImportExport extends LitElement {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }
-
-  async resetData() {
-    if (
-      confirm(
-        "Är du säker? Detta raderar alla ändringar och återställer till ursprungsdata."
-      )
-    ) {
-      try {
-        await store.resetToSeedData();
-        this.message = "Data återställd till ursprungsdata!";
-        this.messageType = "success";
-      } catch (error) {
-        this.message = `Fel vid återställning: ${error.message}`;
-        this.messageType = "error";
-      }
-      this.requestUpdate();
-      setTimeout(() => {
-        this.message = "";
-        this.requestUpdate();
-      }, 4000);
-    }
   }
 }
 
