@@ -188,4 +188,84 @@ export class TeachersManager {
     // Resync the teacherCourses array
     this.syncTeacherCoursesFromTeachers();
   }
+
+  /**
+   * Add a course to the compatible course list for the selected teachers.
+   * Used when creating a course and selecting compatible teachers.
+   */
+  addCourseToTeachers(courseId, selectedTeacherIds = []) {
+    const cid = Number(courseId);
+    if (!Number.isFinite(cid)) return;
+
+    const teacherIds = new Set(
+      (selectedTeacherIds || [])
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id))
+    );
+    if (teacherIds.size === 0) return;
+
+    let changed = false;
+    for (const teacherId of teacherIds) {
+      const teacher = this.getTeacher(teacherId);
+      if (!teacher) continue;
+
+      const current = Array.isArray(teacher.compatible_courses)
+        ? teacher.compatible_courses
+            .map((x) => Number(x))
+            .filter((x) => Number.isFinite(x))
+        : [];
+
+      if (!current.includes(cid)) {
+        teacher.compatible_courses = [...current, cid];
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.syncTeacherCoursesFromTeachers();
+      this.events.notify();
+    }
+  }
+
+  /**
+   * Synchronize teacher-course relationships for a given course.
+   * Adds/removes the course from teachers based on selection.
+   */
+  syncCourseToTeachers(courseId, selectedTeacherIds = []) {
+    const cid = Number(courseId);
+    if (!Number.isFinite(cid)) return;
+
+    const teacherIds = new Set(
+      (selectedTeacherIds || [])
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id))
+    );
+
+    let changed = false;
+    for (const teacher of this.teachers || []) {
+      const tid = Number(teacher.teacher_id);
+      const shouldInclude = teacherIds.has(tid);
+
+      const current = Array.isArray(teacher.compatible_courses)
+        ? teacher.compatible_courses
+            .map((x) => Number(x))
+            .filter((x) => Number.isFinite(x))
+        : [];
+
+      const currentlyIncluded = current.includes(cid);
+
+      if (shouldInclude && !currentlyIncluded) {
+        teacher.compatible_courses = [...current, cid];
+        changed = true;
+      } else if (!shouldInclude && currentlyIncluded) {
+        teacher.compatible_courses = current.filter((x) => x !== cid);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.syncTeacherCoursesFromTeachers();
+      this.events.notify();
+    }
+  }
 }

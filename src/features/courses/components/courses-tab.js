@@ -1,12 +1,6 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import {
-  getInputValue,
-  getSelectValues,
-  getRadioValue,
-  resetForm,
-} from "../../../utils/form-helpers.js";
-import {
   showSuccessMessage,
   showErrorMessage,
 } from "../../../utils/message-helpers.js";
@@ -16,6 +10,11 @@ import {
 } from "../../admin/utils/admin-helpers.js";
 import { FormService } from "../../../platform/services/form.service.js";
 import { CourseFormService } from "../services/course-form.service.js";
+import {
+  createCourseFromForm,
+  resetCourseForm,
+  deleteCourseById,
+} from "../services/course-tab.service.js";
 import "./course-modal.component.js";
 import "../../../components/ui/index.js";
 import { coursesTabStyles } from "../styles/courses-tab.styles.js";
@@ -152,18 +151,25 @@ export class CoursesTab extends LitElement {
 
   _handleModalSave(e) {
     const { courseId, formData } = e.detail;
-    CourseFormService.updateCourse(
-      courseId,
-      {
-        code: formData.code,
-        name: formData.name,
-        credits: formData.credits,
-        prerequisites: formData.prerequisites,
-      },
-      formData.selectedTeacherIds
-    );
-    this.editingCourseId = null;
-    showSuccessMessage(this, "Kurs uppdaterad!");
+    (async () => {
+      try {
+        const { mutationId } = CourseFormService.updateCourse(
+          courseId,
+          {
+            code: formData.code,
+            name: formData.name,
+            credits: formData.credits,
+            prerequisites: formData.prerequisites,
+          },
+          formData.selectedTeacherIds
+        );
+        await store.saveData({ mutationId });
+        this.editingCourseId = null;
+        showSuccessMessage(this, "Kurs uppdaterad!");
+      } catch (err) {
+        showErrorMessage(this, `Kunde inte uppdatera kurs: ${err.message}`);
+      }
+    })();
   }
 
   _getTableColumns() {
@@ -256,52 +262,20 @@ export class CoursesTab extends LitElement {
     return html`<span class="compatible-teachers">${teacherNames}</span>`;
   }
 
-  handleAddCourse(e) {
+  async handleAddCourse(e) {
     e.preventDefault();
-    // Ensure we wait for persistence before clearing the form
-    (async () => {
-      const root = this.shadowRoot;
-      const prerequisites = getSelectValues(root, "prerequisites");
-      const selectedTeacherIds = getSelectValues(root, "courseTeachers");
+    const root = this.shadowRoot;
 
-      const course = {
-        code: getInputValue(root, "courseCode"),
-        name: getInputValue(root, "courseName"),
-        credits: parseFloat(getInputValue(root, "courseCredits")) || 0,
-        prerequisites: prerequisites,
-      };
-
-      const { course: newCourse, mutationId } = CourseFormService.createCourse(
-        course,
-        selectedTeacherIds
+    try {
+      const newCourse = await createCourseFromForm(root);
+      resetCourseForm(root);
+      window.dispatchEvent(
+        new CustomEvent("henry:course-added", { detail: newCourse })
       );
-
-      try {
-        await store.saveData({ mutationId });
-
-        // Reset native form and custom controls
-        resetForm(root);
-        FormService.clearCustomForm(root, [
-          "prerequisites",
-          "courseTeachers",
-          "courseCode",
-          "courseName",
-          "courseCredits",
-        ]);
-        FormService.setCustomInput(root, "courseCredits", "7.5");
-
-        // Notify other components a course was added
-        try {
-          window.dispatchEvent(
-            new CustomEvent("henry:course-added", { detail: newCourse })
-          );
-        } catch (e) {}
-
-        showSuccessMessage(this, "Kurs tillagd!");
-      } catch (err) {
-        showErrorMessage(this, `Kunde inte lägga till kurs: ${err.message}`);
-      }
-    })();
+      showSuccessMessage(this, "Kurs tillagd!");
+    } catch (err) {
+      showErrorMessage(this, `Kunde inte lägga till kurs: ${err.message}`);
+    }
   }
 
   handleEditCourse(courseId) {
@@ -312,26 +286,21 @@ export class CoursesTab extends LitElement {
     this.editingCourseId = null;
   }
 
-  handleDeleteCourse(courseId) {
-    (async () => {
-      const course = store.getCourse(courseId);
-      const courseName = course ? course.name : "Okänd kurs";
-      if (
-        !confirm(`Är du säker på att du vill ta bort kursen "${courseName}"?`)
-      ) {
-        return;
-      }
+  async handleDeleteCourse(courseId) {
+    const course = store.getCourse(courseId);
+    const courseName = course ? course.name : "Okänd kurs";
+    if (!confirm(`Är du säker på att du vill ta bort kursen "${courseName}"?`)) {
+      return;
+    }
 
-      const { removed, mutationId } = CourseFormService.deleteCourse(courseId);
-      if (!removed) return;
-
-      try {
-        await store.saveData({ mutationId });
+    try {
+      const removed = await deleteCourseById(courseId);
+      if (removed) {
         showSuccessMessage(this, `Kurs "${courseName}" borttagen!`);
-      } catch (err) {
-        showErrorMessage(this, `Kunde inte ta bort kursen: ${err.message}`);
       }
-    })();
+    } catch (err) {
+      showErrorMessage(this, `Kunde inte ta bort kursen: ${err.message}`);
+    }
   }
 }
 

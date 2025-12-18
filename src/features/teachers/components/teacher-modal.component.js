@@ -1,6 +1,6 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
-import { getInputValue, getRadioValue, getSelectValues } from "../../../utils/form-helpers.js";
+import { FormService } from "../../../platform/services/form.service.js";
 
 /**
  * Teacher Edit Modal Component
@@ -103,11 +103,11 @@ export class TeacherModal extends LitElement {
   _handleSave() {
     const root = this.shadowRoot;
 
-    const formData = {
-      name: getInputValue(root, "edit-name"),
-      home_department: getRadioValue(root, "edit-department"),
-      compatible_courses: getSelectValues(root, "edit-courses"),
-    };
+    const formData = FormService.extractFormData(root, {
+      name: "edit-name",
+      home_department: { id: "edit-department", type: "radio" },
+      compatible_courses: { id: "edit-courses", type: "select-multiple" },
+    });
 
     this.dispatchEvent(
       new CustomEvent("modal-save", {

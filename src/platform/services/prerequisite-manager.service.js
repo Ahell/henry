@@ -5,82 +5,179 @@ export class PrerequisiteManager {
     this.store = store;
   }
 
-  // Find courses that are missing their prerequisites
+  /**
+   * Return an array of prerequisite problems across all cohorts and runs.
+   * A problem is reported when a run's course either:
+   *  - lacks a scheduled run for a prerequisite in the same cohort, or
+   *  - starts before a prerequisite run has finished.
+   * Throws if foundational data (course/slot) referenced by runs is missing.
+   */
   findCoursesWithMissingPrerequisites() {
-    const problems = []; // { cohortId, cohortName, courseId, courseName, missingPrereqId, missingPrereqName }
+    const problems = [];
+    const runsByCohort = this._groupRunsByCohort();
+    const courseById = this._courseMap();
 
-    // Get all cohorts
     for (const cohort of this.store.cohorts) {
-      // Get all runs for this cohort
-      const cohortRuns = this.store.courseRunsManager.courseRuns.filter(
-        (r) => r.cohorts && r.cohorts.includes(cohort.cohort_id)
-      );
-
-      // For each run, check if its prerequisites are scheduled before it
-      for (const run of cohortRuns) {
-        const course = this.store.getCourse(run.course_id);
-        if (
-          !course ||
-          !course.prerequisites ||
-          course.prerequisites.length === 0
-        ) {
-          continue;
-        }
-
-        const slot = this.store.getSlot(run.slot_id);
-        if (!slot) continue;
-        const runDate = new Date(slot.start_date);
-
-        // Check each prerequisite
-        for (const prereqId of course.prerequisites) {
-          const prereqCourse = this.store.getCourse(prereqId);
-          if (!prereqCourse) continue;
-
-          // Find if prerequisite is scheduled for this cohort
-          const prereqRun = cohortRuns.find((r) => r.course_id === prereqId);
-
-          if (!prereqRun) {
-            // Prerequisite not scheduled at all
-            problems.push({
-              type: "missing",
-              cohortId: cohort.cohort_id,
-              cohortName: cohort.name,
-              courseId: course.course_id,
-              courseName: course.name,
-              courseCode: course.code,
-              runId: run.run_id,
-              missingPrereqId: prereqId,
-              missingPrereqName: prereqCourse.name,
-              missingPrereqCode: prereqCourse.code,
-            });
-          } else {
-            // Check that prerequisite is completely finished before this course starts
-            const prereqSlot = this.store.getSlot(prereqRun.slot_id);
-            if (prereqSlot) {
-              const prereqRange = getSlotRange(prereqSlot);
-              const prereqEndDate = prereqRange?.end;
-
-              // The dependent course must start AFTER the prerequisite ends
-              if (prereqEndDate && runDate <= prereqEndDate) {
-                problems.push({
-                  type: "before_prerequisite",
-                  cohortId: cohort.cohort_id,
-                  cohortName: cohort.name,
-                  courseId: course.course_id,
-                  courseName: course.name,
-                  courseCode: course.code,
-                  runId: run.run_id,
-                  missingPrereqId: prereqId,
-                  missingPrereqName: prereqCourse.name,
-                  missingPrereqCode: prereqCourse.code,
-                });
-              }
-            }
-          }
-        }
+      const runs = runsByCohort.get(cohort.cohort_id) || [];
+      for (const run of runs) {
+        const course = courseById.get(run.course_id);
+        problems.push(
+          ...this._problemsForRun({
+            cohort,
+            run,
+            course,
+            runsInCohort: runs,
+            courseById,
+          })
+        );
       }
     }
 
     return problems;
+  }
+
+  /**
+   * Build a map: cohort_id -> runs[] (note: a run can belong to multiple cohorts).
+   */
+  _groupRunsByCohort() {
+    const map = new Map();
+    for (const run of this.store.courseRunsManager.courseRuns || []) {
+      for (const cohortId of run.cohorts || []) {
+        const list = map.get(cohortId) || [];
+        list.push(run);
+        map.set(cohortId, list);
+      }
+    }
+    return map;
+  }
+
+  /**
+   * Build a quick lookup map of course_id -> course object.
+   */
+  _courseMap() {
+    const map = new Map();
+    for (const c of this.store.coursesManager.getCourses() || []) {
+      map.set(c.course_id, c);
+    }
+    return map;
+  }
+
+  /**
+   * Evaluate one run against its prerequisites for a single cohort.
+   * Throws on data integrity errors (missing course/slot for the run).
+   */
+  _problemsForRun({ cohort, run, course, runsInCohort, courseById }) {
+    if (!course) {
+      throw new Error(
+        `Data integrity error: Run ${run.run_id} references non-existent course ${run.course_id}`
+      );
+    }
+
+    if (
+      !Array.isArray(course.prerequisites) ||
+      course.prerequisites.length === 0
+    ) {
+      return [];
+    }
+
+    const runSlot = this._getSlot(run.slot_id);
+    if (!runSlot) {
+      throw new Error(
+        `Data integrity error: Run ${run.run_id} is not assigned to any slot (slot_id: ${run.slot_id})`
+      );
+    }
+    const runDate = new Date(runSlot.start_date);
+
+    return course.prerequisites.flatMap((prereqId) =>
+      this._problemsForPrereq({
+        prereqId,
+        cohort,
+        course,
+        run,
+        runDate,
+        runsInCohort,
+        courseById,
+      })
+    );
+  }
+
+  /**
+   * Build a problem payload with consistent shape.
+   */
+  _buildProblem({ type, cohort, course, run, prereqCourse }) {
+    return {
+      type,
+      cohortId: cohort.cohort_id,
+      cohortName: cohort.name,
+      courseId: course.course_id,
+      courseName: course.name,
+      courseCode: course.code,
+      runId: run.run_id,
+      missingPrereqId: prereqCourse.course_id,
+      missingPrereqName: prereqCourse.name,
+      missingPrereqCode: prereqCourse.code,
+    };
+  }
+
+  /**
+   * Evaluate a single prerequisite for a run:
+   *  - missing scheduled run => "missing"
+   *  - scheduled but overlaps => "before_prerequisite"
+   */
+  _problemsForPrereq({
+    prereqId,
+    cohort,
+    course,
+    run,
+    runDate,
+    runsInCohort,
+    courseById,
+  }) {
+    const prereqCourse = courseById.get(prereqId);
+    if (!prereqCourse) return [];
+
+    const prereqRun =
+      runsInCohort.find((r) => r.course_id === prereqId) || null;
+    if (!prereqRun) {
+      return [
+        this._buildProblem({
+          type: "missing",
+          cohort,
+          course,
+          run,
+          prereqCourse,
+        }),
+      ];
+    }
+
+    const prereqSlot = this._getSlot(prereqRun.slot_id);
+    if (!prereqSlot) {
+      throw new Error(
+        `Data integrity error: Prerequisite run ${prereqRun.run_id} for course ${prereqCourse.course_id} is not assigned to any slot (slot_id: ${prereqRun.slot_id})`
+      );
+    }
+    const prereqRange = getSlotRange(prereqSlot);
+    const prereqEndDate = prereqRange?.end;
+
+    if (prereqEndDate && runDate <= prereqEndDate) {
+      return [
+        this._buildProblem({
+          type: "before_prerequisite",
+          cohort,
+          course,
+          run,
+          prereqCourse,
+        }),
+      ];
+    }
+
+    return [];
+  }
+
+  /**
+   * Fetch slot by id; isolated for readability and future validation hooks.
+   */
+  _getSlot(slotId) {
+    return this.store.getSlot(slotId);
   }
 }

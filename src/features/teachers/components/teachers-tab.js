@@ -1,12 +1,6 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import {
-  getInputValue,
-  getSelectValues,
-  getRadioValue,
-  resetForm,
-} from "../../../utils/form-helpers.js";
-import {
   showSuccessMessage,
   showErrorMessage,
 } from "../../../utils/message-helpers.js";
@@ -14,7 +8,11 @@ import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
-import { FormService } from "../../../platform/services/form.service.js";
+import {
+  createTeacherFromForm,
+  resetTeacherForm,
+  deleteTeacherById,
+} from "../services/teacher-tab.service.js";
 import { TeacherFormService } from "../services/teacher-form.service.js";
 import "./teacher-modal.component.js";
 import "../../../components/ui/index.js";
@@ -106,11 +104,16 @@ export class TeachersTab extends LitElement {
     `;
   }
 
-  _handleModalSave(e) {
+  async _handleModalSave(e) {
     const { teacherId, formData } = e.detail;
-    TeacherFormService.updateTeacher(teacherId, formData);
-    this.editingTeacherId = null;
-    showSuccessMessage(this, "Lärare uppdaterad!");
+    try {
+      const { mutationId } = TeacherFormService.updateTeacher(teacherId, formData);
+      await store.saveData({ mutationId });
+      this.editingTeacherId = null;
+      showSuccessMessage(this, "Lärare uppdaterad!");
+    } catch (err) {
+      showErrorMessage(this, `Kunde inte uppdatera lärare: ${err.message}`);
+    }
   }
 
   _getTeacherTableColumns() {
@@ -161,7 +164,8 @@ export class TeachersTab extends LitElement {
             <henry-button
               variant="danger"
               size="small"
-              @click="${() => this.handleDeleteTeacher(teacher.teacher_id)}"
+              @click="${() =>
+                this.handleDeleteTeacher(teacher.teacher_id, teacher.name)}"
             >
               Ta bort
             </henry-button>
@@ -173,49 +177,20 @@ export class TeachersTab extends LitElement {
     }
   }
 
-  handleAddTeacher(e) {
+  async handleAddTeacher(e) {
     e.preventDefault();
+    const root = this.shadowRoot;
 
-    (async () => {
-      const root = this.shadowRoot;
-      const selectedCourses = getSelectValues(root, "teacherCourses");
-
-      const teacher = {
-        name: getInputValue(root, "teacherName"),
-        home_department: getRadioValue(root, "teacherDepartment"),
-        compatible_courses: selectedCourses,
-      };
-
-      const { teacher: newTeacher, mutationId } =
-        TeacherFormService.createTeacher(teacher);
-
-      try {
-        await store.saveData({ mutationId });
-
-        // Reset the native form and custom controls
-        resetForm(root);
-        FormService.clearCustomForm(root, [
-          "teacherCourses",
-          "teacherName",
-          "teacherDepartment",
-        ]);
-        FormService.setCustomInput(root, "teacherDepartment", "AIJ");
-
-        // Notify other components that a teacher was added so they can
-        // react (e.g., CoursesTab may want to clear or refresh its form)
-        try {
-          window.dispatchEvent(
-            new CustomEvent("henry:teacher-added", { detail: newTeacher })
-          );
-        } catch (e) {
-          // ignore if window is not available
-        }
-
-        showSuccessMessage(this, "Lärare tillagd!");
-      } catch (err) {
-        showErrorMessage(this, `Kunde inte lägga till lärare: ${err.message}`);
-      }
-    })();
+    try {
+      const newTeacher = await createTeacherFromForm(root);
+      resetTeacherForm(root);
+      window.dispatchEvent(
+        new CustomEvent("henry:teacher-added", { detail: newTeacher })
+      );
+      showSuccessMessage(this, "Lärare tillagd!");
+    } catch (err) {
+      showErrorMessage(this, `Kunde inte lägga till lärare: ${err.message}`);
+    }
   }
 
   handleEditTeacher(teacherId) {
@@ -226,25 +201,21 @@ export class TeachersTab extends LitElement {
     this.editingTeacherId = null;
   }
 
-  handleDeleteTeacher(teacherId, teacherName) {
-    (async () => {
-      if (
-        !confirm(`Är du säker på att du vill ta bort läraren "${teacherName}"?`)
-      ) {
-        return;
-      }
+  async handleDeleteTeacher(teacherId, teacherName) {
+    if (
+      !confirm(`Är du säker på att du vill ta bort läraren "${teacherName}"?`)
+    ) {
+      return;
+    }
 
-      const { removed, mutationId } =
-        TeacherFormService.deleteTeacher(teacherId);
-      if (!removed) return;
-
-      try {
-        await store.saveData({ mutationId });
+    try {
+      const removed = await deleteTeacherById(teacherId);
+      if (removed) {
         showSuccessMessage(this, `Lärare "${teacherName}" borttagen!`);
-      } catch (err) {
-        showErrorMessage(this, `Kunde inte ta bort läraren: ${err.message}`);
       }
-    })();
+    } catch (err) {
+      showErrorMessage(this, `Kunde inte ta bort läraren: ${err.message}`);
+    }
   }
 }
 

@@ -270,6 +270,15 @@ export class DataStore {
     this.notify();
   }
 
+  // Course ↔ teacher compatibility helpers
+  addCourseToTeachers(courseId, selectedTeacherIds) {
+    return this.teachersManager.addCourseToTeachers(courseId, selectedTeacherIds);
+  }
+
+  syncCourseToTeachers(courseId, selectedTeacherIds) {
+    return this.teachersManager.syncCourseToTeachers(courseId, selectedTeacherIds);
+  }
+
   // Courses - delegate to CoursesManager
   getCourses() {
     return this.coursesManager.getCourses();

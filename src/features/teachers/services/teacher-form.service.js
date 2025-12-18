@@ -31,9 +31,30 @@ export class TeacherFormService {
    * Update an existing teacher
    * @param {number} teacherId - Teacher ID
    * @param {Object} teacherData - Updated teacher data
+   * @returns {Object} Updated teacher and mutation ID
    */
   static updateTeacher(teacherId, teacherData) {
-    store.updateTeacher(teacherId, teacherData);
+    const existing = store.getTeacher(teacherId);
+    if (!existing) {
+      throw new Error(`Teacher ${teacherId} not found`);
+    }
+
+    const previous = {
+      ...existing,
+      compatible_courses: Array.isArray(existing.compatible_courses)
+        ? [...existing.compatible_courses]
+        : [],
+    };
+
+    const mutationId = store.applyOptimistic({
+      label: "update-teacher",
+      rollback: () => {
+        store.updateTeacher(teacherId, previous);
+      },
+    });
+
+    const updated = store.updateTeacher(teacherId, teacherData);
+    return { teacher: updated, mutationId };
   }
 
   /**

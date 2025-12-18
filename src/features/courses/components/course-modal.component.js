@@ -1,6 +1,6 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
-import { getInputValue, getSelectValues } from "../../../utils/form-helpers.js";
+import { FormService } from "../../../platform/services/form.service.js";
 
 /**
  * Course Edit Modal Component
@@ -120,13 +120,16 @@ export class CourseModal extends LitElement {
   _handleSave() {
     const root = this.shadowRoot;
 
-    const formData = {
-      code: getInputValue(root, "edit-code"),
-      name: getInputValue(root, "edit-name"),
-      credits: parseFloat(getInputValue(root, "edit-credits")) || 0,
-      prerequisites: getSelectValues(root, "edit-prerequisites"),
-      selectedTeacherIds: getSelectValues(root, "edit-compatible-teachers"),
-    };
+    const formData = FormService.extractFormData(root, {
+      code: "edit-code",
+      name: "edit-name",
+      credits: { id: "edit-credits", transform: (value) => Number(value) },
+      prerequisites: { id: "edit-prerequisites", type: "select-multiple" },
+      selectedTeacherIds: {
+        id: "edit-compatible-teachers",
+        type: "select-multiple",
+      },
+    });
 
     this.dispatchEvent(
       new CustomEvent("modal-save", {
