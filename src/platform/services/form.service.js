@@ -60,33 +60,19 @@ export class FormService {
 
     // Handle henry-input
     if (typeof el.getInput === "function") {
-      const input = el.getInput();
-      if (input) input.value = "";
+      this._clearInputValue(el);
     }
     // Handle henry-select (single or multi)
     else if (typeof el.getSelect === "function") {
-      const sel = el.getSelect();
-      if (sel) {
-        Array.from(sel.options).forEach((o) => (o.selected = false));
-        sel.value = "";
-        sel.dispatchEvent(new Event("change", { bubbles: true }));
-      }
+      this._clearSelectValue(el);
     }
     // Handle henry-radio-group
     else if (el.tagName === "HENRY-RADIO-GROUP") {
-      if (typeof el.setValue === "function") {
-        el.setValue(el.value || ""); // Reset to default
-      } else if (typeof el.value !== "undefined") {
-        // Reset to first option or empty
-        const firstOption = el.querySelector('input[type="radio"]');
-        if (firstOption) {
-          el.value = firstOption.value;
-        }
-      }
+      this._clearRadioValue(el);
     }
     // Handle generic elements
     else if (typeof el.value !== "undefined") {
-      el.value = "";
+      this._clearNativeValue(el);
     }
   }
 
@@ -103,42 +89,25 @@ export class FormService {
 
     // henry-input
     if (typeof el.getInput === "function") {
-      const input = el.getInput();
-      if (input) input.value = value ?? "";
+      this._setInputValue(el, value);
       return;
     }
 
     // henry-select (single or multi)
     if (typeof el.getSelect === "function") {
-      const sel = el.getSelect();
-      if (!sel) return;
-      const values = Array.isArray(value)
-        ? value.map(String)
-        : [value?.toString() ?? ""];
-      Array.from(sel.options).forEach((o) => {
-        o.selected = values.includes(o.value);
-      });
-      // For single select, set the main value as well
-      sel.value = values[0] ?? "";
-      sel.dispatchEvent(new Event("change", { bubbles: true }));
+      this._setSelectValue(el, value);
       return;
     }
 
     // henry-radio-group
     if (el.tagName === "HENRY-RADIO-GROUP") {
-      if (typeof el.setValue === "function") {
-        el.setValue(value ?? "");
-      } else if (typeof el.value !== "undefined") {
-        el.value = value ?? "";
-        el.dispatchEvent(new Event("change", { bubbles: true }));
-      }
+      this._setRadioValue(el, value);
       return;
     }
 
     // Fallback native
     if (typeof el.value !== "undefined") {
-      el.value = value ?? "";
-      el.dispatchEvent(new Event("change", { bubbles: true }));
+      this._setNativeValue(el, value);
     }
   }
 
@@ -152,6 +121,74 @@ export class FormService {
     Object.entries(values).forEach(([id, val]) =>
       this.setCustomInput(root, id, val)
     );
+  }
+
+  // Private setters
+  static _setInputValue(el, value) {
+    const input = el.getInput();
+    if (input) {
+      input.value = value ?? "";
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+
+  static _setSelectValue(el, value) {
+    const sel = el.getSelect();
+    if (!sel) return;
+    const values = Array.isArray(value)
+      ? value.map(String)
+      : [value?.toString() ?? ""];
+    Array.from(sel.options).forEach((o) => {
+      o.selected = values.includes(o.value);
+    });
+    sel.value = values[0] ?? "";
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  static _setRadioValue(el, value) {
+    const next = value ?? "";
+    if (typeof el.setValue === "function") {
+      el.setValue(next);
+    } else if (typeof el.value !== "undefined") {
+      el.value = next;
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+
+  static _setNativeValue(el, value) {
+    el.value = value ?? "";
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  // Private clear helpers
+  static _clearInputValue(el) {
+    const input = el.getInput();
+    if (!input) return;
+    input.value = "";
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  static _clearSelectValue(el) {
+    const sel = el.getSelect();
+    if (!sel) return;
+    Array.from(sel.options).forEach((o) => (o.selected = false));
+    sel.value = "";
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  static _clearRadioValue(el) {
+    if (typeof el.setValue === "function") {
+      el.setValue("");
+    } else if (typeof el.value !== "undefined") {
+      const firstOption = el.querySelector('input[type="radio"]');
+      el.value = firstOption ? firstOption.value : "";
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+
+  static _clearNativeValue(el) {
+    el.value = "";
+    el.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
   /**
