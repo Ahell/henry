@@ -14,6 +14,7 @@ import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
+import { FormService } from "../../../platform/services/form.service.js";
 import { TeacherFormService } from "../services/teacher-form.service.js";
 import "./teacher-modal.component.js";
 import "../../../components/ui/index.js";
@@ -191,35 +192,14 @@ export class TeachersTab extends LitElement {
       try {
         await store.saveData({ mutationId });
 
-        // Reset the native form
+        // Reset the native form and custom controls
         resetForm(root);
-
-        // Clear custom henry-select (teacherCourses)
-        FormService.clearCustomInput(root, "teacherCourses");
-
-        // Ensure custom inputs are cleared as well (some components don't
-        // respond to form.reset()). Clear name input and reset department.
-        try {
-          const nameEl = root.querySelector("#teacherName");
-          if (nameEl && typeof nameEl.getInput === "function") {
-            const input = nameEl.getInput();
-            if (input) input.value = "";
-          }
-
-          const deptEl = root.querySelector("#teacherDepartment");
-          if (deptEl) {
-            // Prefer an API method if available
-            if (typeof deptEl.setValue === "function") {
-              deptEl.setValue("AIJ");
-            } else if (typeof deptEl.value !== "undefined") {
-              deptEl.value = "AIJ";
-              deptEl.dispatchEvent(new Event("change", { bubbles: true }));
-            }
-          }
-        } catch (e) {
-          // Non-critical, swallow
-          console.warn("Failed to fully clear teacher form fields:", e);
-        }
+        FormService.clearCustomForm(root, [
+          "teacherCourses",
+          "teacherName",
+          "teacherDepartment",
+        ]);
+        FormService.setCustomInput(root, "teacherDepartment", "AIJ");
 
         // Notify other components that a teacher was added so they can
         // react (e.g., CoursesTab may want to clear or refresh its form)

@@ -91,22 +91,67 @@ export class FormService {
   }
 
   /**
-   * Set a select element to a specific value
-   * @param {ShadowRoot} root - Component shadow root
-   * @param {string} id - Select element ID
-   * @param {string} value - Value to set
+   * Set a single custom input element to a value.
+   * Handles henry-input, henry-select (single/multi), henry-radio-group, and native inputs.
+   * @param {ShadowRoot} root
+   * @param {string} id
+   * @param {string|Array} value
    */
-  static setSelectValue(root, id, value) {
+  static setCustomInput(root, id, value) {
     const el = root.querySelector(`#${id}`);
     if (!el) return;
 
+    // henry-input
+    if (typeof el.getInput === "function") {
+      const input = el.getInput();
+      if (input) input.value = value ?? "";
+      return;
+    }
+
+    // henry-select (single or multi)
     if (typeof el.getSelect === "function") {
       const sel = el.getSelect();
-      if (sel) {
-        sel.value = value;
-        sel.dispatchEvent(new Event("change", { bubbles: true }));
-      }
+      if (!sel) return;
+      const values = Array.isArray(value)
+        ? value.map(String)
+        : [value?.toString() ?? ""];
+      Array.from(sel.options).forEach((o) => {
+        o.selected = values.includes(o.value);
+      });
+      // For single select, set the main value as well
+      sel.value = values[0] ?? "";
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+      return;
     }
+
+    // henry-radio-group
+    if (el.tagName === "HENRY-RADIO-GROUP") {
+      if (typeof el.setValue === "function") {
+        el.setValue(value ?? "");
+      } else if (typeof el.value !== "undefined") {
+        el.value = value ?? "";
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      return;
+    }
+
+    // Fallback native
+    if (typeof el.value !== "undefined") {
+      el.value = value ?? "";
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+
+  /**
+   * Set many custom fields using an object map of id -> value.
+   * @param {ShadowRoot} root
+   * @param {Object} values - { fieldId: value }
+   */
+  static setCustomForm(root, values = {}) {
+    if (!values || typeof values !== "object") return;
+    Object.entries(values).forEach(([id, val]) =>
+      this.setCustomInput(root, id, val)
+    );
   }
 
   /**

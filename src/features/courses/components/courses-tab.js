@@ -14,6 +14,7 @@ import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
+import { FormService } from "../../../platform/services/form.service.js";
 import { CourseFormService } from "../services/course-form.service.js";
 import "./course-modal.component.js";
 import "../../../components/ui/index.js";
@@ -37,30 +38,11 @@ export class CoursesTab extends LitElement {
       try {
         const root = this.shadowRoot;
         // Only clear code/name inputs (user asked these specifically)
-        const clearInput = (id) => {
-          const el = root.querySelector(`#${id}`);
-          if (!el) return;
-          if (typeof el.getInput === "function") {
-            const input = el.getInput();
-            if (input) input.value = "";
-          } else {
-            el.value = "";
-          }
-        };
-
-        clearInput("courseCode");
-        clearInput("courseName");
-
-        // Also clear any selections on custom selects to keep state consistent
-        const selectEl = root.querySelector(`#courseTeachers`);
-        if (selectEl && typeof selectEl.getSelect === "function") {
-          const sel = selectEl.getSelect();
-          if (sel) {
-            Array.from(sel.options).forEach((o) => (o.selected = false));
-            sel.value = "";
-            sel.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-        }
+        FormService.clearCustomForm(root, [
+          "courseCode",
+          "courseName",
+          "courseTeachers",
+        ]);
       } catch (err) {
         // swallow errors; non-critical
         console.warn("Failed to clear course form after teacher added:", err);
@@ -297,41 +279,16 @@ export class CoursesTab extends LitElement {
       try {
         await store.saveData({ mutationId });
 
-        // Reset native form
+        // Reset native form and custom controls
         resetForm(root);
-
-        // Clear any custom select components (henry-select) since form.reset may not
-        FormService.clearCustomInput(root, "prerequisites");
-        FormService.clearCustomInput(root, "courseTeachers");
-
-        // Explicitly clear inputs that may not be affected by form.reset()
-        try {
-          const clearInput = (id) => {
-            const el = root.querySelector(`#${id}`);
-            if (!el) return;
-            if (typeof el.getInput === "function") {
-              const input = el.getInput();
-              if (input) input.value = "";
-            } else if (typeof el.value !== "undefined") {
-              el.value = "";
-            }
-          };
-
-          clearInput("courseCode");
-          clearInput("courseName");
-
-          // Reset credits select to default (7.5)
-          const creditsEl = root.querySelector(`#courseCredits`);
-          if (creditsEl && typeof creditsEl.getSelect === "function") {
-            const sel = creditsEl.getSelect();
-            if (sel) {
-              sel.value = "7.5";
-              sel.dispatchEvent(new Event("change", { bubbles: true }));
-            }
-          }
-        } catch (e) {
-          console.warn("Failed to fully clear course form fields:", e);
-        }
+        FormService.clearCustomForm(root, [
+          "prerequisites",
+          "courseTeachers",
+          "courseCode",
+          "courseName",
+          "courseCredits",
+        ]);
+        FormService.setCustomInput(root, "courseCredits", "7.5");
 
         // Notify other components a course was added
         try {
