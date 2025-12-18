@@ -22,65 +22,6 @@ export class FormService {
    * @param {string} options.errorMessage - Error message prefix
    * @param {string} options.label - Label for optimistic update
    */
-  static async submitWithOptimistic({
-    component,
-    getData,
-    mutation,
-    onSuccess,
-    onError,
-    successMessage,
-    errorMessage,
-    label,
-  }) {
-    const root = component.shadowRoot;
-
-    try {
-      // Extract form data
-      const data = getData(root);
-
-      // Track mutation result for rollback
-      let mutationResult = null;
-
-      // Apply optimistic update
-      const mutationId = store.applyOptimistic({
-        label: label || "form-submit",
-        rollback: () => {
-          if (onError) {
-            onError(mutationResult);
-          }
-        },
-      });
-
-      // Perform mutation
-      mutationResult = mutation(data);
-
-      // Save to backend
-      await store.saveData({ mutationId });
-
-      // Clear form on success
-      this.clearCustomForm(root);
-
-      // Success callback
-      if (onSuccess) {
-        onSuccess(mutationResult);
-      }
-
-      // Show success message
-      if (successMessage) {
-        showSuccessMessage(component, successMessage);
-      }
-
-      return mutationResult;
-    } catch (err) {
-      // Show error message
-      const message = errorMessage
-        ? `${errorMessage}: ${err.message}`
-        : err.message;
-      showErrorMessage(component, message);
-
-      throw err;
-    }
-  }
 
   /**
    * Clear all form inputs including custom components
@@ -96,16 +37,13 @@ export class FormService {
     if (!customFields) {
       customFields = [
         ...Array.from(root.querySelectorAll("henry-input")).map((el) => el.id),
-        ...Array.from(root.querySelectorAll("henry-select")).map(
-          (el) => el.id
-        ),
+        ...Array.from(root.querySelectorAll("henry-select")).map((el) => el.id),
         ...Array.from(root.querySelectorAll("henry-radio-group")).map(
           (el) => el.id
         ),
       ].filter(Boolean);
     }
 
-    // Clear custom inputs
     customFields.forEach((id) => {
       this.clearCustomInput(root, id);
     });
@@ -125,7 +63,7 @@ export class FormService {
       const input = el.getInput();
       if (input) input.value = "";
     }
-    // Handle henry-select
+    // Handle henry-select (single or multi)
     else if (typeof el.getSelect === "function") {
       const sel = el.getSelect();
       if (sel) {
@@ -150,23 +88,6 @@ export class FormService {
     else if (typeof el.value !== "undefined") {
       el.value = "";
     }
-  }
-
-  /**
-   * Clear a custom select element (multi-select)
-   * @param {ShadowRoot} root - Component shadow root
-   * @param {string} id - Select element ID
-   */
-  static clearCustomSelect(root, id) {
-    const el = root.querySelector(`#${id}`);
-    if (!el || typeof el.getSelect !== "function") return;
-
-    const sel = el.getSelect();
-    if (!sel) return;
-
-    Array.from(sel.options).forEach((o) => (o.selected = false));
-    sel.value = "";
-    sel.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
   /**

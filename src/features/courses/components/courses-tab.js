@@ -301,18 +301,8 @@ export class CoursesTab extends LitElement {
         resetForm(root);
 
         // Clear any custom select components (henry-select) since form.reset may not
-        const clearCustomSelect = (id) => {
-          const el = root.querySelector(`#${id}`);
-          if (!el || typeof el.getSelect !== "function") return;
-          const sel = el.getSelect();
-          if (!sel) return;
-          Array.from(sel.options).forEach((o) => (o.selected = false));
-          sel.value = "";
-          sel.dispatchEvent(new Event("change", { bubbles: true }));
-        };
-
-        clearCustomSelect("prerequisites");
-        clearCustomSelect("courseTeachers");
+        FormService.clearCustomInput(root, "prerequisites");
+        FormService.clearCustomInput(root, "courseTeachers");
 
         // Explicitly clear inputs that may not be affected by form.reset()
         try {
