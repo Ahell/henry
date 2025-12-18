@@ -19,27 +19,17 @@ export class SlotsManager {
   addSlot(slot) {
     const startStr = this.normalizer.normalizeDateOnly(slot.start_date);
     if (!startStr) {
-      const message = "Kan inte skapa slot utan giltigt startdatum.";
-      showAlert(message);
-      throw new Error(message);
+      throw new Error("Kan inte skapa slot utan giltigt startdatum.");
     }
 
-    const explicitEnd = this.normalizer.normalizeDateOnly(slot.end_date);
-    const endDateObj = explicitEnd
-      ? new Date(explicitEnd)
-      : this.normalizer.defaultSlotEndDate(startStr);
-    const endStr = this.normalizer.normalizeDateOnly(endDateObj);
+    const endStr = this.normalizer.normalizeDateOnly(slot.end_date);
 
     if (!endStr) {
-      const message = "Kan inte skapa slot utan giltigt slutdatum.";
-      showAlert(message);
-      throw new Error(message);
+      throw new Error("Kan inte skapa slot utan giltigt slutdatum.");
     }
 
     if (new Date(endStr) <= new Date(startStr)) {
-      const message = "Slotens slutdatum måste vara efter startdatum.";
-      showAlert(message);
-      throw new Error(message);
+      throw new Error("Slotens slutdatum måste vara efter startdatum.");
     }
 
     const overlapping = this.findOverlappingSlot(startStr, endStr);
@@ -52,7 +42,6 @@ export class SlotsManager {
           this.normalizer.defaultSlotEndDate(overlapping.start_date)
         );
       const message = `Slot ${startStr}–${endStr} krockar med befintlig slot ${overlapping.start_date}–${conflictEnd}.`;
-      showAlert(message);
       throw new Error(message);
     }
 

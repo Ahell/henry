@@ -24,10 +24,7 @@ export class ApiService {
     return this._postJson("/api/admin/reset-all", {}, "Reset failed");
   }
 
-  async resetTeachers() {
-    return this._postJson("/api/admin/reset-teachers", {}, "Reset failed");
-  }
-
+  // We kept a separate /api/teacher-availability call because availability changes are high-frequency, small, and shouldn’t trigger the full auto-save/bulk-save flow (which reconciles the whole dataset, regenerates normalized structures, and takes longer). The lightweight endpoint lets the paint tool persist tiny deltas without risking races with the big optimistic save loop.
   async updateTeacherAvailability(payload) {
     return this._postJson(
       "/api/teacher-availability",

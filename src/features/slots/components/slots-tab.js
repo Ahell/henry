@@ -9,6 +9,7 @@ import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
+import { DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
 import "../../../components/ui/index.js";
 import { slotsTabStyles } from "../styles/slots-tab.styles.js";
 
@@ -131,61 +132,35 @@ export class SlotsTab extends LitElement {
     const slots = (this.slots || [])
       .slice()
       .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-    if (!insertVal) {
+    const idx = slots.findIndex((s) => String(s.slot_id) === String(insertVal));
+
+    if (!insertVal || idx === -1) {
+      // When nothing is selected, keep the UI empty/disabled
       this.startOptions = [];
       this.allowFreeDate = false;
       this.requestUpdate();
       return;
     }
 
-    const idx = slots.findIndex((s) => String(s.slot_id) === String(insertVal));
-    if (idx === -1) {
-      this.startOptions = [];
-      this.requestUpdate();
-      return;
-    }
-
-    // If the selected insert position is the last slot, show 90 possible start dates
-    if (idx === slots.length - 1) {
-      let min;
-      if (slots.length === 0) {
-        min = new Date();
-      } else {
-        const last = slots[slots.length - 1];
-        const lastEnd = new Date(store._defaultSlotEndDate(last.start_date));
-        min = new Date(lastEnd);
-        min.setDate(min.getDate() + 1);
-      }
-      const opts = [];
-      for (let k = 0; k < 90; k++) {
-        const d = new Date(min);
-        d.setDate(d.getDate() + k);
-        const dateStr = this._formatDate(d);
-        opts.push({ value: dateStr, label: dateStr });
-      }
-      this.startOptions = opts;
-      this.requestUpdate();
-      return;
-    }
-
-    // inserting after a specific slot - compute allowed start date range
     const prev = slots[idx];
-    const next = slots[idx + 1];
+    const next = slots[idx + 1] || null;
 
-    const min = new Date(store._defaultSlotEndDate(prev.start_date));
+    // Allowed range: the day after prev ends through the latest day that keeps a 28-day slot before next starts
+    const min = new Date(store.defaultSlotEndDate(prev.start_date));
     min.setDate(min.getDate() + 1);
 
-    let max;
-    if (next) {
-      // latest allowed start such that end (start +27) < next.start_date
-      const nextStart = new Date(next.start_date);
-      max = new Date(nextStart);
-      max.setDate(max.getDate() - (28 - 1));
-    } else {
-      // shouldn't happen since insertVal !== last, but fallback
-      max = new Date(min);
-      max.setFullYear(max.getFullYear() + 2);
-    }
+    const max = next
+      ? (() => {
+          const nextStart = new Date(next.start_date);
+          const latest = new Date(nextStart);
+          latest.setDate(latest.getDate() - (DEFAULT_SLOT_LENGTH_DAYS - 1));
+          return latest;
+        })()
+      : (() => {
+          const latest = new Date(min);
+          latest.setFullYear(latest.getFullYear() + 1);
+          return latest;
+        })();
 
     if (max < min) {
       this.startOptions = [];
@@ -194,7 +169,6 @@ export class SlotsTab extends LitElement {
       return;
     }
 
-    // build options for each day between min and max inclusive
     const opts = [];
     for (let d = new Date(min); d <= max; d.setDate(d.getDate() + 1)) {
       const dateStr = this._formatDate(new Date(d));
@@ -255,41 +229,6 @@ export class SlotsTab extends LitElement {
     const start = sel ? sel.getSelect().value : null;
     if (!start) {
       showErrorMessage(this, "Fyll i startdatum för slot.");
-      return;
-    }
-
-    const endDate = store._defaultSlotEndDate(start);
-    const endStr = store._normalizeDateOnly(endDate);
-
-    // Basic validation: can't add before first slot
-    const current = (store.getSlots() || [])
-      .slice()
-      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-    if (current.length > 0) {
-      const firstStart = current[0].start_date;
-      if (new Date(start) < new Date(firstStart)) {
-        showErrorMessage(
-          this,
-          "Slot får inte läggas före den första befintliga slotten."
-        );
-        return;
-      }
-    }
-
-    // Check for overlap
-    const overlapping = store._findOverlappingSlot(start, endStr);
-    if (overlapping) {
-      showErrorMessage(
-        this,
-        `Slot ${start}–${endStr} överlappar med befintlig slot ${
-          overlapping.start_date
-        }–${
-          overlapping.end_date ||
-          store._normalizeDateOnly(
-            store._defaultSlotEndDate(overlapping.start_date)
-          )
-        }`
-      );
       return;
     }
 

@@ -35,12 +35,8 @@ export class DataServiceManager {
 
     // Derive normalized structures if missing
     this.store.courseRunsManager.ensureCourseSlotsFromRuns();
-    this.store.slotsManager.ensureSlotDaysFromSlots();
     this._syncStoreCollections();
     this.store.teachingDaysManager._ensureCourseSlotDayDefaults();
-    this.store.slots = this.store.normalizer.normalizeSlotsInPlace(
-      this.store.slots
-    );
     this.store.validator.assertAllSlotsNonOverlapping();
 
     // Validate and fix teacher assignments (ensure one course per teacher per slot)
@@ -185,9 +181,6 @@ export class DataServiceManager {
   async saveData() {
     this.store.teachersManager.syncTeacherCoursesFromTeachers();
     this.store.coursesManager.syncCoursePrerequisitesFromCourses();
-    this.store.slots = this.store.normalizer.normalizeSlotsInPlace(
-      this.store.slots
-    );
     return this.dataService.saveData(this.getDataSnapshot());
   }
 

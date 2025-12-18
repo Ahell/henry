@@ -551,11 +551,11 @@ export class DataStore {
 
   // Public utility methods (delegate to services)
   normalizeDateOnly(value) {
-    return this.dataServiceManager.normalizeDateOnly(value);
+    return this.normalizer.normalizeDateOnly(value);
   }
 
   defaultSlotEndDate(startDate) {
-    return this.dataServiceManager.defaultSlotEndDate(startDate);
+    return this.normalizer.defaultSlotEndDate(startDate);
   }
 }
 

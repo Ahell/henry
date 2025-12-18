@@ -64,18 +64,6 @@ export class DataNormalizer {
     return courses;
   }
 
-  normalizeSlotsInPlace(slots) {
-    return (slots || []).map((slot) => {
-      const startStr = this.normalizeDateOnly(slot.start_date);
-      if (!startStr) return slot;
-      const expectedEnd = this.defaultSlotEndDate(startStr);
-      const endStr = this.normalizeDateOnly(expectedEnd);
-      return endStr
-        ? { ...slot, start_date: startStr, end_date: endStr }
-        : { ...slot, start_date: startStr };
-    });
-  }
-
   getSlotRange(slot) {
     if (!slot) return null;
     const startStr = this.normalizeDateOnly(slot.start_date);
