@@ -217,9 +217,8 @@ export class DataServiceManager {
 
     if (data.courses) {
       this.store.coursesManager.load(
-        null,
-        null,
-        this.store.normalizer.normalizeCourses(data.courses || [])
+        data.courses || [],
+        data.coursePrerequisites || []
       );
     }
     if (data.cohorts) {

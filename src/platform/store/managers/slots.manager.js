@@ -1,10 +1,14 @@
 // src/features/slots/store/slots.manager.js
 import { showAlert } from "../../../utils/ui.js";
+import {
+  normalizeDateOnly,
+  defaultSlotEndDate,
+  getSlotRange,
+} from "../../../utils/date-utils.js";
 
 export class SlotsManager {
-  constructor(events, normalizer, courseRunsManager) {
+  constructor(events, courseRunsManager) {
     this.events = events;
-    this.normalizer = normalizer;
     this.courseRunsManager = courseRunsManager;
     this.slots = [];
     this.slotDays = [];
@@ -17,12 +21,12 @@ export class SlotsManager {
 
   // SLOTS
   addSlot(slot) {
-    const startStr = this.normalizer.normalizeDateOnly(slot.start_date);
+    const startStr = normalizeDateOnly(slot.start_date);
     if (!startStr) {
       throw new Error("Kan inte skapa slot utan giltigt startdatum.");
     }
 
-    const endStr = this.normalizer.normalizeDateOnly(slot.end_date);
+    const endStr = normalizeDateOnly(slot.end_date);
 
     if (!endStr) {
       throw new Error("Kan inte skapa slot utan giltigt slutdatum.");
@@ -34,13 +38,11 @@ export class SlotsManager {
 
     const overlapping = this.findOverlappingSlot(startStr, endStr);
     if (overlapping) {
-      const overlappingRange = this.normalizer.getSlotRange(overlapping);
+      const overlappingRange = getSlotRange(overlapping);
       const conflictEnd =
         overlappingRange?.endStr ||
         overlapping.end_date ||
-        this.normalizer.normalizeDateOnly(
-          this.normalizer.defaultSlotEndDate(overlapping.start_date)
-        );
+        normalizeDateOnly(defaultSlotEndDate(overlapping.start_date));
       const message = `Slot ${startStr}–${endStr} krockar med befintlig slot ${overlapping.start_date}–${conflictEnd}.`;
       throw new Error(message);
     }
@@ -107,8 +109,8 @@ export class SlotsManager {
   }
 
   findOverlappingSlot(startDateStr, endDateStr, ignoreSlotId = null) {
-    const normalizedStart = this.normalizer.normalizeDateOnly(startDateStr);
-    const normalizedEnd = this.normalizer.normalizeDateOnly(endDateStr);
+    const normalizedStart = normalizeDateOnly(startDateStr);
+    const normalizedEnd = normalizeDateOnly(endDateStr);
     if (!normalizedStart || !normalizedEnd) return null;
 
     const start = new Date(normalizedStart);
@@ -121,7 +123,7 @@ export class SlotsManager {
       ) {
         return false;
       }
-      const range = this.normalizer.getSlotRange(slot);
+      const range = getSlotRange(slot);
       if (!range) return false;
       return start <= range.end && end >= range.start;
     });
@@ -161,7 +163,7 @@ export class SlotsManager {
   computeSlotDayRange(slot) {
     if (!slot) return [];
 
-    const slotRange = this.normalizer.getSlotRange(slot);
+    const slotRange = getSlotRange(slot);
     if (!slotRange) return [];
 
     const allSlots = this.getSlots()
@@ -192,7 +194,7 @@ export class SlotsManager {
       }
     }
     if (!endDate || Number.isNaN(endDate.getTime())) {
-      endDate = this.normalizer.defaultSlotEndDate(slotRange.start);
+      endDate = defaultSlotEndDate(slotRange.start);
     }
 
     const days = [];

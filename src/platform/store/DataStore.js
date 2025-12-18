@@ -1,8 +1,4 @@
-import {
-  DataValidator,
-  DataNormalizer,
-  PrerequisiteManager,
-} from "../services/index.js";
+import { DataValidator, PrerequisiteManager } from "../services/index.js";
 import { EventManager } from "./managers/event.manager.js";
 import { DataServiceManager } from "./managers/dataService.manager.js";
 import { CoursesManager } from "./managers/courses.manager.js";
@@ -36,7 +32,6 @@ export class DataStore {
 
     // Initialize services
     this.validator = new DataValidator(this);
-    this.normalizer = new DataNormalizer();
     this.events = new EventManager(this);
     this.prerequisites = new PrerequisiteManager(this);
     this.dataServiceManager = new DataServiceManager(this);
@@ -48,11 +43,7 @@ export class DataStore {
       this.coursesManager
     );
     this.courseRunsManager = new CourseRunsManager(this.events);
-    this.slotsManager = new SlotsManager(
-      this.events,
-      this.normalizer,
-      this.courseRunsManager
-    );
+    this.slotsManager = new SlotsManager(this.events, this.courseRunsManager);
     this.cohortsManager = new CohortsManager(
       this.events,
       this.courseRunsManager

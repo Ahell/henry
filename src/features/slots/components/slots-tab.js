@@ -9,7 +9,10 @@ import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
-import { DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
+import {
+  DEFAULT_SLOT_LENGTH_DAYS,
+  defaultSlotEndDate,
+} from "../../../utils/date-utils.js";
 import "../../../components/ui/index.js";
 import { slotsTabStyles } from "../styles/slots-tab.styles.js";
 
@@ -146,7 +149,7 @@ export class SlotsTab extends LitElement {
     const next = slots[idx + 1] || null;
 
     // Allowed range: the day after prev ends through the latest day that keeps a 28-day slot before next starts
-    const min = new Date(store.defaultSlotEndDate(prev.start_date));
+    const min = new Date(defaultSlotEndDate(prev.start_date));
     min.setDate(min.getDate() + 1);
 
     const max = next

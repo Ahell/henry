@@ -1,4 +1,5 @@
 // Prerequisite Manager Service - Handles prerequisite validation business logic
+import { getSlotRange } from "../../utils/date-utils.js";
 export class PrerequisiteManager {
   constructor(store) {
     this.store = store;
@@ -56,8 +57,7 @@ export class PrerequisiteManager {
             // Check that prerequisite is completely finished before this course starts
             const prereqSlot = this.store.getSlot(prereqRun.slot_id);
             if (prereqSlot) {
-              const prereqRange =
-                this.store.normalizer.getSlotRange(prereqSlot);
+              const prereqRange = getSlotRange(prereqSlot);
               const prereqEndDate = prereqRange?.end;
 
               // The dependent course must start AFTER the prerequisite ends
