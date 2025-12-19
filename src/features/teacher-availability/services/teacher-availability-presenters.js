@@ -3,54 +3,16 @@ import { isDayUnavailableConsideringSlot } from "./helpers.js";
 /**
  * Decide presentation for a day header in the detail view.
  * Pure function: queries `store` but does NOT mutate state.
- * @param {{slotId:number, dateStr:string, isEditingExamDate:boolean, store:object, courseId:number|null, applyToAllCourses?:boolean}} options
- * @returns {{className:string,title:string,clickMode:('toggleTeachingDay'|'setExamDate'|null)}}
+ * @param {{slotId:number, dateStr:string, store:object, courseId:number|null, applyToAllCourses?:boolean}} options
+ * @returns {{className:string,title:string,clickMode:('toggleTeachingDay'|null)}}
  */
 export function getDetailDayHeaderPresentation({
   slotId,
   dateStr,
-  isEditingExamDate,
   courseId = null,
   applyToAllCourses = false,
   store,
 }) {
-  const isExamDate = store.isExamDate(slotId, dateStr);
-  const isExamDateLocked = store.isExamDateLocked(slotId);
-
-  // Exam-date scenarios first
-  if (isExamDateLocked) {
-    return {
-      className: "exam-date-locked-header",
-      title:
-        "Tentamensdatum (låst - tryck 'Ändra tentamensdatum' för att ändra)",
-      clickMode: null,
-    };
-  }
-
-  if (isExamDate && isEditingExamDate) {
-    return {
-      className: "exam-date-unlocked-header",
-      title: "Nuvarande tentamensdatum (klicka för att byta)",
-      clickMode: "setExamDate",
-    };
-  }
-
-  if (isExamDate) {
-    return {
-      className: "exam-date-unlocked-header",
-      title: "Tentamensdatum (olåst)",
-      clickMode: null,
-    };
-  }
-
-  if (isEditingExamDate) {
-    return {
-      className: "exam-date-new-header",
-      title: "Klicka för att sätta som tentamensdatum",
-      clickMode: "setExamDate",
-    };
-  }
-
   const isAllCourses = courseId == null || courseId === "all";
   const canEditTeachingDays = !isAllCourses || applyToAllCourses;
 
@@ -119,7 +81,7 @@ export function getDetailDayHeaderPresentation({
 /**
  * Decide presentation for a day cell in the detail view.
  * Pure function: queries `store` but does NOT mutate state.
- * @param {{slotId:number, dateStr:string, teacherId:number, slotDate:string, isEditingExamDate:boolean, store:object, courseId:number|null}} options
+ * @param {{slotId:number, dateStr:string, teacherId:number, slotDate:string, store:object, courseId:number|null}} options
  * @returns {{className:string,title:string}}
  */
 export function getDetailDayCellPresentation({
@@ -127,7 +89,6 @@ export function getDetailDayCellPresentation({
   slotDate,
   dateStr,
   teacherId,
-  isEditingExamDate,
   courseId = null,
   store,
 }) {
@@ -136,8 +97,6 @@ export function getDetailDayCellPresentation({
     courseId && courseId !== "all"
       ? store.getCourseSlotDaysForCourse(slotId, courseId)
       : [];
-  const isExamDate = store.isExamDate(slotId, dateStr);
-  const isExamDateLocked = store.isExamDateLocked(slotId);
   const isUnavailable = isDayUnavailableConsideringSlot(
     teacherId,
     dateStr,
@@ -149,21 +108,7 @@ export function getDetailDayCellPresentation({
   let className = "";
   let title = dateStr;
 
-  if (isExamDate) {
-    if (isExamDateLocked) {
-      className = "exam-date-locked";
-      title += " (Tentamensdatum - låst)";
-    } else if (isEditingExamDate) {
-      className = "exam-date-unlocked";
-      title += " (Tentamensdatum - olåst)";
-    } else {
-      className = "exam-date-unlocked";
-      title += " (Tentamensdatum - olåst)";
-    }
-  } else if (isEditingExamDate) {
-    className = "exam-date-new";
-    title += " (Kan väljas som tentamensdatum)";
-  } else if (state) {
+  if (state) {
     if (state.isDefault && state.active) {
       className = "teaching-day-default";
       title += " (Standarddag)";
@@ -190,7 +135,7 @@ export function getDetailDayCellPresentation({
 
   if (isUnavailable) {
     className += (className ? " " : "") + "unavailable";
-    title = `Upptagen ${dateStr}` + (isExamDate ? " (Tentamensdatum)" : "");
+    title = `Upptagen ${dateStr}`;
   }
 
   return { className, title };

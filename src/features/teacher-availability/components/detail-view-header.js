@@ -7,7 +7,6 @@ export class DetailViewHeader extends LitElement {
   static properties = {
     slotTitle: { type: String },
     daysLength: { type: Number },
-    isEditingExamDate: { type: Boolean },
     courses: { type: Array },
     courseFilter: { type: Number },
     applyToAllCourses: { type: Boolean },
@@ -20,10 +19,9 @@ export class DetailViewHeader extends LitElement {
     super();
     this.slotTitle = "";
     this.daysLength = 0;
-    this.isEditingExamDate = false;
     this.courses = [];
     this.courseFilter = null;
-    this.applyToAllCourses = false;
+    this.applyToAllCourses = true;
   }
 
   render() {
@@ -70,15 +68,6 @@ export class DetailViewHeader extends LitElement {
         </div>
         <div class="detail-view-actions">
           <henry-button
-            variant="${this.isEditingExamDate ? "primary" : "outline"}"
-            size="small"
-            @click="${this._toggleExamDateEditing}"
-          >
-            ${this.isEditingExamDate
-              ? "Avbryt ändring"
-              : "Ändra tentamensdatum"}
-          </henry-button>
-          <henry-button
             variant="secondary"
             size="small"
             @click="${this._exitDetailView}"
@@ -88,16 +77,6 @@ export class DetailViewHeader extends LitElement {
         </div>
       </div>
     `;
-  }
-
-  _toggleExamDateEditing() {
-    this.dispatchEvent(
-      new CustomEvent("toggle-edit-exam", {
-        bubbles: true,
-        composed: true,
-        detail: { isEditing: !this.isEditingExamDate },
-      })
-    );
   }
 
   _exitDetailView() {

@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { store } from "../../../platform/store/DataStore.js";
+import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
 import "../../../components/ui/index.js";
 import "./teacher-availability-table.js";
 import { teacherAvailabilityTabStyles } from "../styles/teacher-availability-tab.styles.js";
@@ -10,6 +10,9 @@ export class TeacherAvailabilityTab extends LitElement {
     paintMode: { type: String },
     teachers: { type: Array },
     slots: { type: Array },
+    _isDetailView: { type: Boolean },
+    _detailSlotId: { type: Number },
+    _detailSlotDate: { type: String },
   };
 
   static styles = teacherAvailabilityTabStyles;
@@ -20,6 +23,9 @@ export class TeacherAvailabilityTab extends LitElement {
     this.paintMode = null;
     this.teachers = [];
     this.slots = [];
+    this._isDetailView = false;
+    this._detailSlotId = null;
+    this._detailSlotDate = null;
     this._updateData();
     store.subscribe(() => {
       this._updateData();
@@ -42,9 +48,7 @@ export class TeacherAvailabilityTab extends LitElement {
       </henry-panel>`;
     }
 
-    const slotCount = new Set(this.slots.map((s) => s.start_date)).size;
-    const slotLabel =
-      slotCount === 1 ? "1 period" : `${slotCount} perioder/tidsluckor`;
+    const daysLabel = this._getDaysLabel();
     const paintStatus = "";
 
     return html`
@@ -66,10 +70,10 @@ export class TeacherAvailabilityTab extends LitElement {
 
         <div class="layout-stack">
           <div class="legend-row">
-            <div class="legend-left">${this._renderLegend()}</div>
+            <div class="legend-left">${this._renderLegend(this._isDetailView)}</div>
             <div class="legend-right">
               <span class="legend-chip">${this.teachers.length} lärare</span>
-              <span class="legend-chip">${slotLabel}</span>
+              <span class="legend-chip">${daysLabel}</span>
             </div>
           </div>
 
@@ -80,13 +84,54 @@ export class TeacherAvailabilityTab extends LitElement {
             @availability-changed="${this._handleAvailabilityChanged}"
             @paint-session-ended="${this._handlePaintSessionEnded}"
             @paint-state-changed="${this._handlePaintStateChanged}"
+            @detail-view-changed="${this._handleDetailViewChanged}"
           ></teacher-availability-table>
         </div>
       </henry-panel>
     `;
   }
 
-  _renderLegend() {
+  _getDaysLabel() {
+    const slotId =
+      this._isDetailView && this._detailSlotId != null
+        ? this._detailSlotId
+        : this.slots?.[0]?.slot_id;
+    const days = slotId != null ? store.getSlotDays(slotId) : [];
+    const count =
+      Array.isArray(days) && days.length ? days.length : DEFAULT_SLOT_LENGTH_DAYS;
+    return `${count} dagar`;
+  }
+
+  _renderLegend(isDetailView) {
+    if (isDetailView) {
+      const items = [
+        {
+          label: "Tilldelad kurs",
+          meta: "Läraren är tilldelad kursen denna dag",
+          swatchClass: "legend-swatch--assigned",
+        },
+        {
+          label: "Kompatibel kurs",
+          meta: "Läraren är kompatibel med kursen denna dag",
+          swatchClass: "legend-swatch--compatible",
+        },
+        {
+          label: "Otillgänglig dag",
+          meta: "Läraren är markerad som upptagen denna dag",
+          swatchClass: "legend-swatch--unavailable",
+        },
+      ];
+
+      return items.map(
+        (item) => html`
+          <span class="legend-chip" title=${item.meta || ""}>
+            <span class="legend-swatch ${item.swatchClass}" aria-hidden="true"></span>
+            ${item.label}
+          </span>
+        `
+      );
+    }
+
     const items = [
       {
         label: "Tilldelad kurs",
@@ -146,6 +191,14 @@ export class TeacherAvailabilityTab extends LitElement {
     const detail = e?.detail || {};
     this.isPainting = !!detail.isPainting;
     this.paintMode = detail.paintMode || null;
+  }
+
+  _handleDetailViewChanged(e) {
+    const detail = e?.detail || {};
+    this._isDetailView = !!detail.active;
+    this._detailSlotId = detail.slotId != null ? Number(detail.slotId) : null;
+    this._detailSlotDate = detail.slotDate || null;
+    this.requestUpdate();
   }
 }
 

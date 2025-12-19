@@ -39,7 +39,6 @@ export class TeacherAvailabilityTable extends LitElement {
     _paintMode: { type: String }, // 'add' or 'remove'
     _detailSlotDate: { type: String }, // Set when in detail view for a specific slot
     _detailSlotId: { type: Number }, // The specific slot_id being viewed in detail
-    _isEditingExamDate: { type: Boolean }, // Whether exam date editing is enabled
     _detailCourseFilter: { type: Number }, // Selected course_id filter for detail view (null = all)
     _applyToAllCourses: { type: Boolean }, // If true, slot-day edits apply to all courses in slot
   };
@@ -53,9 +52,8 @@ export class TeacherAvailabilityTable extends LitElement {
     this._paintMode = null;
     this._detailSlotDate = null;
     this._detailSlotId = null;
-    this._isEditingExamDate = false;
     this._detailCourseFilter = null;
-    this._applyToAllCourses = false;
+    this._applyToAllCourses = true;
     this._availabilityMutationId = null;
   }
 

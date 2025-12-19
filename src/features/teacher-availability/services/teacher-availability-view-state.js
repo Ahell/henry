@@ -3,31 +3,29 @@ import { store } from "../../../platform/store/DataStore.js";
 export const enterDetailView = (component, slotDate, slotId) => {
   component._detailSlotDate = slotDate;
   component._detailSlotId = slotId;
+  component._applyToAllCourses = true;
+  component.dispatchEvent(
+    new CustomEvent("detail-view-changed", {
+      detail: { active: true, slotId, slotDate },
+      bubbles: true,
+      composed: true,
+    })
+  );
   component.requestUpdate();
 };
 
 export const exitDetailView = (component) => {
   component._detailSlotDate = null;
   component._detailSlotId = null;
-  component._isEditingExamDate = false;
   component._detailCourseFilter = null;
-  component.requestUpdate();
-};
-
-export const toggleExamDateEditing = (component) => {
-  component._isEditingExamDate = !component._isEditingExamDate;
-  if (component._isEditingExamDate) {
-    store.unlockExamDate(component._detailSlotId);
-  } else {
-    store.lockExamDate(component._detailSlotId);
-  }
-  component.requestUpdate();
-};
-
-export const setExamDate = (component, dateStr) => {
-  store.setExamDate(component._detailSlotId, dateStr);
-  component._isEditingExamDate = false;
-  store.lockExamDate(component._detailSlotId);
+  component._applyToAllCourses = true;
+  component.dispatchEvent(
+    new CustomEvent("detail-view-changed", {
+      detail: { active: false },
+      bubbles: true,
+      composed: true,
+    })
+  );
   component.requestUpdate();
 };
 

@@ -10,8 +10,6 @@ import { renderDateHeader } from "./date-header.js";
 import {
   enterDetailView,
   exitDetailView,
-  toggleExamDateEditing,
-  setExamDate,
   toggleTeachingDay,
 } from "./teacher-availability-view-state.js";
 
@@ -27,7 +25,6 @@ export function renderDetailView(component) {
     getDetailDayHeaderPresentation({
       slotId: component._detailSlotId,
       dateStr: day,
-      isEditingExamDate: component._isEditingExamDate,
       courseId: component._detailCourseFilter,
       applyToAllCourses: component._applyToAllCourses,
       store,
@@ -59,11 +56,9 @@ export function renderDetailView(component) {
     <detail-view-header
       slotTitle="${formatSlotDate(component._detailSlotDate)}"
       .daysLength=${days.length}
-      .isEditingExamDate=${component._isEditingExamDate}
       .courseFilter=${component._detailCourseFilter}
       .applyToAllCourses=${component._applyToAllCourses}
       .courses=${slotRuns}
-      @toggle-edit-exam=${() => toggleExamDateEditing(component)}
       @exit-detail=${() => exitDetailView(component)}
       @course-filter-change=${(e) => component._handleCourseFilterChange(e)}
       @apply-to-all-change=${(e) => component._handleApplyToAllChange(e)}
@@ -92,7 +87,6 @@ export function renderDayHeader(component, dateStr, courseId = null) {
   const presentation = getDetailDayHeaderPresentation({
     slotId: component._detailSlotId,
     dateStr,
-    isEditingExamDate: component._isEditingExamDate,
     courseId,
     applyToAllCourses: component._applyToAllCourses,
     store,
@@ -140,8 +134,6 @@ export function renderDayHeader(component, dateStr, courseId = null) {
   let clickHandler = null;
   if (headerPresentation.clickMode === "toggleTeachingDay") {
     clickHandler = () => toggleTeachingDay(component, dateStr, courseId);
-  } else if (headerPresentation.clickMode === "setExamDate") {
-    clickHandler = () => setExamDate(component, dateStr);
   }
 
   return renderDayHeaderCell({
@@ -157,7 +149,6 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
     slotDate: component._detailSlotDate,
     dateStr,
     teacherId: teacher.teacher_id,
-    isEditingExamDate: component._isEditingExamDate,
     courseId,
     store,
   });
