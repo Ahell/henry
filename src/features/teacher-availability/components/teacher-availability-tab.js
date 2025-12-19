@@ -1,5 +1,8 @@
 import { LitElement, html } from "lit";
-import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
+import {
+  store,
+  DEFAULT_SLOT_LENGTH_DAYS,
+} from "../../../platform/store/DataStore.js";
 import "../../../components/ui/index.js";
 import "./teacher-availability-table.js";
 import { teacherAvailabilityTabStyles } from "../styles/teacher-availability-tab.styles.js";
@@ -70,7 +73,9 @@ export class TeacherAvailabilityTab extends LitElement {
 
         <div class="layout-stack">
           <div class="legend-row">
-            <div class="legend-left">${this._renderLegend(this._isDetailView)}</div>
+            <div class="legend-left">
+              ${this._renderLegend(this._isDetailView)}
+            </div>
             <div class="legend-right">
               <span class="legend-chip">${this.teachers.length} lärare</span>
               <span class="legend-chip">${daysLabel}</span>
@@ -98,7 +103,9 @@ export class TeacherAvailabilityTab extends LitElement {
         : this.slots?.[0]?.slot_id;
     const days = slotId != null ? store.getSlotDays(slotId) : [];
     const count =
-      Array.isArray(days) && days.length ? days.length : DEFAULT_SLOT_LENGTH_DAYS;
+      Array.isArray(days) && days.length
+        ? days.length
+        : DEFAULT_SLOT_LENGTH_DAYS;
     return `${count} dagar`;
   }
 
@@ -125,7 +132,10 @@ export class TeacherAvailabilityTab extends LitElement {
       return items.map(
         (item) => html`
           <span class="legend-chip" title=${item.meta || ""}>
-            <span class="legend-swatch ${item.swatchClass}" aria-hidden="true"></span>
+            <span
+              class="legend-swatch ${item.swatchClass}"
+              aria-hidden="true"
+            ></span>
             ${item.label}
           </span>
         `
@@ -155,8 +165,7 @@ export class TeacherAvailabilityTab extends LitElement {
       },
       {
         label: "Info (utanför kursdagar)",
-        meta:
-          "Otillgänglighet finns i perioden men inte på kursens aktiva kursdagar",
+        meta: "Otillgänglighet finns i perioden men inte på kursens aktiva kursdagar",
         swatchClass: "legend-swatch--partial-availability",
       },
       {
@@ -169,7 +178,10 @@ export class TeacherAvailabilityTab extends LitElement {
     return items.map(
       (item) => html`
         <span class="legend-chip" title=${item.meta || ""}>
-          <span class="legend-swatch ${item.swatchClass}" aria-hidden="true"></span>
+          <span
+            class="legend-swatch ${item.swatchClass}"
+            aria-hidden="true"
+          ></span>
           ${item.label}
         </span>
       `

@@ -86,7 +86,11 @@ export const teacherAvailabilityTabStyles = css`
   }
 
   .legend-swatch--compatible {
-    background: linear-gradient(135deg, var(--color-info), var(--color-info-hover));
+    background: linear-gradient(
+      135deg,
+      var(--color-info),
+      var(--color-info-hover)
+    );
   }
 
   .legend-swatch--unavailable {
