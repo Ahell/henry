@@ -1,4 +1,5 @@
 import { store } from "../../../platform/store/DataStore.js";
+import { BaseFormService } from "../../../platform/services/base-form.service.js";
 
 /**
  * Cohort Form Service
@@ -11,19 +12,13 @@ export class CohortFormService {
    * @returns {Object} Created cohort and mutation ID
    */
   static createCohort(cohortData) {
-    let newCohort = null;
-
-    const mutationId = store.applyOptimistic({
-      label: "add-cohort",
-      rollback: () => {
-        if (newCohort && newCohort.cohort_id) {
-          store.deleteCohort(newCohort.cohort_id);
-        }
-      },
+    const result = BaseFormService.create("add-cohort", cohortData, {
+      add: (data) => store.addCohort(data),
+      delete: (id) => store.deleteCohort(id),
+      getIdField: "cohort_id",
     });
 
-    newCohort = store.addCohort(cohortData);
-    return { cohort: newCohort, mutationId };
+    return { cohort: result.entity, mutationId: result.mutationId };
   }
 
   /**
@@ -33,22 +28,12 @@ export class CohortFormService {
    * @returns {Object} Updated cohort and mutation ID
    */
   static updateCohort(cohortId, cohortData) {
-    const existing = store.getCohort(cohortId);
-    if (!existing) {
-      throw new Error(`Cohort ${cohortId} not found`);
-    }
-
-    const previous = { ...existing };
-
-    const mutationId = store.applyOptimistic({
-      label: "update-cohort",
-      rollback: () => {
-        store.updateCohort(cohortId, previous);
-      },
+    const result = BaseFormService.update("update-cohort", cohortId, cohortData, {
+      get: (id) => store.getCohort(id),
+      update: (id, data) => store.updateCohort(id, data),
     });
 
-    const updated = store.updateCohort(cohortId, cohortData);
-    return { cohort: updated, mutationId };
+    return { cohort: result.entity, mutationId: result.mutationId };
   }
 
   /**
@@ -57,11 +42,8 @@ export class CohortFormService {
    * @returns {Object} Mutation info
    */
   static deleteCohort(cohortId) {
-    const mutationId = store.applyOptimistic({
-      label: "delete-cohort",
+    return BaseFormService.delete("delete-cohort", cohortId, {
+      delete: (id) => store.deleteCohort(id),
     });
-
-    const removed = store.deleteCohort(cohortId);
-    return { removed, mutationId };
   }
 }

@@ -1,5 +1,4 @@
 import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
-import { beginOptimisticMutation } from "../../../utils/mutation-helpers.js";
 
 /**
  * Course Run Manager Service
@@ -40,7 +39,25 @@ export class CourseRunManager {
       .getSlots()
       .find((s) => s.start_date === targetSlotDate);
 
-    const mutationId = beginOptimisticMutation("create-course-run");
+    let createdSlot = null;
+    let createdRun = null;
+
+    const mutationId = store.applyOptimistic({
+      label: "create-course-run",
+      rollback: () => {
+        if (createdRun) {
+          const index = store.courseRuns.findIndex(
+            (r) => r.run_id === createdRun.run_id
+          );
+          if (index !== -1) {
+            store.courseRuns.splice(index, 1);
+          }
+        }
+        if (createdSlot) {
+          store.deleteSlot(createdSlot.slot_id);
+        }
+      },
+    });
 
     try {
       if (!targetSlot) {
@@ -53,28 +70,29 @@ export class CourseRunManager {
           evening_pattern: "tis/tor",
           is_placeholder: false,
         });
+        createdSlot = targetSlot;
       }
 
-    // Get teachers from existing runs if co-teaching
-    const existingRunsForCourse = store
-      .getCourseRuns()
-      .filter(
-        (r) => r.slot_id === targetSlot.slot_id && r.course_id === courseId
-      );
+      // Get teachers from existing runs if co-teaching
+      const existingRunsForCourse = store
+        .getCourseRuns()
+        .filter(
+          (r) => r.slot_id === targetSlot.slot_id && r.course_id === courseId
+        );
 
-    let teachersToAssign = [];
-    if (existingRunsForCourse.length > 0) {
-      const existingTeachers = new Set();
-      existingRunsForCourse.forEach((r) => {
-        if (r.teachers) {
-          r.teachers.forEach((tid) => existingTeachers.add(tid));
-        }
-      });
-      teachersToAssign = Array.from(existingTeachers);
-    }
+      let teachersToAssign = [];
+      if (existingRunsForCourse.length > 0) {
+        const existingTeachers = new Set();
+        existingRunsForCourse.forEach((r) => {
+          if (r.teachers) {
+            r.teachers.forEach((tid) => existingTeachers.add(tid));
+          }
+        });
+        teachersToAssign = Array.from(existingTeachers);
+      }
 
       // Create the course run
-      store.addCourseRun({
+      createdRun = store.addCourseRun({
         course_id: courseId,
         slot_id: targetSlot.slot_id,
         cohorts: [targetCohortId],
@@ -107,7 +125,18 @@ export class CourseRunManager {
     const run = store.courseRuns.find((r) => r.run_id === runId);
     if (!run) return;
 
-    const mutationId = beginOptimisticMutation("move-course-run");
+    const previousSlotId = run.slot_id;
+    let createdSlot = null;
+
+    const mutationId = store.applyOptimistic({
+      label: "move-course-run",
+      rollback: () => {
+        run.slot_id = previousSlotId;
+        if (createdSlot) {
+          store.deleteSlot(createdSlot.slot_id);
+        }
+      },
+    });
 
     try {
       // Find or create target slot
@@ -125,6 +154,7 @@ export class CourseRunManager {
           evening_pattern: "tis/tor",
           is_placeholder: false,
         });
+        createdSlot = targetSlot;
       }
 
       // Update run's slot
@@ -147,12 +177,42 @@ export class CourseRunManager {
    * @param {string} slotDate - Slot date
    */
   static async toggleTeacherAssignment(runs, teacherId, checked, slotDate) {
-    const mutationId = beginOptimisticMutation("toggle-teacher-assignment");
+    // Capture state for rollback
+    const previousState = new Map();
+    const slot = store.getSlots().find((s) => s.start_date === slotDate);
+
+    if (slot) {
+      const allRunsInSlot = store.getCourseRuns().filter((r) => r.slot_id === slot.slot_id);
+      allRunsInSlot.forEach((run) => {
+        previousState.set(run.run_id, {
+          teachers: run.teachers ? [...run.teachers] : [],
+        });
+      });
+    }
+
+    runs.forEach((run) => {
+      if (!previousState.has(run.run_id)) {
+        previousState.set(run.run_id, {
+          teachers: run.teachers ? [...run.teachers] : [],
+        });
+      }
+    });
+
+    const mutationId = store.applyOptimistic({
+      label: "toggle-teacher-assignment",
+      rollback: () => {
+        previousState.forEach((state, runId) => {
+          const run = store.courseRuns.find((r) => r.run_id === runId);
+          if (run) {
+            run.teachers = [...state.teachers];
+          }
+        });
+      },
+    });
 
     try {
       if (checked) {
         // When assigning a teacher, remove them from other courses in same slot
-        const slot = store.getSlots().find((s) => s.start_date === slotDate);
         if (slot) {
           const allRunsInSlot = store
             .getCourseRuns()
@@ -273,7 +333,27 @@ export class CourseRunManager {
     const run = store.courseRuns.find((r) => r.run_id === runId);
     if (!run) return { mutationId: null };
 
-    const mutationId = beginOptimisticMutation("remove-course-run");
+    const previousCohorts = [...run.cohorts];
+    let wasRemoved = false;
+
+    const mutationId = store.applyOptimistic({
+      label: "remove-course-run",
+      rollback: () => {
+        if (wasRemoved) {
+          // Restore the run if it was removed
+          store.courseRuns.push({
+            ...run,
+            cohorts: previousCohorts,
+          });
+        } else {
+          // Restore cohorts if run still exists
+          const currentRun = store.courseRuns.find((r) => r.run_id === runId);
+          if (currentRun) {
+            currentRun.cohorts = previousCohorts;
+          }
+        }
+      },
+    });
 
     try {
       // Remove cohort from run
@@ -284,6 +364,7 @@ export class CourseRunManager {
         const index = store.courseRuns.indexOf(run);
         if (index > -1) {
           store.courseRuns.splice(index, 1);
+          wasRemoved = true;
         }
       }
 

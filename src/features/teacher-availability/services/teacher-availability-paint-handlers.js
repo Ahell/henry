@@ -4,7 +4,6 @@ import {
   convertSlotEntryToDayEntriesAndRemove,
 } from "./helpers.js";
 import { removeTeacherFromRunsInSlot } from "./teacher-availability-runs.js";
-import { beginOptimisticMutation } from "../../../utils/mutation-helpers.js";
 
 const dispatchPaintState = (component) => {
   component.dispatchEvent(
@@ -50,9 +49,19 @@ const ensureAvailabilityMutation = (component) => {
   if (component._availabilityMutationId) {
     return component._availabilityMutationId;
   }
-  component._availabilityMutationId = beginOptimisticMutation(
-    "teacher-availability"
-  );
+
+  // Capture initial state of teacher availability for rollback
+  const previousAvailability = store.teacherAvailability.map((entry) => ({
+    ...entry,
+  }));
+
+  component._availabilityMutationId = store.applyOptimistic({
+    label: "teacher-availability",
+    rollback: () => {
+      store.teacherAvailability = previousAvailability;
+    },
+  });
+
   return component._availabilityMutationId;
 };
 

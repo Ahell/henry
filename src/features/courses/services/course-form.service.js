@@ -1,4 +1,5 @@
 import { store } from "../../../platform/store/DataStore.js";
+import { BaseFormService } from "../../../platform/services/base-form.service.js";
 
 /**
  * Course Form Service
@@ -12,21 +13,15 @@ export class CourseFormService {
    * @returns {Object} Created course
    */
   static createCourse(courseData, selectedTeacherIds) {
-    let newCourse = null;
-
-    const mutationId = store.applyOptimistic({
-      label: "add-course",
-      rollback: () => {
-        if (newCourse && newCourse.course_id) {
-          store.deleteCourse(newCourse.course_id);
-        }
-      },
+    const result = BaseFormService.create("add-course", courseData, {
+      add: (data) => store.addCourse(data),
+      delete: (id) => store.deleteCourse(id),
+      getIdField: "course_id",
     });
 
-    newCourse = store.addCourse(courseData);
-    store.addCourseToTeachers(newCourse.course_id, selectedTeacherIds);
+    store.addCourseToTeachers(result.entity.course_id, selectedTeacherIds);
 
-    return { course: newCourse, mutationId };
+    return { course: result.entity, mutationId: result.mutationId };
   }
 
   /**
@@ -80,12 +75,8 @@ export class CourseFormService {
    * @returns {Object} Mutation info
    */
   static deleteCourse(courseId) {
-    const mutationId = store.applyOptimistic({
-      label: "delete-course",
+    return BaseFormService.delete("delete-course", courseId, {
+      delete: (id) => store.deleteCourse(id),
     });
-
-    const removed = store.deleteCourse(courseId);
-
-    return { removed, mutationId };
   }
 }

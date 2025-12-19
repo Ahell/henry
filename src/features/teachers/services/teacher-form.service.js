@@ -1,4 +1,5 @@
 import { store } from "../../../platform/store/DataStore.js";
+import { BaseFormService } from "../../../platform/services/base-form.service.js";
 
 /**
  * Teacher Form Service
@@ -11,20 +12,13 @@ export class TeacherFormService {
    * @returns {Object} Created teacher and mutation ID
    */
   static createTeacher(teacherData) {
-    let newTeacher = null;
-
-    const mutationId = store.applyOptimistic({
-      label: "add-teacher",
-      rollback: () => {
-        if (newTeacher && newTeacher.teacher_id) {
-          store.deleteTeacher(newTeacher.teacher_id);
-        }
-      },
+    const result = BaseFormService.create("add-teacher", teacherData, {
+      add: (data) => store.addTeacher(data),
+      delete: (id) => store.deleteTeacher(id),
+      getIdField: "teacher_id",
     });
 
-    newTeacher = store.addTeacher(teacherData);
-
-    return { teacher: newTeacher, mutationId };
+    return { teacher: result.entity, mutationId: result.mutationId };
   }
 
   /**
@@ -34,27 +28,12 @@ export class TeacherFormService {
    * @returns {Object} Updated teacher and mutation ID
    */
   static updateTeacher(teacherId, teacherData) {
-    const existing = store.getTeacher(teacherId);
-    if (!existing) {
-      throw new Error(`Teacher ${teacherId} not found`);
-    }
-
-    const previous = {
-      ...existing,
-      compatible_courses: Array.isArray(existing.compatible_courses)
-        ? [...existing.compatible_courses]
-        : [],
-    };
-
-    const mutationId = store.applyOptimistic({
-      label: "update-teacher",
-      rollback: () => {
-        store.updateTeacher(teacherId, previous);
-      },
+    const result = BaseFormService.update("update-teacher", teacherId, teacherData, {
+      get: (id) => store.getTeacher(id),
+      update: (id, data) => store.updateTeacher(id, data),
     });
 
-    const updated = store.updateTeacher(teacherId, teacherData);
-    return { teacher: updated, mutationId };
+    return { teacher: result.entity, mutationId: result.mutationId };
   }
 
   /**
@@ -63,12 +42,8 @@ export class TeacherFormService {
    * @returns {Object} Mutation info
    */
   static deleteTeacher(teacherId) {
-    const mutationId = store.applyOptimistic({
-      label: "delete-teacher",
+    return BaseFormService.delete("delete-teacher", teacherId, {
+      delete: (id) => store.deleteTeacher(id),
     });
-
-    const removed = store.deleteTeacher(teacherId);
-
-    return { removed, mutationId };
   }
 }

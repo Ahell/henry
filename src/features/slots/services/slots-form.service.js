@@ -1,4 +1,5 @@
 import { store } from "../../../platform/store/DataStore.js";
+import { BaseFormService } from "../../../platform/services/base-form.service.js";
 
 /**
  * Slots Form Service
@@ -11,19 +12,13 @@ export class SlotsFormService {
    * @returns {Object} Created slot and mutation ID
    */
   static createSlot(slotData) {
-    let newSlot = null;
-
-    const mutationId = store.applyOptimistic({
-      label: "add-slot",
-      rollback: () => {
-        if (newSlot && newSlot.slot_id) {
-          store.deleteSlot(newSlot.slot_id);
-        }
-      },
+    const result = BaseFormService.create("add-slot", slotData, {
+      add: (data) => store.addSlot(data),
+      delete: (id) => store.deleteSlot(id),
+      getIdField: "slot_id",
     });
 
-    newSlot = store.addSlot(slotData);
-    return { slot: newSlot, mutationId };
+    return { slot: result.entity, mutationId: result.mutationId };
   }
 
   /**
@@ -32,11 +27,8 @@ export class SlotsFormService {
    * @returns {Object} Mutation info
    */
   static deleteSlot(slotId) {
-    const mutationId = store.applyOptimistic({
-      label: "delete-slot",
+    return BaseFormService.delete("delete-slot", slotId, {
+      delete: (id) => store.deleteSlot(id),
     });
-
-    const removed = store.deleteSlot(slotId);
-    return { removed, mutationId };
   }
 }
