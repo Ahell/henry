@@ -159,6 +159,11 @@ export class TeacherAvailabilityTab extends LitElement {
           "Otillgänglighet finns i perioden men inte på kursens aktiva kursdagar",
         swatchClass: "legend-swatch--partial-availability",
       },
+      {
+        label: "Grå ränder",
+        meta: "Visar grå ränder för särskild markering",
+        swatchClass: "legend-swatch--grey-stripes",
+      },
     ];
 
     return items.map(

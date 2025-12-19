@@ -115,6 +115,17 @@ export const teacherAvailabilityTabStyles = css`
       var(--color-info);
   }
 
+  .legend-swatch--grey-stripes {
+    background: repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.4) 0px,
+        rgba(255, 255, 255, 0.4) 8px,
+        rgba(255, 255, 255, 0) 8px,
+        rgba(255, 255, 255, 0) 16px
+      ),
+      var(--color-gray-400);
+  }
+
   .legend-left {
     display: flex;
     gap: var(--space-3);
