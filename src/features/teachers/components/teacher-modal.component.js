@@ -80,7 +80,8 @@ export class TeacherModal extends LitElement {
               id="edit-department"
               label="Avdelning"
               name="edit-department"
-              value="${teacher.home_department}"
+              required
+              .value="${teacher.home_department}"
               .options=${departments.map((dept) => ({
                 value: dept,
                 label: dept,

@@ -17,8 +17,11 @@ export async function createTeacherFromForm(root) {
   }
 
   // Validate department
-  const validDepartments = ["FE", "BE", "AIJ"];
-  if (!teacher.home_department || !validDepartments.includes(teacher.home_department)) {
+  const validDepartments = ["AIJ", "AIE", "AF"];
+  if (
+    !teacher.home_department ||
+    !validDepartments.includes(teacher.home_department)
+  ) {
     throw new Error("Avdelning måste väljas.");
   }
 

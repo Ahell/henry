@@ -386,6 +386,13 @@ export class FormService {
    * @private
    */
   static _getRadioValue(root, name) {
+    // Prefer henry-radio-group by id (our forms typically pass the element id)
+    const maybeGroup = root.querySelector(`#${name}`);
+    if (maybeGroup && maybeGroup.tagName === "HENRY-RADIO-GROUP") {
+      return maybeGroup.value || "";
+    }
+
+    // Fallback: native radios in light DOM
     const checked = root.querySelector(`input[name="${name}"]:checked`);
     return checked ? checked.value : "";
   }
