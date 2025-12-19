@@ -28,6 +28,7 @@ export class DetailViewHeader extends LitElement {
 
   render() {
     const hasCourses = Array.isArray(this.courses) && this.courses.length > 0;
+    const showCourseSelect = hasCourses && this.courses.length > 1;
     const showApplyToAllSwitch =
       hasCourses && this.courses.length > 1 && this.courseFilter == null;
     return html`
@@ -37,7 +38,7 @@ export class DetailViewHeader extends LitElement {
           ${this.daysLength
             ? html`<span class="pill">${this.daysLength} dagar</span>`
             : ""}
-          ${hasCourses
+          ${showCourseSelect
             ? html`
                 <label class="pill select-pill">
                   <span>Kurser</span>
