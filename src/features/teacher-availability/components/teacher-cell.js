@@ -35,7 +35,7 @@ export class TeacherCell extends LitElement {
     this.segments = [];
     this._prevClassTokens = [];
     this._onMouseDownListener = null;
-    this._onMouseEnterListener = null;
+    this._onMouseOverListener = null;
   }
 
   updated() {
@@ -69,18 +69,21 @@ export class TeacherCell extends LitElement {
     super.connectedCallback();
     // Use event listeners on the host (light DOM) to normalize interactions
     this._onMouseDownListener = (e) => this._handleMouseDown(e);
-    this._onMouseEnterListener = (e) => this._handleMouseEnter(e);
+    this._onMouseOverListener = (e) => this._handleMouseOver(e);
 
     this.addEventListener("mousedown", this._onMouseDownListener);
-    this.addEventListener("mouseenter", this._onMouseEnterListener);
+    // `mouseenter` doesn't bubble and can get swallowed by absolutely positioned
+    // children; `mouseover` does bubble so we can reliably detect "entered this cell"
+    // even when the content is layered.
+    this.addEventListener("mouseover", this._onMouseOverListener);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     if (this._onMouseDownListener)
       this.removeEventListener("mousedown", this._onMouseDownListener);
-    if (this._onMouseEnterListener)
-      this.removeEventListener("mouseenter", this._onMouseEnterListener);
+    if (this._onMouseOverListener)
+      this.removeEventListener("mouseover", this._onMouseOverListener);
   }
 
   render() {
@@ -134,6 +137,12 @@ export class TeacherCell extends LitElement {
         composed: true,
       })
     );
+  }
+
+  _handleMouseOver(e) {
+    const related = e.relatedTarget;
+    if (related && this.contains(related)) return;
+    this._handleMouseEnter();
   }
 
   _buildDetail() {

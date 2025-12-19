@@ -103,11 +103,6 @@ export function handleCellMouseDown(component, e) {
         teacherId,
         date
       );
-      if (removed) {
-        console.log("Removing slot entry:", removed.id);
-        const days = store.getSlotDays(component._detailSlotId);
-        console.log("Days in slot:", days.length, "Clicked date:", date);
-      }
 
       component._paintMode = "remove";
       component._isMouseDown = true;

@@ -256,9 +256,12 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
     (shouldShowCourse || shouldShowUnavailableCourse)
   ) {
     const getCode = (id) => store.getCourse(id)?.code || String(id);
+    const normalizeDate = (v) => (v || "").split("T")[0];
     const examCourseIds = filteredCourseIds.filter(
       (id) =>
-        store.getExamDayForCourseInSlot(component._detailSlotId, id) === dateStr
+        normalizeDate(
+          store.getExamDayForCourseInSlot(component._detailSlotId, id)
+        ) === normalizeDate(dateStr)
     );
     const normalCourseIds = filteredCourseIds.filter(
       (id) => !examCourseIds.includes(id)

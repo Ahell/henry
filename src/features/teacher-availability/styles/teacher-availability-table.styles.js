@@ -223,8 +223,7 @@ export const teacherAvailabilityTableStyles = css`
     inset: 4px;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    border-radius: var(--radius-sm);
+    gap: 3px;
   }
 
   .teacher-cell .course-segment {
@@ -236,10 +235,7 @@ export const teacherAvailabilityTableStyles = css`
     position: relative;
     padding: 0 6px;
     background: rgba(15, 23, 42, 0.08);
-  }
-
-  .teacher-cell .course-segment + .course-segment {
-    border-top: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: var(--radius-sm);
   }
 
   .teacher-cell .course-segment-text {
