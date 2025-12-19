@@ -5,6 +5,14 @@ import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataSto
  * Manages course run creation, updates, and teacher assignments
  */
 export class CourseRunManager {
+  static _runs() {
+    return store.getCourseRuns();
+  }
+
+  static _runById(runId) {
+    return CourseRunManager._runs().find((r) => String(r.run_id) === String(runId));
+  }
+
   /**
    * Create a course run from depot drop
    * @param {Object} data - Drop data
@@ -46,11 +54,12 @@ export class CourseRunManager {
       label: "create-course-run",
       rollback: () => {
         if (createdRun) {
-          const index = store.courseRuns.findIndex(
-            (r) => r.run_id === createdRun.run_id
+          const runs = CourseRunManager._runs();
+          const index = runs.findIndex(
+            (r) => String(r.run_id) === String(createdRun.run_id)
           );
           if (index !== -1) {
-            store.courseRuns.splice(index, 1);
+            runs.splice(index, 1);
           }
         }
         if (createdSlot) {
@@ -122,7 +131,7 @@ export class CourseRunManager {
       return;
     }
 
-    const run = store.courseRuns.find((r) => r.run_id === runId);
+    const run = CourseRunManager._runById(runId);
     if (!run) return;
 
     const previousSlotId = run.slot_id;
@@ -202,7 +211,7 @@ export class CourseRunManager {
       label: "toggle-teacher-assignment",
       rollback: () => {
         previousState.forEach((state, runId) => {
-          const run = store.courseRuns.find((r) => r.run_id === runId);
+          const run = CourseRunManager._runById(runId);
           if (run) {
             run.teachers = [...state.teachers];
           }
@@ -262,7 +271,7 @@ export class CourseRunManager {
    * @param {number} targetCohortId - Cohort ID to remove from
    */
   static async removeCourseRunFromCohort(runId, targetCohortId) {
-    const run = store.courseRuns.find((r) => r.run_id === runId);
+    const run = CourseRunManager._runById(runId);
     if (!run) return { mutationId: null };
 
     const previousCohorts = [...run.cohorts];
@@ -273,13 +282,13 @@ export class CourseRunManager {
       rollback: () => {
         if (wasRemoved) {
           // Restore the run if it was removed
-          store.courseRuns.push({
+          CourseRunManager._runs().push({
             ...run,
             cohorts: previousCohorts,
           });
         } else {
           // Restore cohorts if run still exists
-          const currentRun = store.courseRuns.find((r) => r.run_id === runId);
+          const currentRun = CourseRunManager._runById(runId);
           if (currentRun) {
             currentRun.cohorts = previousCohorts;
           }
@@ -293,9 +302,10 @@ export class CourseRunManager {
 
       // If no cohorts left, remove the run entirely
       if (run.cohorts.length === 0) {
-        const index = store.courseRuns.indexOf(run);
+        const runs = CourseRunManager._runs();
+        const index = runs.indexOf(run);
         if (index > -1) {
-          store.courseRuns.splice(index, 1);
+          runs.splice(index, 1);
           wasRemoved = true;
         }
       }
