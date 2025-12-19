@@ -48,6 +48,7 @@ export class CourseModal extends LitElement {
 
     const course = store.getCourse(this.courseId);
     if (!course) return html``;
+    const normalizedCredits = Number(course.credits) === 15 ? 15 : 7.5;
 
     return html`
       <henry-modal open title="Redigera Kurs" @close="${this._handleClose}">
@@ -96,15 +97,16 @@ export class CourseModal extends LitElement {
               id="edit-credits"
               label="Högskolepoäng"
               required
-              .value=${String(course.credits ?? 7.5)}
               .options=${[
                 {
                   value: "7.5",
                   label: "7,5 hp",
+                  selected: normalizedCredits === 7.5,
                 },
                 {
                   value: "15",
                   label: "15 hp",
+                  selected: normalizedCredits === 15,
                 },
               ]}
             ></henry-select>
