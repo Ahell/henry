@@ -5,6 +5,10 @@ export const schedulingTabStyles = css`
 
   :host {
     display: block;
+    --gantt-depot-width: 240px;
+    --gantt-cohort-width: 96px;
+    --gantt-slot-width: 120px;
+    --gantt-row-height: 220px;
   }
 
   .warning-pills {
@@ -24,29 +28,17 @@ export const schedulingTabStyles = css`
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
-    background: var(--color-danger);
-    color: white;
+    background: var(--color-danger-light);
+    color: var(--color-danger-hover);
     padding: var(--space-1) var(--space-3);
-    border-radius: 16px;
+    border-radius: var(--radius-full);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-medium);
-    animation: pulse-pill 1.5s infinite;
+    border: 1px solid rgba(239, 68, 68, 0.25);
   }
 
   .warning-pill .cohort-name {
     font-weight: var(--font-weight-semibold);
-  }
-
-  @keyframes pulse-pill {
-    0%,
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.8;
-      transform: scale(1.02);
-    }
   }
 
   .legend {
@@ -61,12 +53,14 @@ export const schedulingTabStyles = css`
     align-items: center;
     gap: var(--space-2);
     font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
   }
 
   .legend-box {
-    width: 24px;
-    height: 24px;
-    border-radius: var(--radius-sm);
+    width: 14px;
+    height: 14px;
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-xs);
   }
 
   .law-course.law-order-1 {
@@ -103,67 +97,93 @@ export const schedulingTabStyles = css`
     overflow-x: auto;
     overflow-y: auto;
     max-height: calc(100vh - 220px);
-    padding-bottom: 15px;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
   }
 
   .gantt-table {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     min-width: 100%;
+    width: max-content;
+    background: var(--color-background);
   }
 
   .gantt-table th,
   .gantt-table td {
-    border: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
     padding: 0;
-    min-width: 100px;
-    width: 100px;
-    height: 44px;
+    min-width: var(--gantt-slot-width);
+    width: var(--gantt-slot-width);
     text-align: center;
     vertical-align: middle;
   }
 
+  .gantt-table tr > :first-child {
+    border-left: 1px solid var(--color-border);
+  }
+
+  .gantt-table thead tr:first-child > th {
+    border-top: 1px solid var(--color-border);
+  }
+
   .gantt-table th {
-    background: var(--color-gray-200);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-bold);
-    padding: var(--space-1) var(--space-1);
+    background: rgba(237, 241, 247, 0.92);
+    backdrop-filter: blur(10px);
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    padding: var(--space-2) var(--space-2);
     position: sticky;
     top: 0;
     z-index: 10;
-    box-shadow: var(--shadow-sm);
+  }
+
+  .gantt-table thead th:not(.cohort-header) {
+    font-family: var(--font-family-mono);
+    font-variant-numeric: tabular-nums;
   }
 
   .gantt-table th.cohort-header {
-    min-width: 70px;
-    width: 70px;
+    min-width: var(--gantt-cohort-width);
+    width: var(--gantt-cohort-width);
     text-align: left;
-    padding-left: var(--space-2);
+    padding-left: var(--space-3);
     position: sticky;
-    background: var(--color-gray-200);
     z-index: 20;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 6px 0 12px rgba(31, 39, 51, 0.06);
   }
 
   .gantt-table th.cohort-header:first-child {
     left: 0;
-    min-width: 180px;
-    width: 180px;
+    min-width: var(--gantt-depot-width);
+    width: var(--gantt-depot-width);
   }
 
   .gantt-table th.cohort-header:nth-child(2) {
-    left: 180px;
+    left: var(--gantt-depot-width);
   }
 
   .gantt-table td.depot-cell {
-    min-width: 180px;
-    width: 180px;
-    max-width: 180px;
-    background: var(--color-surface);
+    min-width: var(--gantt-depot-width);
+    width: var(--gantt-depot-width);
+    max-width: var(--gantt-depot-width);
+    background: var(--color-gray-50);
     position: sticky;
     left: 0;
     z-index: 5;
     vertical-align: top;
-    padding: var(--space-1);
+    padding: 0;
+    box-shadow: 6px 0 12px rgba(31, 39, 51, 0.06);
+  }
+
+  .gantt-table td.depot-cell gantt-depot {
+    display: block;
+    height: 100%;
   }
 
   .gantt-table td.depot-cell.drag-over {
@@ -172,31 +192,45 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table td.cohort-cell {
-    min-width: 70px;
-    width: 70px;
+    min-width: var(--gantt-cohort-width);
+    width: var(--gantt-cohort-width);
     text-align: left;
-    padding-left: var(--space-2);
-    font-weight: var(--font-weight-bold);
+    padding: var(--space-3);
+    font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-xs);
+    color: var(--color-text-primary);
     background: var(--color-gray-50);
     position: sticky;
-    left: 180px;
+    left: var(--gantt-depot-width);
     z-index: 5;
+    box-shadow: 6px 0 12px rgba(31, 39, 51, 0.06);
   }
 
   .gantt-table td.slot-cell {
-    background: var(--color-surface);
+    background: var(--color-background);
     position: relative;
     cursor: pointer;
-    transition: var(--transition-fast);
-    overflow: visible;
-    min-width: 85px;
-    width: 85px;
+    transition: background var(--transition-fast),
+      box-shadow var(--transition-fast);
+    overflow: hidden;
     vertical-align: top;
   }
 
-  .gantt-table td.slot-cell:hover {
-    background: var(--color-info-light);
+  .gantt-table tbody td {
+    height: var(--gantt-row-height);
+  }
+
+  .gantt-table tbody td.slot-cell gantt-cell {
+    display: block;
+    height: 100%;
+  }
+
+  .gantt-table tbody tr:hover td.slot-cell:not(.disabled-slot):not(.no-teachers-available) {
+    background: var(--color-primary-50);
+  }
+
+  .gantt-table td.slot-cell:hover:not(.disabled-slot):not(.no-teachers-available) {
+    background: var(--color-primary-50);
   }
 
   .gantt-table td.slot-cell.drag-over {
@@ -210,18 +244,21 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table td.slot-cell.no-teachers-available {
-    background: var(--color-danger-light) !important;
-    box-shadow: inset 0 0 0 2px var(--color-danger);
+    background: linear-gradient(
+      0deg,
+      rgba(239, 68, 68, 0.08),
+      rgba(239, 68, 68, 0.08)
+    );
+    box-shadow: inset 0 0 0 2px rgba(239, 68, 68, 0.35);
   }
 
   .gantt-table td.slot-cell.disabled-slot {
-    background: var(--color-gray-300);
+    background: var(--color-gray-100);
     cursor: not-allowed;
-    opacity: 0.5;
   }
 
   .gantt-table td.slot-cell.disabled-slot:hover {
-    background: var(--color-gray-300);
+    background: var(--color-gray-100);
   }
 
   .gantt-table td.slot-cell.cohort-start-slot {
@@ -229,9 +266,136 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table tfoot td {
-    background: var(--color-gray-200);
+    background: var(--color-gray-50);
     vertical-align: top;
-    padding: var(--space-1);
-    border-top: 2px solid var(--color-gray-300);
+    padding: var(--space-2);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* === Summary row (rendered directly in scheduling-tab) === */
+
+  .gantt-table tfoot .summary-label {
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-xs);
+    text-align: right;
+    padding-right: var(--space-3);
+    color: var(--color-text-secondary);
+    background: var(--color-gray-50);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .gantt-table tfoot .summary-cell {
+    background: var(--color-gray-50);
+    vertical-align: top;
+    padding: var(--space-2);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .gantt-table tfoot .summary-course {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    font-size: 0.65rem;
+    color: white;
+    margin-bottom: var(--space-2);
+    box-shadow: var(--shadow-xs);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+  }
+
+  .gantt-table tfoot .summary-course .course-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .gantt-table tfoot .summary-course .course-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: bold;
+  }
+
+  .gantt-table tfoot .summary-course .participant-count {
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.3);
+    padding: 1px 4px;
+    border-radius: 2px;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: var(--radius-base);
+    padding: var(--space-2);
+    box-shadow: inset 0 0 0 1px rgba(31, 39, 51, 0.08);
+    max-height: 180px;
+    overflow: auto;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.6rem;
+    color: var(--color-text-primary);
+    padding: 4px 6px;
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row:hover {
+    background: rgba(58, 116, 246, 0.08);
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row input {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--color-primary-600);
+    cursor: pointer;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row label {
+    cursor: pointer;
+    flex: 1;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row input:focus-visible {
+    outline: 2px solid var(--color-primary-400);
+    outline-offset: 2px;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row input:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row input:disabled + label {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row.assigned {
+    background: rgba(16, 185, 129, 0.16);
+    font-weight: 600;
+    color: var(--color-success-hover);
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row.assigned:hover {
+    background: rgba(16, 185, 129, 0.22);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      scroll-behavior: auto !important;
+      transition: none !important;
+      animation: none !important;
+    }
   }
 `;

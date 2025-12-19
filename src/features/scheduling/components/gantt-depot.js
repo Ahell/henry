@@ -24,9 +24,11 @@ export class GanttDepot extends LitElement {
     const courses = store.getCourses();
 
     // Filter out already scheduled courses
-    const scheduledSet = new Set(this.scheduledCourseIds);
+    const scheduledSet = new Set(
+      (this.scheduledCourseIds || []).map((id) => String(id))
+    );
     const availableCourses = courses.filter(
-      (c) => !scheduledSet.has(c.course_id)
+      (c) => !scheduledSet.has(String(c.course_id))
     );
 
     // Sort courses: those with prerequisites first

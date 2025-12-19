@@ -6,8 +6,8 @@ import { CourseRunManager } from "../services/course-run-manager.service.js";
 import "../../../components/ui/index.js";
 import "./gantt-depot.js";
 import "./gantt-cell.js";
-import "./gantt-summary-row.js";
 import { schedulingTabStyles } from "../styles/scheduling-tab.styles.js";
+import { getCompatibleTeachersForCourse } from "../services/teacher-availability.service.js";
 
 /**
  * Scheduling Tab - Gantt view for course planning
@@ -31,7 +31,6 @@ export class SchedulingTab extends LitElement {
     this.addEventListener("cell-drag-over", this._handleCellDragOver);
     this.addEventListener("cell-drag-leave", this._handleCellDragLeave);
     this.addEventListener("cell-drop", this._handleCellDrop);
-    this.addEventListener("teacher-toggle", this._handleTeacherToggle);
   }
 
   disconnectedCallback() {
@@ -43,7 +42,6 @@ export class SchedulingTab extends LitElement {
     this.removeEventListener("cell-drag-over", this._handleCellDragOver);
     this.removeEventListener("cell-drag-leave", this._handleCellDragLeave);
     this.removeEventListener("cell-drop", this._handleCellDrop);
-    this.removeEventListener("teacher-toggle", this._handleTeacherToggle);
   }
 
   render() {
@@ -88,16 +86,7 @@ export class SchedulingTab extends LitElement {
               <tr>
                 <th class="cohort-header">Depå</th>
                 <th class="cohort-header">Kull</th>
-                ${slotDates.map((dateStr) => {
-                  const date = new Date(dateStr);
-                  const formatted = `${date.getFullYear()}-${String(
-                    date.getMonth() + 1
-                  ).padStart(2, "0")}-${String(date.getDate()).padStart(
-                    2,
-                    "0"
-                  )}`;
-                  return html`<th>${formatted}</th>`;
-                })}
+                ${slotDates.map((dateStr) => html`<th>${dateStr}</th>`)}
               </tr>
             </thead>
             <tbody>
@@ -106,11 +95,7 @@ export class SchedulingTab extends LitElement {
               )}
             </tbody>
             <tfoot>
-              <tr>
-                <gantt-summary-row
-                  .slotDates="${slotDates}"
-                ></gantt-summary-row>
-              </tr>
+              ${this._renderSummaryRow(slotDates)}
             </tfoot>
           </table>
         </div>
@@ -177,7 +162,7 @@ export class SchedulingTab extends LitElement {
 
     store
       .getCourseRuns()
-      .filter((r) => r.cohorts && r.cohorts.includes(cohort.cohort_id))
+      .filter((r) => this._runHasCohort(r, cohort.cohort_id))
       .forEach((run) => {
         const slot = store.getSlot(run.slot_id);
         const course = store.getCourse(run.course_id);
@@ -210,17 +195,20 @@ export class SchedulingTab extends LitElement {
         ${slotDates.map((dateStr, index) => {
           const runs = runsByDate[dateStr] || [];
 
-          const slotDate = new Date(dateStr);
-          const cohortStartDate = new Date(cohort.start_date);
-          const isBeforeCohortStart = slotDate < cohortStartDate;
+          const slotDate = this._parseDateOnly(dateStr);
+          const cohortStartDate = this._parseDateOnly(cohort.start_date);
+          const isBeforeCohortStart =
+            slotDate && cohortStartDate ? slotDate < cohortStartDate : false;
 
           const nextSlotDate =
             index < slotDates.length - 1
-              ? new Date(slotDates[index + 1])
+              ? this._parseDateOnly(slotDates[index + 1])
               : null;
           const isCohortStartSlot =
-            cohortStartDate >= slotDate &&
-            (nextSlotDate === null || cohortStartDate < nextSlotDate);
+            slotDate && cohortStartDate
+              ? cohortStartDate >= slotDate &&
+                (nextSlotDate === null || cohortStartDate < nextSlotDate)
+              : false;
 
           return html`
             <td
@@ -245,6 +233,170 @@ export class SchedulingTab extends LitElement {
         })}
       </tr>
     `;
+  }
+
+  _parseDateOnly(dateStr) {
+    if (typeof dateStr !== "string") return null;
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return null;
+    const year = Number(parts[0]);
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    if (
+      !Number.isFinite(year) ||
+      !Number.isFinite(month) ||
+      !Number.isFinite(day)
+    ) {
+      return null;
+    }
+    return new Date(year, month - 1, day);
+  }
+
+  _runHasCohort(run, cohortId) {
+    if (!run || cohortId == null) return false;
+    if (!Array.isArray(run.cohorts)) return false;
+    return run.cohorts.some((id) => String(id) === String(cohortId));
+  }
+
+  _renderSummaryRow(slotDates) {
+    return html`
+      <tr>
+        <td class="summary-label" colspan="2">Kurser & Lärare:</td>
+        ${slotDates.map((dateStr) => this._renderSummaryCell(dateStr))}
+      </tr>
+    `;
+  }
+
+  _renderSummaryCell(slotDate) {
+    const slot = store.getSlots().find((s) => s.start_date === slotDate);
+    if (!slot) return html`<td class="summary-cell"></td>`;
+
+    const runsInSlot = store
+      .getCourseRuns()
+      .filter((r) => String(r.slot_id) === String(slot.slot_id));
+
+    const courseMap = new Map();
+    for (const run of runsInSlot) {
+      const course = store.getCourse(run.course_id);
+      if (!course) continue;
+
+      if (!courseMap.has(course.course_id)) {
+        courseMap.set(course.course_id, {
+          course,
+          runs: [],
+          assignedTeachers: new Set(),
+          totalParticipants: 0,
+        });
+      }
+      const entry = courseMap.get(course.course_id);
+      entry.runs.push(run);
+
+      // cohorts -> participants
+      if (Array.isArray(run.cohorts)) {
+        for (const cohortId of run.cohorts) {
+          const cohort = store.getCohort(cohortId);
+          if (cohort) entry.totalParticipants += cohort.planned_size || 0;
+        }
+      }
+
+      if (Array.isArray(run.teachers)) {
+        run.teachers.forEach((tid) => entry.assignedTeachers.add(tid));
+      }
+    }
+
+    const items = Array.from(courseMap.values()).sort((a, b) =>
+      (a.course?.name || "").localeCompare(b.course?.name || "")
+    );
+
+    return html`
+      <td class="summary-cell">
+        ${items.map((item) => {
+          const course = item.course;
+          const bgColor = this._getCourseColor(course);
+          const assignedTeacherIds = Array.from(item.assignedTeachers);
+          const compatibleTeachers = getCompatibleTeachersForCourse(
+            course.course_id
+          );
+
+          return html`
+            <div class="summary-course" style="background-color: ${bgColor};">
+              <div class="course-header">
+                <span class="course-name" title="${course.name}"
+                  >${course.code}</span
+                >
+                <span class="participant-count">${item.totalParticipants} st</span>
+              </div>
+
+              <div class="summary-teacher-list">
+                ${compatibleTeachers.length === 0
+                  ? html`<div class="summary-teacher-row">
+                      Inga kompatibla lärare
+                    </div>`
+                  : compatibleTeachers.map((teacher) => {
+                      const isAssigned = assignedTeacherIds.includes(
+                        teacher.teacher_id
+                      );
+                      const isUnavailable = store.isTeacherUnavailable(
+                        teacher.teacher_id,
+                        slotDate
+                      );
+                      const disabled = isUnavailable && !isAssigned;
+                      const inputId = `summary-${slotDate}-${course.course_id}-${teacher.teacher_id}`;
+                      return html`
+                        <div
+                          class="summary-teacher-row ${isAssigned ? "assigned" : ""}"
+                          title=${isUnavailable
+                            ? "Otillgänglig i perioden"
+                            : "Tillgänglig"}
+                        >
+                          <input
+                            type="checkbox"
+                            id="${inputId}"
+                            .checked=${isAssigned}
+                            ?disabled=${disabled}
+                            @change=${(e) =>
+                              this._toggleTeacherAssignment({
+                                runs: item.runs,
+                                teacherId: teacher.teacher_id,
+                                checked: !!e?.target?.checked,
+                                slotDate,
+                              })}
+                          />
+                          <label for="${inputId}">${teacher.name}</label>
+                        </div>
+                      `;
+                    })}
+              </div>
+            </div>
+          `;
+        })}
+      </td>
+    `;
+  }
+
+  _getCourseColor(course) {
+    if (!course) return "#666";
+    // Keep consistent with gantt blocks (simple deterministic color list).
+    const colors = [
+      "#2ecc71",
+      "#3498db",
+      "#e67e22",
+      "#1abc9c",
+      "#e74c3c",
+      "#f39c12",
+      "#16a085",
+      "#d35400",
+      "#27ae60",
+      "#2980b9",
+      "#c0392b",
+      "#f1c40f",
+      "#00cec9",
+      "#0984e3",
+      "#00b894",
+      "#fdcb6e",
+    ];
+    const colorIndex = (course.course_id || 0) % colors.length;
+    return colors[colorIndex];
   }
 
   _handleDepotDragStart(e) {
@@ -314,8 +466,7 @@ export class SchedulingTab extends LitElement {
     }
   }
 
-  async _handleTeacherToggle(e) {
-    const { runs, teacherId, checked, slotDate } = e.detail;
+  async _toggleTeacherAssignment({ runs, teacherId, checked, slotDate }) {
     try {
       await CourseRunManager.toggleTeacherAssignment(
         runs,

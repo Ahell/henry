@@ -1,44 +1,54 @@
 import { css } from "lit";
 
 export const ganttDepotStyles = css`
+  @import url("/src/styles/tokens.css");
+
   :host {
     display: block;
+    height: 100%;
     min-height: 20px;
   }
 
   .cohort-depot-content {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px;
-    align-content: flex-start;
+    height: 100%;
     min-height: 20px;
+    overflow: auto;
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
   }
 
   .depot-empty {
-    color: #28a745;
-    font-size: 0.75rem;
-    font-weight: bold;
-    padding: 4px;
+    color: var(--color-success-hover);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-2);
   }
 
   .depot-block {
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-size: 0.6rem;
+    padding: var(--space-2) var(--space-2);
+    border-radius: var(--radius-md);
+    font-size: 0.7rem;
     color: white;
     cursor: grab;
     user-select: none;
     text-align: left;
-    min-width: 80px;
-    max-width: 170px;
+    min-width: 0;
+    width: 100%;
+    box-shadow: var(--shadow-xs);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
   }
 
   .depot-block:hover {
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
   }
 
   .depot-block:active {
     cursor: grabbing;
+    transform: translateY(0);
   }
 
   .depot-block.dragging {
@@ -48,16 +58,17 @@ export const ganttDepotStyles = css`
   .depot-block .course-code {
     font-weight: bold;
     display: inline;
-    margin-right: 4px;
+    margin-right: 6px;
   }
 
   .depot-block .course-name {
-    font-size: 0.55rem;
-    opacity: 0.85;
+    font-size: 0.65rem;
+    opacity: 0.88;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: block;
+    margin-top: 2px;
   }
 
   .prerequisite-course {
@@ -65,7 +76,7 @@ export const ganttDepotStyles = css`
   }
 
   .normal-course {
-    background: #007bff;
+    background: var(--color-primary-600);
   }
 
   .two-block-course {
