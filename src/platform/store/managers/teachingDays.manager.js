@@ -1,4 +1,8 @@
-// Teaching days store manager
+/**
+ * Teaching Days Manager
+ * Manages which days within slots are active teaching days
+ * Handles both slot-level defaults and course-specific overrides
+ */
 export class TeachingDaysManager {
   constructor(events, slotsManager, courseRunsManager) {
     this.events = events;
@@ -9,14 +13,26 @@ export class TeachingDaysManager {
     this.courseSlotDays = [];
   }
 
+  /**
+   * Load teaching days data from backend
+   * @param {Array} teachingDays - Legacy teaching days records
+   */
   loadTeachingDays(teachingDays) {
     this.teachingDays = teachingDays || [];
   }
 
+  /**
+   * Load slot days data from backend
+   * @param {Array} slotDays - Slot day records
+   */
   loadSlotDays(slotDays) {
     this.slotDays = slotDays || [];
   }
 
+  /**
+   * Load course-specific teaching days from backend
+   * @param {Array} courseSlotDays - Course slot day records with active/inactive flags
+   */
   loadCourseSlotDays(courseSlotDays) {
     this.courseSlotDays = courseSlotDays || [];
   }
@@ -56,6 +72,13 @@ export class TeachingDaysManager {
   generateDefaultTeachingDays() {}
   initializeAllTeachingDays() {}
 
+  /**
+   * Toggle teaching day state for a slot
+   * Can toggle for all courses in slot or a specific course
+   * @param {number} slotId - Slot ID
+   * @param {string} date - Date (ISO format)
+   * @param {number|null} [courseId=null] - Course ID (null = toggle for all courses)
+   */
   toggleTeachingDay(slotId, date, courseId = null) {
     const defaultDates = this.slotsManager.getDefaultTeachingDaysPattern(slotId);
     const isDefaultDate = defaultDates.includes(date);
@@ -100,6 +123,13 @@ export class TeachingDaysManager {
     // Auto-save happens in notify() - no manual save needed
   }
 
+  /**
+   * Get the state of a teaching day (whether it's active/inactive and default/custom)
+   * @param {number} slotId - Slot ID
+   * @param {string} date - Date (ISO format)
+   * @param {number|null} [courseId=null] - Course ID (null = get slot-level state)
+   * @returns {Object|null} State object with {isDefault: boolean, active: boolean} or null
+   */
   getTeachingDayState(slotId, date, courseId = null) {
     const normalizeDate = (v) => (v || "").split("T")[0];
 
@@ -201,10 +231,20 @@ export class TeachingDaysManager {
     );
   }
 
+  /**
+   * Get all course slots (courses scheduled in slots)
+   * @returns {Array} Array of course slot objects
+   */
   getCourseSlots() {
     return this.courseRunsManager.courseSlots || [];
   }
 
+  /**
+   * Get a specific course slot
+   * @param {number} courseId - Course ID
+   * @param {number} slotId - Slot ID
+   * @returns {Object|undefined} Course slot object or undefined
+   */
   getCourseSlot(courseId, slotId) {
     return (this.courseRunsManager.courseSlots || []).find(
       (cs) =>
@@ -213,6 +253,11 @@ export class TeachingDaysManager {
     );
   }
 
+  /**
+   * Get all active teaching days for a course slot
+   * @param {number} courseSlotId - Course slot ID
+   * @returns {string[]} Array of date strings (ISO format)
+   */
   getCourseSlotDays(courseSlotId) {
     return (this.courseSlotDays || [])
       .filter((csd) => String(csd.course_slot_id) === String(courseSlotId))
@@ -220,12 +265,27 @@ export class TeachingDaysManager {
       .map((csd) => (csd.date || csd.slot_day_id_date || "").split("T")[0]);
   }
 
+  /**
+   * Get active teaching days for a specific course in a specific slot
+   * @param {number} slotId - Slot ID
+   * @param {number} courseId - Course ID
+   * @returns {string[]} Array of date strings (ISO format)
+   */
   getCourseSlotDaysForCourse(slotId, courseId) {
     const courseSlot = this.getCourseSlot(courseId, slotId);
     if (!courseSlot) return [];
     return this.getCourseSlotDays(courseSlot.course_slot_id);
   }
 
+  /**
+   * Toggle a specific teaching day for a course in a slot
+   * @param {number} slotId - Slot ID
+   * @param {number} courseId - Course ID
+   * @param {string} dateStr - Date (ISO format)
+   * @param {Object} [options] - Options
+   * @param {boolean} [options.skipSave=false] - Skip saving to backend
+   * @param {boolean} [options.skipNotify=false] - Skip triggering notifications
+   */
   toggleCourseSlotDay(
     slotId,
     courseId,

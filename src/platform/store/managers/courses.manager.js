@@ -1,4 +1,7 @@
-// src/utils/store/courses.js
+/**
+ * Courses Manager
+ * Manages course entities and their prerequisites
+ */
 export class CoursesManager {
   constructor(events) {
     this.events = events;
@@ -6,11 +9,26 @@ export class CoursesManager {
     this.coursePrerequisites = [];
   }
 
+  /**
+   * Load courses and prerequisites from backend data
+   * @param {Array} courses - Course entities
+   * @param {Array} coursePrerequisites - Course prerequisite junction table
+   * @param {Array} normalizedCourses - Pre-normalized courses with prerequisites embedded
+   */
   load(courses, coursePrerequisites, normalizedCourses) {
     this.courses = normalizedCourses || courses || [];
     this.coursePrerequisites = coursePrerequisites || [];
   }
 
+  /**
+   * Add a new course to the system
+   * @param {Object} course - Course data
+   * @param {string} course.code - Course code (e.g., "FE23", "JS1")
+   * @param {string} course.name - Course name
+   * @param {number} [course.credits=7.5] - Credit points (7.5 or 15)
+   * @param {number[]} [course.prerequisites=[]] - Array of prerequisite course IDs
+   * @returns {Object} The created course with generated course_id
+   */
   addCourse(course) {
     const id = Math.max(...this.courses.map((c) => c.course_id), 0) + 1;
     const newCourse = {
@@ -28,15 +46,30 @@ export class CoursesManager {
     return newCourse;
   }
 
+  /**
+   * Get all courses
+   * @returns {Array} Array of course objects
+   */
   getCourses() {
     return this.courses;
   }
 
+  /**
+   * Get a specific course by ID
+   * @param {number} courseId - Course ID
+   * @returns {Object|undefined} Course object or undefined if not found
+   */
   getCourse(courseId) {
     return this.courses.find((c) => c.course_id === courseId);
   }
 
-  // Get all prerequisites for a course, including transitive ones (prerequisites of prerequisites)
+  /**
+   * Get all prerequisites for a course, including transitive dependencies
+   * Recursively follows prerequisite chains (prerequisites of prerequisites)
+   * @param {number} courseId - Course ID
+   * @param {Set} [visited=new Set()] - Internal set to prevent circular dependencies
+   * @returns {number[]} Array of all prerequisite course IDs (direct and transitive)
+   */
   getAllPrerequisites(courseId, visited = new Set()) {
     if (visited.has(courseId)) return []; // Prevent circular dependencies
     visited.add(courseId);
@@ -61,6 +94,12 @@ export class CoursesManager {
     return allPrereqs;
   }
 
+  /**
+   * Update an existing course
+   * @param {number} courseId - Course ID
+   * @param {Object} updates - Fields to update
+   * @returns {Object|null} Updated course object or null if not found
+   */
   updateCourse(courseId, updates) {
     const index = this.courses.findIndex((c) => c.course_id === courseId);
     if (index !== -1) {
@@ -71,6 +110,13 @@ export class CoursesManager {
     return null;
   }
 
+  /**
+   * Delete a course from the system
+   * Also removes all prerequisite relationships involving this course
+   * Triggers "course-deleted" event for cleanup in other managers
+   * @param {number} courseId - Course ID to delete
+   * @returns {boolean} True if deleted, false if not found
+   */
   deleteCourse(courseId) {
     const index = this.courses.findIndex((c) => c.course_id === courseId);
     if (index !== -1) {
@@ -88,6 +134,10 @@ export class CoursesManager {
     return false;
   }
 
+  /**
+   * Hydrate course.prerequisites arrays from coursePrerequisites junction table
+   * Used during data loading to populate embedded prerequisite arrays
+   */
   ensurePrerequisitesFromNormalized() {
     if (!Array.isArray(this.courses)) return;
     const byCourse = new Map();
@@ -103,6 +153,11 @@ export class CoursesManager {
     });
   }
 
+  /**
+   * Synchronize coursePrerequisites junction table from course.prerequisites arrays
+   * Maintains consistency between embedded and normalized representations
+   * Called automatically after each data change
+   */
   syncCoursePrerequisitesFromCourses() {
     if (!Array.isArray(this.courses)) return;
     const next = [];
