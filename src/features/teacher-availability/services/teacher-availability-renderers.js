@@ -229,10 +229,6 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
     .map((id) => store.getCourse(id)?.code)
     .filter(Boolean)
     .join(", ");
-  const examCoursesInCell = filteredCourseIds.filter(
-    (id) => store.getExamDayForCourseInSlot(component._detailSlotId, id) === dateStr
-  );
-  const showExamBadge = examCoursesInCell.length > 0;
 
   const hasActiveCourses = filteredCourseIds.length > 0;
   const shouldShowCourse =
@@ -252,6 +248,33 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
       presentation.className.includes("teaching-day-default") ||
       shouldShowCourse ||
       shouldShowUnavailableCourse);
+
+  const segments = [];
+  if (
+    shouldShowContent &&
+    filteredCourseIds.length > 0 &&
+    (shouldShowCourse || shouldShowUnavailableCourse)
+  ) {
+    const getCode = (id) => store.getCourse(id)?.code || String(id);
+    const examCourseIds = filteredCourseIds.filter(
+      (id) =>
+        store.getExamDayForCourseInSlot(component._detailSlotId, id) === dateStr
+    );
+    const normalCourseIds = filteredCourseIds.filter(
+      (id) => !examCourseIds.includes(id)
+    );
+
+    if (examCourseIds.length > 0) {
+      segments.push({
+        text: examCourseIds.map(getCode).join(", "),
+        badgeText: "Exam",
+      });
+    }
+
+    normalCourseIds.forEach((id) => {
+      segments.push({ text: getCode(id), badgeText: "" });
+    });
+  }
   const courseTokens = overviewClassTokens.filter((token) =>
     ["assigned-course", "has-course"].includes(token)
   );
@@ -292,7 +315,7 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
           : shouldShowUnavailableCourse
           ? filteredContent
           : ""}
-        .badgeText=${showExamBadge ? "Exam" : ""}
+        .segments=${segments}
         .isLocked=${overviewPresentation?.isLocked ?? false}
       ></teacher-cell>
     </td>

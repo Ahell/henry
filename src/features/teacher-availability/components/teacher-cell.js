@@ -12,6 +12,7 @@ export class TeacherCell extends LitElement {
     content: { type: String },
     isLocked: { type: Boolean },
     badgeText: { type: String },
+    segments: { type: Array },
   };
 
   // Render into light DOM to keep table structure and global CSS compatibility
@@ -31,6 +32,7 @@ export class TeacherCell extends LitElement {
     this.content = "";
     this.isLocked = false;
     this.badgeText = "";
+    this.segments = [];
     this._prevClassTokens = [];
     this._onMouseDownListener = null;
     this._onMouseEnterListener = null;
@@ -82,6 +84,24 @@ export class TeacherCell extends LitElement {
   }
 
   render() {
+    if (Array.isArray(this.segments) && this.segments.length > 0) {
+      return html`
+        <div class="course-stack">
+          ${this.segments.map(
+            (seg) => html`
+              <div class="course-segment">
+                <span class="course-segment-text">${seg?.text || ""}</span>
+                ${seg?.badgeText
+                  ? html`<span class="exam-badge" aria-label="Exam"
+                      >${seg.badgeText}</span
+                    >`
+                  : ""}
+              </div>
+            `
+          )}
+        </div>
+      `;
+    }
     return html`
       <span class="cell-content">${this.content || ""}</span>
       ${this.badgeText

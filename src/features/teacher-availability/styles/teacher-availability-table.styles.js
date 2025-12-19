@@ -218,6 +218,39 @@ export const teacherAvailabilityTableStyles = css`
     font-size: clamp(10px, 0.95rem, var(--font-size-sm));
   }
 
+  .teacher-cell .course-stack {
+    position: absolute;
+    inset: 4px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+  }
+
+  .teacher-cell .course-segment {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0 6px;
+    background: rgba(15, 23, 42, 0.08);
+  }
+
+  .teacher-cell .course-segment + .course-segment {
+    border-top: 1px solid rgba(15, 23, 42, 0.12);
+  }
+
+  .teacher-cell .course-segment-text {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--font-weight-semibold);
+    font-size: clamp(10px, 0.95rem, var(--font-size-sm));
+  }
+
   .teacher-cell.unavailable .cell-content,
   .teacher-cell.partially-unavailable .cell-content {
     background: transparent;
@@ -521,6 +554,13 @@ export const teacherAvailabilityTableStyles = css`
     border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow: var(--shadow-sm);
     pointer-events: none;
+  }
+
+  .teacher-cell .course-segment .exam-badge {
+    top: 2px;
+    right: 2px;
+    padding: 2px 5px;
+    font-size: 9px;
   }
 
   .painting-active .teacher-cell:hover {
