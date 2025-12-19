@@ -35,7 +35,16 @@ export class TeachersTab extends LitElement {
     subscribeToStore(this);
   }
 
+  firstUpdated(changedProperties) {
+    super.firstUpdated(changedProperties);
+    this._updateFormValidity();
+  }
+
   _handleInputChange() {
+    this._updateFormValidity();
+  }
+
+  _updateFormValidity() {
     const form = this.shadowRoot.querySelector('form');
     this.formValid = form ? form.checkValidity() : false;
   }
