@@ -160,7 +160,7 @@ export class TeachingDaysManager {
         if (csd) {
           return {
             isDefault: Boolean(csd.is_default),
-            active: csd.active !== false,
+            active: csd.active === true,
           };
         }
         const defaultDates = this.slotsManager.getDefaultTeachingDaysPattern(slotId);
@@ -169,23 +169,15 @@ export class TeachingDaysManager {
         }
       }
 
-      const td =
-        this.teachingDays.find(
-          (t) =>
-            t.slot_id === slotId && t.date === date && t.course_id === courseId
-        ) ||
-        this.teachingDays.find(
-          (t) =>
-            t.slot_id === slotId &&
-            t.date === date &&
-            (t.course_id === null || t.course_id === undefined)
-        );
+      const td = this.teachingDays.find(
+        (t) => t.slot_id === slotId && t.date === date && t.course_id === courseId
+      );
 
       if (!td) return null;
 
       return {
         isDefault: td.isDefault || false,
-        active: td.active !== false,
+        active: td.active === true,
       };
     }
 
@@ -203,7 +195,7 @@ export class TeachingDaysManager {
     });
 
     if (matches.length > 0) {
-      const anyActive = matches.some((m) => m.active !== false);
+      const anyActive = matches.some((m) => m.active === true);
       const anyDefault = matches.some((m) => m.is_default);
       const anyDefaultInactive = matches.some(
         (m) => m.is_default && m.active === false
@@ -231,7 +223,7 @@ export class TeachingDaysManager {
     if (!generic) return null;
     return {
       isDefault: generic.isDefault || false,
-      active: generic.active !== false,
+      active: generic.active === true,
     };
   }
 

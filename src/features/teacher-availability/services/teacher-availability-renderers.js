@@ -202,29 +202,18 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
           normalizeDate(csd.date) === normalizeDate(dateStr)
       );
     if (record) {
-      return record.active !== false;
+      return record.active === true;
     }
 
-    const normalizedDays =
-      store.getCourseSlotDaysForCourse(component._detailSlotId, id) || [];
-    if (normalizedDays.length > 0) {
-      if (normalizedDays.includes(dateStr)) return true;
-      // If other normalized days exist, fall back to teaching day state to allow defaults
-    }
     const specificState = store.getTeachingDayState(
       component._detailSlotId,
       dateStr,
       id
     );
     if (specificState) {
-      return specificState.active !== false;
+      return specificState.active === true;
     }
-    const genericState = store.getTeachingDayState(
-      component._detailSlotId,
-      dateStr,
-      null
-    );
-    return genericState?.active;
+    return false;
   };
 
   const activeCourseIds = courseIds.filter((id) => courseHasDay(id));
