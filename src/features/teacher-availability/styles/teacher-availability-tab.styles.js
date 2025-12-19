@@ -68,11 +68,51 @@ export const teacherAvailabilityTabStyles = css`
     color: var(--color-text-primary);
   }
 
-  .legend-dot {
-    width: 12px;
+  .legend-swatch {
+    width: 16px;
     height: 12px;
-    border-radius: var(--radius-full);
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+    background: var(--color-gray-200);
+  }
+
+  .legend-swatch--assigned {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    );
+  }
+
+  .legend-swatch--compatible {
+    background: linear-gradient(135deg, var(--color-info), var(--color-info-hover));
+  }
+
+  .legend-swatch--unavailable {
+    background: var(--color-danger);
+  }
+
+  .legend-swatch--partial-conflict {
+    background: repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.22) 0px,
+        rgba(255, 255, 255, 0.22) 8px,
+        rgba(255, 255, 255, 0) 8px,
+        rgba(255, 255, 255, 0) 16px
+      ),
+      var(--color-danger);
+  }
+
+  .legend-swatch--partial-availability {
+    background: repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.32) 0px,
+        rgba(255, 255, 255, 0.32) 8px,
+        rgba(255, 255, 255, 0) 8px,
+        rgba(255, 255, 255, 0) 16px
+      ),
+      var(--color-info);
   }
 
   .legend-left {

@@ -235,7 +235,8 @@ export const teacherAvailabilityTableStyles = css`
     position: relative;
     overflow: hidden;
     padding: 0 6px;
-    background: rgba(15, 23, 42, 0.08);
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: var(--radius-sm);
   }
 

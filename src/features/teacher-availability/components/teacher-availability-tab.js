@@ -90,29 +90,36 @@ export class TeacherAvailabilityTab extends LitElement {
     const items = [
       {
         label: "Tilldelad kurs",
-        meta: "Läraren har redan ett uppdrag i perioden",
-        color: "var(--color-success)",
+        meta: "Läraren är tilldelad kursen i perioden",
+        swatchClass: "legend-swatch--assigned",
       },
       {
         label: "Kompatibel kurs",
         meta: "Matchar lärarens kompetens men ej tilldelad",
-        color: "var(--color-info)",
+        swatchClass: "legend-swatch--compatible",
       },
       {
-        label: "Upptagen/ej tillgänglig",
-        meta: "Markerat i målningsläget",
-        color: "var(--color-danger)",
+        label: "Otillgänglig (hela kursen)",
+        meta: "Alla aktiva kursdagar i perioden är otillgängliga",
+        swatchClass: "legend-swatch--unavailable",
+      },
+      {
+        label: "Krock (delvis)",
+        meta: "Otillgänglighet överlappar vissa aktiva kursdagar",
+        swatchClass: "legend-swatch--partial-conflict",
+      },
+      {
+        label: "Info (utanför kursdagar)",
+        meta:
+          "Otillgänglighet finns i perioden men inte på kursens aktiva kursdagar",
+        swatchClass: "legend-swatch--partial-availability",
       },
     ];
 
     return items.map(
       (item) => html`
-        <span class="legend-chip">
-          <span
-            class="legend-dot"
-            style="background:${item.color};"
-            aria-hidden="true"
-          ></span>
+        <span class="legend-chip" title=${item.meta || ""}>
+          <span class="legend-swatch ${item.swatchClass}" aria-hidden="true"></span>
           ${item.label}
         </span>
       `
