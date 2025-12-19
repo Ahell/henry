@@ -86,12 +86,30 @@ export class SchedulingTab extends LitElement {
 
         <div class="gantt-scroll-wrapper">
           <table class="gantt-table">
+            <colgroup>
+              <col style="width: var(--gantt-depot-width);" />
+              <col style="width: var(--gantt-cohort-width);" />
+              ${slotDates.map(
+                () => html`<col style="width: var(--gantt-slot-width);" />`
+              )}
+            </colgroup>
             <thead>
-              <tr>
-                <th class="cohort-header">Depå</th>
-                <th class="cohort-header">Kull</th>
+              <tr class="availability-row">
+                <th class="cohort-header" rowspan="2">Depå</th>
+                <th class="cohort-header" rowspan="2">Kull</th>
                 ${slotDates.map(
-                  (dateStr) => html`<th>${this._renderSlotHeader(dateStr)}</th>`
+                  (dateStr) =>
+                    html`<th class="slot-col-header">
+                      ${this._renderSlotAvailabilityHeader(dateStr)}
+                    </th>`
+                )}
+              </tr>
+              <tr class="date-row">
+                ${slotDates.map(
+                  (dateStr) =>
+                    html`<th class="slot-col-header">
+                      <div class="slot-date">${dateStr}</div>
+                    </th>`
                 )}
               </tr>
             </thead>
@@ -162,14 +180,12 @@ export class SchedulingTab extends LitElement {
     `;
   }
 
-  _renderSlotHeader(slotDate) {
+  _renderSlotAvailabilityHeader(slotDate) {
     const availableTeachers =
       this._availableTeachersBySlotDate?.get(slotDate) || [];
 
     if (!this._dragCourseId) {
-      return html`<div class="slot-header">
-        <div class="slot-date">${slotDate}</div>
-      </div>`;
+      return html`<div class="slot-availability-row" aria-hidden="true"></div>`;
     }
 
     const compatibleTeachers = getCompatibleTeachersForCourse(this._dragCourseId);
@@ -188,7 +204,7 @@ export class SchedulingTab extends LitElement {
       : `${availableTeachers.length}/${compatibleCount} tillgängliga`;
 
     return html`
-      <div class="slot-header" title="${title}">
+      <div class="slot-availability-row" title="${title}">
         <div class="slot-availability ${isEmpty ? "is-empty" : ""}">
           ${hasNoCompatible
             ? html`<span class="availability-chip is-empty">Inga kompatibla</span>`
@@ -205,7 +221,6 @@ export class SchedulingTab extends LitElement {
                     >`
                   : ""}`}
         </div>
-        <div class="slot-date">${slotDate}</div>
       </div>
     `;
   }
@@ -474,24 +489,25 @@ export class SchedulingTab extends LitElement {
   }
 
   async _handleCellDrop(e) {
-    const dropResult = this._dragDropManager.handleCellDrop(e);
+    let dropResult = null;
+    try {
+      dropResult = this._dragDropManager.handleCellDrop(e);
 
-    if (dropResult) {
-      try {
+      if (dropResult) {
         const { type, data, slotDate, cohortId } = dropResult;
         if (type === "depot") {
-          await CourseRunManager.createRunFromDepot(
-            data,
-            slotDate,
-            cohortId
-          );
+          await CourseRunManager.createRunFromDepot(data, slotDate, cohortId);
         } else if (type === "existing") {
           await CourseRunManager.moveExistingRun(data, slotDate, cohortId);
         }
         this.requestUpdate();
-      } catch (error) {
-        console.error("Kunde inte spara förändringen i schemat:", error);
       }
+    } catch (error) {
+      console.error("Kunde inte spara förändringen i schemat:", error);
+    } finally {
+      // Some browsers/components can miss dragend when the dragged element is re-rendered.
+      // Ensure we always clear the header "availability bubbles" after drop.
+      this._dragDropManager.handleDragEnd();
     }
   }
 
@@ -504,19 +520,20 @@ export class SchedulingTab extends LitElement {
   }
 
   async _handleDepotDrop(e) {
-    const dropResult = this._dragDropManager.handleDepotDrop(e);
+    let dropResult = null;
+    try {
+      dropResult = this._dragDropManager.handleDepotDrop(e);
 
-    if (dropResult) {
-      try {
+      if (dropResult) {
         const { runId, targetCohortId } = dropResult;
-        await CourseRunManager.removeCourseRunFromCohort(
-          runId,
-          targetCohortId
-        );
+        await CourseRunManager.removeCourseRunFromCohort(runId, targetCohortId);
         this.requestUpdate();
-      } catch (error) {
-        console.error("Kunde inte ta bort kurstillfälle:", error);
       }
+    } catch (error) {
+      console.error("Kunde inte ta bort kurstillfälle:", error);
+    } finally {
+      // Ensure overlays never "stick" after a drop back to depot.
+      this._dragDropManager.handleDragEnd();
     }
   }
 

@@ -9,6 +9,8 @@ export const schedulingTabStyles = css`
     --gantt-cohort-width: 96px;
     --gantt-slot-width: 120px;
     --gantt-row-height: 220px;
+    --gantt-availability-row-height: 34px;
+    --gantt-date-row-height: 32px;
   }
 
   .warning-pills {
@@ -106,6 +108,7 @@ export const schedulingTabStyles = css`
   .gantt-table {
     border-collapse: separate;
     border-spacing: 0;
+    table-layout: fixed;
     min-width: 100%;
     width: max-content;
     background: var(--color-background);
@@ -120,6 +123,7 @@ export const schedulingTabStyles = css`
     width: var(--gantt-slot-width);
     text-align: center;
     vertical-align: middle;
+    box-sizing: border-box;
   }
 
   .gantt-table tr > :first-child {
@@ -141,21 +145,36 @@ export const schedulingTabStyles = css`
     position: sticky;
     top: 0;
     z-index: 10;
+    overflow: hidden;
+  }
+
+  .gantt-table thead tr.availability-row th:not(.cohort-header) {
+    top: 0;
+    height: var(--gantt-availability-row-height);
+    z-index: 12;
+    vertical-align: middle;
+    text-align: left;
+  }
+
+  .gantt-table thead tr.date-row th {
+    top: var(--gantt-availability-row-height);
+    height: var(--gantt-date-row-height);
+    z-index: 11;
+    vertical-align: middle;
+    text-align: left;
+  }
+
+  .gantt-table thead tr.date-row th .slot-date {
+    display: block;
   }
 
   .gantt-table thead th:not(.cohort-header) {
     font-family: var(--font-family-mono);
     font-variant-numeric: tabular-nums;
-    vertical-align: top;
-    text-align: left;
   }
 
-  .slot-header {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: flex-start;
-    min-height: 42px;
+  .slot-col-header {
+    padding: var(--space-2);
   }
 
   .slot-date {
@@ -166,16 +185,29 @@ export const schedulingTabStyles = css`
     letter-spacing: 0.01em;
   }
 
+  .slot-availability-row {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
   .slot-availability {
     width: 100%;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 4px;
     padding: 4px 6px;
     border-radius: var(--radius-md);
     background: rgba(16, 185, 129, 0.92);
     color: #fff;
     box-shadow: var(--shadow-xs);
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .slot-availability.is-empty {
@@ -187,6 +219,8 @@ export const schedulingTabStyles = css`
   .availability-chip {
     display: inline-flex;
     align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
     padding: 2px 6px;
     border-radius: var(--radius-full);
     background: rgba(255, 255, 255, 0.16);
@@ -194,7 +228,7 @@ export const schedulingTabStyles = css`
     font-size: 0.6rem;
     line-height: 1.1;
     white-space: nowrap;
-    max-width: 100%;
+    max-width: min(88px, 100%);
     overflow: hidden;
     text-overflow: ellipsis;
   }
