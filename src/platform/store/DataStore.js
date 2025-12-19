@@ -126,8 +126,8 @@ export class DataStore {
     }
   }
 
-  _handleLoadAlerts(removedCourses) {
-    this.dataServiceManager._handleLoadAlerts(removedCourses);
+  _handleLoadAlerts() {
+    this.dataServiceManager._handleLoadAlerts();
   }
   // Subscribe to changes
   subscribe(listener) {

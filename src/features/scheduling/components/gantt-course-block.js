@@ -1,6 +1,10 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import { ganttCourseBlockStyles } from "../styles/gantt-course-block.styles.js";
+import {
+  getTeacherShortageStatusForCourseInSlot,
+  TEACHER_SHORTAGE_STATUS,
+} from "../services/teacher-availability.service.js";
 
 /**
  * Gantt Course Block Component - Displays a course in the Gantt chart
@@ -27,6 +31,13 @@ export class GanttCourseBlock extends LitElement {
     if (!course) return html``;
 
     const hasPrereqs = this._hasPrerequisites(course.course_id);
+    const slot = store.getSlot(this.run.slot_id);
+    const slotDate = slot?.start_date;
+    const teacherShortageStatus = slotDate
+      ? getTeacherShortageStatusForCourseInSlot(course.course_id, slotDate)
+      : TEACHER_SHORTAGE_STATUS.OK;
+    const hasTeacherShortage =
+      teacherShortageStatus !== TEACHER_SHORTAGE_STATUS.OK;
 
     // Check for prerequisite problems
     const prerequisiteProblems = store.prerequisiteProblems || [];
@@ -49,6 +60,9 @@ export class GanttCourseBlock extends LitElement {
       blockClasses.push("prerequisite-course");
     } else {
       blockClasses.push("normal-course");
+    }
+    if (hasTeacherShortage) {
+      blockClasses.push("teacher-shortage", teacherShortageStatus);
     }
     const bgColor = this._getCourseColor(course);
     const inlineStyle = `background-color: ${bgColor};`;
@@ -73,7 +87,18 @@ export class GanttCourseBlock extends LitElement {
       prereqInfo += `\n⚠️ FÖRE SPÄRRKURS: ${beforePrereqs.join(", ")}`;
     }
 
-    const title = `${course.code}: ${course.name}${prereqInfo}`;
+    let teacherInfo = "";
+    if (teacherShortageStatus === TEACHER_SHORTAGE_STATUS.NO_COMPATIBLE_TEACHERS) {
+      teacherInfo = "\nLÄRARVARNING: Inga kompatibla lärare för kursen";
+    } else if (
+      teacherShortageStatus ===
+      TEACHER_SHORTAGE_STATUS.NO_AVAILABLE_COMPATIBLE_TEACHERS
+    ) {
+      teacherInfo =
+        "\nLÄRARVARNING: Inga tillgängliga kompatibla lärare i denna slot";
+    }
+
+    const title = `${course.code}: ${course.name}${prereqInfo}${teacherInfo}`;
 
     return html`
       <div
@@ -88,6 +113,11 @@ export class GanttCourseBlock extends LitElement {
       >
         ${hasMissingPrereq || hasBeforePrereqProblem
           ? html`<span class="warning-icon">⚠️</span>`
+          : ""}
+        ${hasTeacherShortage
+          ? html`<span class="teacher-warning-badge" aria-label="Lärarvarning"
+              >!</span
+            >`
           : ""}
         <span class="course-code">${course.code}</span>
         <span class="course-name">${shortName}</span>

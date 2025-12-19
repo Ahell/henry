@@ -1,4 +1,7 @@
 import { store } from "../../../platform/store/DataStore.js";
+import {
+  getAvailableCompatibleTeachersForCourseInSlot,
+} from "./teacher-availability.service.js";
 
 /**
  * Teacher Availability Overlay Service
@@ -13,15 +16,7 @@ export class TeacherAvailabilityOverlay {
    * @returns {Array} Available teachers
    */
   static getAvailableTeachersForSlot(courseId, slotDate, targetCohortId) {
-    const teachers = store.getTeachers();
-    const compatibleTeachers = teachers.filter(
-      (t) => t.compatible_courses && t.compatible_courses.includes(courseId)
-    );
-
-    return compatibleTeachers.filter((t) => {
-      const isUnavailable = store.isTeacherUnavailable(t.teacher_id, slotDate);
-      return !isUnavailable;
-    });
+    return getAvailableCompatibleTeachersForCourseInSlot(courseId, slotDate);
   }
 
   /**
@@ -32,10 +27,6 @@ export class TeacherAvailabilityOverlay {
    * @param {number} courseId - Course ID being dragged
    */
   static showOverlayForCohort(shadowRoot, cohortId, courseId) {
-    const compatibleTeachers = store
-      .getTeachers()
-      .filter((teacher) => teacher.compatible_courses?.includes(courseId));
-
     const cells = shadowRoot.querySelectorAll(
       `.slot-cell[data-cohort-id="${cohortId}"] gantt-cell`
     );
@@ -63,16 +54,11 @@ export class TeacherAvailabilityOverlay {
         }
       });
 
-      // Filter for available teachers
-      const availableTeachers = compatibleTeachers.filter((teacher) => {
-        const isAlreadyTeachingThisCourse =
-          teachersAlreadyTeachingThisCourse.has(teacher.teacher_id);
-        const isUnavailable = store.isTeacherUnavailable(
-          teacher.teacher_id,
-          slotDate
-        );
-        return isAlreadyTeachingThisCourse || !isUnavailable;
-      });
+      const availableTeachers = getAvailableCompatibleTeachersForCourseInSlot(
+        courseId,
+        slotDate,
+        { includeTeacherIds: Array.from(teachersAlreadyTeachingThisCourse) }
+      );
 
       if (availableTeachers.length === 0) {
         const td = cell.closest("td");
@@ -90,10 +76,6 @@ export class TeacherAvailabilityOverlay {
    * @param {number} courseId - Course ID being dragged
    */
   static showOverlayForAllCohorts(shadowRoot, courseId) {
-    const compatibleTeachers = store
-      .getTeachers()
-      .filter((teacher) => teacher.compatible_courses?.includes(courseId));
-
     const cells = shadowRoot.querySelectorAll("gantt-cell");
 
     cells.forEach((cell) => {
@@ -119,16 +101,11 @@ export class TeacherAvailabilityOverlay {
         }
       });
 
-      // Filter for available teachers
-      const availableTeachers = compatibleTeachers.filter((teacher) => {
-        const isAlreadyTeachingThisCourse =
-          teachersAlreadyTeachingThisCourse.has(teacher.teacher_id);
-        const isUnavailable = store.isTeacherUnavailable(
-          teacher.teacher_id,
-          slotDate
-        );
-        return isAlreadyTeachingThisCourse || !isUnavailable;
-      });
+      const availableTeachers = getAvailableCompatibleTeachersForCourseInSlot(
+        courseId,
+        slotDate,
+        { includeTeacherIds: Array.from(teachersAlreadyTeachingThisCourse) }
+      );
 
       if (availableTeachers.length === 0) {
         const td = cell.closest("td");

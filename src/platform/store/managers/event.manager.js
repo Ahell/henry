@@ -42,8 +42,7 @@ export class EventManager {
    *
    * Reactive Validation Flow (runs on every mutation):
    * 1. Teacher assignments - ensures one course per teacher per slot
-   * 2. Course availability - removes courses with no available teachers
-   * 3. Prerequisites - checks for missing/misordered prerequisites
+   * 2. Prerequisites - checks for missing/misordered prerequisites
    *
    * Note: Slot overlap validation happens proactively in slots.manager.js
    * before slots are added (not reactively here). Slots are validated and
@@ -68,7 +67,6 @@ export class EventManager {
     // Otherwise, this is a general notification
     // Run validations before notifying listeners
     this.store.validator.validateTeacherAssignments();
-    const removedCourses = this.store.validator.validateCoursesHaveTeachers();
 
     // Get previous prerequisite problems to detect new ones
     const previousProblems = new Set(
@@ -77,7 +75,7 @@ export class EventManager {
       )
     );
 
-    // Check for prerequisite problems after removing courses
+    // Check for prerequisite problems after teacher assignment validation
     this.store.prerequisiteProblems =
       this.store.prerequisites.findCoursesWithMissingPrerequisites();
 
@@ -93,17 +91,6 @@ export class EventManager {
     // Auto-save after notifications unless we are reconciling with backend
     if (!this.store.isReconciling) {
       this.store.saveData().catch((err) => console.error("Auto-save failed:", err));
-    }
-
-    // Show alert if courses were removed
-    if (removedCourses.length > 0) {
-      let message = `Följande kurser flyttades till depån (ingen lärare tillgänglig):\n\n`;
-      message += removedCourses
-        .map(
-          (rc) => `${rc.courseCode} ${rc.courseName} (${rc.cohorts.join(", ")})`
-        )
-        .join("\n");
-      this.showAlert(message);
     }
 
     // Show alert for new prerequisite problems

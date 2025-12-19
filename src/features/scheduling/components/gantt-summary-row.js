@@ -1,6 +1,7 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import { ganttSummaryRowStyles } from "../styles/gantt-summary-row.styles.js";
+import { getAvailableCompatibleTeachersForCourseInSlot } from "../services/teacher-availability.service.js";
 
 /**
  * Gantt Summary Row - Shows course summary with teacher assignment per slot
@@ -136,25 +137,13 @@ export class GanttSummaryRow extends LitElement {
 
     return Array.from(courseMap.values())
       .map((entry) => {
-        const teachers = store.getTeachers();
         const assignedTeacherIds = Array.from(entry.assignedTeachers);
 
-        const availableTeachers = teachers.filter((t) => {
-          if (
-            !t.compatible_courses ||
-            !t.compatible_courses.includes(entry.course.course_id)
-          ) {
-            return false;
-          }
-          const isAssignedToThisCourse = assignedTeacherIds.includes(
-            t.teacher_id
-          );
-          const isUnavailable = store.isTeacherUnavailable(
-            t.teacher_id,
-            slotDate
-          );
-          return isAssignedToThisCourse || !isUnavailable;
-        });
+        const availableTeachers = getAvailableCompatibleTeachersForCourseInSlot(
+          entry.course.course_id,
+          slotDate,
+          { includeTeacherIds: assignedTeacherIds }
+        );
 
         return {
           course: entry.course,

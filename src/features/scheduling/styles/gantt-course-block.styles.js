@@ -65,6 +65,42 @@ export const ganttCourseBlockStyles = css`
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
+  .gantt-block.teacher-shortage {
+    outline: 3px solid #03a9f4;
+    outline-offset: 1px;
+  }
+
+  .gantt-block.teacher-shortage.no-compatible-teachers {
+    outline-color: #9c27b0;
+  }
+
+  .gantt-block.teacher-shortage.no-available-compatible-teachers {
+    outline-color: #03a9f4;
+  }
+
+  .gantt-block .teacher-warning-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 900;
+    background: #03a9f4;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .gantt-block.no-compatible-teachers .teacher-warning-badge {
+    background: #9c27b0;
+  }
+
   .gantt-block.missing-prerequisite {
     border: 4px solid #f44336 !important;
     animation: pulse-warning-red 1s infinite;

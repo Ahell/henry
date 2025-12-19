@@ -45,9 +45,6 @@ export class DataServiceManager {
     // Validate and fix teacher assignments (ensure one course per teacher per slot)
     this.store.validator.validateTeacherAssignments();
 
-    // Validate courses have available teachers (remove those that don't)
-    const removedCourses = this.store.validator.validateCoursesHaveTeachers();
-
     // If teachers exist but none have `compatible_courses` defined,
     // try to infer from assigned runs or fall back to a random assignment.
     const teachersMissingCompat =
@@ -93,8 +90,8 @@ export class DataServiceManager {
     // Notify listeners that data is loaded
     this.store.events.notify();
 
-    // Handle alerts for removed courses and prerequisite problems
-    this._handleLoadAlerts(removedCourses);
+    // Handle alerts for prerequisite problems
+    this._handleLoadAlerts();
   }
 
   // Load data from backend
@@ -106,50 +103,8 @@ export class DataServiceManager {
     return data;
   }
 
-  _handleLoadAlerts(removedCourses) {
-    if (removedCourses.length > 0) {
-      // Delay alert to after page load
-      setTimeout(() => {
-        let message = `Följande kurser flyttades till depån (ingen lärare tillgänglig):\n\n`;
-        message += removedCourses
-          .map(
-            (c) =>
-              `"${c.courseName}" (${c.courseCode}) för ${c.cohorts.join(", ")}`
-          )
-          .join("\n");
-
-        // Add prerequisite warnings if any
-        if (this.store.prerequisiteProblems.length > 0) {
-          message += `\n\n⚠️ VARNING: Följande kurser saknar nu sina spärrkurser:\n\n`;
-          const problemsByCourseCohort = new Map();
-          for (const p of this.store.prerequisiteProblems) {
-            const key = `${p.cohortName}-${p.courseCode}`;
-            if (!problemsByCourseCohort.has(key)) {
-              problemsByCourseCohort.set(key, {
-                cohortName: p.cohortName,
-                courseCode: p.courseCode,
-                courseName: p.courseName,
-                missingPrereqs: [],
-              });
-            }
-            problemsByCourseCohort
-              .get(key)
-              .missingPrereqs.push(p.missingPrereqCode);
-          }
-          message += Array.from(problemsByCourseCohort.values())
-            .map(
-              (p) =>
-                `${p.cohortName}: "${
-                  p.courseName
-                }" saknar spärrkurs ${p.missingPrereqs.join(", ")}`
-            )
-            .join("\n");
-        }
-
-        showAlert(message);
-      }, 100);
-    } else if (this.store.prerequisiteProblems.length > 0) {
-      // Show only prerequisite warnings if no courses were removed but there are issues
+  _handleLoadAlerts() {
+    if (this.store.prerequisiteProblems.length > 0) {
       setTimeout(() => {
         let message = `⚠️ VARNING: Följande kurser saknar sina spärrkurser:\n\n`;
         const problemsByCourseCohort = new Map();

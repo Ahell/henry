@@ -163,6 +163,10 @@ export class SchedulingTab extends LitElement {
           <div class="legend-box normal-course"></div>
           <span>Kurs</span>
         </div>
+        <div class="legend-item">
+          <div class="legend-box teacher-shortage"></div>
+          <span>Inga kompatibla/tillgängliga lärare</span>
+        </div>
       </div>
     `;
   }

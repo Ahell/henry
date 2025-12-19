@@ -226,13 +226,6 @@ export class CourseRunManager {
               otherRun.teachers = otherRun.teachers.filter(
                 (id) => id !== teacherId
               );
-
-              if (wasAssigned) {
-                this.checkAndRemoveCourseIfNoTeachersAvailable(
-                  otherRun.course_id,
-                  slotDate
-                );
-              }
             }
           }
         }
@@ -253,14 +246,6 @@ export class CourseRunManager {
         }
       }
 
-      // Check if course should be removed when unchecking
-      if (!checked && runs.length > 0) {
-        this.checkAndRemoveCourseIfNoTeachersAvailable(
-          runs[0].course_id,
-          slotDate
-        );
-      }
-
       store.notify();
 
       await store.saveData({ mutationId });
@@ -268,59 +253,6 @@ export class CourseRunManager {
     } catch (error) {
       await store.rollback(mutationId);
       throw error;
-    }
-  }
-
-  /**
-   * Check if a course should be removed due to no available teachers
-   * @param {number} courseId - Course ID
-   * @param {string} slotDate - Slot date
-   */
-  static checkAndRemoveCourseIfNoTeachersAvailable(courseId, slotDate) {
-    const slot = store.getSlots().find((s) => s.start_date === slotDate);
-    if (!slot) return;
-
-    const runsForCourse = store
-      .getCourseRuns()
-      .filter((r) => r.slot_id === slot.slot_id && r.course_id === courseId);
-
-    if (runsForCourse.length === 0) return;
-
-    // Check if any run has assigned teachers
-    const hasAssignedTeacher = runsForCourse.some(
-      (r) => r.teachers && r.teachers.length > 0
-    );
-    if (hasAssignedTeacher) return;
-
-    // Get teachers assigned to this course
-    const teachers = store.getTeachers();
-    const teachersAssignedToThisCourse = new Set();
-    runsForCourse.forEach((r) => {
-      if (r.teachers) {
-        r.teachers.forEach((tid) => teachersAssignedToThisCourse.add(tid));
-      }
-    });
-
-    // Check for available compatible teachers
-    const availableCompatibleTeachers = teachers.filter((t) => {
-      if (!t.compatible_courses || !t.compatible_courses.includes(courseId)) {
-        return false;
-      }
-      const isAssignedToThisCourse = teachersAssignedToThisCourse.has(
-        t.teacher_id
-      );
-      const isUnavailable = store.isTeacherUnavailable(t.teacher_id, slotDate);
-      return isAssignedToThisCourse || !isUnavailable;
-    });
-
-    if (availableCompatibleTeachers.length > 0) return;
-
-    // Remove all runs for this course in this slot
-    for (const run of runsForCourse) {
-      const index = store.courseRuns.findIndex((r) => r.run_id === run.run_id);
-      if (index !== -1) {
-        store.courseRuns.splice(index, 1);
-      }
     }
   }
 

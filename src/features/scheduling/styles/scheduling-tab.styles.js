@@ -89,6 +89,12 @@ export const schedulingTabStyles = css`
     background: var(--color-primary-500);
   }
 
+  .teacher-shortage {
+    background: var(--color-primary-500);
+    outline: 3px solid var(--color-info);
+    outline-offset: 1px;
+  }
+
   .two-block-course {
     border: 2px dashed rgba(255, 255, 255, 0.7);
   }
