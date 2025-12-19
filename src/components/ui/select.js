@@ -101,6 +101,54 @@ export class HenrySelect extends LitElement {
   }
 
   render() {
+    const selectEl = this.multiple
+      ? html`
+          <select
+            ?disabled=${this.disabled}
+            ?required=${this.required}
+            ?multiple=${this.multiple}
+            size=${this.size}
+            id=${this.id}
+            name=${this.name || this.id}
+            @change=${this._handleChange}
+          >
+            ${this.options && this.options.length > 0
+              ? this.options.map(
+                  (opt) => html`
+                    <option value="${opt.value}" ?selected="${opt.selected}">
+                      ${opt.label}
+                    </option>
+                  `
+                )
+              : html`<slot></slot>`}
+          </select>
+        `
+      : html`
+          <select
+            .value=${this.value}
+            ?disabled=${this.disabled}
+            ?required=${this.required}
+            ?multiple=${this.multiple}
+            size=${this.size}
+            id=${this.id}
+            name=${this.name || this.id}
+            @change=${this._handleChange}
+          >
+            ${this.placeholder
+              ? html`<option value="">${this.placeholder}</option>`
+              : ""}
+            ${this.options && this.options.length > 0
+              ? this.options.map(
+                  (opt) => html`
+                    <option value="${opt.value}" ?selected="${opt.selected}">
+                      ${opt.label}
+                    </option>
+                  `
+                )
+              : html`<slot></slot>`}
+          </select>
+        `;
+
     return html`
       <div class="select-wrapper">
         ${this.label
@@ -111,34 +159,25 @@ export class HenrySelect extends LitElement {
               </label>
             `
           : ""}
-        <select
-          .value=${this.value}
-          ?disabled=${this.disabled}
-          ?required=${this.required}
-          ?multiple=${this.multiple}
-          size=${this.size}
-          id=${this.id}
-          name=${this.name || this.id}
-          @change=${this._handleChange}
-        >
-          ${!this.multiple && this.placeholder
-            ? html`<option value="">${this.placeholder}</option>`
-            : ""}
-          ${this.options && this.options.length > 0
-            ? this.options.map(
-                (opt) => html`
-                  <option value="${opt.value}" ?selected="${opt.selected}">
-                    ${opt.label}
-                  </option>
-                `
-              )
-            : html`<slot></slot>`}
-        </select>
+        ${selectEl}
       </div>
     `;
   }
 
   _handleChange(e) {
+    if (this.multiple) {
+      const select = e.target;
+      const values = Array.from(select.selectedOptions).map((opt) => opt.value);
+      this.dispatchEvent(
+        new CustomEvent("select-change", {
+          bubbles: true,
+          composed: true,
+          detail: { values },
+        })
+      );
+      return;
+    }
+
     this.value = e.target.value;
     this.dispatchEvent(
       new CustomEvent("select-change", {

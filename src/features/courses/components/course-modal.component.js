@@ -11,6 +11,8 @@ export class CourseModal extends LitElement {
     courseId: { type: Number },
     open: { type: Boolean },
     formValid: { type: Boolean },
+    selectedPrerequisiteIds: { type: Array, attribute: false },
+    selectedCompatibleTeacherIds: { type: Array, attribute: false },
   };
 
   constructor() {
@@ -18,6 +20,26 @@ export class CourseModal extends LitElement {
     this.courseId = null;
     this.open = false;
     this.formValid = false;
+    this.selectedPrerequisiteIds = [];
+    this.selectedCompatibleTeacherIds = [];
+  }
+
+  willUpdate(changedProperties) {
+    if (
+      (changedProperties.has("open") || changedProperties.has("courseId")) &&
+      this.open &&
+      this.courseId
+    ) {
+      const course = store.getCourse(this.courseId);
+      if (!course) return;
+
+      this.selectedPrerequisiteIds = Array.isArray(course.prerequisites)
+        ? course.prerequisites.map(String)
+        : [];
+      this.selectedCompatibleTeacherIds = (store.getTeachers() || [])
+        .filter((t) => t.compatible_courses?.includes(course.course_id))
+        .map((t) => String(t.teacher_id));
+    }
   }
 
   firstUpdated(changedProperties) {
@@ -39,6 +61,21 @@ export class CourseModal extends LitElement {
     this._updateFormValidity();
   }
 
+  _handleSelectChange(e) {
+    const targetId = e?.target?.id;
+    const values = Array.isArray(e?.detail?.values) ? e.detail.values : null;
+    if (!targetId || !values) return;
+
+    if (targetId === "edit-prerequisites") {
+      this.selectedPrerequisiteIds = values.map(String);
+      return;
+    }
+
+    if (targetId === "edit-compatible-teachers") {
+      this.selectedCompatibleTeacherIds = values.map(String);
+    }
+  }
+
   _updateFormValidity() {
     this.formValid = FormService.isFormValid(this.renderRoot);
   }
@@ -57,7 +94,10 @@ export class CourseModal extends LitElement {
           @input="${this._handleInputChange}"
           @change="${this._handleInputChange}"
           @input-change="${this._handleInputChange}"
-          @select-change="${this._handleInputChange}"
+          @select-change="${(e) => {
+            this._handleSelectChange(e);
+            this._handleInputChange();
+          }}"
           @radio-change="${this._handleInputChange}"
           @textarea-change="${this._handleInputChange}"
         >
@@ -89,7 +129,9 @@ export class CourseModal extends LitElement {
                 .map((c) => ({
                   value: c.course_id.toString(),
                   label: c.code,
-                  selected: course.prerequisites?.includes(c.course_id),
+                  selected: this.selectedPrerequisiteIds.includes(
+                    c.course_id.toString()
+                  ),
                 }))}
             ></henry-select>
 
@@ -119,7 +161,9 @@ export class CourseModal extends LitElement {
               .options=${store.getTeachers().map((t) => ({
                 value: t.teacher_id.toString(),
                 label: t.name,
-                selected: t.compatible_courses?.includes(course.course_id),
+                selected: this.selectedCompatibleTeacherIds.includes(
+                  t.teacher_id.toString()
+                ),
               }))}
             ></henry-select>
           </div>

@@ -243,7 +243,9 @@ export class FormService {
     Array.from(sel.options).forEach((o) => {
       o.selected = values.includes(o.value);
     });
-    sel.value = values[0] ?? "";
+    if (!sel.multiple) {
+      sel.value = values[0] ?? "";
+    }
     sel.dispatchEvent(new Event("change", { bubbles: true }));
   }
 

@@ -11,6 +11,7 @@ export class TeacherModal extends LitElement {
     teacherId: { type: Number },
     open: { type: Boolean },
     formValid: { type: Boolean },
+    selectedCompatibleCourseIds: { type: Array, attribute: false },
   };
 
   constructor() {
@@ -18,6 +19,21 @@ export class TeacherModal extends LitElement {
     this.teacherId = null;
     this.open = false;
     this.formValid = false;
+    this.selectedCompatibleCourseIds = [];
+  }
+
+  willUpdate(changedProperties) {
+    if (
+      (changedProperties.has("open") || changedProperties.has("teacherId")) &&
+      this.open &&
+      this.teacherId
+    ) {
+      const teacher = store.getTeacher(this.teacherId);
+      if (!teacher) return;
+      this.selectedCompatibleCourseIds = Array.isArray(teacher.compatible_courses)
+        ? teacher.compatible_courses.map(String)
+        : [];
+    }
   }
 
   firstUpdated(changedProperties) {
@@ -37,6 +53,13 @@ export class TeacherModal extends LitElement {
 
   _handleInputChange() {
     this._updateFormValidity();
+  }
+
+  _handleSelectChange(e) {
+    const targetId = e?.target?.id;
+    const values = Array.isArray(e?.detail?.values) ? e.detail.values : null;
+    if (targetId !== "edit-courses" || !values) return;
+    this.selectedCompatibleCourseIds = values.map(String);
   }
 
   _updateFormValidity() {
@@ -62,7 +85,10 @@ export class TeacherModal extends LitElement {
           @input="${this._handleInputChange}"
           @change="${this._handleInputChange}"
           @input-change="${this._handleInputChange}"
-          @select-change="${this._handleInputChange}"
+          @select-change="${(e) => {
+            this._handleSelectChange(e);
+            this._handleInputChange();
+          }}"
           @radio-change="${this._handleInputChange}"
           @textarea-change="${this._handleInputChange}"
         >
@@ -96,7 +122,9 @@ export class TeacherModal extends LitElement {
               .options=${store.getCourses().map((c) => ({
                 value: c.course_id.toString(),
                 label: `${c.code} - ${c.name}`,
-                selected: teacher.compatible_courses?.includes(c.course_id),
+                selected: this.selectedCompatibleCourseIds.includes(
+                  c.course_id.toString()
+                ),
               }))}
             ></henry-select>
           </div>
