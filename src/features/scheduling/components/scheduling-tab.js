@@ -1,13 +1,15 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import { DragDropManager } from "../services/drag-drop-manager.service.js";
-import { TeacherAvailabilityOverlay } from "../services/teacher-availability-overlay.service.js";
 import { CourseRunManager } from "../services/course-run-manager.service.js";
 import "../../../components/ui/index.js";
 import "./gantt-depot.js";
 import "./gantt-cell.js";
 import { schedulingTabStyles } from "../styles/scheduling-tab.styles.js";
-import { getCompatibleTeachersForCourse } from "../services/teacher-availability.service.js";
+import {
+  getAvailableCompatibleTeachersForCourseInSlot,
+  getCompatibleTeachersForCourse,
+} from "../services/teacher-availability.service.js";
 
 /**
  * Scheduling Tab - Gantt view for course planning
@@ -19,6 +21,8 @@ export class SchedulingTab extends LitElement {
   constructor() {
     super();
     this._dragDropManager = new DragDropManager(this);
+    this._dragCourseId = null;
+    this._availableTeachersBySlotDate = new Map();
     store.subscribe(() => this.requestUpdate());
   }
 
@@ -86,7 +90,9 @@ export class SchedulingTab extends LitElement {
               <tr>
                 <th class="cohort-header">Depå</th>
                 <th class="cohort-header">Kull</th>
-                ${slotDates.map((dateStr) => html`<th>${dateStr}</th>`)}
+                ${slotDates.map(
+                  (dateStr) => html`<th>${this._renderSlotHeader(dateStr)}</th>`
+                )}
               </tr>
             </thead>
             <tbody>
@@ -152,6 +158,54 @@ export class SchedulingTab extends LitElement {
           <div class="legend-box teacher-shortage"></div>
           <span>Inga kompatibla/tillgängliga lärare</span>
         </div>
+      </div>
+    `;
+  }
+
+  _renderSlotHeader(slotDate) {
+    const availableTeachers =
+      this._availableTeachersBySlotDate?.get(slotDate) || [];
+
+    if (!this._dragCourseId) {
+      return html`<div class="slot-header">
+        <div class="slot-date">${slotDate}</div>
+      </div>`;
+    }
+
+    const compatibleTeachers = getCompatibleTeachersForCourse(this._dragCourseId);
+    const compatibleCount = compatibleTeachers.length;
+
+    const maxShown = 6;
+    const shown = availableTeachers.slice(0, maxShown);
+    const remaining = Math.max(0, availableTeachers.length - shown.length);
+
+    const hasNoCompatible = compatibleCount === 0;
+    const isEmpty = hasNoCompatible || availableTeachers.length === 0;
+
+    const course = store.getCourse(this._dragCourseId);
+    const title = course
+      ? `${course.code}: ${availableTeachers.length}/${compatibleCount} tillgängliga`
+      : `${availableTeachers.length}/${compatibleCount} tillgängliga`;
+
+    return html`
+      <div class="slot-header" title="${title}">
+        <div class="slot-availability ${isEmpty ? "is-empty" : ""}">
+          ${hasNoCompatible
+            ? html`<span class="availability-chip is-empty">Inga kompatibla</span>`
+            : availableTeachers.length === 0
+              ? html`<span class="availability-chip is-empty"
+                  >Inga tillgängliga</span
+                >`
+              : html`${shown.map((t) => {
+                  const firstName = (t.name || "").split(" ")[0] || t.name;
+                  return html`<span class="availability-chip">${firstName}</span>`;
+                })}${remaining > 0
+                  ? html`<span class="availability-chip is-more"
+                      >+${remaining}</span
+                    >`
+                  : ""}`}
+        </div>
+        <div class="slot-date">${slotDate}</div>
       </div>
     `;
   }
@@ -481,22 +535,79 @@ export class SchedulingTab extends LitElement {
   }
 
   _showAvailableTeachersForDrag(cohortId, courseId) {
-    TeacherAvailabilityOverlay.showOverlayForCohort(
-      this.shadowRoot,
-      cohortId,
-      courseId
-    );
+    this._setTeacherOverlayForCourse(courseId);
   }
 
   _showAvailableTeachersForDragAllCohorts(courseId) {
-    TeacherAvailabilityOverlay.showOverlayForAllCohorts(
-      this.shadowRoot,
-      courseId
-    );
+    this._setTeacherOverlayForCourse(courseId);
   }
 
   _clearAvailableTeachersOverlays() {
-    TeacherAvailabilityOverlay.clearOverlays(this.shadowRoot);
+    this._dragCourseId = null;
+    this._availableTeachersBySlotDate = new Map();
+    this._applyColumnTeacherShortageClasses(new Map());
+    this.requestUpdate();
+  }
+
+  _setTeacherOverlayForCourse(courseId) {
+    this._dragCourseId = courseId;
+
+    const slotDates = [
+      ...new Set((store.getSlots() || []).map((s) => s.start_date)),
+    ].sort();
+    const map = new Map();
+
+    slotDates.forEach((slotDate) => {
+      map.set(slotDate, this._computeAvailableTeachers(courseId, slotDate));
+    });
+
+    this._availableTeachersBySlotDate = map;
+    this._applyColumnTeacherShortageClasses(map);
+    this.requestUpdate();
+  }
+
+  _computeAvailableTeachers(courseId, slotDate) {
+    const slot = store.getSlots().find((s) => s.start_date === slotDate);
+    if (!slot) return [];
+
+    const existingRunsForCourse = store
+      .getCourseRuns()
+      .filter(
+        (r) => String(r.slot_id) === String(slot.slot_id) && r.course_id === courseId
+      );
+
+    const teachersAlreadyTeachingThisCourse = new Set();
+    existingRunsForCourse.forEach((r) => {
+      if (Array.isArray(r.teachers)) {
+        r.teachers.forEach((tid) => teachersAlreadyTeachingThisCourse.add(tid));
+      }
+    });
+
+    return getAvailableCompatibleTeachersForCourseInSlot(courseId, slotDate, {
+      includeTeacherIds: Array.from(teachersAlreadyTeachingThisCourse),
+    });
+  }
+
+  _applyColumnTeacherShortageClasses(availableTeachersBySlotDate) {
+    if (!this.shadowRoot) return;
+
+    // Clear all existing shortage marks first.
+    this.shadowRoot
+      .querySelectorAll(".gantt-table td.slot-cell.no-teachers-available")
+      .forEach((td) => td.classList.remove("no-teachers-available"));
+
+    if (!this._dragCourseId) return;
+
+    for (const [slotDate, teachers] of availableTeachersBySlotDate.entries()) {
+      if (Array.isArray(teachers) && teachers.length > 0) continue;
+
+      this.shadowRoot
+        .querySelectorAll(`.gantt-table td.slot-cell[data-slot-date="${slotDate}"]`)
+        .forEach((td) => {
+          if (td.dataset.disabled === "true") return;
+          td.classList.add("no-teachers-available");
+        });
+    }
   }
 }
 

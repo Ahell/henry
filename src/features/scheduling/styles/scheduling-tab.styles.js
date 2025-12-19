@@ -146,6 +146,68 @@ export const schedulingTabStyles = css`
   .gantt-table thead th:not(.cohort-header) {
     font-family: var(--font-family-mono);
     font-variant-numeric: tabular-nums;
+    vertical-align: top;
+    text-align: left;
+  }
+
+  .slot-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    min-height: 42px;
+  }
+
+  .slot-date {
+    font-family: var(--font-family-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+  }
+
+  .slot-availability {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 6px;
+    border-radius: var(--radius-md);
+    background: rgba(16, 185, 129, 0.92);
+    color: #fff;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .slot-availability.is-empty {
+    background: rgba(239, 68, 68, 0.16);
+    color: var(--color-danger-hover);
+    border: 1px solid rgba(239, 68, 68, 0.18);
+  }
+
+  .availability-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    font-size: 0.6rem;
+    line-height: 1.1;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .availability-chip.is-empty {
+    background: rgba(239, 68, 68, 0.06);
+    color: var(--color-danger-hover);
+    border: 1px solid rgba(239, 68, 68, 0.12);
+  }
+
+  .availability-chip.is-more {
+    background: rgba(255, 255, 255, 0.22);
+    font-weight: var(--font-weight-semibold);
   }
 
   .gantt-table th.cohort-header {

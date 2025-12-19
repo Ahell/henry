@@ -16,7 +16,6 @@ export class GanttCell extends LitElement {
     isBeforeCohortStart: { type: Boolean },
     isCohortStartSlot: { type: Boolean },
     cohortStartDate: { type: String },
-    availableTeachers: { type: Array },
   };
 
   static styles = ganttCellStyles;
@@ -30,7 +29,6 @@ export class GanttCell extends LitElement {
     this.isBeforeCohortStart = false;
     this.isCohortStartSlot = false;
     this.cohortStartDate = "";
-    this.availableTeachers = [];
   }
 
   render() {
@@ -64,15 +62,6 @@ export class GanttCell extends LitElement {
             ></gantt-course-block>
           `
         )}
-        ${this.availableTeachers.length > 0
-          ? html`
-              <div class="available-teachers-overlay">
-                ${this.availableTeachers.map(
-                  (t) => html`<span>${t.name.split(" ")[0]}</span>`
-                )}
-              </div>
-            `
-          : ""}
       </div>
     `;
   }

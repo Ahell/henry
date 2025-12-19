@@ -35,23 +35,5 @@ export const ganttCellStyles = css`
     pointer-events: none;
   }
 
-  .available-teachers-overlay {
-    position: absolute;
-    top: var(--space-2);
-    left: var(--space-2);
-    right: var(--space-2);
-    background: rgba(16, 185, 129, 0.92);
-    color: #fff;
-    font-size: 0.55rem;
-    padding: 4px 6px;
-    border-radius: var(--radius-md);
-    z-index: 10;
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    line-height: 1.2;
-    box-shadow: var(--shadow-sm);
-    backdrop-filter: blur(8px);
-  }
+  /* available-teachers overlay moved to column headers */
 `;
