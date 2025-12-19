@@ -9,7 +9,7 @@ export const schedulingTabStyles = css`
     --gantt-cohort-width: 96px;
     --gantt-slot-width: 120px;
     --gantt-row-height: 220px;
-    --gantt-availability-row-height: 34px;
+    --gantt-availability-row-height: 78px;
     --gantt-date-row-height: 32px;
   }
 
@@ -151,9 +151,11 @@ export const schedulingTabStyles = css`
   .gantt-table thead tr.availability-row th:not(.cohort-header) {
     top: 0;
     height: var(--gantt-availability-row-height);
+    max-height: var(--gantt-availability-row-height);
     z-index: 12;
-    vertical-align: middle;
+    vertical-align: top;
     text-align: left;
+    padding: 0;
   }
 
   .gantt-table thead tr.date-row th {
@@ -177,6 +179,10 @@ export const schedulingTabStyles = css`
     padding: var(--space-2);
   }
 
+  .gantt-table thead tr.availability-row .slot-col-header {
+    padding: 0;
+  }
+
   .slot-date {
     font-family: var(--font-family-mono);
     font-variant-numeric: tabular-nums;
@@ -187,20 +193,23 @@ export const schedulingTabStyles = css`
 
   .slot-availability-row {
     width: 100%;
-    height: 100%;
+    height: var(--gantt-availability-row-height);
     max-width: 100%;
     box-sizing: border-box;
     overflow: hidden;
     display: flex;
     align-items: center;
+    padding: 6px;
   }
 
   .slot-availability {
     width: 100%;
     display: flex;
-    flex-wrap: nowrap;
+    height: 100%;
+    flex-wrap: wrap;
+    align-content: flex-start;
     gap: 4px;
-    padding: 4px 6px;
+    padding: 6px;
     border-radius: var(--radius-md);
     background: rgba(16, 185, 129, 0.92);
     color: #fff;
