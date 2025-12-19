@@ -10,12 +10,19 @@ export class CourseModal extends LitElement {
   static properties = {
     courseId: { type: Number },
     open: { type: Boolean },
+    formValid: { type: Boolean },
   };
 
   constructor() {
     super();
     this.courseId = null;
     this.open = false;
+    this.formValid = false;
+  }
+
+  _handleInputChange() {
+    const form = this.shadowRoot?.querySelector('form') || this.querySelector('form');
+    this.formValid = form ? form.checkValidity() : false;
   }
 
   render() {
@@ -26,7 +33,7 @@ export class CourseModal extends LitElement {
 
     return html`
       <henry-modal open title="Redigera Kurs" @close="${this._handleClose}">
-        <form @submit="${this._handleSubmit}">
+        <form @submit="${this._handleSubmit}" @input="${this._handleInputChange}">
           <div
             style="display: flex; flex-direction: column; gap: var(--space-4);"
           >
@@ -95,7 +102,7 @@ export class CourseModal extends LitElement {
           <henry-button variant="secondary" @click="${this._handleClose}">
             Avbryt
           </henry-button>
-          <henry-button variant="success" @click="${this._handleSave}">
+          <henry-button variant="success" @click="${this._handleSave}" ?disabled="${!this.formValid}">
             💾 Spara
           </henry-button>
         </div>
@@ -129,6 +136,14 @@ export class CourseModal extends LitElement {
   }
 
   _handleSave() {
+    const form = this.shadowRoot?.querySelector('form') || this.querySelector('form');
+
+    // Check if form is valid before saving
+    if (form && !form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
     const root = this.renderRoot;
 
     const formData = FormService.extractFormData(root, {

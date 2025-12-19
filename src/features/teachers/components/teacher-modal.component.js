@@ -10,12 +10,19 @@ export class TeacherModal extends LitElement {
   static properties = {
     teacherId: { type: Number },
     open: { type: Boolean },
+    formValid: { type: Boolean },
   };
 
   constructor() {
     super();
     this.teacherId = null;
     this.open = false;
+    this.formValid = false;
+  }
+
+  _handleInputChange() {
+    const form = this.shadowRoot?.querySelector('form') || this.querySelector('form');
+    this.formValid = form ? form.checkValidity() : false;
   }
 
   render() {
@@ -32,7 +39,7 @@ export class TeacherModal extends LitElement {
         title="Redigera Lärare"
         @close="${this._handleClose}"
       >
-        <form @submit="${this._handleSubmit}">
+        <form @submit="${this._handleSubmit}" @input="${this._handleInputChange}">
           <div
             style="display: flex; flex-direction: column; gap: var(--space-4);"
           >
@@ -78,6 +85,7 @@ export class TeacherModal extends LitElement {
           <henry-button
             variant="success"
             @click="${this._handleSave}"
+            ?disabled="${!this.formValid}"
           >
             Spara
           </henry-button>
@@ -112,6 +120,14 @@ export class TeacherModal extends LitElement {
   }
 
   _handleSave() {
+    const form = this.shadowRoot?.querySelector('form') || this.querySelector('form');
+
+    // Check if form is valid before saving
+    if (form && !form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
     const root = this.renderRoot;
 
     const formData = FormService.extractFormData(root, {

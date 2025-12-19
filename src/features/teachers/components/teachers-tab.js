@@ -25,12 +25,19 @@ export class TeachersTab extends LitElement {
     editingTeacherId: { type: Number },
     message: { type: String },
     messageType: { type: String },
+    formValid: { type: Boolean },
   };
 
   constructor() {
     super();
+    this.formValid = false;
     initializeEditState(this, "editingTeacherId");
     subscribeToStore(this);
+  }
+
+  _handleInputChange() {
+    const form = this.shadowRoot.querySelector('form');
+    this.formValid = form ? form.checkValidity() : false;
   }
 
   render() {
@@ -46,7 +53,7 @@ export class TeachersTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">Lägg till Ny Lärare</henry-text>
         </div>
-        <form @submit="${this.handleAddTeacher}">
+        <form @submit="${this.handleAddTeacher}" @input="${this._handleInputChange}">
           <div class="form-row">
             <henry-input
               id="teacherName"
@@ -76,7 +83,7 @@ export class TeachersTab extends LitElement {
               label: `${course.code} - ${course.name}`,
             }))}
           ></henry-select>
-          <henry-button type="submit" variant="primary">
+          <henry-button type="submit" variant="primary" ?disabled="${!this.formValid}">
             Lägg till Lärare
           </henry-button>
         </form>

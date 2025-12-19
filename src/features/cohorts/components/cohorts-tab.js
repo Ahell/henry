@@ -25,12 +25,19 @@ export class CohortsTab extends LitElement {
     editingCohortId: { type: Number },
     message: { type: String },
     messageType: { type: String },
+    formValid: { type: Boolean },
   };
 
   constructor() {
     super();
+    this.formValid = false;
     initializeEditState(this, "editingCohortId");
     subscribeToStore(this);
+  }
+
+  _handleInputChange() {
+    const form = this.shadowRoot.querySelector('form');
+    this.formValid = form ? form.checkValidity() : false;
   }
 
   render() {
@@ -45,6 +52,7 @@ export class CohortsTab extends LitElement {
         </div>
         <form
           @submit="${this.handleAddCohort}"
+          @input="${this._handleInputChange}"
         >
           <div class="form-row">
             <henry-input
@@ -65,6 +73,7 @@ export class CohortsTab extends LitElement {
           <henry-button
             type="submit"
             variant="primary"
+            ?disabled="${!this.formValid}"
           >
             Lägg till Kull
           </henry-button>

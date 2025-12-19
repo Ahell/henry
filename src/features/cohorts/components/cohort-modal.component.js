@@ -10,12 +10,19 @@ export class CohortModal extends LitElement {
   static properties = {
     cohortId: { type: Number },
     open: { type: Boolean },
+    formValid: { type: Boolean },
   };
 
   constructor() {
     super();
     this.cohortId = null;
     this.open = false;
+    this.formValid = false;
+  }
+
+  _handleInputChange() {
+    const form = this.shadowRoot?.querySelector('form') || this.querySelector('form');
+    this.formValid = form ? form.checkValidity() : false;
   }
 
   _handleCancel() {
@@ -39,6 +46,14 @@ export class CohortModal extends LitElement {
   }
 
   _handleSave() {
+    const form = this.shadowRoot?.querySelector('form') || this.querySelector('form');
+
+    // Check if form is valid before saving
+    if (form && !form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
     const formData = FormService.extractFormData(this.renderRoot, {
       start_date: "edit-date",
       planned_size: {
@@ -67,7 +82,7 @@ export class CohortModal extends LitElement {
         title="${cohort ? "Redigera kohort" : "Ny kohort"}"
         @close="${this._handleCancel}"
       >
-        <form @submit="${(e) => e.preventDefault()}">
+        <form @submit="${(e) => e.preventDefault()}" @input="${this._handleInputChange}">
           <div style="display: flex; flex-direction: column; gap: var(--space-4);">
             <henry-input
               id="edit-date"
@@ -92,7 +107,7 @@ export class CohortModal extends LitElement {
           <henry-button variant="secondary" @click="${this._handleCancel}">
             Avbryt
           </henry-button>
-          <henry-button variant="success" @click="${this._handleSave}">
+          <henry-button variant="success" @click="${this._handleSave}" ?disabled="${!this.formValid}">
             Spara
           </henry-button>
         </div>
