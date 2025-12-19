@@ -126,12 +126,13 @@ export class GanttCourseBlock extends LitElement {
   }
 
   _handleDragStart(e) {
-    const runId = e.target.dataset.runId;
-    const cohortId = e.target.dataset.cohortId;
+    const runId = e.currentTarget?.dataset?.runId;
+    const cohortId = e.currentTarget?.dataset?.cohortId;
+    if (runId == null || cohortId == null) return;
 
     e.dataTransfer.setData("text/plain", JSON.stringify({ runId, cohortId }));
     e.dataTransfer.effectAllowed = "move";
-    e.target.classList.add("dragging");
+    e.currentTarget.classList.add("dragging");
 
     // Dispatch event to parent
     this.dispatchEvent(
@@ -148,7 +149,7 @@ export class GanttCourseBlock extends LitElement {
   }
 
   _handleDragEnd(e) {
-    e.target.classList.remove("dragging");
+    e.currentTarget.classList.remove("dragging");
 
     this.dispatchEvent(
       new CustomEvent("course-drag-end", {

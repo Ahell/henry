@@ -95,8 +95,9 @@ export class GanttDepot extends LitElement {
   }
 
   _handleDragStart(e) {
-    const courseId = e.target.dataset.courseId;
-    const cohortId = e.target.dataset.cohortId;
+    const courseId = e.currentTarget?.dataset?.courseId;
+    const cohortId = e.currentTarget?.dataset?.cohortId;
+    if (courseId == null || cohortId == null) return;
 
     e.dataTransfer.setData(
       "text/plain",
@@ -107,7 +108,7 @@ export class GanttDepot extends LitElement {
       })
     );
     e.dataTransfer.effectAllowed = "copyMove";
-    e.target.classList.add("dragging");
+    e.currentTarget.classList.add("dragging");
 
     // Dispatch event to parent to show available teachers
     this.dispatchEvent(
@@ -123,7 +124,7 @@ export class GanttDepot extends LitElement {
   }
 
   _handleDragEnd(e) {
-    e.target.classList.remove("dragging");
+    e.currentTarget.classList.remove("dragging");
 
     // Dispatch event to parent to clear overlays
     this.dispatchEvent(

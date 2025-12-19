@@ -36,6 +36,7 @@ export const ganttDepotStyles = css`
     text-align: left;
     min-width: 0;
     width: 100%;
+    box-sizing: border-box;
     box-shadow: var(--shadow-xs);
     border: 1px solid rgba(255, 255, 255, 0.22);
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
