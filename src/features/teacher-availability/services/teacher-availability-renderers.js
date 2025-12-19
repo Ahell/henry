@@ -326,15 +326,53 @@ export function renderTeacherCell(component, teacher, slotDate) {
     slotDate,
     store,
   });
+  const normalizeDate = (v) => (v || "").split("T")[0];
+  const teacherId = teacher.teacher_id;
+  const courseIds = Array.isArray(presentation?.courseIds)
+    ? presentation.courseIds
+    : [];
+  const hasSlotBusyEntry = (store.teacherAvailability || []).some(
+    (a) =>
+      String(a.teacher_id) === String(teacherId) &&
+      String(a.slot_id) === String(slot.slot_id) &&
+      a.type === "busy"
+  );
+  const isUnavailableOnDay = (day) =>
+    hasSlotBusyEntry || store.isTeacherUnavailableOnDay(teacherId, day);
+  const isPartiallyUnavailableForCourse = (courseId) => {
+    const activeDays = (store.getActiveCourseDaysInSlot(slot.slot_id, courseId) || [])
+      .map(normalizeDate)
+      .filter(Boolean);
+    if (!activeDays.length) return false;
+    return activeDays.some(isUnavailableOnDay);
+  };
+
   const segments =
-    Array.isArray(presentation?.courseIds) && presentation.courseIds.length > 1
-      ? presentation.courseIds
-          .map((id) => ({
-            text: store.getCourse(id)?.code || String(id),
-            badgeText: "",
-          }))
-          .filter((seg) => seg.text)
+    courseIds.length > 1
+      ? courseIds
+          .map((id) => {
+            const text = store.getCourse(id)?.code || String(id);
+            if (!text) return null;
+            return {
+              text,
+              badgeText: "",
+              classNameSuffix: isPartiallyUnavailableForCourse(id)
+                ? "partial-availability"
+                : "",
+            };
+          })
+          .filter(Boolean)
       : [];
+
+  const singleCourseId = courseIds.length === 1 ? courseIds[0] : null;
+  const addCellStripe =
+    singleCourseId != null && isPartiallyUnavailableForCourse(singleCourseId);
+  const classNameSuffix = [
+    presentation.className,
+    addCellStripe ? "partial-availability" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return html`
     <td>
@@ -343,7 +381,7 @@ export function renderTeacherCell(component, teacher, slotDate) {
         .slotDate=${slotDate}
         .slotId=${slot.slot_id}
         .isDetail=${false}
-        .classNameSuffix=${presentation.className}
+        .classNameSuffix=${classNameSuffix}
         .titleText=${presentation.title}
         .content=${presentation.content}
         .segments=${segments}

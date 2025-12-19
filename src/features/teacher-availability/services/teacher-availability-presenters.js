@@ -226,25 +226,11 @@ export function getOverviewCellPresentation({
     slot.slot_id
   );
 
-  const unavailablePercentage = store.getTeacherUnavailablePercentageForSlot(
-    teacher.teacher_id,
-    slotDate,
-    slot.slot_id
-  );
-  const isPartiallyUnavailable =
-    unavailablePercentage > 0 && unavailablePercentage < 1;
-
   let className = "";
   let content = "";
   let title = "";
   let isLocked = false;
   let courseIds = [];
-
-  // Locking is independent from assignment; applies to any partially unavailable cell
-  if (isPartiallyUnavailable) {
-    className = appendClass(className, "locked");
-    isLocked = true;
-  }
 
   if (isAssigned) {
     const codes = assignedRuns
@@ -275,13 +261,6 @@ export function getOverviewCellPresentation({
   if (isUnavailable && !isAssigned) {
     className = appendClass(className, "unavailable");
     title = title ? `${title} (Upptagen)` : "Upptagen";
-  } else if (isPartiallyUnavailable && !isAssigned) {
-    const percentage = Math.round(unavailablePercentage * 100);
-    className = appendClass(className, "partially-unavailable");
-    const base = title
-      ? `${title} (${percentage}% upptagen)`
-      : `${percentage}% upptagen`;
-    title = `${base} 🔒 Låst (använd detaljvy för att ändra)`;
   }
 
   // Ensure leading/trailing whitespace trimmed

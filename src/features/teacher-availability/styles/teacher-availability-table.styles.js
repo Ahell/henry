@@ -233,6 +233,7 @@ export const teacherAvailabilityTableStyles = css`
     align-items: center;
     justify-content: center;
     position: relative;
+    overflow: hidden;
     padding: 0 6px;
     background: rgba(15, 23, 42, 0.08);
     border-radius: var(--radius-sm);
@@ -245,13 +246,51 @@ export const teacherAvailabilityTableStyles = css`
     white-space: nowrap;
     font-weight: var(--font-weight-semibold);
     font-size: clamp(10px, 0.95rem, var(--font-size-sm));
+    position: relative;
+    z-index: 1;
   }
 
   .teacher-cell.unavailable .cell-content,
-  .teacher-cell.partially-unavailable .cell-content {
+  .teacher-cell.partially-unavailable .cell-content,
+  .teacher-cell.partial-availability .cell-content {
     background: transparent;
     color: white;
     box-shadow: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Partial availability stripes (slot view) */
+  .teacher-cell.partial-availability::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.32) 0px,
+      rgba(255, 255, 255, 0.32) 8px,
+      rgba(255, 255, 255, 0) 8px,
+      rgba(255, 255, 255, 0) 16px
+    );
+    opacity: 0.9;
+  }
+
+  .teacher-cell .course-segment.partial-availability::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.32) 0px,
+      rgba(255, 255, 255, 0.32) 8px,
+      rgba(255, 255, 255, 0) 8px,
+      rgba(255, 255, 255, 0) 16px
+    );
+    opacity: 0.9;
   }
 
   /* Default teaching day - purple/lila, active */
@@ -550,6 +589,7 @@ export const teacherAvailabilityTableStyles = css`
     border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow: var(--shadow-sm);
     pointer-events: none;
+    z-index: 2;
   }
 
   .teacher-cell .course-segment .exam-badge {

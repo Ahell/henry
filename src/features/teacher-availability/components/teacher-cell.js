@@ -92,7 +92,7 @@ export class TeacherCell extends LitElement {
         <div class="course-stack">
           ${this.segments.map(
             (seg) => html`
-              <div class="course-segment">
+              <div class="course-segment ${seg?.classNameSuffix || ""}">
                 <span class="course-segment-text">${seg?.text || ""}</span>
                 ${seg?.badgeText
                   ? html`<span class="exam-badge" aria-label="Exam"
