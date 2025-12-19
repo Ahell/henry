@@ -230,6 +230,7 @@ export class CoursesTab extends LitElement {
   }
 
   renderPrerequisitesList(course) {
+    console.log("Rendering prerequisites for course:", course);
     if (!course.prerequisites || course.prerequisites.length === 0) {
       return html`<span class="no-prerequisites">-</span>`;
     }
@@ -289,7 +290,9 @@ export class CoursesTab extends LitElement {
   async handleDeleteCourse(courseId) {
     const course = store.getCourse(courseId);
     const courseName = course ? course.name : "Okänd kurs";
-    if (!confirm(`Är du säker på att du vill ta bort kursen "${courseName}"?`)) {
+    if (
+      !confirm(`Är du säker på att du vill ta bort kursen "${courseName}"?`)
+    ) {
       return;
     }
 
