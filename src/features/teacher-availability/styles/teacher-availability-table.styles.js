@@ -201,6 +201,28 @@ export const teacherAvailabilityTableStyles = css`
     box-shadow: var(--shadow-danger);
   }
 
+  /* No-course partial unavailability in slot view (some days unavailable): stripe only, no solid fill */
+  .teacher-cell.partial-unavailable {
+    background: transparent;
+    border-color: rgba(15, 23, 42, 0.18);
+  }
+
+  .teacher-cell.partial-unavailable::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.16) 0px,
+      rgba(15, 23, 42, 0.16) 8px,
+      transparent 8px,
+      transparent 16px
+    );
+    opacity: 0.95;
+  }
+
   .teacher-cell .cell-content {
     display: inline-flex;
     align-items: center;

@@ -398,6 +398,21 @@ export function renderTeacherCell(component, teacher, slotDate) {
     .filter(Boolean)
     .join(" ");
 
+  // No course in this slot for this teacher:
+  // - if ALL days are unavailable => solid red
+  // - if SOME days are unavailable => striped (transparent background)
+  const noCourse = courseIds.length === 0;
+  const hasAnyUnavailable = unavailableDaysInSlot.length > 0;
+  const hasAllUnavailable =
+    slotDays.length > 0 && unavailableDaysInSlot.length === slotDays.length;
+  const noCourseAvailabilityClass = noCourse
+    ? hasAllUnavailable
+      ? "unavailable"
+      : hasAnyUnavailable
+      ? "partial-unavailable"
+      : ""
+    : "";
+
   return html`
     <td>
       <teacher-cell
@@ -405,8 +420,12 @@ export function renderTeacherCell(component, teacher, slotDate) {
         .slotDate=${slotDate}
         .slotId=${slot.slot_id}
         .isDetail=${false}
-        .classNameSuffix=${classNameSuffix}
-        .titleText=${presentation.title}
+        .classNameSuffix=${[classNameSuffix, noCourseAvailabilityClass]
+          .filter(Boolean)
+          .join(" ")}
+        .titleText=${noCourseAvailabilityClass === "partial-unavailable"
+          ? "Delvis upptagen (utvalda dagar)"
+          : presentation.title}
         .content=${presentation.content}
         .segments=${segments}
         .isLocked=${presentation.isLocked}
