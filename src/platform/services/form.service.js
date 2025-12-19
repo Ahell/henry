@@ -10,6 +10,108 @@ import {
  * Provides reusable form handling, clearing, and submission patterns
  */
 export class FormService {
+  static isFormValid(containerOrForm) {
+    const form = this._resolveForm(containerOrForm);
+    if (!form) return false;
+
+    const requiredControls = this._getRequiredControls(form);
+    for (const control of requiredControls) {
+      if (!this._isControlValid(control)) return false;
+    }
+    return true;
+  }
+
+  static reportFormValidity(containerOrForm) {
+    const form = this._resolveForm(containerOrForm);
+    if (!form) return false;
+
+    const requiredControls = this._getRequiredControls(form);
+    for (const control of requiredControls) {
+      if (this._isControlValid(control)) continue;
+
+      const native = this._getNativeControl(control);
+      if (native && typeof native.reportValidity === "function") {
+        native.reportValidity();
+      }
+      if (native && typeof native.focus === "function") {
+        try {
+          native.focus();
+        } catch (err) {
+          /* ignore */
+        }
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  static _resolveForm(containerOrForm) {
+    if (!containerOrForm) return null;
+    if (
+      typeof containerOrForm.checkValidity === "function" &&
+      containerOrForm.tagName === "FORM"
+    ) {
+      return containerOrForm;
+    }
+    if (typeof containerOrForm.querySelector === "function") {
+      return containerOrForm.querySelector("form");
+    }
+    return null;
+  }
+
+  static _getRequiredControls(form) {
+    const controls = [];
+
+    controls.push(
+      ...Array.from(form.querySelectorAll("henry-input[required]")),
+      ...Array.from(form.querySelectorAll("henry-select[required]")),
+      ...Array.from(form.querySelectorAll("henry-radio-group[required]")),
+      ...Array.from(form.querySelectorAll("henry-textarea[required]")),
+      ...Array.from(form.querySelectorAll("input[required]")),
+      ...Array.from(form.querySelectorAll("select[required]")),
+      ...Array.from(form.querySelectorAll("textarea[required]"))
+    );
+
+    return controls;
+  }
+
+  static _isControlValid(control) {
+    const native = this._getNativeControl(control);
+    if (!native) return true;
+    if (typeof native.checkValidity === "function") return native.checkValidity();
+    return String(native?.value ?? "").trim().length > 0;
+  }
+
+  static _getNativeControl(control) {
+    if (!control) return null;
+
+    // Native inputs
+    if (typeof control.checkValidity === "function" && control.tagName !== "HENRY-RADIO-GROUP") {
+      return control;
+    }
+
+    // henry-input
+    if (typeof control.getInput === "function") {
+      return control.getInput();
+    }
+
+    // henry-select
+    if (typeof control.getSelect === "function") {
+      return control.getSelect();
+    }
+
+    // henry-radio-group
+    if (control.tagName === "HENRY-RADIO-GROUP") {
+      // Prefer native radio input so browser can render validation UI.
+      const firstRadio = control.shadowRoot?.querySelector('input[type="radio"]');
+      if (firstRadio) return firstRadio;
+      return { value: control.value ?? "" };
+    }
+
+    return null;
+  }
+
   /**
    * Submit a form with optimistic updates and error handling
    * @param {Object} options

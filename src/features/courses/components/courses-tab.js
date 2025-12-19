@@ -44,6 +44,7 @@ export class CoursesTab extends LitElement {
           "courseName",
           "courseTeachers",
         ]);
+        this._updateFormValidity();
       } catch (err) {
         // swallow errors; non-critical
         console.warn("Failed to clear course form after teacher added:", err);
@@ -61,6 +62,7 @@ export class CoursesTab extends LitElement {
 
   firstUpdated(changedProperties) {
     super.firstUpdated(changedProperties);
+    resetCourseForm(this.shadowRoot);
     this._updateFormValidity();
   }
 
@@ -69,8 +71,7 @@ export class CoursesTab extends LitElement {
   }
 
   _updateFormValidity() {
-    const form = this.shadowRoot.querySelector('form');
-    this.formValid = form ? form.checkValidity() : false;
+    this.formValid = FormService.isFormValid(this.shadowRoot);
   }
 
   render() {
@@ -83,7 +84,15 @@ export class CoursesTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">Lägg till Ny Kurs</henry-text>
         </div>
-        <form @submit="${this.handleAddCourse}" @input="${this._handleInputChange}" @change="${this._handleInputChange}">
+        <form
+          @submit="${this.handleAddCourse}"
+          @input="${this._handleInputChange}"
+          @change="${this._handleInputChange}"
+          @input-change="${this._handleInputChange}"
+          @select-change="${this._handleInputChange}"
+          @radio-change="${this._handleInputChange}"
+          @textarea-change="${this._handleInputChange}"
+        >
           <div class="form-row two-cols">
             <henry-input
               id="courseCode"
@@ -284,8 +293,14 @@ export class CoursesTab extends LitElement {
     const root = this.shadowRoot;
 
     try {
+      if (!FormService.isFormValid(root)) {
+        FormService.reportFormValidity(root);
+        return;
+      }
+
       const newCourse = await createCourseFromForm(root);
       resetCourseForm(root);
+      this._updateFormValidity();
       window.dispatchEvent(
         new CustomEvent("henry:course-added", { detail: newCourse })
       );

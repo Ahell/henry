@@ -16,6 +16,7 @@ import {
   resetCohortForm,
   updateCohortFromForm,
 } from "../services/cohort-tab.service.js";
+import { FormService } from "../../../platform/services/form.service.js";
 import "./cohort-modal.component.js";
 
 export class CohortsTab extends LitElement {
@@ -37,6 +38,7 @@ export class CohortsTab extends LitElement {
 
   firstUpdated(changedProperties) {
     super.firstUpdated(changedProperties);
+    resetCohortForm(this.shadowRoot);
     this._updateFormValidity();
   }
 
@@ -45,8 +47,7 @@ export class CohortsTab extends LitElement {
   }
 
   _updateFormValidity() {
-    const form = this.shadowRoot.querySelector('form');
-    this.formValid = form ? form.checkValidity() : false;
+    this.formValid = FormService.isFormValid(this.shadowRoot);
   }
 
   render() {
@@ -63,6 +64,10 @@ export class CohortsTab extends LitElement {
           @submit="${this.handleAddCohort}"
           @input="${this._handleInputChange}"
           @change="${this._handleInputChange}"
+          @input-change="${this._handleInputChange}"
+          @select-change="${this._handleInputChange}"
+          @radio-change="${this._handleInputChange}"
+          @textarea-change="${this._handleInputChange}"
         >
           <div class="form-row">
             <henry-input
@@ -163,8 +168,14 @@ export class CohortsTab extends LitElement {
     e.preventDefault();
     const root = this.shadowRoot;
     try {
+      if (!FormService.isFormValid(root)) {
+        FormService.reportFormValidity(root);
+        return;
+      }
+
       await createCohortFromForm(root);
       resetCohortForm(root);
+      this._updateFormValidity();
       showSuccessMessage(this, "Kull tillagd!");
     } catch (error) {
       showErrorMessage(this, `Fel: ${error.message}`);
@@ -180,9 +191,9 @@ export class CohortsTab extends LitElement {
   }
 
   async _handleModalSave(e) {
-    const { cohortId, formData } = e.detail;
+    const { cohortId } = e.detail;
     try {
-      await updateCohortFromForm(this.shadowRoot, cohortId);
+      await updateCohortFromForm(e.currentTarget, cohortId);
       this.editingCohortId = null;
       showSuccessMessage(this, "Kull uppdaterad!");
     } catch (error) {

@@ -25,13 +25,22 @@ export class TeacherModal extends LitElement {
     this._updateFormValidity();
   }
 
+  updated(changedProperties) {
+    if (changedProperties.has("open") || changedProperties.has("teacherId")) {
+      if (this.open && this.teacherId) {
+        this._updateFormValidity();
+      } else {
+        this.formValid = false;
+      }
+    }
+  }
+
   _handleInputChange() {
     this._updateFormValidity();
   }
 
   _updateFormValidity() {
-    const form = this.shadowRoot?.querySelector('form') || this.querySelector('form');
-    this.formValid = form ? form.checkValidity() : false;
+    this.formValid = FormService.isFormValid(this.renderRoot);
   }
 
   render() {
@@ -48,7 +57,15 @@ export class TeacherModal extends LitElement {
         title="Redigera Lärare"
         @close="${this._handleClose}"
       >
-        <form @submit="${this._handleSubmit}" @input="${this._handleInputChange}" @change="${this._handleInputChange}">
+        <form
+          @submit="${this._handleSubmit}"
+          @input="${this._handleInputChange}"
+          @change="${this._handleInputChange}"
+          @input-change="${this._handleInputChange}"
+          @select-change="${this._handleInputChange}"
+          @radio-change="${this._handleInputChange}"
+          @textarea-change="${this._handleInputChange}"
+        >
           <div
             style="display: flex; flex-direction: column; gap: var(--space-4);"
           >
@@ -109,17 +126,6 @@ export class TeacherModal extends LitElement {
   }
 
   _handleClose() {
-    const form = this.shadowRoot.querySelector('form');
-
-    // Check if form is valid before allowing close
-    if (form && !form.checkValidity()) {
-      // Trigger HTML5 validation messages to show which fields are invalid
-      form.reportValidity();
-      // Prevent close
-      return;
-    }
-
-    // Safe to close - form is valid or doesn't exist
     this.dispatchEvent(
       new CustomEvent("modal-close", {
         bubbles: true,
@@ -129,11 +135,8 @@ export class TeacherModal extends LitElement {
   }
 
   _handleSave() {
-    const form = this.shadowRoot?.querySelector('form') || this.querySelector('form');
-
-    // Check if form is valid before saving
-    if (form && !form.checkValidity()) {
-      form.reportValidity();
+    if (!FormService.isFormValid(this.renderRoot)) {
+      FormService.reportFormValidity(this.renderRoot);
       return;
     }
 

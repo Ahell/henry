@@ -25,13 +25,22 @@ export class CourseModal extends LitElement {
     this._updateFormValidity();
   }
 
+  updated(changedProperties) {
+    if (changedProperties.has("open") || changedProperties.has("courseId")) {
+      if (this.open && this.courseId) {
+        this._updateFormValidity();
+      } else {
+        this.formValid = false;
+      }
+    }
+  }
+
   _handleInputChange() {
     this._updateFormValidity();
   }
 
   _updateFormValidity() {
-    const form = this.shadowRoot?.querySelector('form') || this.querySelector('form');
-    this.formValid = form ? form.checkValidity() : false;
+    this.formValid = FormService.isFormValid(this.renderRoot);
   }
 
   render() {
@@ -42,7 +51,15 @@ export class CourseModal extends LitElement {
 
     return html`
       <henry-modal open title="Redigera Kurs" @close="${this._handleClose}">
-        <form @submit="${this._handleSubmit}" @input="${this._handleInputChange}" @change="${this._handleInputChange}">
+        <form
+          @submit="${this._handleSubmit}"
+          @input="${this._handleInputChange}"
+          @change="${this._handleInputChange}"
+          @input-change="${this._handleInputChange}"
+          @select-change="${this._handleInputChange}"
+          @radio-change="${this._handleInputChange}"
+          @textarea-change="${this._handleInputChange}"
+        >
           <div
             style="display: flex; flex-direction: column; gap: var(--space-4);"
           >
@@ -79,16 +96,15 @@ export class CourseModal extends LitElement {
               id="edit-credits"
               label="Högskolepoäng"
               required
+              .value=${String(course.credits ?? 7.5)}
               .options=${[
                 {
                   value: "7.5",
                   label: "7,5 hp",
-                  selected: (course.credits ?? 7.5) === 7.5,
                 },
                 {
                   value: "15",
                   label: "15 hp",
-                  selected: course.credits === 15,
                 },
               ]}
             ></henry-select>
@@ -125,17 +141,6 @@ export class CourseModal extends LitElement {
   }
 
   _handleClose() {
-    const form = this.shadowRoot.querySelector('form');
-
-    // Check if form is valid before allowing close
-    if (form && !form.checkValidity()) {
-      // Trigger HTML5 validation messages to show which fields are invalid
-      form.reportValidity();
-      // Prevent close
-      return;
-    }
-
-    // Safe to close - form is valid or doesn't exist
     this.dispatchEvent(
       new CustomEvent("modal-close", {
         bubbles: true,
@@ -145,11 +150,8 @@ export class CourseModal extends LitElement {
   }
 
   _handleSave() {
-    const form = this.shadowRoot?.querySelector('form') || this.querySelector('form');
-
-    // Check if form is valid before saving
-    if (form && !form.checkValidity()) {
-      form.reportValidity();
+    if (!FormService.isFormValid(this.renderRoot)) {
+      FormService.reportFormValidity(this.renderRoot);
       return;
     }
 

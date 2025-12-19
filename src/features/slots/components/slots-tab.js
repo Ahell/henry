@@ -1,6 +1,5 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
-import { resetForm } from "../../../utils/form-helpers.js";
 import {
   showSuccessMessage,
   showErrorMessage,
@@ -14,6 +13,7 @@ import {
   defaultSlotEndDate,
 } from "../../../utils/date-utils.js";
 import { createSlot, deleteSlot } from "../services/slot-tab.service.js";
+import { FormService } from "../../../platform/services/form.service.js";
 import "../../../components/ui/index.js";
 import { slotsTabStyles } from "../styles/slots-tab.styles.js";
 
@@ -27,6 +27,7 @@ export class SlotsTab extends LitElement {
     startOptions: { type: Array },
     allowFreeDate: { type: Boolean },
     selectedInsertAfter: { type: String },
+    formValid: { type: Boolean },
   };
 
   constructor() {
@@ -35,7 +36,21 @@ export class SlotsTab extends LitElement {
     this.slots = store.getSlots() || [];
     this.startOptions = [];
     this.allowFreeDate = false;
+    this.formValid = false;
     subscribeToStore(this);
+  }
+
+  firstUpdated(changedProperties) {
+    super.firstUpdated(changedProperties);
+    this._updateFormValidity();
+  }
+
+  _handleInputChange() {
+    this._updateFormValidity();
+  }
+
+  _updateFormValidity() {
+    this.formValid = FormService.isFormValid(this.shadowRoot);
   }
 
   render() {
@@ -53,7 +68,15 @@ export class SlotsTab extends LitElement {
           <henry-text variant="heading-3">Lägg till Ny Slot</henry-text>
         </div>
 
-        <form @submit="${this.handleAddSlot}">
+        <form
+          @submit="${this.handleAddSlot}"
+          @input="${this._handleInputChange}"
+          @change="${this._handleInputChange}"
+          @input-change="${this._handleInputChange}"
+          @select-change="${this._handleInputChange}"
+          @radio-change="${this._handleInputChange}"
+          @textarea-change="${this._handleInputChange}"
+        >
           <div class="form-row">
             <henry-select
               id="insertAfter"
@@ -78,9 +101,10 @@ export class SlotsTab extends LitElement {
             <henry-button
               type="submit"
               variant="primary"
-              ?disabled=${!this.allowFreeDate &&
-              this.selectedInsertAfter &&
-              (this.startOptions || []).length === 0}
+              ?disabled=${!this.formValid ||
+              (!this.allowFreeDate &&
+                this.selectedInsertAfter &&
+                (this.startOptions || []).length === 0)}
               >Lägg till Slot</henry-button
             >
           </div>
@@ -123,6 +147,7 @@ export class SlotsTab extends LitElement {
     const insertVal = insertAfterEl ? insertAfterEl.getSelect().value : null;
     this.selectedInsertAfter = insertVal;
     this._computeStartOptions(insertVal);
+    this._updateFormValidity();
   }
 
   _formatDate(d) {
@@ -229,16 +254,17 @@ export class SlotsTab extends LitElement {
   async handleAddSlot(e) {
     e.preventDefault();
     const root = this.shadowRoot;
-    const sel = root.querySelector("#slotStart");
-    const start = sel ? sel.getSelect().value : null;
-    if (!start) {
-      showErrorMessage(this, "Fyll i startdatum för slot.");
+    if (!FormService.isFormValid(root)) {
+      FormService.reportFormValidity(root);
       return;
     }
 
+    const sel = root.querySelector("#slotStart");
+    const start = sel ? sel.getSelect().value : null;
     try {
       await createSlot({ start_date: start });
-      resetForm(root);
+      FormService.clearCustomForm(root, ["insertAfter", "slotStart"]);
+      this._updateFormValidity();
       showSuccessMessage(this, "Slot tillagd!");
     } catch (err) {
       showErrorMessage(this, err.message || "Kunde inte lägga till slot.");

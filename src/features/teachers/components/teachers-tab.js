@@ -13,6 +13,7 @@ import {
   resetTeacherForm,
   deleteTeacherById,
 } from "../services/teacher-tab.service.js";
+import { FormService } from "../../../platform/services/form.service.js";
 import { TeacherFormService } from "../services/teacher-form.service.js";
 import "./teacher-modal.component.js";
 import "../../../components/ui/index.js";
@@ -45,8 +46,7 @@ export class TeachersTab extends LitElement {
   }
 
   _updateFormValidity() {
-    const form = this.shadowRoot.querySelector('form');
-    this.formValid = form ? form.checkValidity() : false;
+    this.formValid = FormService.isFormValid(this.shadowRoot);
   }
 
   render() {
@@ -62,7 +62,15 @@ export class TeachersTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">Lägg till Ny Lärare</henry-text>
         </div>
-        <form @submit="${this.handleAddTeacher}" @input="${this._handleInputChange}" @change="${this._handleInputChange}">
+        <form
+          @submit="${this.handleAddTeacher}"
+          @input="${this._handleInputChange}"
+          @change="${this._handleInputChange}"
+          @input-change="${this._handleInputChange}"
+          @select-change="${this._handleInputChange}"
+          @radio-change="${this._handleInputChange}"
+          @textarea-change="${this._handleInputChange}"
+        >
           <div class="form-row">
             <henry-input
               id="teacherName"
@@ -198,8 +206,14 @@ export class TeachersTab extends LitElement {
     const root = this.shadowRoot;
 
     try {
+      if (!FormService.isFormValid(root)) {
+        FormService.reportFormValidity(root);
+        return;
+      }
+
       const newTeacher = await createTeacherFromForm(root);
       resetTeacherForm(root);
+      this._updateFormValidity();
       window.dispatchEvent(
         new CustomEvent("henry:teacher-added", { detail: newTeacher })
       );
