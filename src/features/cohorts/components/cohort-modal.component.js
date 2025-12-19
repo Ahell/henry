@@ -19,6 +19,17 @@ export class CohortModal extends LitElement {
   }
 
   _handleCancel() {
+    const form = this.shadowRoot.querySelector('form');
+
+    // Check if form is valid before allowing close
+    if (form && !form.checkValidity()) {
+      // Trigger HTML5 validation messages to show which fields are invalid
+      form.reportValidity();
+      // Prevent close
+      return;
+    }
+
+    // Safe to close - form is valid or doesn't exist
     this.dispatchEvent(
       new CustomEvent("modal-close", {
         bubbles: true,

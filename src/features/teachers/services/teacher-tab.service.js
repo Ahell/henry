@@ -10,6 +10,18 @@ export async function createTeacherFromForm(root) {
     home_department: { id: "teacherDepartment", type: "radio" },
     compatible_courses: { id: "teacherCourses", type: "select-multiple" },
   });
+
+  // Validate teacher name
+  if (!teacher.name || teacher.name.trim().length === 0) {
+    throw new Error("Lärarens namn måste anges.");
+  }
+
+  // Validate department
+  const validDepartments = ["FE", "BE", "AIJ"];
+  if (!teacher.home_department || !validDepartments.includes(teacher.home_department)) {
+    throw new Error("Avdelning måste väljas.");
+  }
+
   const { teacher: newTeacher, mutationId } =
     TeacherFormService.createTeacher(teacher);
   await store.saveData({ mutationId });
