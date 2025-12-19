@@ -35,6 +35,34 @@ export const toggleTeachingDay = (component, dateStr, courseId = null) => {
   if (courseId && courseId !== "all") {
     store.toggleCourseSlotDay(component._detailSlotId, courseId, dateStr);
   } else {
+    const slotId = component._detailSlotId;
+    const slotCourses = Array.from(
+      new Map(
+        store
+          .getCourseRuns()
+          .filter((run) => String(run.slot_id) === String(slotId))
+          .map((run) => {
+            const course = store.getCourse(run.course_id);
+            return [
+              run.course_id,
+              {
+                courseId: run.course_id,
+                code: course?.code || "",
+                name: course?.name || "",
+              },
+            ];
+          })
+      ).values()
+    ).filter((c) => c.courseId != null && c.code);
+
+    if (slotCourses.length > 1) {
+      const courseList = slotCourses.map((c) => c.code).join(", ");
+      const ok = confirm(
+        `Ändra undervisningsdag ${dateStr} för ALLA kurser i denna slot?\n\nKurser: ${courseList}`
+      );
+      if (!ok) return;
+    }
+
     store.toggleTeachingDay(component._detailSlotId, dateStr, null);
   }
   component.requestUpdate();

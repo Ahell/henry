@@ -10,7 +10,7 @@ export function getDetailDayHeaderPresentation({
   slotId,
   dateStr,
   isEditingExamDate,
-   courseId = null,
+  courseId = null,
   store,
 }) {
   const isExamDate = store.isExamDate(slotId, dateStr);
@@ -60,7 +60,10 @@ export function getDetailDayHeaderPresentation({
   if (state?.isDefault && state.active) {
     return {
       className: "teaching-day-default-header",
-      title: "Standarddag (klicka för att inaktivera)",
+      title:
+        courseId == null
+          ? "Standarddag (klicka för att inaktivera för alla kurser)"
+          : "Standarddag (klicka för att inaktivera)",
       clickMode: "toggleTeachingDay",
     };
   }
@@ -71,7 +74,10 @@ export function getDetailDayHeaderPresentation({
   ) {
     return {
       className: "teaching-day-alt-header",
-      title: "Aktiv kursdag (klicka för att avaktivera)",
+      title:
+        courseId == null
+          ? "Aktiv kursdag (klicka för att avaktivera för alla kurser)"
+          : "Aktiv kursdag (klicka för att avaktivera)",
       clickMode: "toggleTeachingDay",
     };
   }
@@ -79,7 +85,10 @@ export function getDetailDayHeaderPresentation({
   if (state?.isDefault && !state.active) {
     return {
       className: "teaching-day-default-dimmed-header",
-      title: "Inaktiverad standarddag (klicka för att aktivera)",
+      title:
+        courseId == null
+          ? "Inaktiverad standarddag (klicka för att aktivera för alla kurser)"
+          : "Inaktiverad standarddag (klicka för att aktivera)",
       clickMode: "toggleTeachingDay",
     };
   }
@@ -87,14 +96,20 @@ export function getDetailDayHeaderPresentation({
   if (state && !state.isDefault && state.active) {
     return {
       className: "teaching-day-alt-header",
-      title: "Alternativ undervisningsdag (klicka för att ta bort)",
+      title:
+        courseId == null
+          ? "Alternativ undervisningsdag (klicka för att ta bort för alla kurser)"
+          : "Alternativ undervisningsdag (klicka för att ta bort)",
       clickMode: "toggleTeachingDay",
     };
   }
 
   return {
     className: "",
-    title: "Klicka för att markera som undervisningsdag",
+    title:
+      courseId == null
+        ? "Klicka för att markera som undervisningsdag för alla kurser"
+        : "Klicka för att markera som undervisningsdag",
     clickMode: "toggleTeachingDay",
   };
 }
