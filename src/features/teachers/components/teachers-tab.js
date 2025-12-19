@@ -62,7 +62,7 @@ export class TeachersTab extends LitElement {
         <div slot="header">
           <henry-text variant="heading-3">Lägg till Ny Lärare</henry-text>
         </div>
-        <form @submit="${this.handleAddTeacher}" @input="${this._handleInputChange}">
+        <form @submit="${this.handleAddTeacher}" @input="${this._handleInputChange}" @change="${this._handleInputChange}">
           <div class="form-row">
             <henry-input
               id="teacherName"

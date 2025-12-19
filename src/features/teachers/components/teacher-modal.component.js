@@ -48,7 +48,7 @@ export class TeacherModal extends LitElement {
         title="Redigera Lärare"
         @close="${this._handleClose}"
       >
-        <form @submit="${this._handleSubmit}" @input="${this._handleInputChange}">
+        <form @submit="${this._handleSubmit}" @input="${this._handleInputChange}" @change="${this._handleInputChange}">
           <div
             style="display: flex; flex-direction: column; gap: var(--space-4);"
           >

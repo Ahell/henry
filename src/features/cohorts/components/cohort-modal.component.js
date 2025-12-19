@@ -91,7 +91,7 @@ export class CohortModal extends LitElement {
         title="${cohort ? "Redigera kohort" : "Ny kohort"}"
         @close="${this._handleCancel}"
       >
-        <form @submit="${(e) => e.preventDefault()}" @input="${this._handleInputChange}">
+        <form @submit="${(e) => e.preventDefault()}" @input="${this._handleInputChange}" @change="${this._handleInputChange}">
           <div style="display: flex; flex-direction: column; gap: var(--space-4);">
             <henry-input
               id="edit-date"

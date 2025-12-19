@@ -62,6 +62,7 @@ export class CohortsTab extends LitElement {
         <form
           @submit="${this.handleAddCohort}"
           @input="${this._handleInputChange}"
+          @change="${this._handleInputChange}"
         >
           <div class="form-row">
             <henry-input
