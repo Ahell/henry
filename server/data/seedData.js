@@ -3,7 +3,7 @@
  * Contains all courses, cohorts, teachers, slots, and historical course runs
  */
 
-export const seedData = {
+const seedDataRaw = {
   // All 14 courses
   courses: [
     {
@@ -650,3 +650,68 @@ export const seedData = {
     }, // AI185U
   ],
 };
+
+export const seedData = normalizeSeedData(seedDataRaw);
+
+function normalizeSeedData(raw) {
+  const courses = normalizeCourses(raw.courses || []);
+  const coursePrerequisites = buildCoursePrerequisites(courses);
+  const courseRuns = normalizeCourseRuns(raw.courseRuns || []);
+
+  return {
+    ...raw,
+    courses,
+    coursePrerequisites,
+    courseRuns,
+  };
+}
+
+function normalizeCourses(coursesRaw) {
+  const codeToId = new Map(
+    (coursesRaw || []).map((c, idx) => [c.code, idx + 1])
+  );
+
+  return (coursesRaw || []).map((c, idx) => {
+    const prerequisiteCodes = Array.isArray(c.prerequisite_codes)
+      ? c.prerequisite_codes
+      : [];
+    const prerequisites = prerequisiteCodes.map((code) => {
+      const id = codeToId.get(code);
+      if (id == null) {
+        throw new Error(
+          `seedData: okänd prerequisite-kurskod "${code}" för kurs "${c.code}"`
+        );
+      }
+      return id;
+    });
+
+    const { prerequisite_codes, ...rest } = c;
+    return {
+      ...rest,
+      course_id: idx + 1,
+      prerequisites,
+    };
+  });
+}
+
+function buildCoursePrerequisites(courses) {
+  const rows = [];
+  (courses || []).forEach((c) => {
+    (c.prerequisites || []).forEach((pid) =>
+      rows.push({ course_id: c.course_id, prerequisite_course_id: pid })
+    );
+  });
+  return rows;
+}
+
+function normalizeCourseRuns(courseRunsRaw) {
+  const runs = Array.isArray(courseRunsRaw) ? courseRunsRaw : [];
+  const hasZeroBasedCourseIds = runs.some((r) => Number(r.course_id) === 0);
+  const offset = hasZeroBasedCourseIds ? 1 : 0;
+
+  return runs.map((r) => ({
+    ...r,
+    course_id:
+      typeof r.course_id === "number" ? r.course_id + offset : r.course_id,
+  }));
+}

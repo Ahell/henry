@@ -8,6 +8,10 @@ dist/
 # Database
 server/*.db
 server/*.db-journal
+server/db/*.db
+server/db/*.db-journal
+server/var/*.db
+server/var/*.db-journal
 
 # Logs
 *.log

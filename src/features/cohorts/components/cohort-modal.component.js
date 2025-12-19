@@ -28,7 +28,7 @@ export class CohortModal extends LitElement {
   }
 
   _handleSave() {
-    const formData = FormService.extractFormData(this, {
+    const formData = FormService.extractFormData(this.renderRoot, {
       start_date: "edit-date",
       planned_size: {
         id: "edit-size",

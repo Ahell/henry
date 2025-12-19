@@ -118,7 +118,7 @@ export class CourseModal extends LitElement {
   }
 
   _handleSave() {
-    const root = this.shadowRoot;
+    const root = this.renderRoot;
 
     const formData = FormService.extractFormData(root, {
       code: "edit-code",

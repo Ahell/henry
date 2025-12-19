@@ -21,7 +21,9 @@ export async function persistBulkData(payload = {}) {
     cohorts: normalized.dedupedCohorts?.length,
     teachers: normalized.dedupedTeachers?.length,
     slots: normalized.dedupedSlots?.length,
-    courseRuns: Array.isArray(payload.courseRuns) ? payload.courseRuns.length : 0,
+    courseRuns: Array.isArray(payload.courseRuns)
+      ? payload.courseRuns.length
+      : 0,
     teacherAvailability: Array.isArray(payload.teacherAvailability)
       ? payload.teacherAvailability.length
       : Object.keys(payload.teacherAvailability || {}).length,
@@ -40,9 +42,15 @@ export async function persistBulkData(payload = {}) {
     insertTeacherCourses(normalized.teacherCoursesToInsert);
     insertSlots(normalized.dedupedSlots);
     insertSlotDays(payload.slotDays || [], normalized.remappers.remapSlotId);
-    insertTeacherAvailability(normalized.teacherAvailabilityOps, normalized.remappers);
+    insertTeacherAvailability(
+      normalized.teacherAvailabilityOps,
+      normalized.remappers
+    );
     insertCourseSlots(normalized.dedupedCourseSlots);
-    insertCourseSlotDays(payload.courseSlotDays || [], normalized.remapCourseSlotId);
+    insertCourseSlotDays(
+      payload.courseSlotDays || [],
+      normalized.remapCourseSlotId
+    );
     insertCourseRunSlots(normalized.courseRunSlotsRows);
   });
 
@@ -50,4 +58,3 @@ export async function persistBulkData(payload = {}) {
   console.log("Bulk save completed successfully");
   return { success: true };
 }
-

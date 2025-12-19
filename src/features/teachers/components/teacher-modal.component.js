@@ -101,7 +101,7 @@ export class TeacherModal extends LitElement {
   }
 
   _handleSave() {
-    const root = this.shadowRoot;
+    const root = this.renderRoot;
 
     const formData = FormService.extractFormData(root, {
       name: "edit-name",
