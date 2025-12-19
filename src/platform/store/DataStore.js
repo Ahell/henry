@@ -581,6 +581,14 @@ export class DataStore {
     );
   }
 
+  getActiveCourseDaysInSlot(slotId, courseId) {
+    return this.teachingDaysManager.getActiveCourseDaysInSlot(slotId, courseId);
+  }
+
+  getExamDayForCourseInSlot(slotId, courseId) {
+    return this.teachingDaysManager.getExamDayForCourseInSlot(slotId, courseId);
+  }
+
   toggleCourseSlotDay(
     slotId,
     courseId,

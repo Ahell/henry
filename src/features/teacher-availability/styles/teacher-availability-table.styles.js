@@ -168,6 +168,7 @@ export const teacherAvailabilityTableStyles = css`
     background: transparent;
     text-align: center;
     box-sizing: border-box;
+    position: relative;
   }
 
   .teacher-cell.assigned-course {
@@ -501,9 +502,25 @@ export const teacherAvailabilityTableStyles = css`
     content: "🔒";
     position: absolute;
     top: 2px;
-    right: 2px;
+    left: 2px;
     font-size: 0.7rem;
     opacity: 0.6;
+  }
+
+  .teacher-cell .exam-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    background: var(--exam-date-locked-bg);
+    color: var(--exam-date-locked-text);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
+    pointer-events: none;
   }
 
   .painting-active .teacher-cell:hover {

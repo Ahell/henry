@@ -11,6 +11,7 @@ export class TeacherCell extends LitElement {
     titleText: { type: String },
     content: { type: String },
     isLocked: { type: Boolean },
+    badgeText: { type: String },
   };
 
   // Render into light DOM to keep table structure and global CSS compatibility
@@ -29,6 +30,7 @@ export class TeacherCell extends LitElement {
     this.titleText = "";
     this.content = "";
     this.isLocked = false;
+    this.badgeText = "";
     this._prevClassTokens = [];
     this._onMouseDownListener = null;
     this._onMouseEnterListener = null;
@@ -80,7 +82,12 @@ export class TeacherCell extends LitElement {
   }
 
   render() {
-    return html`<span class="cell-content">${this.content || ""}</span>`;
+    return html`
+      <span class="cell-content">${this.content || ""}</span>
+      ${this.badgeText
+        ? html`<span class="exam-badge" aria-label="Exam">${this.badgeText}</span>`
+        : ""}
+    `;
   }
 
   _handleMouseDown(e) {

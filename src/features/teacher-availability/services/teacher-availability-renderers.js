@@ -229,6 +229,10 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
     .map((id) => store.getCourse(id)?.code)
     .filter(Boolean)
     .join(", ");
+  const examCoursesInCell = filteredCourseIds.filter(
+    (id) => store.getExamDayForCourseInSlot(component._detailSlotId, id) === dateStr
+  );
+  const showExamBadge = examCoursesInCell.length > 0;
 
   const hasActiveCourses = filteredCourseIds.length > 0;
   const shouldShowCourse =
@@ -288,6 +292,7 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
           : shouldShowUnavailableCourse
           ? filteredContent
           : ""}
+        .badgeText=${showExamBadge ? "Exam" : ""}
         .isLocked=${overviewPresentation?.isLocked ?? false}
       ></teacher-cell>
     </td>

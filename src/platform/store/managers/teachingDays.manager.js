@@ -267,10 +267,13 @@ export class TeachingDaysManager {
    * @returns {string[]} Array of date strings (ISO format)
    */
   getCourseSlotDays(courseSlotId) {
+    const normalizeDate = (v) => (v || "").split("T")[0];
     return (this.courseSlotDays || [])
       .filter((csd) => String(csd.course_slot_id) === String(courseSlotId))
-      .filter((csd) => csd.active !== false)
-      .map((csd) => (csd.date || csd.slot_day_id_date || "").split("T")[0]);
+      .filter((csd) => csd.active === true)
+      .map((csd) => normalizeDate(csd.date || csd.slot_day_id_date || ""))
+      .filter(Boolean)
+      .sort();
   }
 
   /**
@@ -281,8 +284,35 @@ export class TeachingDaysManager {
    */
   getCourseSlotDaysForCourse(slotId, courseId) {
     const courseSlot = this.getCourseSlot(courseId, slotId);
-    if (!courseSlot) return [];
+    if (!courseSlot) {
+      return (this.slotsManager.getDefaultTeachingDaysPattern(slotId) || [])
+        .map((d) => (d || "").split("T")[0])
+        .filter(Boolean)
+        .sort();
+    }
     return this.getCourseSlotDays(courseSlot.course_slot_id);
+  }
+
+  /**
+   * Get all active teaching days for a course in a slot.
+   * This is the canonical source for "course days" in the UI.
+   * @param {number} slotId
+   * @param {number} courseId
+   * @returns {string[]} Sorted ISO date strings
+   */
+  getActiveCourseDaysInSlot(slotId, courseId) {
+    return this.getCourseSlotDaysForCourse(slotId, courseId);
+  }
+
+  /**
+   * Derived exam day = latest active course day in this slot.
+   * @param {number} slotId
+   * @param {number} courseId
+   * @returns {string|null} ISO date string or null
+   */
+  getExamDayForCourseInSlot(slotId, courseId) {
+    const days = this.getActiveCourseDaysInSlot(slotId, courseId);
+    return days.length > 0 ? days[days.length - 1] : null;
   }
 
   /**
