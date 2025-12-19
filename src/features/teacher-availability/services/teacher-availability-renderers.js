@@ -256,27 +256,16 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
     (shouldShowCourse || shouldShowUnavailableCourse)
   ) {
     const getCode = (id) => store.getCourse(id)?.code || String(id);
-    const normalizeDate = (v) => (v || "").split("T")[0];
-    const examCourseIds = filteredCourseIds.filter(
-      (id) =>
-        normalizeDate(
-          store.getExamDayForCourseInSlot(component._detailSlotId, id)
-        ) === normalizeDate(dateStr)
-    );
-    const normalCourseIds = filteredCourseIds.filter(
-      (id) => !examCourseIds.includes(id)
-    );
-
-    if (examCourseIds.length > 0) {
-      segments.push({
-        text: examCourseIds.map(getCode).join(", "),
-        badgeText: "Exam",
+    if (filteredCourseIds.length > 1) {
+      const normalizeDate = (v) => (v || "").split("T")[0];
+      filteredCourseIds.forEach((id) => {
+        const isExam =
+          normalizeDate(
+            store.getExamDayForCourseInSlot(component._detailSlotId, id)
+          ) === normalizeDate(dateStr);
+        segments.push({ text: getCode(id), badgeText: isExam ? "Exam" : "" });
       });
     }
-
-    normalCourseIds.forEach((id) => {
-      segments.push({ text: getCode(id), badgeText: "" });
-    });
   }
   const courseTokens = overviewClassTokens.filter((token) =>
     ["assigned-course", "has-course"].includes(token)
@@ -337,6 +326,15 @@ export function renderTeacherCell(component, teacher, slotDate) {
     slotDate,
     store,
   });
+  const segments =
+    Array.isArray(presentation?.courseIds) && presentation.courseIds.length > 1
+      ? presentation.courseIds
+          .map((id) => ({
+            text: store.getCourse(id)?.code || String(id),
+            badgeText: "",
+          }))
+          .filter((seg) => seg.text)
+      : [];
 
   return html`
     <td>
@@ -348,6 +346,7 @@ export function renderTeacherCell(component, teacher, slotDate) {
         .classNameSuffix=${presentation.className}
         .titleText=${presentation.title}
         .content=${presentation.content}
+        .segments=${segments}
         .isLocked=${presentation.isLocked}
       ></teacher-cell>
     </td>
