@@ -32,38 +32,47 @@ export const setExamDate = (component, dateStr) => {
 };
 
 export const toggleTeachingDay = (component, dateStr, courseId = null) => {
-  if (courseId && courseId !== "all") {
-    store.toggleCourseSlotDay(component._detailSlotId, courseId, dateStr);
-  } else {
-    const slotId = component._detailSlotId;
-    const slotCourses = Array.from(
-      new Map(
+  const slotId = component._detailSlotId;
+  const normalizedCourseId =
+    courseId == null || courseId === "all" ? null : Number(courseId);
+
+  if (normalizedCourseId != null && !Number.isNaN(normalizedCourseId)) {
+    store.toggleCourseSlotDay(slotId, normalizedCourseId, dateStr);
+    component.requestUpdate();
+    return;
+  }
+
+  if (component._applyToAllCourses) {
+    const courseIdsInSlot = Array.from(
+      new Set(
         store
           .getCourseRuns()
           .filter((run) => String(run.slot_id) === String(slotId))
-          .map((run) => {
-            const course = store.getCourse(run.course_id);
-            return [
-              run.course_id,
-              {
-                courseId: run.course_id,
-                code: course?.code || "",
-                name: course?.name || "",
-              },
-            ];
-          })
-      ).values()
-    ).filter((c) => c.courseId != null && c.code);
+          .map((run) => run.course_id)
+          .filter((id) => id != null)
+      )
+    );
 
-    if (slotCourses.length > 1) {
-      const courseList = slotCourses.map((c) => c.code).join(", ");
-      const ok = confirm(
-        `Ändra undervisningsdag ${dateStr} för ALLA kurser i denna slot?\n\nKurser: ${courseList}`
-      );
-      if (!ok) return;
+    if (courseIdsInSlot.length === 0) {
+      component.requestUpdate();
+      return;
     }
 
-    store.toggleTeachingDay(component._detailSlotId, dateStr, null);
+    const perCourse = courseIdsInSlot.map((cid) => ({
+      courseId: cid,
+      active: store.getTeachingDayState(slotId, dateStr, cid)?.active === true,
+    }));
+
+    const allActive = perCourse.every((c) => c.active);
+    const desiredActive = !allActive;
+
+    for (const { courseId: cid, active } of perCourse) {
+      if (active !== desiredActive) {
+        store.toggleCourseSlotDay(slotId, cid, dateStr, { skipNotify: true });
+      }
+    }
+
+    store.notify();
   }
   component.requestUpdate();
 };

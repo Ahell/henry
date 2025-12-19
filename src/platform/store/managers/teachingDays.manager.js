@@ -34,7 +34,23 @@ export class TeachingDaysManager {
    * @param {Array} courseSlotDays - Course slot day records with active/inactive flags
    */
   loadCourseSlotDays(courseSlotDays) {
-    this.courseSlotDays = courseSlotDays || [];
+    const toBool = (value) => {
+      if (value === false) return false;
+      if (value === true) return true;
+      if (value === 0 || value === "0") return false;
+      if (value === 1 || value === "1") return true;
+      if (value == null) return true;
+      return Boolean(value);
+    };
+    const toInt01 = (value) => {
+      if (value === 1 || value === true || value === "1") return 1;
+      return 0;
+    };
+    this.courseSlotDays = (courseSlotDays || []).map((csd) => ({
+      ...csd,
+      active: toBool(csd.active),
+      is_default: toInt01(csd?.is_default),
+    }));
   }
 
   _ensureCourseSlotDayDefaults() {
@@ -62,7 +78,7 @@ export class TeachingDaysManager {
             course_slot_id: cs.course_slot_id,
             date: normalizeDate(d),
             is_default: 1,
-            active: 1,
+            active: true,
           });
         }
       });
@@ -313,7 +329,7 @@ export class TeachingDaysManager {
     if (existingIdx >= 0) {
       const record = this.courseSlotDays[existingIdx];
       if (record.is_default) {
-        record.active = record.active === false;
+        record.active = !record.active;
       } else {
         this.courseSlotDays.splice(existingIdx, 1);
       }
@@ -328,7 +344,7 @@ export class TeachingDaysManager {
         course_slot_id: courseSlot.course_slot_id,
         date: normalizedDate,
         is_default: isDefault ? 1 : 0,
-        active: isDefault ? 0 : 1,
+        active: isDefault ? false : true,
       });
     }
     if (!skipNotify) this.events.notify();

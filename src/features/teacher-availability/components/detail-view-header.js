@@ -1,5 +1,6 @@
 import { LitElement, html } from "lit";
 import "../../../components/ui/button.js";
+import "../../../components/ui/switch.js";
 import { detailViewHeaderStyles } from "../styles/detail-view-header.styles.js";
 
 export class DetailViewHeader extends LitElement {
@@ -9,6 +10,7 @@ export class DetailViewHeader extends LitElement {
     isEditingExamDate: { type: Boolean },
     courses: { type: Array },
     courseFilter: { type: Number },
+    applyToAllCourses: { type: Boolean },
   };
 
   // Keep default shadow DOM here - the header is a div outside of the table
@@ -21,10 +23,13 @@ export class DetailViewHeader extends LitElement {
     this.isEditingExamDate = false;
     this.courses = [];
     this.courseFilter = null;
+    this.applyToAllCourses = false;
   }
 
   render() {
     const hasCourses = Array.isArray(this.courses) && this.courses.length > 0;
+    const showApplyToAllSwitch =
+      hasCourses && this.courses.length > 1 && this.courseFilter == null;
     return html`
       <div class="detail-view-header">
         <div class="title-block">
@@ -49,6 +54,16 @@ export class DetailViewHeader extends LitElement {
                     )}
                   </select>
                 </label>
+              `
+            : ""}
+          ${showApplyToAllSwitch
+            ? html`
+                <henry-switch
+                  label="Applicera på alla kurser"
+                  label-position="right"
+                  .checked=${this.applyToAllCourses}
+                  @switch-change=${this._onApplyToAllChange}
+                ></henry-switch>
               `
             : ""}
         </div>
@@ -95,6 +110,16 @@ export class DetailViewHeader extends LitElement {
     this.dispatchEvent(
       new CustomEvent("course-filter-change", {
         detail: { courseId },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  _onApplyToAllChange(e) {
+    this.dispatchEvent(
+      new CustomEvent("apply-to-all-change", {
+        detail: { checked: !!e?.detail?.checked },
         bubbles: true,
         composed: true,
       })

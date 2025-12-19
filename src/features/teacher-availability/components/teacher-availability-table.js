@@ -41,6 +41,7 @@ export class TeacherAvailabilityTable extends LitElement {
     _detailSlotId: { type: Number }, // The specific slot_id being viewed in detail
     _isEditingExamDate: { type: Boolean }, // Whether exam date editing is enabled
     _detailCourseFilter: { type: Number }, // Selected course_id filter for detail view (null = all)
+    _applyToAllCourses: { type: Boolean }, // If true, slot-day edits apply to all courses in slot
   };
 
   constructor() {
@@ -54,6 +55,7 @@ export class TeacherAvailabilityTable extends LitElement {
     this._detailSlotId = null;
     this._isEditingExamDate = false;
     this._detailCourseFilter = null;
+    this._applyToAllCourses = false;
     this._availabilityMutationId = null;
   }
 
@@ -140,6 +142,11 @@ export class TeacherAvailabilityTable extends LitElement {
       e?.detail?.courseId === "all" ? null : Number(e?.detail?.courseId);
     this._detailCourseFilter = Number.isNaN(nextFilter) ? null : nextFilter;
     // Filter change is purely UI state; store data is already reconciled via saveData().
+    this.requestUpdate();
+  }
+
+  _handleApplyToAllChange(e) {
+    this._applyToAllCourses = !!e?.detail?.checked;
     this.requestUpdate();
   }
 }

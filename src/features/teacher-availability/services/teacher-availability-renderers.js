@@ -29,6 +29,7 @@ export function renderDetailView(component) {
       dateStr: day,
       isEditingExamDate: component._isEditingExamDate,
       courseId: component._detailCourseFilter,
+      applyToAllCourses: component._applyToAllCourses,
       store,
     })?.className || ""
   );
@@ -60,10 +61,12 @@ export function renderDetailView(component) {
       .daysLength=${days.length}
       .isEditingExamDate=${component._isEditingExamDate}
       .courseFilter=${component._detailCourseFilter}
+      .applyToAllCourses=${component._applyToAllCourses}
       .courses=${slotRuns}
       @toggle-edit-exam=${() => toggleExamDateEditing(component)}
       @exit-detail=${() => exitDetailView(component)}
       @course-filter-change=${(e) => component._handleCourseFilterChange(e)}
+      @apply-to-all-change=${(e) => component._handleApplyToAllChange(e)}
     ></detail-view-header>
 
     <detail-table
@@ -91,6 +94,7 @@ export function renderDayHeader(component, dateStr, courseId = null) {
     dateStr,
     isEditingExamDate: component._isEditingExamDate,
     courseId,
+    applyToAllCourses: component._applyToAllCourses,
     store,
   });
 
