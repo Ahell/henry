@@ -3,8 +3,10 @@ export function normalizeCoursePrerequisites(courses, coursePrerequisitesRaw) {
     ? coursePrerequisitesRaw
     : [];
 
+  // Om det inte finns några prerequisites i databasen, returnera tom array
+  // Kurser från databasen har inte prerequisites embedded
   if (prerequisites.length === 0) {
-    return buildPrerequisitesFromCourseField(courses);
+    return [];
   }
 
   const byCourse = new Map();
@@ -20,18 +22,3 @@ export function normalizeCoursePrerequisites(courses, coursePrerequisitesRaw) {
 
   return prerequisites;
 }
-
-function buildPrerequisitesFromCourseField(courses = []) {
-  const prerequisites = [];
-  courses.forEach((c) => {
-    if (!Array.isArray(c.prerequisites)) return;
-    c.prerequisites.forEach((pid) =>
-      prerequisites.push({
-        course_id: c.course_id,
-        prerequisite_course_id: pid,
-      })
-    );
-  });
-  return prerequisites;
-}
-

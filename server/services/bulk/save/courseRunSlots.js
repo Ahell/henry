@@ -6,29 +6,43 @@ export function buildCourseRunSlotsRows({
   remapSlotId,
   runSlotOverridesInput,
 }) {
-  const runSlotOverrides = buildRunSlotOverrides(runSlotOverridesInput, remapSlotId);
+  const runSlotOverrides = buildRunSlotOverrides(
+    runSlotOverridesInput,
+    remapSlotId
+  );
 
   const rows = [];
-  (dedupedCourseSlots || []).forEach((cs) => {
-    if (cs.cohort_slot_course_id == null) return;
-    const primarySlotId = remapSlotId(cs.slot_id);
-    if (primarySlotId == null) return;
-
-    const slotIds = computeSlotIdsForRun({
-      primarySlotId,
-      span: Number(cs.slot_span) || 1,
-      runId: cs.cohort_slot_course_id,
+  (dedupedCourseSlots || []).forEach((cs) =>
+    appendRunSlotsForCourseSlot(rows, cs, {
       orderedSlotsForSpan,
       runSlotOverrides,
       remapSlotId,
-    });
+    })
+  );
+  return rows;
+}
 
-    slotIds.forEach((slotId, idx) =>
-      rows.push({ run_id: cs.cohort_slot_course_id, slot_id: slotId, sequence: idx + 1 })
-    );
+function appendRunSlotsForCourseSlot(rows, cs, ctx) {
+  if (cs?.cohort_slot_course_id == null) return;
+  const primarySlotId = ctx.remapSlotId(cs.slot_id);
+  if (primarySlotId == null) return;
+
+  const slotIds = computeSlotIdsForRun({
+    primarySlotId,
+    span: Number(cs.slot_span) || 1,
+    runId: cs.cohort_slot_course_id,
+    orderedSlotsForSpan: ctx.orderedSlotsForSpan,
+    runSlotOverrides: ctx.runSlotOverrides,
+    remapSlotId: ctx.remapSlotId,
   });
 
-  return rows;
+  slotIds.forEach((slotId, idx) =>
+    rows.push({
+      run_id: cs.cohort_slot_course_id,
+      slot_id: slotId,
+      sequence: idx + 1,
+    })
+  );
 }
 
 function buildRunSlotOverrides(input, remapSlotId) {
@@ -61,4 +75,3 @@ function computeSlotIdsForRun({
     (sid) => sid != null
   );
 }
-

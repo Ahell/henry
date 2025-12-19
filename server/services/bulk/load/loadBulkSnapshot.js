@@ -17,32 +17,63 @@ import { mapTeacherAvailability } from "./teacherAvailability.js";
 import { normalizeCoursePrerequisites } from "./coursePrerequisites.js";
 
 export function loadBulkSnapshot() {
-  const courses = getCourses();
-  const cohorts = getCohorts();
-  const teachers = getTeachers();
-  const teacherCourses = getTeacherCourses();
-  const slots = getSlots();
+  const base = loadBaseEntities();
+  const scheduling = loadCourseRunsData();
+  const availability = loadAvailabilityData(base.slots);
+  const aux = loadAuxTables(base.courses);
 
+  logBulkLoadStats({
+    ...base,
+    ...scheduling,
+    ...availability,
+  });
+
+  return buildSnapshot({
+    ...base,
+    ...scheduling,
+    ...availability,
+    ...aux,
+  });
+}
+
+function loadBaseEntities() {
+  return {
+    courses: getCourses(),
+    cohorts: getCohorts(),
+    teachers: getTeachers(),
+    teacherCourses: getTeacherCourses(),
+    slots: getSlots(),
+  };
+}
+
+function loadCourseRunsData() {
   const cohortSlotCoursesRaw = getCohortSlotCourses();
   const courseRunSlots = getCourseRunSlots();
   const slotsByRun = buildSlotsByRun(courseRunSlots);
-
   const courseSlots = buildCourseSlots(cohortSlotCoursesRaw);
   const courseRuns = buildCourseRuns(courseSlots, slotsByRun);
+  return { courseSlots, courseRuns, courseRunSlots };
+}
 
-  const teacherAvailability = mapTeacherAvailability(
-    getTeacherSlotUnavailability(),
-    slots
-  );
+function loadAvailabilityData(slots) {
+  return {
+    teacherAvailability: mapTeacherAvailability(getTeacherSlotUnavailability(), slots),
+  };
+}
 
-  const slotDays = getSlotDays();
-  const courseSlotDays = getCourseSlotDays();
-  const teacherDayUnavailability = getTeacherDayUnavailability();
-  const coursePrerequisites = normalizeCoursePrerequisites(
-    courses,
-    getCoursePrerequisites()
-  );
+function loadAuxTables(courses) {
+  return {
+    slotDays: getSlotDays(),
+    courseSlotDays: getCourseSlotDays(),
+    teacherDayUnavailability: getTeacherDayUnavailability(),
+    coursePrerequisites: normalizeCoursePrerequisites(
+      courses,
+      getCoursePrerequisites()
+    ),
+  };
+}
 
+function logBulkLoadStats({ courses, cohorts, teachers, slots, courseRuns, courseRunSlots, teacherAvailability }) {
   console.log("Bulk load successful:", {
     courses: courses.length,
     cohorts: cohorts.length,
@@ -52,22 +83,23 @@ export function loadBulkSnapshot() {
     courseRunSlots: courseRunSlots.length,
     teacherAvailability: teacherAvailability.length,
   });
-
-  return {
-    courses,
-    cohorts,
-    teachers,
-    teacherCourses,
-    slots,
-    courseRuns,
-    teacherAvailability,
-    courseSlots,
-    cohortSlotCourses: courseSlots,
-    courseRunSlots,
-    slotDays,
-    teacherDayUnavailability,
-    courseSlotDays,
-    coursePrerequisites,
-  };
 }
 
+function buildSnapshot(data) {
+  return {
+    courses: data.courses,
+    cohorts: data.cohorts,
+    teachers: data.teachers,
+    teacherCourses: data.teacherCourses,
+    slots: data.slots,
+    courseRuns: data.courseRuns,
+    teacherAvailability: data.teacherAvailability,
+    courseSlots: data.courseSlots,
+    cohortSlotCourses: data.courseSlots,
+    courseRunSlots: data.courseRunSlots,
+    slotDays: data.slotDays,
+    teacherDayUnavailability: data.teacherDayUnavailability,
+    courseSlotDays: data.courseSlotDays,
+    coursePrerequisites: data.coursePrerequisites,
+  };
+}
