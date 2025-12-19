@@ -95,7 +95,23 @@ export class AvailabilityManager {
     );
 
     if (slotEntry) {
-      this.removeTeacherAvailability(slotEntry.id);
+      // When toggling a slot back to "available", we also clear any day-level
+      // unavailability inside that slot so the teacher becomes fully available
+      // for the whole slot.
+      const daysInSlot = this.slotsManager.getSlotDays(slotId);
+      const daySet = new Set(daysInSlot);
+      this.teacherAvailability = this.teacherAvailability.filter((a) => {
+        if (a.teacher_id !== teacherId) return true;
+        if (a.type !== "busy") return true;
+        if (a.slot_id && a.slot_id === slotId && a.from_date === slotDate) {
+          return false;
+        }
+        if (!a.slot_id && daySet.has(a.from_date)) {
+          return false;
+        }
+        return true;
+      });
+      this.events.notify();
       return;
     }
 
