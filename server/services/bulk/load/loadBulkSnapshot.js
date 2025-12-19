@@ -19,8 +19,12 @@ import { normalizeCoursePrerequisites } from "./coursePrerequisites.js";
 export function loadBulkSnapshot() {
   const base = loadBaseEntities();
   const scheduling = loadCourseRunsData();
-  const availability = loadAvailabilityData(base.slots);
   const aux = loadAuxTables(base.courses);
+  const availability = loadAvailabilityData({
+    slots: base.slots,
+    slotDays: aux.slotDays,
+    teacherDayUnavailability: aux.teacherDayUnavailability,
+  });
 
   logBulkLoadStats({
     ...base,
@@ -55,9 +59,14 @@ function loadCourseRunsData() {
   return { courseSlots, courseRuns, courseRunSlots };
 }
 
-function loadAvailabilityData(slots) {
+function loadAvailabilityData({ slots = [], slotDays = [], teacherDayUnavailability = [] } = {}) {
   return {
-    teacherAvailability: mapTeacherAvailability(getTeacherSlotUnavailability(), slots),
+    teacherAvailability: mapTeacherAvailability({
+      slotUnavailability: getTeacherSlotUnavailability(),
+      dayUnavailability: teacherDayUnavailability,
+      slots,
+      slotDays,
+    }),
   };
 }
 
