@@ -39,6 +39,9 @@ export class DataServiceManager {
     this.store.teachingDaysManager._ensureCourseSlotDayDefaults();
     this.store.validator.assertAllSlotsNonOverlapping();
 
+    // One-time validation during data load (different from reactive notify() validation)
+    // This runs once on startup/reload, whereas EventManager.notify() runs on every mutation
+
     // Validate and fix teacher assignments (ensure one course per teacher per slot)
     this.store.validator.validateTeacherAssignments();
 

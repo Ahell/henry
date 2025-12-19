@@ -40,7 +40,7 @@ export class EventManager {
   /**
    * Notify all subscribers of a data change
    *
-   * Validation Flow (happens automatically before notifying listeners):
+   * Reactive Validation Flow (runs on every mutation):
    * 1. Teacher assignments - ensures one course per teacher per slot
    * 2. Course availability - removes courses with no available teachers
    * 3. Prerequisites - checks for missing/misordered prerequisites
@@ -50,6 +50,10 @@ export class EventManager {
    * rejected at creation time if they would overlap.
    *
    * After validation, triggers auto-save unless reconciling with backend.
+   *
+   * IMPORTANT: This is different from DataServiceManager.hydrate() validation,
+   * which runs once during data load. This reactive validation runs on every
+   * user mutation to maintain data consistency.
    *
    * @param {string} eventName - Optional named event for targeted subscriptions
    * @param {...any} args - Event arguments passed to named event listeners

@@ -32,7 +32,7 @@ export class DataValidator {
   validateTeacherAssignments() {
     // Group runs by slot
     const runsBySlot = new Map();
-    for (const run of this.store.courseRunsManager.courseRuns) {
+    for (const run of this.store.getCourseRuns()) {
       if (!runsBySlot.has(run.slot_id)) {
         runsBySlot.set(run.slot_id, []);
       }
@@ -68,7 +68,7 @@ export class DataValidator {
 
     // Group runs by slot and course
     const slotCourseRuns = new Map(); // "slotId-courseId" -> runs[]
-    for (const run of this.store.courseRunsManager.courseRuns) {
+    for (const run of this.store.getCourseRuns()) {
       const key = `${run.slot_id}-${run.course_id}`;
       if (!slotCourseRuns.has(key)) {
         slotCourseRuns.set(key, []);

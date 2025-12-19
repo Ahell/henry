@@ -14,6 +14,15 @@ import { showAlert } from "../../utils/ui.js";
 
 export const DEFAULT_SLOT_LENGTH_DAYS = 28;
 
+/**
+ * ID Comparison Pattern Convention:
+ * Always use String(id1) === String(id2) for database ID comparisons.
+ * IDs may arrive as numbers (from DB) or strings (from forms/URLs).
+ * String coercion ensures consistent comparison regardless of source.
+ *
+ * Example: String(slot.slot_id) === String(slotDateOrId)
+ */
+
 // Dev-safe alert wrapper: logs as warning in dev, shows native alert in prod
 
 export class DataStore {
