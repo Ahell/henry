@@ -1,16 +1,18 @@
 // Teacher availability store manager
 export class AvailabilityManager {
-  constructor(store) {
-    this.store = store;
+  constructor(events, slotsManager) {
+    this.events = events;
+    this.slotsManager = slotsManager;
+    this.teacherAvailability = [];
   }
 
   load(teacherAvailability) {
-    this.store.teacherAvailability = teacherAvailability || [];
+    this.teacherAvailability = teacherAvailability || [];
   }
 
   addTeacherAvailability(availability) {
     const id =
-      Math.max(...this.store.teacherAvailability.map((a) => a.id), 0) + 1;
+      Math.max(...this.teacherAvailability.map((a) => a.id), 0) + 1;
     const newAvailability = {
       id,
       teacher_id: availability.teacher_id,
@@ -19,33 +21,33 @@ export class AvailabilityManager {
       slot_id: availability.slot_id || null,
       type: availability.type || "busy",
     };
-    this.store.teacherAvailability.push(newAvailability);
-    this.store.notify();
+    this.teacherAvailability.push(newAvailability);
+    this.events.notify();
     return newAvailability;
   }
 
   getTeacherAvailability(teacherId) {
-    return this.store.teacherAvailability.filter(
+    return this.teacherAvailability.filter(
       (a) => a.teacher_id === teacherId
     );
   }
 
   getAllTeacherAvailability() {
-    return this.store.teacherAvailability;
+    return this.teacherAvailability;
   }
 
   removeTeacherAvailability(id) {
-    const index = this.store.teacherAvailability.findIndex((a) => a.id === id);
+    const index = this.teacherAvailability.findIndex((a) => a.id === id);
     if (index !== -1) {
-      this.store.teacherAvailability.splice(index, 1);
-      this.store.notify();
+      this.teacherAvailability.splice(index, 1);
+      this.events.notify();
       return true;
     }
     return false;
   }
 
   toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId) {
-    const slotEntry = this.store.teacherAvailability.find(
+    const slotEntry = this.teacherAvailability.find(
       (a) =>
         a.teacher_id === teacherId &&
         a.from_date === slotDate &&
@@ -57,10 +59,10 @@ export class AvailabilityManager {
       return;
     }
 
-    const days = this.store.slotsManager.getSlotDays(slotId);
+    const days = this.slotsManager.getSlotDays(slotId);
     const dayEntries = days
       .map((day) =>
-        this.store.teacherAvailability.find(
+        this.teacherAvailability.find(
           (a) =>
             a.teacher_id === teacherId &&
             a.from_date === day &&
@@ -84,7 +86,7 @@ export class AvailabilityManager {
   }
 
   toggleTeacherAvailabilityForDay(teacherId, dateStr) {
-    const existing = this.store.teacherAvailability.find(
+    const existing = this.teacherAvailability.find(
       (a) => a.teacher_id === teacherId && a.from_date === dateStr
     );
 
@@ -101,7 +103,7 @@ export class AvailabilityManager {
   }
 
   isTeacherUnavailable(teacherId, slotDate, slotId = null) {
-    const hasSlotEntry = this.store.teacherAvailability.some(
+    const hasSlotEntry = this.teacherAvailability.some(
       (a) =>
         a.teacher_id === teacherId &&
         a.from_date === slotDate &&
@@ -112,11 +114,11 @@ export class AvailabilityManager {
 
     if (hasSlotEntry) return true;
 
-    const days = this.store.slotsManager.getSlotDays(slotId || slotDate);
+    const days = this.slotsManager.getSlotDays(slotId || slotDate);
     if (days.length === 0) return false;
 
     const unavailableDays = days.filter((day) =>
-      this.store.teacherAvailability.some(
+      this.teacherAvailability.some(
         (a) =>
           a.teacher_id === teacherId &&
           a.from_date === day &&
@@ -129,7 +131,7 @@ export class AvailabilityManager {
   }
 
   isTeacherUnavailableOnDay(teacherId, dateStr) {
-    return this.store.teacherAvailability.some(
+    return this.teacherAvailability.some(
       (a) =>
         a.teacher_id === teacherId &&
         a.from_date === dateStr &&
@@ -138,7 +140,7 @@ export class AvailabilityManager {
   }
 
   getTeacherUnavailablePercentageForSlot(teacherId, slotDate, slotId = null) {
-    const hasSlotEntry = this.store.teacherAvailability.some(
+    const hasSlotEntry = this.teacherAvailability.some(
       (a) =>
         a.teacher_id === teacherId &&
         a.from_date === slotDate &&
@@ -149,11 +151,11 @@ export class AvailabilityManager {
 
     if (hasSlotEntry) return 1.0;
 
-    const days = this.store.slotsManager.getSlotDays(slotId || slotDate);
+    const days = this.slotsManager.getSlotDays(slotId || slotDate);
     if (days.length === 0) return 0;
 
     const unavailableDays = days.filter((day) =>
-      this.store.teacherAvailability.some(
+      this.teacherAvailability.some(
         (a) =>
           a.teacher_id === teacherId &&
           a.from_date === day &&

@@ -1,4 +1,11 @@
-// Event Manager Service - Handles subscription pattern for store updates
+/**
+ * Event Manager Service
+ * Handles subscription pattern for store updates
+ *
+ * Note: This manager requires full store reference due to its coordinating role.
+ * It needs to access prerequisiteProblems, getCohort(), getCourseRun(), and getCourse()
+ * methods for validation alerts. This is an intentional architectural decision.
+ */
 export class EventManager {
   constructor(store) {
     this.store = store;

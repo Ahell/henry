@@ -20,10 +20,6 @@ export class DataStore {
   constructor() {
     this.cohorts = [];
     this.slots = [];
-    this.teacherAvailability = [];
-    this.slotDays = [];
-    this.courseSlotDays = [];
-    this.teachingDays = []; // Array of {slot_id, date} objects marking teaching days
     this.prerequisiteProblems = [];
     this._nextMutationId = 1;
     this._pendingMutations = new Map();
@@ -48,9 +44,16 @@ export class DataStore {
       this.events,
       this.courseRunsManager
     );
-    this.availabilityManager = new AvailabilityManager(this);
+    this.availabilityManager = new AvailabilityManager(
+      this.events,
+      this.slotsManager
+    );
     this.examDatesManager = new ExamDatesManager(this.events);
-    this.teachingDaysManager = new TeachingDaysManager(this);
+    this.teachingDaysManager = new TeachingDaysManager(
+      this.events,
+      this.slotsManager,
+      this.courseRunsManager
+    );
 
     // Load data from backend asynchronously
     this.dataServiceManager.loadData().catch((error) => {
@@ -72,9 +75,9 @@ export class DataStore {
       );
 
       // Remove any course slot day rows that referenced the removed course slots
-      this.courseSlotDays = (this.courseSlotDays || []).filter(
-        (csd) => !removedCourseSlotIds.has(csd.course_slot_id)
-      );
+      this.teachingDaysManager.courseSlotDays = (
+        this.teachingDaysManager.courseSlotDays || []
+      ).filter((csd) => !removedCourseSlotIds.has(csd.course_slot_id));
 
       // Delegate teacher-related cleanup to the TeachersManager
       this.teachersManager.handleCourseDeleted(courseId);
@@ -85,9 +88,9 @@ export class DataStore {
       this.courseRunsManager.handleTeacherDeleted(teacherId);
 
       // Remove any teacher availability rows for this teacher
-      this.teacherAvailability = (this.teacherAvailability || []).filter(
-        (a) => String(a.teacher_id) !== String(teacherId)
-      );
+      this.availabilityManager.teacherAvailability = (
+        this.availabilityManager.teacherAvailability || []
+      ).filter((a) => String(a.teacher_id) !== String(teacherId));
     });
 
     // Automatic synchronization handlers
@@ -414,6 +417,14 @@ export class DataStore {
   }
 
   // Teacher Availability
+  get teacherAvailability() {
+    return this.availabilityManager.teacherAvailability;
+  }
+
+  set teacherAvailability(value) {
+    this.availabilityManager.teacherAvailability = value;
+  }
+
   addTeacherAvailability(availability) {
     return this.availabilityManager.addTeacherAvailability(availability);
   }
@@ -478,6 +489,30 @@ export class DataStore {
   }
 
   // Teaching days methods (default pattern only; actual aktiva dagar finns i courseSlotDays)
+  get teachingDays() {
+    return this.teachingDaysManager.teachingDays;
+  }
+
+  set teachingDays(value) {
+    this.teachingDaysManager.teachingDays = value;
+  }
+
+  get slotDays() {
+    return this.teachingDaysManager.slotDays;
+  }
+
+  set slotDays(value) {
+    this.teachingDaysManager.slotDays = value;
+  }
+
+  get courseSlotDays() {
+    return this.teachingDaysManager.courseSlotDays;
+  }
+
+  set courseSlotDays(value) {
+    this.teachingDaysManager.courseSlotDays = value;
+  }
+
   getDefaultTeachingDaysPattern(slotId) {
     return this.slotsManager.getDefaultTeachingDaysPattern(slotId);
   }
