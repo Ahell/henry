@@ -14,6 +14,7 @@ export class GanttCourseBlock extends LitElement {
   static properties = {
     run: { type: Object },
     cohortId: { type: Number },
+    prerequisiteProblems: { type: Array },
   };
 
   static styles = ganttCourseBlockStyles;
@@ -22,6 +23,7 @@ export class GanttCourseBlock extends LitElement {
     super();
     this.run = null;
     this.cohortId = null;
+    this.prerequisiteProblems = [];
   }
 
   render() {
@@ -40,7 +42,9 @@ export class GanttCourseBlock extends LitElement {
       teacherShortageStatus !== TEACHER_SHORTAGE_STATUS.OK;
 
     // Check for prerequisite problems
-    const prerequisiteProblems = store.prerequisiteProblems || [];
+    const prerequisiteProblems = Array.isArray(this.prerequisiteProblems)
+      ? this.prerequisiteProblems
+      : store.prerequisiteProblems || [];
     const courseProblems = prerequisiteProblems.filter(
       (p) => p.runId === this.run.run_id && p.cohortId === this.cohortId
     );

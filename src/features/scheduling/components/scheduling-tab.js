@@ -6,6 +6,7 @@ import "../../../components/ui/index.js";
 import "./gantt-depot.js";
 import "./gantt-cell.js";
 import { schedulingTabStyles } from "../styles/scheduling-tab.styles.js";
+import { getSlotRange } from "../../../utils/date-utils.js";
 import {
   getAvailableCompatibleTeachersForCourseInSlot,
   getCompatibleTeachersForCourse,
@@ -64,6 +65,7 @@ export class SchedulingTab extends LitElement {
     }
 
     const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
+    const prerequisiteProblems = this._computeSchedulingPrerequisiteProblems();
 
     return html`
       <henry-panel>
@@ -72,7 +74,7 @@ export class SchedulingTab extends LitElement {
             <henry-text variant="heading-3">
               Gantt-vy: Planeringsöversikt
             </henry-text>
-            ${this._renderWarningPills()}
+            ${this._renderWarningPills(prerequisiteProblems)}
           </div>
         </div>
         <p
@@ -118,7 +120,7 @@ export class SchedulingTab extends LitElement {
             </thead>
             <tbody>
               ${cohorts.map((cohort) =>
-                this._renderGanttRow(cohort, slotDates)
+                this._renderGanttRow(cohort, slotDates, prerequisiteProblems)
               )}
             </tbody>
             <tfoot>
@@ -130,8 +132,10 @@ export class SchedulingTab extends LitElement {
     `;
   }
 
-  _renderWarningPills() {
-    const prerequisiteProblems = store.prerequisiteProblems || [];
+  _renderWarningPills(prerequisiteProblems) {
+    prerequisiteProblems = Array.isArray(prerequisiteProblems)
+      ? prerequisiteProblems
+      : [];
     if (prerequisiteProblems.length === 0) return "";
 
     const problemsByCohort = new Map();
@@ -228,7 +232,7 @@ export class SchedulingTab extends LitElement {
     `;
   }
 
-  _renderGanttRow(cohort, slotDates) {
+  _renderGanttRow(cohort, slotDates, prerequisiteProblems) {
     const runsByDate = {};
     const scheduledCourseIds = new Set();
 
@@ -299,12 +303,101 @@ export class SchedulingTab extends LitElement {
                 .isBeforeCohortStart="${isBeforeCohortStart}"
                 .isCohortStartSlot="${isCohortStartSlot}"
                 .cohortStartDate="${cohort.start_date}"
+                .prerequisiteProblems="${prerequisiteProblems}"
               ></gantt-cell>
             </td>
           `;
         })}
       </tr>
     `;
+  }
+
+  /**
+   * Scheduling-only prerequisite evaluation:
+   * Uses transitive prerequisites (A -> B -> C implies A is prerequisite for C).
+   * This does NOT modify persisted course prerequisites; it only affects UI warnings in scheduling.
+   */
+  _computeSchedulingPrerequisiteProblems() {
+    const problems = [];
+
+    const runsByCohort = new Map();
+    for (const run of store.getCourseRuns() || []) {
+      for (const cohortId of run.cohorts || []) {
+        const list = runsByCohort.get(cohortId) || [];
+        list.push(run);
+        runsByCohort.set(cohortId, list);
+      }
+    }
+
+    const courseById = new Map();
+    for (const course of store.getCourses() || []) {
+      courseById.set(course.course_id, course);
+    }
+
+    for (const cohort of store.getCohorts() || []) {
+      const runsInCohort = runsByCohort.get(cohort.cohort_id) || [];
+
+      for (const run of runsInCohort) {
+        const course = courseById.get(run.course_id);
+        if (!course) continue;
+
+        const runSlot = store.getSlot(run.slot_id);
+        if (!runSlot) continue;
+
+        const allPrereqs = store.getAllPrerequisites(course.course_id) || [];
+        const uniquePrereqs = new Set(allPrereqs);
+        if (uniquePrereqs.size === 0) continue;
+
+        const runDate = new Date(runSlot.start_date);
+
+        for (const prereqId of uniquePrereqs) {
+          const prereqCourse = courseById.get(prereqId);
+          if (!prereqCourse) continue;
+
+          const prereqRun =
+            runsInCohort.find((r) => r.course_id === prereqId) || null;
+
+          if (!prereqRun) {
+            problems.push({
+              type: "missing",
+              cohortId: cohort.cohort_id,
+              cohortName: cohort.name,
+              courseId: course.course_id,
+              courseName: course.name,
+              courseCode: course.code,
+              runId: run.run_id,
+              missingPrereqId: prereqCourse.course_id,
+              missingPrereqName: prereqCourse.name,
+              missingPrereqCode: prereqCourse.code,
+            });
+            continue;
+          }
+
+          const prereqSlot = store.getSlot(prereqRun.slot_id);
+          if (!prereqSlot) continue;
+
+          const prereqRange = getSlotRange(prereqSlot);
+          const prereqEndDate = prereqRange?.end;
+
+          if (prereqEndDate && runDate <= prereqEndDate) {
+            problems.push({
+              type: "before_prerequisite",
+              cohortId: cohort.cohort_id,
+              cohortName: cohort.name,
+              courseId: course.course_id,
+              courseName: course.name,
+              courseCode: course.code,
+              runId: run.run_id,
+              missingPrereqId: prereqCourse.course_id,
+              missingPrereqName: prereqCourse.name,
+              missingPrereqCode: prereqCourse.code,
+            });
+          }
+        }
+      }
+    }
+
+    return problems;
   }
 
   _parseDateOnly(dateStr) {
