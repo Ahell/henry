@@ -143,6 +143,8 @@ export class DataServiceManager {
   }
 
   getDataSnapshot() {
+    const courseRuns = this.store.courseRunsManager.courseRuns;
+    const cohortSlotCourses = buildCohortSlotCoursesFromRuns(courseRuns);
     return {
       courses: this.store.coursesManager.getCourses(),
       cohorts: this.store.cohortsManager.getCohorts(),
@@ -150,11 +152,16 @@ export class DataServiceManager {
       teacherCourses: this.store.teachersManager.teacherCourses,
       coursePrerequisites: this.store.coursesManager.coursePrerequisites,
       slots: this.store.slotsManager.getSlots(),
-      courseRuns: this.store.courseRunsManager.courseRuns,
+      courseRuns,
       teacherAvailability: this.store.teacherAvailability,
       teachingDays: this.store.teachingDays,
       examDates: this.store.examDatesManager.examDates,
-      courseSlots: this.store.courseRunsManager.courseSlots,
+      // Persist scheduling via the backend's canonical "cohort_slot_courses" shape.
+      // The in-memory `courseRunsManager.courseSlots` is a UI/helper structure and
+      // may be missing `cohort_id` for newly created runs, which would cause
+      // dropped courses to disappear on reload.
+      cohortSlotCourses,
+      courseSlots: cohortSlotCourses,
       slotDays: this.store.slotDays,
       courseSlotDays: this.store.courseSlotDays,
     };
@@ -271,4 +278,26 @@ export class DataServiceManager {
   }
 
   // Public utility methods (delegate to services)
+}
+
+function buildCohortSlotCoursesFromRuns(courseRuns = []) {
+  if (!Array.isArray(courseRuns)) return [];
+
+  return courseRuns.flatMap((run) => {
+    if (!run) return [];
+
+    const cohorts =
+      Array.isArray(run.cohorts) && run.cohorts.length > 0 ? run.cohorts : [null];
+
+    return cohorts.map((cohortId) => ({
+      cohort_slot_course_id: run.run_id ?? null,
+      course_slot_id: run.run_id ?? null,
+      course_id: run.course_id,
+      slot_id: run.slot_id,
+      cohort_id: cohortId,
+      teachers: Array.isArray(run.teachers) ? run.teachers : [],
+      slot_span: Number(run.slot_span) >= 2 ? Number(run.slot_span) : 1,
+      created_at: run.created_at || new Date().toISOString(),
+    }));
+  });
 }
