@@ -54,14 +54,12 @@ export class TeacherAvailabilityTab extends LitElement {
             <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
           </div>
           <div class="header-actions">
-            <henry-button
-              variant="${this.isPainting ? "success" : "primary"}"
-              @click="${this._togglePaintMode}"
-            >
-              ${this.isPainting
-                ? "Avsluta målningsläge"
-                : "Starta målningsläge"}
-            </henry-button>
+            <henry-switch
+              label="Redigera tillgänglighet"
+              label-position="left"
+              .checked=${this.isPainting}
+              @switch-change=${this._handleEditAvailabilityToggle}
+            ></henry-switch>
             <div class="paint-status"></div>
           </div>
         </div>
@@ -121,12 +119,10 @@ export class TeacherAvailabilityTab extends LitElement {
     );
   }
 
-  _togglePaintMode() {
-    const next = !this.isPainting;
+  _handleEditAvailabilityToggle(e) {
+    const next = !!e?.detail?.checked;
     this.isPainting = next;
-    if (!next) {
-      this.paintMode = null;
-    }
+    if (!next) this.paintMode = null;
   }
 
   _handleAvailabilityChanged() {
