@@ -250,14 +250,15 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
       shouldShowUnavailableCourse);
 
   const segments = [];
+  let badgeText = "";
   if (
     shouldShowContent &&
     filteredCourseIds.length > 0 &&
     (shouldShowCourse || shouldShowUnavailableCourse)
   ) {
     const getCode = (id) => store.getCourse(id)?.code || String(id);
+    const normalizeDate = (v) => (v || "").split("T")[0];
     if (filteredCourseIds.length > 1) {
-      const normalizeDate = (v) => (v || "").split("T")[0];
       filteredCourseIds.forEach((id) => {
         const isExam =
           normalizeDate(
@@ -265,6 +266,13 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
           ) === normalizeDate(dateStr);
         segments.push({ text: getCode(id), badgeText: isExam ? "Exam" : "" });
       });
+    } else if (filteredCourseIds.length === 1) {
+      const id = filteredCourseIds[0];
+      const isExam =
+        normalizeDate(
+          store.getExamDayForCourseInSlot(component._detailSlotId, id)
+        ) === normalizeDate(dateStr);
+      badgeText = isExam ? "Exam" : "";
     }
   }
   const courseTokens = overviewClassTokens.filter((token) =>
@@ -307,6 +315,7 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
           : shouldShowUnavailableCourse
           ? filteredContent
           : ""}
+        .badgeText=${badgeText}
         .segments=${segments}
         .isLocked=${overviewPresentation?.isLocked ?? false}
       ></teacher-cell>
@@ -331,6 +340,9 @@ export function renderTeacherCell(component, teacher, slotDate) {
   const courseIds = Array.isArray(presentation?.courseIds)
     ? presentation.courseIds
     : [];
+  const slotDays = (store.getSlotDays(slot.slot_id) || [])
+    .map(normalizeDate)
+    .filter(Boolean);
   const hasSlotBusyEntry = (store.teacherAvailability || []).some(
     (a) =>
       String(a.teacher_id) === String(teacherId) &&
@@ -339,12 +351,35 @@ export function renderTeacherCell(component, teacher, slotDate) {
   );
   const isUnavailableOnDay = (day) =>
     hasSlotBusyEntry || store.isTeacherUnavailableOnDay(teacherId, day);
-  const isPartiallyUnavailableForCourse = (courseId) => {
-    const activeDays = (store.getActiveCourseDaysInSlot(slot.slot_id, courseId) || [])
+  const unavailableDaysInSlot = hasSlotBusyEntry
+    ? slotDays
+    : slotDays.filter((d) => store.isTeacherUnavailableOnDay(teacherId, d));
+  const courseAvailabilityClass = (courseId) => {
+    if (hasSlotBusyEntry) return "";
+    if (!unavailableDaysInSlot.length) return "";
+
+    const activeDays = (
+      store.getActiveCourseDaysInSlot(slot.slot_id, courseId) || []
+    )
       .map(normalizeDate)
-      .filter(Boolean);
-    if (!activeDays.length) return false;
-    return activeDays.some(isUnavailableOnDay);
+      .filter(Boolean)
+      .filter((d) => slotDays.includes(d));
+
+    if (!activeDays.length) return "";
+
+    const unavailableActiveDays = activeDays.filter((d) => isUnavailableOnDay(d));
+    if (unavailableActiveDays.length === 0) {
+      // Teacher has unavailability in the slot period, but not on this course's active days.
+      return "partial-availability";
+    }
+
+    if (unavailableActiveDays.length === activeDays.length) {
+      // All active days for this course are unavailable -> solid red (not striped).
+      return "course-unavailable";
+    }
+
+    // Some (but not all) active days are unavailable -> red striped.
+    return "partial-conflict";
   };
 
   const segments =
@@ -356,20 +391,18 @@ export function renderTeacherCell(component, teacher, slotDate) {
             return {
               text,
               badgeText: "",
-              classNameSuffix: isPartiallyUnavailableForCourse(id)
-                ? "partial-availability"
-                : "",
+              classNameSuffix: courseAvailabilityClass(id),
             };
           })
           .filter(Boolean)
       : [];
 
   const singleCourseId = courseIds.length === 1 ? courseIds[0] : null;
-  const addCellStripe =
-    singleCourseId != null && isPartiallyUnavailableForCourse(singleCourseId);
+  const cellStripeClass =
+    singleCourseId != null ? courseAvailabilityClass(singleCourseId) : "";
   const classNameSuffix = [
     presentation.className,
-    addCellStripe ? "partial-availability" : "",
+    cellStripeClass,
   ]
     .filter(Boolean)
     .join(" ");

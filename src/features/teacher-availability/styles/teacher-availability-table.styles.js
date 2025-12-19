@@ -260,6 +260,22 @@ export const teacherAvailabilityTableStyles = css`
     z-index: 1;
   }
 
+  .teacher-cell.partial-conflict .cell-content {
+    background: transparent;
+    color: white;
+    box-shadow: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  .teacher-cell.course-unavailable .cell-content {
+    background: transparent;
+    color: white;
+    box-shadow: none;
+    position: relative;
+    z-index: 1;
+  }
+
   /* Partial availability stripes (slot view) */
   .teacher-cell.partial-availability::after {
     content: "";
@@ -291,6 +307,71 @@ export const teacherAvailabilityTableStyles = css`
       rgba(255, 255, 255, 0) 16px
     );
     opacity: 0.9;
+  }
+
+  /* Partial conflict (overlaps active course days): red base + stripes */
+  .teacher-cell.partial-conflict {
+    background: var(--color-danger) !important;
+    color: white;
+    border-color: transparent;
+    box-shadow: var(--shadow-danger);
+  }
+
+  .teacher-cell.partial-conflict::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.22) 0px,
+      rgba(255, 255, 255, 0.22) 8px,
+      rgba(255, 255, 255, 0) 8px,
+      rgba(255, 255, 255, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  .teacher-cell .course-segment.partial-conflict {
+    background: var(--color-danger);
+    color: white;
+  }
+
+  .teacher-cell .course-segment.partial-conflict .course-segment-text {
+    color: white;
+  }
+
+  .teacher-cell.course-unavailable {
+    background: var(--color-danger) !important;
+    color: white;
+    border-color: transparent;
+    box-shadow: var(--shadow-danger);
+  }
+
+  .teacher-cell .course-segment.course-unavailable {
+    background: var(--color-danger);
+    color: white;
+  }
+
+  .teacher-cell .course-segment.course-unavailable .course-segment-text {
+    color: white;
+  }
+
+  .teacher-cell .course-segment.partial-conflict::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.22) 0px,
+      rgba(255, 255, 255, 0.22) 8px,
+      rgba(255, 255, 255, 0) 8px,
+      rgba(255, 255, 255, 0) 16px
+    );
+    opacity: 0.95;
   }
 
   /* Default teaching day - purple/lila, active */
