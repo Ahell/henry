@@ -1,6 +1,7 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
+import { CourseFormService } from "../services/course-form.service.js";
 
 /**
  * Course Edit Modal Component
@@ -77,7 +78,19 @@ export class CourseModal extends LitElement {
   }
 
   _updateFormValidity() {
-    this.formValid = FormService.isFormValid(this.renderRoot);
+    const baseValid = FormService.isFormValid(this.renderRoot);
+    if (!baseValid) {
+      this.formValid = false;
+      return;
+    }
+
+    const { code, name } = FormService.extractFormData(this.renderRoot, {
+      code: "edit-code",
+      name: "edit-name",
+    });
+    this.formValid =
+      CourseFormService.isCourseCodeUnique(code, this.courseId) &&
+      CourseFormService.isCourseNameUnique(name, this.courseId);
   }
 
   render() {

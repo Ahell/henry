@@ -1,6 +1,7 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
+import { TeacherFormService } from "../services/teacher-form.service.js";
 
 /**
  * Teacher Edit Modal Component
@@ -63,7 +64,16 @@ export class TeacherModal extends LitElement {
   }
 
   _updateFormValidity() {
-    this.formValid = FormService.isFormValid(this.renderRoot);
+    const baseValid = FormService.isFormValid(this.renderRoot);
+    if (!baseValid) {
+      this.formValid = false;
+      return;
+    }
+
+    const { name } = FormService.extractFormData(this.renderRoot, {
+      name: "edit-name",
+    });
+    this.formValid = TeacherFormService.isTeacherNameUnique(name, this.teacherId);
   }
 
   render() {

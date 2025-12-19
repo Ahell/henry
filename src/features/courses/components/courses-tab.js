@@ -71,7 +71,20 @@ export class CoursesTab extends LitElement {
   }
 
   _updateFormValidity() {
-    this.formValid = FormService.isFormValid(this.shadowRoot);
+    const root = this.shadowRoot;
+    const baseValid = FormService.isFormValid(root);
+    if (!baseValid) {
+      this.formValid = false;
+      return;
+    }
+
+    const { code, name } = FormService.extractFormData(root, {
+      code: "courseCode",
+      name: "courseName",
+    });
+    this.formValid =
+      CourseFormService.isCourseCodeUnique(code) &&
+      CourseFormService.isCourseNameUnique(name);
   }
 
   render() {

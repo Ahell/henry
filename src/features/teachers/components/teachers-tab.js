@@ -46,7 +46,15 @@ export class TeachersTab extends LitElement {
   }
 
   _updateFormValidity() {
-    this.formValid = FormService.isFormValid(this.shadowRoot);
+    const root = this.shadowRoot;
+    const baseValid = FormService.isFormValid(root);
+    if (!baseValid) {
+      this.formValid = false;
+      return;
+    }
+
+    const { name } = FormService.extractFormData(root, { name: "teacherName" });
+    this.formValid = TeacherFormService.isTeacherNameUnique(name);
   }
 
   render() {
