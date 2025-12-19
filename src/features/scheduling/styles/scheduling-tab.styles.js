@@ -11,6 +11,7 @@ export const schedulingTabStyles = css`
     --gantt-row-height: 220px;
     --gantt-availability-row-height: 78px;
     --gantt-date-row-height: 32px;
+    --availability-chip-gap: 4px;
   }
 
   .warning-pills {
@@ -109,8 +110,10 @@ export const schedulingTabStyles = css`
     border-collapse: separate;
     border-spacing: 0;
     table-layout: fixed;
-    min-width: 100%;
-    width: max-content;
+    width: calc(
+      var(--gantt-depot-width) + var(--gantt-cohort-width) +
+        (var(--gantt-slot-width) * var(--gantt-slot-count, 0))
+    );
     background: var(--color-background);
   }
 
@@ -121,6 +124,7 @@ export const schedulingTabStyles = css`
     padding: 0;
     min-width: var(--gantt-slot-width);
     width: var(--gantt-slot-width);
+    max-width: var(--gantt-slot-width);
     text-align: center;
     vertical-align: middle;
     box-sizing: border-box;
@@ -208,7 +212,7 @@ export const schedulingTabStyles = css`
     height: 100%;
     flex-wrap: wrap;
     align-content: flex-start;
-    gap: 4px;
+    gap: var(--availability-chip-gap);
     padding: 6px;
     border-radius: var(--radius-md);
     background: rgba(16, 185, 129, 0.92);
@@ -228,8 +232,8 @@ export const schedulingTabStyles = css`
   .availability-chip {
     display: inline-flex;
     align-items: center;
-    flex: 0 1 auto;
-    min-width: 0;
+    flex: 0 0 calc((100% - var(--availability-chip-gap)) / 2);
+    width: calc((100% - var(--availability-chip-gap)) / 2);
     padding: 2px 6px;
     border-radius: var(--radius-full);
     background: rgba(255, 255, 255, 0.16);
@@ -237,9 +241,10 @@ export const schedulingTabStyles = css`
     font-size: 0.6rem;
     line-height: 1.1;
     white-space: nowrap;
-    max-width: min(88px, 100%);
     overflow: hidden;
     text-overflow: ellipsis;
+    justify-content: center;
+    box-sizing: border-box;
   }
 
   .availability-chip.is-empty {

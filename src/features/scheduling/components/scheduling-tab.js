@@ -85,7 +85,10 @@ export class SchedulingTab extends LitElement {
         ${this._renderLegend()}
 
         <div class="gantt-scroll-wrapper">
-          <table class="gantt-table">
+          <table
+            class="gantt-table"
+            style="--gantt-slot-count: ${slotDates.length};"
+          >
             <colgroup>
               <col style="width: var(--gantt-depot-width);" />
               <col style="width: var(--gantt-cohort-width);" />
