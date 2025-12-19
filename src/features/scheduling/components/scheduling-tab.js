@@ -158,13 +158,20 @@ export class SchedulingTab extends LitElement {
           const beforeCount = problems.filter(
             (p) => p.type === "before_prerequisite"
           ).length;
+          const chainCount = problems.filter(
+            (p) => p.type === "blocked_by_prerequisite_chain"
+          ).length;
 
           return html`
             <div class="warning-pill">
               <span class="cohort-name">${cohort.name}</span>:
               ${missingCount > 0 ? html`${missingCount} saknar spärrkurs` : ""}
-              ${missingCount > 0 && beforeCount > 0 ? ", " : ""}
+              ${missingCount > 0 && (beforeCount > 0 || chainCount > 0)
+                ? ", "
+                : ""}
               ${beforeCount > 0 ? html`${beforeCount} före spärrkurs` : ""}
+              ${beforeCount > 0 && chainCount > 0 ? ", " : ""}
+              ${chainCount > 0 ? html`${chainCount} kedjeblockering` : ""}
             </div>
           `;
         })}
@@ -337,6 +344,9 @@ export class SchedulingTab extends LitElement {
     for (const cohort of store.getCohorts() || []) {
       const runsInCohort = runsByCohort.get(cohort.cohort_id) || [];
 
+      // First pass: compute base problems using transitive prerequisites.
+      const baseProblemCourseIds = new Set();
+
       for (const run of runsInCohort) {
         const course = courseById.get(run.course_id);
         if (!course) continue;
@@ -358,7 +368,7 @@ export class SchedulingTab extends LitElement {
             runsInCohort.find((r) => r.course_id === prereqId) || null;
 
           if (!prereqRun) {
-            problems.push({
+            const problem = {
               type: "missing",
               cohortId: cohort.cohort_id,
               cohortName: cohort.name,
@@ -369,7 +379,9 @@ export class SchedulingTab extends LitElement {
               missingPrereqId: prereqCourse.course_id,
               missingPrereqName: prereqCourse.name,
               missingPrereqCode: prereqCourse.code,
-            });
+            };
+            problems.push(problem);
+            baseProblemCourseIds.add(course.course_id);
             continue;
           }
 
@@ -380,7 +392,7 @@ export class SchedulingTab extends LitElement {
           const prereqEndDate = prereqRange?.end;
 
           if (prereqEndDate && runDate <= prereqEndDate) {
-            problems.push({
+            const problem = {
               type: "before_prerequisite",
               cohortId: cohort.cohort_id,
               cohortName: cohort.name,
@@ -391,9 +403,69 @@ export class SchedulingTab extends LitElement {
               missingPrereqId: prereqCourse.course_id,
               missingPrereqName: prereqCourse.name,
               missingPrereqCode: prereqCourse.code,
-            });
+            };
+            problems.push(problem);
+            baseProblemCourseIds.add(course.course_id);
           }
         }
+      }
+
+      // Second pass: propagate "blocked" status forward in the chain.
+      // If any direct prerequisite has a problem, then the dependent course should
+      // also be marked as problematic in scheduling (even if it's placed after all prereqs).
+      const problemCourseIds = new Set(baseProblemCourseIds);
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const run of runsInCohort) {
+          const course = courseById.get(run.course_id);
+          if (!course) continue;
+          if (problemCourseIds.has(course.course_id)) continue;
+          if (!Array.isArray(course.prerequisites) || course.prerequisites.length === 0) {
+            continue;
+          }
+
+          const hasProblematicDirectPrereq = course.prerequisites.some((pid) =>
+            problemCourseIds.has(pid)
+          );
+          if (hasProblematicDirectPrereq) {
+            problemCourseIds.add(course.course_id);
+            changed = true;
+          }
+        }
+      }
+
+      // Add a single "chain blocked" problem for each course that is only problematic
+      // due to a prerequisite having its own issues.
+      for (const run of runsInCohort) {
+        const course = courseById.get(run.course_id);
+        if (!course) continue;
+        if (!problemCourseIds.has(course.course_id)) continue;
+        if (baseProblemCourseIds.has(course.course_id)) continue;
+
+        const directPrereqs = Array.isArray(course.prerequisites)
+          ? course.prerequisites
+          : [];
+        const blocking = directPrereqs
+          .map((pid) => courseById.get(pid))
+          .filter(Boolean)
+          .filter((c) => problemCourseIds.has(c.course_id))
+          .sort((a, b) => (a.code || "").localeCompare(b.code || ""))[0];
+
+        if (!blocking) continue;
+
+        problems.push({
+          type: "blocked_by_prerequisite_chain",
+          cohortId: cohort.cohort_id,
+          cohortName: cohort.name,
+          courseId: course.course_id,
+          courseName: course.name,
+          courseCode: course.code,
+          runId: run.run_id,
+          missingPrereqId: blocking.course_id,
+          missingPrereqName: blocking.name,
+          missingPrereqCode: blocking.code,
+        });
       }
     }
 

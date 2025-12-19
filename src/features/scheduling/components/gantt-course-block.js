@@ -53,12 +53,15 @@ export class GanttCourseBlock extends LitElement {
     const hasBeforePrereqProblem = courseProblems.some(
       (p) => p.type === "before_prerequisite"
     );
+    const hasChainBlockedProblem = courseProblems.some(
+      (p) => p.type === "blocked_by_prerequisite_chain"
+    );
 
     // Build CSS classes
     let blockClasses = [];
     if (hasMissingPrereq) {
       blockClasses.push("missing-prerequisite");
-    } else if (hasBeforePrereqProblem) {
+    } else if (hasBeforePrereqProblem || hasChainBlockedProblem) {
       blockClasses.push("before-prerequisite");
     } else if (hasPrereqs) {
       blockClasses.push("prerequisite-course");
@@ -91,6 +94,19 @@ export class GanttCourseBlock extends LitElement {
       prereqInfo += `\n⚠️ FÖRE SPÄRRKURS: ${beforePrereqs.join(", ")}`;
     }
 
+    if (hasChainBlockedProblem) {
+      const blockedBy = courseProblems
+        .filter((p) => p.type === "blocked_by_prerequisite_chain")
+        .map((p) => p.missingPrereqCode)
+        .filter(Boolean);
+
+      prereqInfo += blockedBy.length
+        ? `\n⚠️ SPÄRRKEDJA: spärrkursen "${blockedBy.join(
+            ", "
+          )}" har problem längre bak i kedjan`
+        : "\n⚠️ SPÄRRKEDJA: spärrkurskedjan har problem längre bak";
+    }
+
     let teacherInfo = "";
     if (teacherShortageStatus === TEACHER_SHORTAGE_STATUS.NO_COMPATIBLE_TEACHERS) {
       teacherInfo = "\nLÄRARVARNING: Inga kompatibla lärare för kursen";
@@ -115,7 +131,7 @@ export class GanttCourseBlock extends LitElement {
         @dragstart="${this._handleDragStart}"
         @dragend="${this._handleDragEnd}"
       >
-        ${hasMissingPrereq || hasBeforePrereqProblem
+        ${hasMissingPrereq || hasBeforePrereqProblem || hasChainBlockedProblem
           ? html`<span class="warning-icon">⚠️</span>`
           : ""}
         ${hasTeacherShortage
