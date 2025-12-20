@@ -2,8 +2,6 @@ import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
 import { CourseFormService } from "./course-form.service.js";
 
-const DEFAULT_CREDITS = "7.5";
-
 export async function createCourseFromForm(root) {
   const formData = FormService.extractFormData(root, {
     code: "courseCode",
@@ -42,7 +40,6 @@ export function resetCourseForm(root) {
     "courseName",
     "courseCredits",
   ]);
-  FormService.setCustomInput(root, "courseCredits", DEFAULT_CREDITS);
 }
 
 export async function deleteCourseById(courseId) {
@@ -51,4 +48,3 @@ export async function deleteCourseById(courseId) {
   await store.saveData({ mutationId });
   return true;
 }
-

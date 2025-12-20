@@ -148,23 +148,17 @@ export class CourseModal extends LitElement {
                 }))}
             ></henry-select>
 
-            <henry-select
+            <henry-radio-group
               id="edit-credits"
+              name="edit-credits"
               label="Högskolepoäng"
               required
+              .value="${String(normalizedCredits)}"
               .options=${[
-                {
-                  value: "7.5",
-                  label: "7,5 hp",
-                  selected: normalizedCredits === 7.5,
-                },
-                {
-                  value: "15",
-                  label: "15 hp",
-                  selected: normalizedCredits === 15,
-                },
+                { value: "7.5", label: "7,5 hp" },
+                { value: "15", label: "15 hp" },
               ]}
-            ></henry-select>
+            ></henry-radio-group>
 
             <henry-select
               id="edit-compatible-teachers"

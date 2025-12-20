@@ -122,15 +122,16 @@ export class CoursesTab extends LitElement {
           </div>
 
           <div class="form-row two-cols">
-            <henry-select
+            <henry-radio-group
               id="courseCredits"
+              name="courseCredits"
               label="Högskolepoäng"
               required
               .options=${[
                 { value: "7.5", label: "7,5 hp" },
                 { value: "15", label: "15 hp" },
               ]}
-            ></henry-select>
+            ></henry-radio-group>
             <henry-select
               id="prerequisites"
               label="Spärrkurser (kurser som måste läsas före)"
