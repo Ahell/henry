@@ -354,8 +354,16 @@ export class SchedulingTab extends LitElement {
   }
 
   _handleAutoFillCohortClick(cohortId) {
-    // Intentionally not implemented yet (business rules still being finalized).
-    console.info("Auto-fyll ej implementerad ännu för kull:", cohortId);
+    this._handleAutoFillCohortClickAsync(cohortId);
+  }
+
+  async _handleAutoFillCohortClickAsync(cohortId) {
+    try {
+      await CourseRunManager.autoFillCohortSchedule(cohortId);
+      this.requestUpdate();
+    } catch (error) {
+      console.error("Kunde inte auto-fylla kullens schema:", error);
+    }
   }
 
   _getRunSpan(run) {
@@ -840,7 +848,23 @@ export class SchedulingTab extends LitElement {
     if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
       return run.slot_ids.some((id) => String(id) === String(slotId));
     }
-    return String(run.slot_id) === String(slotId);
+    if (String(run.slot_id) === String(slotId)) return true;
+
+    const span = this._getRunSpan(run);
+    if (!Number.isFinite(span) || span <= 1) return false;
+
+    const ordered = (store.getSlots() || [])
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(a.start_date) - new Date(b.start_date) ||
+          Number(a.slot_id) - Number(b.slot_id)
+      );
+    const indexById = new Map(ordered.map((s, idx) => [String(s.slot_id), idx]));
+    const startIdx = indexById.get(String(run.slot_id));
+    const targetIdx = indexById.get(String(slotId));
+    if (!Number.isFinite(startIdx) || !Number.isFinite(targetIdx)) return false;
+    return targetIdx >= startIdx && targetIdx < startIdx + span;
   }
 
   _teacherAvailabilityForCourseInSlot({ teacherId, slot, slotDate, courseId }) {

@@ -17,11 +17,14 @@ export class CourseRunsManager {
       run_id: id,
       course_id: run.course_id,
       slot_id: run.slot_id,
+      slot_span: run.slot_span,
+      slot_ids: run.slot_ids,
       teacher_id: run.teacher_id,
       teachers: run.teachers || [],
       cohorts: run.cohorts || [],
       planned_students: run.planned_students || 0,
       status: run.status || "planerad",
+      created_at: run.created_at || new Date().toISOString(),
     };
     this.courseRuns.push(newRun);
     // Ensure the normalized course-slot link exists

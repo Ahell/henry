@@ -427,4 +427,335 @@ export class CourseRunManager {
       throw error;
     }
   }
+
+  /**
+   * Auto-fill a cohort's schedule across slots, respecting:
+   * - max 1 course per slot per cohort
+   * - prerequisites (including spans; 15hp occupies 2 slots)
+   * - max students per course+slot across cohorts (hard cap 130)
+   *
+   * This schedules ONLY the selected cohort and adapts to already scheduled
+   * cohorts (the order the user clicks "Auto-fyll" becomes the "master" signal).
+   */
+  static async autoFillCohortSchedule(
+    targetCohortId,
+    { maxStudentsHard = 130, maxStudentsPreferred = 100 } = {}
+  ) {
+    const cohortId = Number(targetCohortId);
+    if (!Number.isFinite(cohortId)) return { mutationId: null };
+
+    const cohort = store.getCohort(cohortId);
+    if (!cohort) return { mutationId: null };
+
+    const slots = store.getSlots() || [];
+    const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
+    if (slotDates.length === 0) return { mutationId: null };
+
+    const slotByStartDate = new Map(slots.map((s) => [s.start_date, s]));
+    const slotIndexById = new Map(
+      slots
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(a.start_date) - new Date(b.start_date) ||
+            Number(a.slot_id) - Number(b.slot_id)
+        )
+        .map((s, idx) => [String(s.slot_id), idx])
+    );
+
+    const parseDateOnly = (dateStr) => {
+      if (typeof dateStr !== "string") return null;
+      const parts = dateStr.split("-");
+      if (parts.length !== 3) return null;
+      const y = Number(parts[0]);
+      const m = Number(parts[1]);
+      const d = Number(parts[2]);
+      if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+        return null;
+      }
+      return new Date(y, m - 1, d);
+    };
+
+    const cohortStart = parseDateOnly(cohort.start_date);
+    const startSlotIdx = (() => {
+      if (!cohortStart) return 0;
+      for (let i = 0; i < slotDates.length; i += 1) {
+        const cur = parseDateOnly(slotDates[i]);
+        const next =
+          i < slotDates.length - 1 ? parseDateOnly(slotDates[i + 1]) : null;
+        if (!cur) continue;
+        if (cohortStart < cur) return 0;
+        if (cohortStart >= cur && (!next || cohortStart < next)) return i;
+      }
+      return 0;
+    })();
+
+    const courses = store.getCourses() || [];
+    const courseById = new Map(courses.map((c) => [Number(c.course_id), c]));
+    const prereqsById = new Map(
+      courses.map((c) => [Number(c.course_id), Array.isArray(c.prerequisites) ? c.prerequisites : []])
+    );
+    const spanById = new Map(
+      courses.map((c) => [Number(c.course_id), Number(c?.credits) === 15 ? 2 : 1])
+    );
+
+    // Dependents count (tie-breaker for "important" courses).
+    const dependentsCount = new Map();
+    for (const c of courses) {
+      const prereqs = prereqsById.get(Number(c.course_id)) || [];
+      prereqs.forEach((pid) => {
+        dependentsCount.set(pid, (dependentsCount.get(pid) || 0) + 1);
+      });
+    }
+
+    // Special chain priority: AI180U -> AI192U -> AI182U
+    const findCourseIdByCode = (code) =>
+      courses.find((c) => String(c.code) === String(code))?.course_id ?? null;
+    const ai180Id = findCourseIdByCode("AI180U");
+    const ai192Id = findCourseIdByCode("AI192U");
+    const ai182Id = findCourseIdByCode("AI182U");
+    const otherAi180Dependents = new Set(
+      courses
+        .filter((c) => {
+          if (ai180Id == null) return false;
+          if (Number(c.course_id) === Number(ai192Id)) return false;
+          if (Number(c.course_id) === Number(ai182Id)) return false;
+          const prereqs = prereqsById.get(Number(c.course_id)) || [];
+          return prereqs.some((pid) => String(pid) === String(ai180Id));
+        })
+        .map((c) => Number(c.course_id))
+    );
+
+    // Build totals per (slotIdx, courseId) across all already scheduled cohorts.
+    const cohorts = store.getCohorts() || [];
+    const cohortSizeById = new Map(
+      cohorts.map((c) => [String(c.cohort_id), Number(c.planned_size) || 0])
+    );
+
+    const totalsBySlotIdx = new Map(); // slotIdx -> Map(courseId -> totalStudents)
+    const occupiedSlotIdxForTarget = new Set();
+    const scheduledCoursesForTarget = new Set();
+    const completionEndIdxByCourse = new Map(); // courseId -> end slotIdx
+
+    const runSpanFor = (run) => {
+      const spanFromRun = Number(run?.slot_span);
+      if (Number.isFinite(spanFromRun) && spanFromRun >= 2) return spanFromRun;
+      return spanById.get(Number(run?.course_id)) || 1;
+    };
+
+    const coveredSlotIdxsForRun = (run) => {
+      if (!run) return [];
+      if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+        const idxs = run.slot_ids
+          .map((sid) => slotIndexById.get(String(sid)))
+          .filter((v) => Number.isFinite(v));
+        if (idxs.length > 0) return idxs.sort((a, b) => a - b);
+      }
+      const startIdx = slotIndexById.get(String(run.slot_id));
+      if (!Number.isFinite(startIdx)) return [];
+      const span = runSpanFor(run);
+      const idxs = [];
+      for (let i = 0; i < span; i += 1) idxs.push(startIdx + i);
+      return idxs.filter((i) => i >= 0 && i < slotDates.length);
+    };
+
+    for (const run of CourseRunManager._runs() || []) {
+      const courseId = Number(run.course_id);
+      if (!courseById.has(courseId)) continue;
+
+      const slotIdxs = coveredSlotIdxsForRun(run);
+      if (slotIdxs.length === 0) continue;
+
+      const cohortsInRun = Array.isArray(run.cohorts) ? run.cohorts : [];
+      for (const cid of cohortsInRun) {
+        if (cid == null) continue;
+        const size = cohortSizeById.get(String(cid)) || 0;
+
+        for (const slotIdx of slotIdxs) {
+          if (!totalsBySlotIdx.has(slotIdx)) totalsBySlotIdx.set(slotIdx, new Map());
+          const m = totalsBySlotIdx.get(slotIdx);
+          m.set(courseId, (m.get(courseId) || 0) + size);
+        }
+
+        if (String(cid) === String(cohortId)) {
+          scheduledCoursesForTarget.add(courseId);
+          slotIdxs.forEach((i) => occupiedSlotIdxForTarget.add(i));
+          const endIdx = Math.max(...slotIdxs);
+          completionEndIdxByCourse.set(
+            courseId,
+            Math.max(completionEndIdxByCourse.get(courseId) ?? -1, endIdx)
+          );
+        }
+      }
+    }
+
+    const remainingCourseIds = new Set(
+      courses
+        .map((c) => Number(c.course_id))
+        .filter((id) => id != null && !scheduledCoursesForTarget.has(id))
+    );
+
+    const isPrereqsMet = (courseId, slotIdx) => {
+      const prereqs = prereqsById.get(courseId) || [];
+      return prereqs.every((pid) => {
+        const doneAt = completionEndIdxByCourse.get(Number(pid));
+        return Number.isFinite(doneAt) && doneAt < slotIdx;
+      });
+    };
+
+    const canPlaceCourseAt = (courseId, slotIdx) => {
+      const span = spanById.get(courseId) || 1;
+      if (slotIdx + span - 1 >= slotDates.length) return false;
+      for (let i = 0; i < span; i += 1) {
+        if (occupiedSlotIdxForTarget.has(slotIdx + i)) return false;
+      }
+      if (!isPrereqsMet(courseId, slotIdx)) return false;
+      return true;
+    };
+
+    const fitsCapacityAt = (courseId, slotIdx) => {
+      const cohortSize = Number(cohort.planned_size) || 0;
+      const span = spanById.get(courseId) || 1;
+      for (let i = 0; i < span; i += 1) {
+        const idx = slotIdx + i;
+        const cur = totalsBySlotIdx.get(idx)?.get(courseId) || 0;
+        if (cur + cohortSize > maxStudentsHard) return false;
+      }
+      return true;
+    };
+
+    const projectedMaxTotal = (courseId, slotIdx) => {
+      const cohortSize = Number(cohort.planned_size) || 0;
+      const span = spanById.get(courseId) || 1;
+      let max = 0;
+      for (let i = 0; i < span; i += 1) {
+        const idx = slotIdx + i;
+        const cur = totalsBySlotIdx.get(idx)?.get(courseId) || 0;
+        max = Math.max(max, cur + cohortSize);
+      }
+      return max;
+    };
+
+    const shouldPrioritizeChain = () => {
+      if (ai180Id == null) return false;
+      if (ai192Id == null || ai182Id == null) return false;
+      const hasOthers = Array.from(remainingCourseIds).some((id) =>
+        otherAi180Dependents.has(id)
+      );
+      const chainPending = remainingCourseIds.has(Number(ai192Id)) || remainingCourseIds.has(Number(ai182Id));
+      return hasOthers && chainPending;
+    };
+
+    const scoreCourse = (courseId, slotIdx) => {
+      const alignedStudents = totalsBySlotIdx.get(slotIdx)?.get(courseId) || 0;
+      const span = spanById.get(courseId) || 1;
+      const dependents = dependentsCount.get(courseId) || 0;
+      const overPreferred = Math.max(0, projectedMaxTotal(courseId, slotIdx) - maxStudentsPreferred);
+
+      let score = 0;
+      // Strongly prefer aligning with courses already running in this slot.
+      score += alignedStudents > 0 ? 100000 + alignedStudents * 10 : 0;
+      // Prefer "important" courses earlier.
+      score += dependents * 20;
+      // Prefer 15hp earlier (reduces fragmentation).
+      score += span >= 2 ? 50 : 0;
+      // Soft: keep AI192U + AI182U early before other AI180U-dependent courses.
+      if (shouldPrioritizeChain()) {
+        if (String(courseId) === String(ai192Id)) score += 5000;
+        if (String(courseId) === String(ai182Id)) score += 4800;
+        if (otherAi180Dependents.has(courseId)) score -= 500;
+      }
+      // Soft: avoid exceeding preferred threshold when possible.
+      score -= overPreferred * 5;
+      return score;
+    };
+
+    const teachersToAssignForCourseInSlot = (courseId, slotId) => {
+      const existingRuns = (CourseRunManager._runs() || []).filter(
+        (r) => String(r.slot_id) === String(slotId) && Number(r.course_id) === Number(courseId)
+      );
+      if (existingRuns.length === 0) return [];
+      const teachers = new Set();
+      existingRuns.forEach((r) => {
+        (r.teachers || []).forEach((tid) => teachers.add(tid));
+      });
+      return Array.from(teachers);
+    };
+
+    const placeCourse = (courseId, slotIdx) => {
+      const slotDate = slotDates[slotIdx];
+      const slot = slotByStartDate.get(slotDate);
+      if (!slot) return false;
+
+      const span = spanById.get(courseId) || 1;
+      const teachers = teachersToAssignForCourseInSlot(courseId, slot.slot_id);
+
+      store.addCourseRun({
+        course_id: courseId,
+        slot_id: slot.slot_id,
+        cohorts: [cohortId],
+        teachers,
+        slot_span: span,
+      });
+
+      const cohortSize = Number(cohort.planned_size) || 0;
+      for (let i = 0; i < span; i += 1) {
+        const idx = slotIdx + i;
+        occupiedSlotIdxForTarget.add(idx);
+        if (!totalsBySlotIdx.has(idx)) totalsBySlotIdx.set(idx, new Map());
+        const m = totalsBySlotIdx.get(idx);
+        m.set(courseId, (m.get(courseId) || 0) + cohortSize);
+      }
+      completionEndIdxByCourse.set(courseId, slotIdx + span - 1);
+      remainingCourseIds.delete(courseId);
+      return true;
+    };
+
+    const previousRuns = (CourseRunManager._runs() || []).map((r) => ({
+      ...r,
+      teachers: Array.isArray(r.teachers) ? [...r.teachers] : [],
+      cohorts: Array.isArray(r.cohorts) ? [...r.cohorts] : [],
+      slot_ids: Array.isArray(r.slot_ids) ? [...r.slot_ids] : r.slot_ids,
+    }));
+    const previousCourseSlots = (store.courseRunsManager.courseSlots || []).map(
+      (cs) => ({ ...cs })
+    );
+    const previousCourseSlotDays = (store.courseSlotDays || []).map((csd) => ({
+      ...csd,
+    }));
+
+    const mutationId = store.applyOptimistic({
+      label: "auto-fill-cohort",
+      rollback: () => {
+        store.courseRunsManager.courseRuns = previousRuns;
+        store.courseRunsManager.courseSlots = previousCourseSlots;
+        store.courseSlotDays = previousCourseSlotDays;
+        store.notify();
+      },
+    });
+
+    try {
+      // Fill earliest possible, leaving gaps only if no valid course can be placed.
+      for (let slotIdx = startSlotIdx; slotIdx < slotDates.length; slotIdx += 1) {
+        if (remainingCourseIds.size === 0) break;
+        if (occupiedSlotIdxForTarget.has(slotIdx)) continue;
+
+        const eligible = Array.from(remainingCourseIds).filter(
+          (cid) => canPlaceCourseAt(cid, slotIdx) && fitsCapacityAt(cid, slotIdx)
+        );
+        if (eligible.length === 0) continue;
+
+        eligible.sort((a, b) => scoreCourse(b, slotIdx) - scoreCourse(a, slotIdx));
+        const chosen = eligible[0];
+        placeCourse(chosen, slotIdx);
+      }
+
+      store.notify();
+      await store.saveData({ mutationId });
+      return { mutationId };
+    } catch (error) {
+      await store.rollback(mutationId);
+      throw error;
+    }
+  }
 }
