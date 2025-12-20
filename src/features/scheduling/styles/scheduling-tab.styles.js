@@ -102,7 +102,7 @@ export const schedulingTabStyles = css`
     max-height: calc(100vh - 220px);
     background: var(--color-background);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: 0;
     box-shadow: var(--shadow-xs);
   }
 
@@ -139,12 +139,10 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table th {
-    background: rgba(237, 241, 247, 0.92);
-    backdrop-filter: blur(10px);
-    font-size: 0.7rem;
-    letter-spacing: 0.02em;
+    background: var(--color-gray-100);
+    font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
     padding: var(--space-2) var(--space-2);
     position: sticky;
     top: 0;
@@ -175,8 +173,7 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table thead th:not(.cohort-header) {
-    font-family: var(--font-family-mono);
-    font-variant-numeric: tabular-nums;
+    font-family: var(--font-family-base);
   }
 
   .slot-col-header {
@@ -191,8 +188,8 @@ export const schedulingTabStyles = css`
     font-family: var(--font-family-mono);
     font-variant-numeric: tabular-nums;
     color: var(--color-text-primary);
-    font-size: 0.72rem;
-    letter-spacing: 0.01em;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
   }
 
   .slot-availability-row {
@@ -266,6 +263,8 @@ export const schedulingTabStyles = css`
     position: sticky;
     z-index: 20;
     box-shadow: 6px 0 12px rgba(31, 39, 51, 0.06);
+    vertical-align: bottom;
+    padding-bottom: var(--space-2);
   }
 
   .gantt-table th.cohort-header:first-child {
