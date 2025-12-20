@@ -16,6 +16,7 @@ export class GanttCourseBlock extends LitElement {
     cohortId: { type: Number },
     prerequisiteProblems: { type: Array },
     isSecondBlock: { type: Boolean },
+    disabled: { type: Boolean },
   };
 
   static styles = ganttCourseBlockStyles;
@@ -26,6 +27,7 @@ export class GanttCourseBlock extends LitElement {
     this.cohortId = null;
     this.prerequisiteProblems = [];
     this.isSecondBlock = false;
+    this.disabled = false;
   }
 
   render() {
@@ -128,7 +130,8 @@ export class GanttCourseBlock extends LitElement {
           ? "second-block"
           : ""}"
         style="${inlineStyle}"
-        draggable="true"
+        draggable="${this.disabled ? "false" : "true"}"
+        aria-disabled="${this.disabled ? "true" : "false"}"
         data-run-id="${this.run.run_id}"
         data-cohort-id="${this.cohortId}"
         title="${title}"
@@ -147,6 +150,7 @@ export class GanttCourseBlock extends LitElement {
   }
 
   _handleDragStart(e) {
+    if (this.disabled) return;
     const runId = e.currentTarget?.dataset?.runId;
     const cohortId = e.currentTarget?.dataset?.cohortId;
     if (runId == null || cohortId == null) return;
@@ -175,6 +179,7 @@ export class GanttCourseBlock extends LitElement {
   }
 
   _handleDragEnd(e) {
+    if (this.disabled) return;
     e.currentTarget.classList.remove("dragging");
 
     this.dispatchEvent(

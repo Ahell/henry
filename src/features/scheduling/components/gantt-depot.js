@@ -10,6 +10,7 @@ export class GanttDepot extends LitElement {
   static properties = {
     cohortId: { type: Number },
     scheduledCourseIds: { type: Array },
+    disabled: { type: Boolean },
   };
 
   static styles = ganttDepotStyles;
@@ -18,6 +19,7 @@ export class GanttDepot extends LitElement {
     super();
     this.cohortId = null;
     this.scheduledCourseIds = [];
+    this.disabled = false;
   }
 
   render() {
@@ -76,18 +78,18 @@ export class GanttDepot extends LitElement {
       hasPrereqs ? "\nSpärrkurser: " + prereqNames : ""
     }`;
 
-    return html`
-      <div
-        class="depot-block ${blockClass}"
-        style="${inlineStyle}"
-        draggable="true"
-        data-course-id="${course.course_id}"
-        data-cohort-id="${this.cohortId}"
-        data-from-depot="true"
-        title="${title}"
-        @dragstart="${this._handleDragStart}"
-        @dragend="${this._handleDragEnd}"
-      >
+	    return html`
+	      <div
+	        class="depot-block ${blockClass}"
+	        style="${inlineStyle}"
+	        draggable="${this.disabled ? "false" : "true"}"
+	        data-course-id="${course.course_id}"
+	        data-cohort-id="${this.cohortId}"
+	        data-from-depot="true"
+	        title="${title}"
+	        @dragstart="${this._handleDragStart}"
+	        @dragend="${this._handleDragEnd}"
+	      >
         <span class="course-code">${course.code}</span>
         <span class="course-name">${shortName}</span>
       </div>
@@ -95,6 +97,7 @@ export class GanttDepot extends LitElement {
   }
 
   _handleDragStart(e) {
+    if (this.disabled) return;
     const courseId = e.currentTarget?.dataset?.courseId;
     const cohortId = e.currentTarget?.dataset?.cohortId;
     if (courseId == null || cohortId == null) return;
@@ -124,6 +127,7 @@ export class GanttDepot extends LitElement {
   }
 
   _handleDragEnd(e) {
+    if (this.disabled) return;
     e.currentTarget.classList.remove("dragging");
 
     // Dispatch event to parent to clear overlays

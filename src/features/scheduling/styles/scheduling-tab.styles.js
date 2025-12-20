@@ -26,6 +26,7 @@ export const schedulingTabStyles = css`
 	    align-items: center;
 	    gap: var(--space-4);
 	    flex-wrap: wrap;
+	    min-height: var(--button-height-base);
 	  }
 
 	  .header-actions {
@@ -417,7 +418,12 @@ export const schedulingTabStyles = css`
     line-height: 1.2;
   }
 
-  .gantt-table td.cohort-cell .cohort-reset-button:hover {
+  .gantt-table td.cohort-cell .cohort-reset-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .gantt-table td.cohort-cell .cohort-reset-button:hover:not(:disabled) {
     background: rgba(15, 23, 42, 0.04);
     color: var(--color-text-primary);
   }
@@ -445,7 +451,7 @@ export const schedulingTabStyles = css`
     cursor: not-allowed;
   }
 
-  .gantt-table td.cohort-cell .cohort-autofill-button:hover {
+  .gantt-table td.cohort-cell .cohort-autofill-button:hover:not(:disabled) {
     background: rgba(37, 99, 235, 0.1);
     border-color: rgba(37, 99, 235, 0.5);
   }

@@ -13,6 +13,7 @@ export const teacherAvailabilityTabStyles = css`
     gap: var(--space-4);
     align-items: center;
     flex-wrap: wrap;
+    min-height: var(--button-height-base);
   }
 
   .header-text {

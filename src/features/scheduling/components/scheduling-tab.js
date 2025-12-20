@@ -18,8 +18,13 @@ import {
 export class SchedulingTab extends LitElement {
   static styles = schedulingTabStyles;
 
+  static properties = {
+    isEditing: { type: Boolean },
+  };
+
   constructor() {
     super();
+    this.isEditing = false;
     this._dragDropManager = new DragDropManager(this);
     this._dragCourseId = null;
     this._teacherOverlayChipsBySlotDate = new Map();
@@ -133,14 +138,14 @@ export class SchedulingTab extends LitElement {
 	            <div class="header-buttons">
 	              <henry-button
 	                variant="primary"
-	                @click=${() => this._handleEditClick()}
-	                >Redigera</henry-button
-	              >
-	              <henry-button
-	                variant="primary"
 	                @click=${() => this._scrollToToday()}
 	                >Idag</henry-button
 	              >
+	              <henry-switch
+	                label="Redigera"
+	                .checked=${this.isEditing}
+	                @switch-change=${this._handleEditClick}
+	              ></henry-switch>
 	            </div>
 	          </div>
 	        </div>
@@ -191,10 +196,16 @@ export class SchedulingTab extends LitElement {
 	    `;
 	  }
 
-	  _handleEditClick() {
-	    const wrapper = this.shadowRoot?.querySelector(".gantt-scroll-wrapper");
-	    wrapper?.focus?.();
-	  }
+  _handleEditClick(e) {
+    const next =
+      typeof e?.detail?.checked === "boolean" ? !!e.detail.checked : !this.isEditing;
+    this.isEditing = next;
+    if (!next) {
+      // Ensure any in-progress drag state and overlays are cleared when leaving edit mode.
+      this._dragDropManager?.handleDragEnd?.();
+      return;
+    }
+  }
 
   _renderWarningPills(prerequisiteProblems) {
     prerequisiteProblems = Array.isArray(prerequisiteProblems)
@@ -337,6 +348,7 @@ export class SchedulingTab extends LitElement {
           <gantt-depot
             .cohortId="${cohort.cohort_id}"
             .scheduledCourseIds="${Array.from(scheduledCourseIds)}"
+            .disabled=${!this.isEditing}
           ></gantt-depot>
         </td>
         <td class="cohort-cell">
@@ -346,6 +358,7 @@ export class SchedulingTab extends LitElement {
               <button
                 class="cohort-reset-button"
                 type="button"
+                ?disabled=${!this.isEditing}
                 title="Flytta alla kurser tillbaka till depån"
                 @click=${(e) => {
                   e.preventDefault();
@@ -358,7 +371,7 @@ export class SchedulingTab extends LitElement {
               <button
                 class="cohort-autofill-button"
                 type="button"
-                ?disabled=${autoFillBusy}
+                ?disabled=${!this.isEditing || autoFillBusy}
                 title="Auto-fyll schema för denna kull"
                 @click=${(e) => {
                   e.preventDefault();
@@ -410,6 +423,7 @@ export class SchedulingTab extends LitElement {
                 .isCohortStartSlot="${isCohortStartSlot}"
                 .cohortStartDate="${cohort.start_date}"
                 .prerequisiteProblems="${prerequisiteProblems}"
+                .disabled=${!this.isEditing}
               ></gantt-cell>
             </td>
           `;
@@ -419,6 +433,7 @@ export class SchedulingTab extends LitElement {
   }
 
   async _handleResetCohortClick(cohortId) {
+    if (!this.isEditing) return;
     try {
       await CourseRunManager.resetCohortSchedule(cohortId);
       this.requestUpdate();
@@ -428,10 +443,12 @@ export class SchedulingTab extends LitElement {
   }
 
   _handleAutoFillCohortClick(cohortId) {
+    if (!this.isEditing) return;
     this._handleAutoFillCohortClickAsync(cohortId);
   }
 
   async _handleAutoFillCohortClickAsync(cohortId) {
+    if (!this.isEditing) return;
     const key = String(cohortId);
     if (this._autoFillInProgressByCohort.has(key) || store.isReconciling) {
       return;
@@ -503,6 +520,10 @@ export class SchedulingTab extends LitElement {
   }
 
   _handleSlotCellDragOver(e) {
+    if (!this.isEditing) {
+      if (e?.dataTransfer) e.dataTransfer.dropEffect = "none";
+      return;
+    }
     const td = e.currentTarget;
     if (!td || td.dataset.disabled === "true") {
       if (e?.dataTransfer) e.dataTransfer.dropEffect = "none";
@@ -549,6 +570,7 @@ export class SchedulingTab extends LitElement {
   }
 
   async _handleSlotCellDrop(e) {
+    if (!this.isEditing) return;
     const td = e.currentTarget;
     if (!td || td.dataset.disabled === "true") return;
 
@@ -900,13 +922,14 @@ export class SchedulingTab extends LitElement {
                           class="${rowClassName}"
                           title=${availability.titleText}
                         >
-                          <button
-                            class="summary-teacher-pill"
-                            type="button"
-                            aria-pressed=${isAssigned ? "true" : "false"}
-                            @click=${() =>
-                              this._toggleTeacherAssignment({
-                                runs: item.runs,
+	                          <button
+	                            class="summary-teacher-pill"
+	                            type="button"
+	                            ?disabled=${!this.isEditing}
+	                            aria-pressed=${isAssigned ? "true" : "false"}
+	                            @click=${() =>
+	                              this._toggleTeacherAssignment({
+	                                runs: item.runs,
                                 teacherId: teacher.teacher_id,
                                 checked: !isAssigned,
                                 slotDate,
@@ -1034,10 +1057,12 @@ export class SchedulingTab extends LitElement {
   }
 
   _handleDepotDragStart(e) {
+    if (!this.isEditing) return;
     this._dragDropManager.handleDepotDragStart(e);
   }
 
   _handleCourseDragStart(e) {
+    if (!this.isEditing) return;
     this._dragDropManager.handleCourseDragStart(e);
   }
 
@@ -1077,14 +1102,17 @@ export class SchedulingTab extends LitElement {
   }
 
   _handleDepotDragOver(e) {
+    if (!this.isEditing) return;
     this._dragDropManager.handleDepotDragOver(e);
   }
 
   _handleDepotDragLeave(e) {
+    if (!this.isEditing) return;
     this._dragDropManager.handleDepotDragLeave(e);
   }
 
   async _handleDepotDrop(e) {
+    if (!this.isEditing) return;
     let dropResult = null;
     try {
       dropResult = this._dragDropManager.handleDepotDrop(e);
@@ -1103,6 +1131,7 @@ export class SchedulingTab extends LitElement {
   }
 
   async _toggleTeacherAssignment({ runs, teacherId, checked, slotDate }) {
+    if (!this.isEditing) return;
     try {
       await CourseRunManager.toggleTeacherAssignment(
         runs,

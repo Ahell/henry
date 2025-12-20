@@ -12,6 +12,7 @@ export class BusinessLogicTab extends LitElement {
     message: { type: String },
     messageType: { type: String },
     saving: { type: Boolean },
+    isEditing: { type: Boolean },
   };
 
   constructor() {
@@ -20,6 +21,7 @@ export class BusinessLogicTab extends LitElement {
     this.message = "";
     this.messageType = "";
     this.saving = false;
+    this.isEditing = false;
     this._autoSaveTimer = null;
     this._saveGeneration = 0;
     this._lastScheduledSaveGeneration = 0;
@@ -112,9 +114,11 @@ export class BusinessLogicTab extends LitElement {
             ${this.saving
               ? html`<henry-text variant="caption">Sparar…</henry-text>`
               : ""}
-            <henry-button variant="primary" @click="${this._handleEditClick}">
-              Redigera
-            </henry-button>
+	            <henry-switch
+	              label="Redigera"
+	              .checked=${this.isEditing}
+	              @switch-change="${this._handleEditClick}"
+	            ></henry-switch>
           </div>
         </div>
         <div class="rule-list">
@@ -124,9 +128,13 @@ export class BusinessLogicTab extends LitElement {
     `;
   }
 
-  _handleEditClick() {
-    // The rules are always editable; this button exists for UI consistency.
-    // We use it to move focus to the first editable control.
+  _handleEditClick(e) {
+    const next =
+      typeof e?.detail?.checked === "boolean" ? !!e.detail.checked : !this.isEditing;
+    this.isEditing = next;
+    if (!next) return;
+
+    // Move focus to the first editable control.
     const firstInput = this.renderRoot?.querySelector("henry-input");
     if (firstInput?.getInput) {
       try {
@@ -148,6 +156,7 @@ export class BusinessLogicTab extends LitElement {
     const isHard = String(rule?.kind || "soft").toLowerCase() === "hard";
     const isLast = idx === (Number(listLength) || 0) - 1;
     const ruleId = rule?.id;
+    const disabled = !this.isEditing;
 
     const renderRuleParamInput = () => {
       if (ruleId === "maxStudentsHard") {
@@ -160,6 +169,7 @@ export class BusinessLogicTab extends LitElement {
             style="width: 110px;"
             .value=${String(params.maxStudentsHard ?? "")}
             required
+            ?disabled=${disabled}
             @input-change=${(e) =>
               this._updateSchedulingParam("maxStudentsHard", e.detail.value)}
           ></henry-input>
@@ -176,6 +186,7 @@ export class BusinessLogicTab extends LitElement {
             style="width: 110px;"
             .value=${String(params.maxStudentsPreferred ?? "")}
             required
+            ?disabled=${disabled}
             @input-change=${(e) =>
               this._updateSchedulingParam("maxStudentsPreferred", e.detail.value)}
           ></henry-input>
@@ -196,24 +207,26 @@ export class BusinessLogicTab extends LitElement {
           <henry-switch
             label="Aktiv"
             .checked=${isEnabled}
+            ?disabled=${disabled}
             @switch-change=${(e) =>
               this._toggleRule(ruleId, e.detail.checked)}
           ></henry-switch>
           <henry-switch
             label="Hard"
             .checked=${isHard}
+            ?disabled=${disabled}
             @switch-change=${(e) =>
               this._setRuleKind(ruleId, e.detail.checked ? "hard" : "soft")}
           ></henry-switch>
           <henry-button
             variant="secondary"
-            ?disabled=${idx === 0}
+            ?disabled=${disabled || idx === 0}
             @click=${() => this._moveRule(idx, -1)}
             >Upp</henry-button
           >
           <henry-button
             variant="secondary"
-            ?disabled=${isLast}
+            ?disabled=${disabled || isLast}
             @click=${() => this._moveRule(idx, +1)}
             >Ner</henry-button
           >
@@ -223,6 +236,7 @@ export class BusinessLogicTab extends LitElement {
   }
 
   _updateSchedulingParam(key, value) {
+    if (!this.isEditing) return;
     const current = store.businessLogicManager.getBusinessLogic();
     const scheduling = current?.scheduling || {};
     const params = { ...(scheduling?.params || {}) };
@@ -242,6 +256,7 @@ export class BusinessLogicTab extends LitElement {
   }
 
   _toggleRule(ruleId, enabled) {
+    if (!this.isEditing) return;
     if (!ruleId) return;
     const current = store.businessLogicManager.getBusinessLogic();
     const scheduling = current?.scheduling || {};
@@ -262,6 +277,7 @@ export class BusinessLogicTab extends LitElement {
   }
 
   _setRuleKind(ruleId, kind) {
+    if (!this.isEditing) return;
     if (!ruleId) return;
     const current = store.businessLogicManager.getBusinessLogic();
     const scheduling = current?.scheduling || {};
@@ -283,6 +299,7 @@ export class BusinessLogicTab extends LitElement {
   }
 
   _moveRule(idx, delta) {
+    if (!this.isEditing) return;
     const current = store.businessLogicManager.getBusinessLogic();
     const scheduling = current?.scheduling || {};
     const list = Array.isArray(scheduling.rules)

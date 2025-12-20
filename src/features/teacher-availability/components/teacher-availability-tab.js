@@ -61,13 +61,11 @@ export class TeacherAvailabilityTab extends LitElement {
 	            <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
 	          </div>
 	          <div class="header-actions">
-	            <henry-button
-	              variant="primary"
-	              aria-pressed=${this.isPainting ? "true" : "false"}
-	              @click=${this._handleEditAvailabilityToggle}
-	            >
-	              Redigera
-	            </henry-button>
+	            <henry-switch
+	              label="Redigera"
+	              .checked=${this.isPainting}
+	              @switch-change=${this._handleEditAvailabilityToggle}
+	            ></henry-switch>
 	            <div class="paint-status"></div>
 	          </div>
 	        </div>

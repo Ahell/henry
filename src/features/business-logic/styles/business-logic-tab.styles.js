@@ -20,6 +20,7 @@ export const businessLogicTabStyles = css`
     justify-content: space-between;
     gap: var(--space-4);
     flex-wrap: wrap;
+    min-height: var(--button-height-base);
   }
 
   .header-actions {

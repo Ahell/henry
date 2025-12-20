@@ -17,6 +17,7 @@ export class GanttCell extends LitElement {
     isCohortStartSlot: { type: Boolean },
     cohortStartDate: { type: String },
     prerequisiteProblems: { type: Array },
+    disabled: { type: Boolean },
   };
 
   static styles = ganttCellStyles;
@@ -31,6 +32,7 @@ export class GanttCell extends LitElement {
     this.isCohortStartSlot = false;
     this.cohortStartDate = "";
     this.prerequisiteProblems = [];
+    this.disabled = false;
   }
 
   render() {
@@ -48,6 +50,7 @@ export class GanttCell extends LitElement {
               .cohortId="${this.cohortId}"
               .isSecondBlock="${false}"
               .prerequisiteProblems="${this.prerequisiteProblems}"
+              .disabled=${this.disabled}
             ></gantt-course-block>
           `
         )}
@@ -58,6 +61,7 @@ export class GanttCell extends LitElement {
               .cohortId="${this.cohortId}"
               .isSecondBlock="${true}"
               .prerequisiteProblems="${this.prerequisiteProblems}"
+              .disabled=${this.disabled}
             ></gantt-course-block>
           `
         )}
