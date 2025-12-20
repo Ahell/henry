@@ -25,7 +25,61 @@ export class SchedulingTab extends LitElement {
     this._teacherOverlayChipsBySlotDate = new Map();
     this._shouldShowTeacherAvailabilityOverlay = false;
     this._autoFillInProgressByCohort = new Set();
+    this._didAutoScroll = false;
     store.subscribe(() => this.requestUpdate());
+  }
+
+  _scrollToToday() {
+    const wrapper = this.shadowRoot?.querySelector(".gantt-scroll-wrapper");
+    if (!wrapper) return;
+    const slots = store.getSlots() || [];
+    if (slots.length === 0) return;
+    const left = this._getTodayScrollLeft(slots);
+    requestAnimationFrame(() => {
+      wrapper.scrollLeft = left;
+    });
+  }
+
+  updated() {
+    // Auto-scroll horizontally once per mount, after the table exists.
+    if (this._didAutoScroll) return;
+    const wrapper = this.shadowRoot?.querySelector(".gantt-scroll-wrapper");
+    if (!wrapper) return;
+    const slots = store.getSlots() || [];
+    if (slots.length === 0) return;
+    const left = this._getTodayScrollLeft(slots);
+    requestAnimationFrame(() => {
+      wrapper.scrollLeft = left;
+      this._didAutoScroll = true;
+    });
+  }
+
+  _getTodayScrollLeft(slots) {
+    const slotDates = [...new Set((slots || []).map((s) => s.start_date))]
+      .filter(Boolean)
+      .sort();
+    if (slotDates.length === 0) return 0;
+
+    const slotWidthPx = (() => {
+      const raw = getComputedStyle(this).getPropertyValue("--gantt-slot-width");
+      const n = parseFloat(String(raw || "").trim());
+      return Number.isFinite(n) && n > 0 ? n : 120;
+    })();
+
+    const today = (() => {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    })();
+
+    let targetIdx = 0;
+    for (let i = 0; i < slotDates.length; i += 1) {
+      const d = this._parseDateOnly(slotDates[i]);
+      if (d && d <= today) targetIdx = i;
+    }
+
+    // Desired behavior: first visible slot should be the one just before today's period.
+    const beforeIdx = Math.max(0, targetIdx - 1);
+    return Math.max(0, beforeIdx * slotWidthPx);
   }
 
   connectedCallback() {
@@ -74,10 +128,16 @@ export class SchedulingTab extends LitElement {
       <henry-panel>
         <div slot="header">
           <div class="header-wrapper">
-            <henry-text variant="heading-3">
-              Schemaläggning
-            </henry-text>
-            ${this._renderWarningPills(headerWarnings)}
+            <henry-text variant="heading-3">Schemaläggning</henry-text>
+            <div class="header-actions">
+              ${this._renderWarningPills(headerWarnings)}
+              <henry-button
+                variant="secondary"
+                size="small"
+                @click=${() => this._scrollToToday()}
+                >Idag</henry-button
+              >
+            </div>
           </div>
         </div>
 

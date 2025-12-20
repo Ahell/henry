@@ -27,6 +27,14 @@ export const schedulingTabStyles = css`
     gap: var(--space-4);
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
   .warning-pill {
     display: inline-flex;
     align-items: center;
