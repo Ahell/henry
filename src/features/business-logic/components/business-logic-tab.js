@@ -112,7 +112,7 @@ export class BusinessLogicTab extends LitElement {
             ${this.saving
               ? html`<henry-text variant="caption">Sparar…</henry-text>`
               : ""}
-            <henry-button variant="secondary" @click="${this._handleEditClick}">
+            <henry-button variant="primary" @click="${this._handleEditClick}">
               Redigera
             </henry-button>
           </div>

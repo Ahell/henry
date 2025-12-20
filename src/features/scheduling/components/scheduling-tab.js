@@ -132,12 +132,12 @@ export class SchedulingTab extends LitElement {
 	            ${this._renderWarningPills(headerWarnings)}
 	            <div class="header-buttons">
 	              <henry-button
-	                variant="secondary"
+	                variant="primary"
 	                @click=${() => this._handleEditClick()}
 	                >Redigera</henry-button
 	              >
 	              <henry-button
-	                variant="secondary"
+	                variant="primary"
 	                @click=${() => this._scrollToToday()}
 	                >Idag</henry-button
 	              >

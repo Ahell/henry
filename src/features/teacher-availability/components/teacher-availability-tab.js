@@ -62,7 +62,7 @@ export class TeacherAvailabilityTab extends LitElement {
 	          </div>
 	          <div class="header-actions">
 	            <henry-button
-	              variant=${this.isPainting ? "primary" : "secondary"}
+	              variant="primary"
 	              aria-pressed=${this.isPainting ? "true" : "false"}
 	              @click=${this._handleEditAvailabilityToggle}
 	            >
