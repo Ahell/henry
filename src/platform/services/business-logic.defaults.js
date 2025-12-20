@@ -42,18 +42,10 @@ const RULES_DEFAULT = [
     locked: false,
   },
   {
-    id: "maximizeColocation",
-    label: "Samläsning först (matcha slot)",
+    id: "economyColocationPacking",
+    label: "Ekonomi: samläsning + packa",
     description:
-      "Välj i första hand en kurs som redan startar i samma slot i andra kullar (gemensam kurs-run = samläsning).",
-    enabled: true,
-    kind: "soft",
-  },
-  {
-    id: "packTowardHardCap",
-    label: "Packa inom samläsning (mot max)",
-    description:
-      "Om flera val ger samläsning: välj det alternativ som gör att totalen hamnar närmast max (färre parallella kurs-run).",
+      "Prioritera samläsning (starta samma kurs i samma slot) och packa kurs-run nära relevant gräns (hard cap, eller preferred cap om den regeln är högre prioriterad).",
     enabled: true,
     kind: "soft",
   },
@@ -95,13 +87,54 @@ export const DEFAULT_BUSINESS_LOGIC = {
   },
 };
 
+function migrateEconomyRules(inputRules) {
+  if (!Array.isArray(inputRules) || inputRules.length === 0) return inputRules;
+
+  const hasEconomy = inputRules.some((r) => r?.id === "economyColocationPacking");
+  const idxMaxColocation = inputRules.findIndex((r) => r?.id === "maximizeColocation");
+  const idxPackHard = inputRules.findIndex((r) => r?.id === "packTowardHardCap");
+  const hasLegacy = idxMaxColocation !== -1 || idxPackHard !== -1;
+  if (hasEconomy || !hasLegacy) return inputRules;
+
+  const legacyEnabled = (() => {
+    const legacy = inputRules.filter(
+      (r) => r?.id === "maximizeColocation" || r?.id === "packTowardHardCap"
+    );
+    // If either legacy rule is enabled, enable the new combined rule.
+    return legacy.some((r) => r?.enabled !== false);
+  })();
+
+  const insertIdx = Math.min(
+    idxMaxColocation === -1 ? Number.POSITIVE_INFINITY : idxMaxColocation,
+    idxPackHard === -1 ? Number.POSITIVE_INFINITY : idxPackHard
+  );
+
+  const next = inputRules.filter(
+    (r) => r?.id !== "maximizeColocation" && r?.id !== "packTowardHardCap"
+  );
+
+  const economyRule = {
+    id: "economyColocationPacking",
+    enabled: legacyEnabled,
+    kind: "soft",
+  };
+
+  if (!Number.isFinite(insertIdx) || insertIdx >= next.length) {
+    return [...next, economyRule];
+  }
+
+  return [...next.slice(0, insertIdx), economyRule, ...next.slice(insertIdx)];
+}
+
 function normalizeRules(inputRules, defaults) {
   const byId = new Map(defaults.map((r) => [r.id, r]));
   const used = new Set();
   const out = [];
 
-  if (Array.isArray(inputRules)) {
-    inputRules.forEach((r) => {
+  const migratedRules = migrateEconomyRules(inputRules);
+
+  if (Array.isArray(migratedRules)) {
+    migratedRules.forEach((r) => {
       const id = r?.id;
       if (!byId.has(id) || used.has(id)) return;
       const base = byId.get(id);

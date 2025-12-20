@@ -708,8 +708,7 @@ export class CourseRunManager {
           : 100;
 
     const defaultSoftRuleOrder = [
-      "maximizeColocation",
-      "packTowardHardCap",
+      "economyColocationPacking",
       "futureJoinCapacity",
       "avoidEmptySlots",
       "avoidOverPreferred",
@@ -1193,10 +1192,25 @@ export class CourseRunManager {
         if (eligible.length === 0) continue;
 
         const ruleOrder = hasSoftRulesConfig ? softRuleOrder : defaultSoftRuleOrder;
+        const packEconomyTowardPreferred = (() => {
+          const economyIdx = ruleOrder.indexOf("economyColocationPacking");
+          const avoidPreferredIdx = ruleOrder.indexOf("avoidOverPreferred");
+          return (
+            economyIdx !== -1 &&
+            avoidPreferredIdx !== -1 &&
+            avoidPreferredIdx < economyIdx
+          );
+        })();
 
         const metric = (ruleId, courseId) => {
-          if (ruleId === "maximizeColocation") {
-            return startsTotalsBySlotIdx.get(slotIdx)?.get(courseId) || 0;
+          if (ruleId === "economyColocationPacking") {
+            const colocation = startsTotalsBySlotIdx.get(slotIdx)?.get(courseId) || 0;
+            const projected = projectedMaxTotal(courseId, slotIdx) || 0;
+            const packingScore = packEconomyTowardPreferred
+              ? -Math.abs(projected - effectiveMaxStudentsPreferred)
+              : projected;
+            // Keep samläsning as the primary signal, packing as a tie-breaker.
+            return colocation * 1_000_000 + packingScore;
           }
           if (ruleId === "requireAvailableCompatibleTeachers") {
             const span = spanById.get(courseId) || 1;
@@ -1218,9 +1232,6 @@ export class CourseRunManager {
               );
             }
             return intersection.size;
-          }
-          if (ruleId === "packTowardHardCap") {
-            return projectedMaxTotal(courseId, slotIdx) || 0;
           }
           if (ruleId === "futureJoinCapacity") {
             const projected = projectedMaxTotal(courseId, slotIdx) || 0;
