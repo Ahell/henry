@@ -337,11 +337,15 @@ export const schedulingTabStyles = css`
     height: auto;
   }
 
-  .gantt-table tbody tr:hover td.slot-cell:not(.disabled-slot):not(.no-teachers-available) {
+  .gantt-table
+    tbody
+    tr:hover
+    td.slot-cell:not(.disabled-slot):not(.no-teachers-available) {
     background: var(--color-primary-50);
   }
 
-  .gantt-table td.slot-cell:hover:not(.disabled-slot):not(.no-teachers-available) {
+  .gantt-table
+    td.slot-cell:hover:not(.disabled-slot):not(.no-teachers-available) {
     background: var(--color-primary-50);
   }
 
@@ -488,7 +492,12 @@ export const schedulingTabStyles = css`
     cursor: not-allowed;
   }
 
-  .gantt-table tfoot .summary-course .summary-teacher-row input:disabled + label {
+  .gantt-table
+    tfoot
+    .summary-course
+    .summary-teacher-row
+    input:disabled
+    + label {
     opacity: 0.6;
     cursor: not-allowed;
   }
