@@ -752,9 +752,7 @@ export class SchedulingTab extends LitElement {
 
               <div class="summary-teacher-list">
                 ${compatibleTeachers.length === 0
-                  ? html`<div class="summary-teacher-row">
-                      Inga kompatibla lärare
-                    </div>`
+                  ? null
                   : compatibleTeachers.map((teacher) => {
                       const isAssigned = assignedTeacherIds.includes(
                         teacher.teacher_id

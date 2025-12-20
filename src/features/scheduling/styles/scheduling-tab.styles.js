@@ -444,9 +444,9 @@ export const schedulingTabStyles = css`
     display: flex;
     flex-direction: column;
     gap: 2px;
-    background: rgba(255, 255, 255, 0.92);
+    background: transparent;
     border-radius: var(--radius-base);
-    padding: var(--space-2);
+    padding: 0;
     box-shadow: inset 0 0 0 1px rgba(31, 39, 51, 0.08);
     max-height: 180px;
     overflow: auto;
@@ -456,8 +456,10 @@ export const schedulingTabStyles = css`
     display: flex;
     align-items: center;
     gap: 4px;
+    justify-content: flex-start;
     font-size: 0.6rem;
     color: var(--color-text-primary);
+    text-align: left;
     padding: 4px 6px;
     border-radius: var(--radius-base);
     cursor: pointer;
@@ -484,6 +486,7 @@ export const schedulingTabStyles = css`
   .gantt-table tfoot .summary-course .summary-teacher-row label {
     cursor: pointer;
     flex: 1;
+    text-align: left;
   }
 
   .gantt-table tfoot .summary-course .summary-teacher-row input:focus-visible {
