@@ -119,6 +119,9 @@ export class SlotsTab extends LitElement {
                 <henry-select
                   id="insertAfter"
                   label="Infoga efter"
+                  size="6"
+                  placeholder=""
+                  ?hidePlaceholder=${true}
                   .options=${this._getInsertOptions(sorted)}
                   @select-change="${(e) => this._onInsertAfterChange(e)}"
                   required
@@ -126,12 +129,11 @@ export class SlotsTab extends LitElement {
                 <henry-select
                   id="slotStart"
                   label="Startdatum"
+                  size="6"
                   required
                   .options=${this.startOptions}
-                  .placeholder=${this.selectedInsertAfter &&
-                  (this.startOptions || []).length === 0
-                    ? "Inga tillgängliga startdatum för vald position."
-                    : "Välj..."}
+                  placeholder=""
+                  ?hidePlaceholder=${true}
                 ></henry-select>
               </form>
 

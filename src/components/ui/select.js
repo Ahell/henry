@@ -15,6 +15,7 @@ export class HenrySelect extends LitElement {
     disabled: { type: Boolean },
     required: { type: Boolean },
     placeholder: { type: String },
+    hidePlaceholder: { type: Boolean },
     id: { type: String },
     name: { type: String },
     multiple: { type: Boolean },
@@ -93,6 +94,7 @@ export class HenrySelect extends LitElement {
     this.disabled = false;
     this.required = false;
     this.placeholder = "Välj...";
+    this.hidePlaceholder = false;
     this.id = "";
     this.name = "";
     this.multiple = false;
@@ -100,9 +102,9 @@ export class HenrySelect extends LitElement {
     this.options = [];
   }
 
-  render() {
-    const selectEl = this.multiple
-      ? html`
+	  render() {
+	    const selectEl = this.multiple
+	      ? html`
           <select
             ?disabled=${this.disabled}
             ?required=${this.required}
@@ -123,24 +125,28 @@ export class HenrySelect extends LitElement {
               : html`<slot></slot>`}
           </select>
         `
-      : html`
-          <select
-            .value=${this.value}
-            ?disabled=${this.disabled}
-            ?required=${this.required}
-            ?multiple=${this.multiple}
-            size=${this.size}
-            id=${this.id}
-            name=${this.name || this.id}
-            @change=${this._handleChange}
-          >
-            ${this.placeholder
-              ? html`<option value="">${this.placeholder}</option>`
-              : ""}
-            ${this.options && this.options.length > 0
-              ? this.options.map(
-                  (opt) => html`
-                    <option value="${opt.value}" ?selected="${opt.selected}">
+	      : html`
+	          <select
+	            .value=${this.value}
+	            ?disabled=${this.disabled}
+	            ?required=${this.required}
+	            ?multiple=${this.multiple}
+	            size=${this.size}
+	            id=${this.id}
+	            name=${this.name || this.id}
+	            @change=${this._handleChange}
+	          >
+	            ${this.placeholder
+	              ? this.hidePlaceholder
+	                ? html`<option value="" disabled hidden ?selected=${!this.value}
+	                    >${this.placeholder}</option
+	                  >`
+	                : html`<option value="">${this.placeholder}</option>`
+	              : ""}
+	            ${this.options && this.options.length > 0
+	              ? this.options.map(
+	                  (opt) => html`
+	                    <option value="${opt.value}" ?selected="${opt.selected}">
                       ${opt.label}
                     </option>
                   `
