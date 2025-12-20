@@ -339,4 +339,92 @@ export class CourseRunManager {
       throw error;
     }
   }
+
+  /**
+   * Remove all scheduled course runs from a cohort (send everything back to depot).
+   * Keeps runs that are shared with other cohorts, but removes this cohort_id from them.
+   */
+  static async resetCohortSchedule(targetCohortId) {
+    const cohortId = Number(targetCohortId);
+    if (!Number.isFinite(cohortId)) return { mutationId: null };
+
+    const runs = CourseRunManager._runs();
+    const previousRuns = (runs || []).map((r) => ({
+      ...r,
+      teachers: Array.isArray(r.teachers) ? [...r.teachers] : [],
+      cohorts: Array.isArray(r.cohorts) ? [...r.cohorts] : [],
+      slot_ids: Array.isArray(r.slot_ids) ? [...r.slot_ids] : r.slot_ids,
+    }));
+    const previousCourseSlots = (store.courseRunsManager.courseSlots || []).map(
+      (cs) => ({ ...cs })
+    );
+    const previousCourseSlotDays = (store.courseSlotDays || []).map((csd) => ({
+      ...csd,
+    }));
+
+    const mutationId = store.applyOptimistic({
+      label: "reset-cohort-schedule",
+      rollback: () => {
+        store.courseRunsManager.courseRuns = previousRuns;
+        store.courseRunsManager.courseSlots = previousCourseSlots;
+        store.courseSlotDays = previousCourseSlotDays;
+        store.notify();
+      },
+    });
+
+    try {
+      let didChange = false;
+
+      // Remove cohort from runs (and delete empty runs)
+      for (let idx = runs.length - 1; idx >= 0; idx -= 1) {
+        const run = runs[idx];
+        const cohorts = Array.isArray(run?.cohorts) ? run.cohorts : [];
+        if (!cohorts.some((id) => String(id) === String(cohortId))) continue;
+
+        const nextCohorts = cohorts.filter(
+          (id) => String(id) !== String(cohortId)
+        );
+        run.cohorts = nextCohorts;
+        didChange = true;
+
+        if (nextCohorts.length === 0) {
+          runs.splice(idx, 1);
+        }
+      }
+
+      // Clean up courseSlots + courseSlotDays for removed (course_id, slot_id) keys
+      if (didChange) {
+        const remainingKeys = new Set(
+          (runs || [])
+            .filter((r) => r?.course_id != null && r?.slot_id != null)
+            .map((r) => `${r.course_id}-${r.slot_id}`)
+        );
+
+        const currentCourseSlots = store.courseRunsManager.courseSlots || [];
+        const removedCourseSlotIds = new Set();
+        const keptCourseSlots = currentCourseSlots.filter((cs) => {
+          const keep = remainingKeys.has(`${cs.course_id}-${cs.slot_id}`);
+          if (!keep && cs?.course_slot_id != null) {
+            removedCourseSlotIds.add(cs.course_slot_id);
+          }
+          return keep;
+        });
+
+        store.courseRunsManager.courseSlots = keptCourseSlots;
+        if (removedCourseSlotIds.size > 0) {
+          store.courseSlotDays = (store.courseSlotDays || []).filter(
+            (csd) => !removedCourseSlotIds.has(csd.course_slot_id)
+          );
+        }
+
+        store.notify();
+      }
+
+      await store.saveData({ mutationId });
+      return { mutationId };
+    } catch (error) {
+      await store.rollback(mutationId);
+      throw error;
+    }
+  }
 }

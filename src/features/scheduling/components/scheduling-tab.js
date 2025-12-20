@@ -266,7 +266,37 @@ export class SchedulingTab extends LitElement {
             .scheduledCourseIds="${Array.from(scheduledCourseIds)}"
           ></gantt-depot>
         </td>
-        <td class="cohort-cell">${cohort.name}</td>
+        <td class="cohort-cell">
+          <div class="cohort-cell-content">
+            <span class="cohort-cell-name">${cohort.name}</span>
+            <div class="cohort-cell-actions">
+              <button
+                class="cohort-reset-button"
+                type="button"
+                title="Flytta alla kurser tillbaka till depån"
+                @click=${(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  this._handleResetCohortClick(cohort.cohort_id);
+                }}
+              >
+                Återställ
+              </button>
+              <button
+                class="cohort-autofill-button"
+                type="button"
+                title="Auto-fyll schema för denna kull"
+                @click=${(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  this._handleAutoFillCohortClick(cohort.cohort_id);
+                }}
+              >
+                Auto-fyll
+              </button>
+            </div>
+          </div>
+        </td>
         ${slotDates.map((dateStr, index) => {
           const runs = runsByDate[dateStr] || [];
 
@@ -312,6 +342,20 @@ export class SchedulingTab extends LitElement {
         })}
       </tr>
     `;
+  }
+
+  async _handleResetCohortClick(cohortId) {
+    try {
+      await CourseRunManager.resetCohortSchedule(cohortId);
+      this.requestUpdate();
+    } catch (error) {
+      console.error("Kunde inte återställa kullens schema:", error);
+    }
+  }
+
+  _handleAutoFillCohortClick(cohortId) {
+    // Intentionally not implemented yet (business rules still being finalized).
+    console.info("Auto-fyll ej implementerad ännu för kull:", cohortId);
   }
 
   _getRunSpan(run) {

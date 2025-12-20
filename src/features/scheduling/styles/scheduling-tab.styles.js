@@ -363,6 +363,71 @@ export const schedulingTabStyles = css`
     line-height: 1.2;
   }
 
+  .gantt-table td.cohort-cell .cohort-cell-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .gantt-table td.cohort-cell .cohort-cell-name {
+    flex: 0 0 auto;
+  }
+
+  .gantt-table td.cohort-cell .cohort-cell-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    flex: 0 0 auto;
+  }
+
+  .gantt-table td.cohort-cell .cohort-reset-button {
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    line-height: 1.2;
+  }
+
+  .gantt-table td.cohort-cell .cohort-reset-button:hover {
+    background: rgba(15, 23, 42, 0.04);
+    color: var(--color-text-primary);
+  }
+
+  .gantt-table td.cohort-cell .cohort-reset-button:focus-visible {
+    outline: 2px solid var(--color-primary-400);
+    outline-offset: 2px;
+  }
+
+  .gantt-table td.cohort-cell .cohort-autofill-button {
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(37, 99, 235, 0.35);
+    background: rgba(37, 99, 235, 0.06);
+    color: var(--color-primary-700);
+    cursor: pointer;
+    line-height: 1.2;
+  }
+
+  .gantt-table td.cohort-cell .cohort-autofill-button:hover {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: rgba(37, 99, 235, 0.5);
+  }
+
+  .gantt-table td.cohort-cell .cohort-autofill-button:focus-visible {
+    outline: 2px solid var(--color-primary-400);
+    outline-offset: 2px;
+  }
+
   .gantt-table td.slot-cell {
     background: var(--color-background);
     position: relative;
