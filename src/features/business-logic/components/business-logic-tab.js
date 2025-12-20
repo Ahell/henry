@@ -138,7 +138,7 @@ export class BusinessLogicTab extends LitElement {
             placeholder="Hard cap"
             type="number"
             min="1"
-            style="width: 120px;"
+            style="width: 110px;"
             .value=${String(params.maxStudentsHard ?? "")}
             required
             @input-change=${(e) =>
@@ -154,7 +154,7 @@ export class BusinessLogicTab extends LitElement {
             placeholder="Preferred cap"
             type="number"
             min="1"
-            style="width: 140px;"
+            style="width: 110px;"
             .value=${String(params.maxStudentsPreferred ?? "")}
             required
             @input-change=${(e) =>
