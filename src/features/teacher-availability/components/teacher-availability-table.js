@@ -23,7 +23,7 @@ import "./availability-empty-state.js";
  * - Paint mode for marking unavailable time slots
  * - Visual indication of assigned courses, compatible courses, and unavailability
  * - Mouse drag support for efficient bulk marking
- * - Automatic conflict handling (removes teacher from runs when marked unavailable)
+ * - Does not auto-unassign teachers from scheduled courses when marking unavailability
  */
 export class TeacherAvailabilityTable extends LitElement {
   /**

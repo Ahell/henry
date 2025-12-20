@@ -765,10 +765,6 @@ export class SchedulingTab extends LitElement {
                           courseId: course.course_id,
                         }
                       );
-                      const disabled =
-                        availability.classNameSuffix === "course-unavailable" &&
-                        !isAssigned;
-                      const inputId = `summary-${slotDate}-${course.course_id}-${teacher.teacher_id}`;
                       const baseClass = isAssigned
                         ? "assigned-course"
                         : "has-course";
@@ -784,20 +780,22 @@ export class SchedulingTab extends LitElement {
                           class="${rowClassName}"
                           title=${availability.titleText}
                         >
-                          <input
-                            type="checkbox"
-                            id="${inputId}"
-                            .checked=${isAssigned}
-                            ?disabled=${disabled}
-                            @change=${(e) =>
+                          <button
+                            class="summary-teacher-pill"
+                            type="button"
+                            aria-pressed=${isAssigned ? "true" : "false"}
+                            @click=${() =>
                               this._toggleTeacherAssignment({
                                 runs: item.runs,
                                 teacherId: teacher.teacher_id,
-                                checked: !!e?.target?.checked,
+                                checked: !isAssigned,
                                 slotDate,
                               })}
-                          />
-                          <label for="${inputId}">${teacher.name}</label>
+                          >
+                            <span class="summary-toggle-text"
+                              >${teacher.name}</span
+                            >
+                          </button>
                         </div>
                       `;
                     })}

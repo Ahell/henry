@@ -403,8 +403,8 @@ export const teacherAvailabilityTableStyles = css`
     pointer-events: none;
     background: repeating-linear-gradient(
       135deg,
-      rgba(239, 68, 68, 0.55) 0px,
-      rgba(239, 68, 68, 0.55) 8px,
+      rgba(239, 68, 68, 0.82) 0px,
+      rgba(239, 68, 68, 0.82) 8px,
       rgba(239, 68, 68, 0) 8px,
       rgba(239, 68, 68, 0) 16px
     );
@@ -457,8 +457,8 @@ export const teacherAvailabilityTableStyles = css`
     pointer-events: none;
     background: repeating-linear-gradient(
       135deg,
-      rgba(239, 68, 68, 0.55) 0px,
-      rgba(239, 68, 68, 0.55) 8px,
+      rgba(239, 68, 68, 0.82) 0px,
+      rgba(239, 68, 68, 0.82) 8px,
       rgba(239, 68, 68, 0) 8px,
       rgba(239, 68, 68, 0) 16px
     );

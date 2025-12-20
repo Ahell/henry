@@ -3,7 +3,6 @@ import {
   hasBusySlotEntry,
   convertSlotEntryToDayEntriesAndRemove,
 } from "./helpers.js";
-import { removeTeacherFromRunsInSlot } from "./teacher-availability-runs.js";
 
 const dispatchPaintState = (component) => {
   component.dispatchEvent(
@@ -152,10 +151,6 @@ export function handleCellMouseDown(component, e) {
 
   component._paintMode = isCurrentlyUnavailable ? "remove" : "add";
 
-  if (component._paintMode === "add") {
-    removeTeacherFromRunsInSlot(teacherId, slotDateLocal, component.slots);
-  }
-
   store.toggleTeacherAvailabilityForSlot(
     teacherId,
     slotDateLocal,
@@ -261,7 +256,6 @@ export function handleCellMouseEnter(component, e) {
   );
 
   if (component._paintMode === "add" && !isCurrentlyUnavailable) {
-    removeTeacherFromRunsInSlot(teacherId, slotDateLocal, component.slots);
     store.toggleTeacherAvailabilityForSlot(
       teacherId,
       slotDateLocal,

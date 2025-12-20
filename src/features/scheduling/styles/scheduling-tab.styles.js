@@ -454,14 +454,13 @@ export const schedulingTabStyles = css`
 
   .gantt-table tfoot .summary-course .summary-teacher-row {
     display: flex;
-    align-items: center;
-    gap: 4px;
+    align-items: stretch;
     justify-content: flex-start;
     font-size: 0.6rem;
     color: var(--color-text-primary);
     text-align: left;
-    padding: 4px 6px;
-    border-radius: var(--radius-base);
+    padding: 0;
+    border-radius: 0;
     cursor: pointer;
     transition: background var(--transition-fast);
     position: relative;
@@ -472,65 +471,71 @@ export const schedulingTabStyles = css`
     tfoot
     .summary-course
     .summary-teacher-row:not(.has-course):not(.assigned-course):not(.course-unavailable):not(.partial-conflict):hover {
-    background: rgba(58, 116, 246, 0.08);
+    background: transparent;
   }
 
-  .gantt-table tfoot .summary-course .summary-teacher-row input {
-    width: 14px;
-    height: 14px;
-    margin: 0;
-    accent-color: var(--color-primary-600);
+  .gantt-table tfoot .summary-course .summary-teacher-pill {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    padding: 4px 6px;
+    border-radius: var(--radius-base);
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
     cursor: pointer;
-  }
-
-  .gantt-table tfoot .summary-course .summary-teacher-row label {
-    cursor: pointer;
-    flex: 1;
+    font-weight: var(--font-weight-semibold);
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
     text-align: left;
   }
 
-  .gantt-table tfoot .summary-course .summary-teacher-row input:focus-visible {
+  .gantt-table tfoot .summary-course .summary-teacher-pill::after {
+    z-index: 0;
+  }
+
+  .gantt-table tfoot .summary-course .summary-toggle-text {
+    flex: 1;
+    text-align: left;
+    color: #fff;
+    position: relative;
+    z-index: 1;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-pill:focus-visible {
     outline: 2px solid var(--color-primary-400);
     outline-offset: 2px;
   }
 
-  .gantt-table tfoot .summary-course .summary-teacher-row input:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row
-    input:disabled
-    + label {
-    opacity: 0.6;
+  .gantt-table tfoot .summary-course .summary-teacher-pill:disabled {
+    opacity: 0.55;
     cursor: not-allowed;
   }
 
   /* Summary teacher status styling (mirrors teacher-availability patterns) */
-  .gantt-table tfoot .summary-course .summary-teacher-row.has-course {
+  .gantt-table tfoot .summary-course .summary-teacher-row.has-course .summary-teacher-pill {
     background: linear-gradient(135deg, var(--color-info), var(--color-info-hover));
-    color: #fff;
-    font-weight: var(--font-weight-semibold);
   }
 
-  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course {
+  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course .summary-teacher-pill {
     background: linear-gradient(135deg, var(--color-success), var(--color-success-hover));
-    color: #fff;
-    font-weight: var(--font-weight-semibold);
   }
 
   .gantt-table tfoot .summary-course .summary-teacher-row.course-unavailable,
   .gantt-table tfoot .summary-course .summary-teacher-row.partial-conflict {
-    background: var(--color-danger) !important;
-    color: #fff;
-    font-weight: var(--font-weight-semibold);
+    background: transparent;
   }
 
-  .gantt-table tfoot .summary-course .summary-teacher-row.partial-availability::after,
-  .gantt-table tfoot .summary-course .summary-teacher-row.partial-conflict::after {
+  .gantt-table tfoot .summary-course .summary-teacher-row.course-unavailable:not(.assigned-course) .summary-teacher-pill,
+  .gantt-table tfoot .summary-course .summary-teacher-row.partial-conflict:not(.assigned-course) .summary-teacher-pill {
+    background: var(--color-danger);
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row.partial-availability .summary-teacher-pill::after,
+  .gantt-table tfoot .summary-course .summary-teacher-row.partial-conflict .summary-teacher-pill::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -545,24 +550,65 @@ export const schedulingTabStyles = css`
     opacity: 0.9;
   }
 
-  .gantt-table tfoot .summary-course .summary-teacher-row.has-course:hover,
-  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course:hover {
+  /* Assigned + warnings: keep green base and overlay colored stripes */
+  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course.course-unavailable .summary-teacher-pill {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    ) !important;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course.course-unavailable .summary-teacher-pill::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.82) 0px,
+      rgba(239, 68, 68, 0.82) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course.partial-conflict .summary-teacher-pill {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    ) !important;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course.partial-conflict .summary-teacher-pill::after {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.28) 0px,
+      rgba(239, 68, 68, 0.28) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course.partial-availability .summary-teacher-pill::after {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.28) 0px,
+      rgba(59, 130, 246, 0.28) 8px,
+      rgba(59, 130, 246, 0) 8px,
+      rgba(59, 130, 246, 0) 16px
+    );
+    opacity: 0.9;
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-row.has-course:hover .summary-teacher-pill,
+  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course:hover .summary-teacher-pill {
     filter: brightness(1.02);
   }
 
-  .gantt-table tfoot .summary-course .summary-teacher-row.has-course label,
-  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course label,
-  .gantt-table tfoot .summary-course .summary-teacher-row.course-unavailable label,
-  .gantt-table tfoot .summary-course .summary-teacher-row.partial-conflict label {
-    color: #fff;
-  }
-
-  .gantt-table tfoot .summary-course .summary-teacher-row.has-course input,
-  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course input,
-  .gantt-table tfoot .summary-course .summary-teacher-row.course-unavailable input,
-  .gantt-table tfoot .summary-course .summary-teacher-row.partial-conflict input {
-    accent-color: rgba(255, 255, 255, 0.95);
-  }
 
   @media (prefers-reduced-motion: reduce) {
     * {

@@ -345,7 +345,6 @@ export function renderTeacherCell(component, teacher, slotDate) {
     ? slotDays
     : slotDays.filter((d) => store.isTeacherUnavailableOnDay(teacherId, d));
   const courseAvailabilityClass = (courseId) => {
-    if (hasSlotBusyEntry) return "";
     if (!unavailableDaysInSlot.length) return "";
 
     const activeDays = (
