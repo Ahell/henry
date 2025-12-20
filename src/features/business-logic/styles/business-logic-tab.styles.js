@@ -33,6 +33,7 @@ export const businessLogicTabStyles = css`
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    margin-top: var(--space-4);
   }
 
   .rule {
