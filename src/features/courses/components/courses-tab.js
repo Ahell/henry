@@ -24,6 +24,7 @@ export class CoursesTab extends LitElement {
 
   static properties = {
     editingCourseId: { type: Number },
+    addModalOpen: { type: Boolean },
     message: { type: String },
     messageType: { type: String },
     formValid: { type: Boolean },
@@ -32,6 +33,7 @@ export class CoursesTab extends LitElement {
   constructor() {
     super();
     this.formValid = false;
+    this.addModalOpen = false;
     initializeEditState(this, "editingCourseId");
     subscribeToStore(this);
     // Clear add-course form when a teacher has been added elsewhere
@@ -62,12 +64,23 @@ export class CoursesTab extends LitElement {
 
   firstUpdated(changedProperties) {
     super.firstUpdated(changedProperties);
-    resetCourseForm(this.shadowRoot);
     this._updateFormValidity();
   }
 
   _handleInputChange() {
     this._updateFormValidity();
+  }
+
+  async _openAddModal() {
+    this.addModalOpen = true;
+    await this.updateComplete;
+    resetCourseForm(this.shadowRoot);
+    this._updateFormValidity();
+  }
+
+  _closeAddModal() {
+    this.addModalOpen = false;
+    this.formValid = false;
   }
 
   _updateFormValidity() {
@@ -94,81 +107,11 @@ export class CoursesTab extends LitElement {
         : ""}
 
       <henry-panel>
-        <div slot="header">
-          <henry-text variant="heading-3">Lägg till Ny Kurs</henry-text>
-        </div>
-        <form
-          @submit="${this.handleAddCourse}"
-          @input="${this._handleInputChange}"
-          @change="${this._handleInputChange}"
-          @input-change="${this._handleInputChange}"
-          @select-change="${this._handleInputChange}"
-          @radio-change="${this._handleInputChange}"
-          @textarea-change="${this._handleInputChange}"
-        >
-          <div class="form-row two-cols">
-            <henry-input
-              id="courseCode"
-              label="Kurskod"
-              placeholder="T.ex. AI180U"
-              required
-            ></henry-input>
-            <henry-input
-              id="courseName"
-              label="Kursnamn"
-              placeholder="T.ex. Juridisk översiktskurs"
-              required
-            ></henry-input>
-          </div>
-
-          <div class="form-row two-cols">
-            <henry-radio-group
-              id="courseCredits"
-              name="courseCredits"
-              label="Högskolepoäng"
-              required
-              .options=${[
-                { value: "7.5", label: "7,5 hp" },
-                { value: "15", label: "15 hp" },
-              ]}
-            ></henry-radio-group>
-            <henry-select
-              id="prerequisites"
-              label="Spärrkurser (kurser som måste läsas före)"
-              multiple
-              size="5"
-              .options=${store
-                .getCourses()
-                .filter((c) => c && c.course_id != null)
-                .map((c) => ({
-                  value: String(c.course_id),
-                  label: `${c.code ?? "OKÄND"} - ${c.name ?? ""}`,
-                }))}
-            ></henry-select>
-          </div>
-
-          <henry-select
-            id="courseTeachers"
-            label="Kompatibla lärare (Ctrl/Cmd+klick för flera)"
-            multiple
-            size="5"
-            .options=${store.getTeachers().map((teacher) => ({
-              value: teacher.teacher_id.toString(),
-              label: teacher.name,
-            }))}
-          ></henry-select>
-
-          <div class="form-actions">
-            <henry-button type="submit" variant="primary" ?disabled="${!this.formValid}">
-              Lägg till kurs
-            </henry-button>
-          </div>
-        </form>
-      </henry-panel>
-
-      <henry-panel>
-        <div slot="header">
+        <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga Kurser</henry-text>
+          <henry-button variant="primary" @click="${this._openAddModal}">
+            Lägg till kurs
+          </henry-button>
         </div>
         <henry-table
           striped
@@ -178,6 +121,99 @@ export class CoursesTab extends LitElement {
           .renderCell="${(row, col) => this._renderTableCell(row, col)}"
         ></henry-table>
       </henry-panel>
+
+	      ${this.addModalOpen
+	        ? html`
+	            <henry-modal
+	              open
+	              title="Lägg till Kurs"
+	              @close="${this._closeAddModal}"
+	            >
+	              <form
+	                id="add-course-form"
+	                @submit="${this.handleAddCourse}"
+	                @input="${this._handleInputChange}"
+	                @change="${this._handleInputChange}"
+	                @input-change="${this._handleInputChange}"
+	                @select-change="${this._handleInputChange}"
+	                @radio-change="${this._handleInputChange}"
+	                @textarea-change="${this._handleInputChange}"
+	              >
+	                <henry-input
+	                  id="courseCode"
+	                  label="Kurskod"
+	                  placeholder="T.ex. AI180U"
+	                  required
+	                ></henry-input>
+	                <henry-input
+	                  id="courseName"
+	                  label="Kursnamn"
+	                  placeholder="T.ex. Juridisk översiktskurs"
+	                  required
+	                ></henry-input>
+
+	                <henry-radio-group
+	                  id="courseCredits"
+	                  name="courseCredits"
+	                  label="Högskolepoäng"
+	                  required
+	                  .options=${[
+	                    { value: "7.5", label: "7,5 hp" },
+	                    { value: "15", label: "15 hp" },
+	                  ]}
+	                ></henry-radio-group>
+	                <henry-select
+	                  id="prerequisites"
+	                  label="Spärrkurser (kurser som måste läsas före)"
+	                  multiple
+	                  size="5"
+	                  .options=${store
+	                    .getCourses()
+	                    .filter((c) => c && c.course_id != null)
+	                    .map((c) => ({
+	                      value: String(c.course_id),
+	                      label: `${c.code ?? "OKÄND"} - ${c.name ?? ""}`,
+	                    }))}
+	                ></henry-select>
+
+	                <henry-select
+	                  id="courseTeachers"
+	                  label="Kompatibla lärare (Ctrl/Cmd+klick för flera)"
+                  multiple
+                  size="5"
+                  .options=${store.getTeachers().map((teacher) => ({
+                    value: teacher.teacher_id.toString(),
+                    label: teacher.name,
+                  }))}
+                ></henry-select>
+              </form>
+
+              <div slot="footer">
+                <henry-button
+                  variant="secondary"
+                  @click="${this._closeAddModal}"
+                >
+                  Avbryt
+                </henry-button>
+                <henry-button
+                  variant="primary"
+                  ?disabled="${!this.formValid}"
+                  @click="${() => {
+                    const form =
+                      this.renderRoot?.querySelector("#add-course-form");
+                    if (form?.requestSubmit) form.requestSubmit();
+                    else
+                      form?.dispatchEvent(
+                        new Event("submit", { bubbles: true, cancelable: true })
+                      );
+                  }}"
+                >
+                  Lägg till kurs
+                </henry-button>
+              </div>
+            </henry-modal>
+          `
+        : ""}
 
       <course-modal
         .courseId="${this.editingCourseId}"
@@ -269,7 +305,6 @@ export class CoursesTab extends LitElement {
   }
 
   renderPrerequisitesList(course) {
-    console.log("Rendering prerequisites for course:", course);
     if (!course.prerequisites || course.prerequisites.length === 0) {
       return html`<span class="no-prerequisites">-</span>`;
     }
@@ -318,6 +353,7 @@ export class CoursesTab extends LitElement {
       window.dispatchEvent(
         new CustomEvent("henry:course-added", { detail: newCourse })
       );
+      this._closeAddModal();
       showSuccessMessage(this, "Kurs tillagd!");
     } catch (err) {
       showErrorMessage(this, `Kunde inte lägga till kurs: ${err.message}`);
