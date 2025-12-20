@@ -65,28 +65,6 @@ export class BusinessLogicTab extends LitElement {
             ></henry-switch>
           </div>
           <div class="row">
-            <henry-input
-              id="maxStudentsHard"
-              label="Max studenter per kurs (hard)"
-              type="number"
-              min="1"
-              .value=${String(params.maxStudentsHard ?? "")}
-              required
-              @input-change=${(e) =>
-                this._updateSchedulingParam("maxStudentsHard", e.detail.value)}
-            ></henry-input>
-            <henry-input
-              id="maxStudentsPreferred"
-              label="Max studenter per kurs (preferred)"
-              type="number"
-              min="1"
-              .value=${String(params.maxStudentsPreferred ?? "")}
-              required
-              @input-change=${(e) =>
-                this._updateSchedulingParam("maxStudentsPreferred", e.detail.value)}
-            ></henry-input>
-          </div>
-          <div class="row">
             <henry-button
               variant="primary"
               ?disabled=${!this.formValid || this.saving}
@@ -111,27 +89,69 @@ export class BusinessLogicTab extends LitElement {
   }
 
   _renderRuleRow(rule, idx, listLength) {
+    const params = store.businessLogicManager.getBusinessLogic()?.scheduling?.params || {};
     const isEnabled = Boolean(rule?.enabled);
     const isHard = String(rule?.kind || "soft").toLowerCase() === "hard";
     const isLast = idx === (Number(listLength) || 0) - 1;
+    const ruleId = rule?.id;
+
+    const renderRuleParamInput = () => {
+      if (ruleId === "maxStudentsHard") {
+        return html`
+          <div class="row">
+            <henry-input
+              id="maxStudentsHard"
+              label="Hard cap"
+              type="number"
+              min="1"
+              .value=${String(params.maxStudentsHard ?? "")}
+              required
+              @input-change=${(e) =>
+                this._updateSchedulingParam("maxStudentsHard", e.detail.value)}
+            ></henry-input>
+          </div>
+        `;
+      }
+
+      if (ruleId === "avoidOverPreferred") {
+        return html`
+          <div class="row">
+            <henry-input
+              id="maxStudentsPreferred"
+              label="Preferred cap"
+              type="number"
+              min="1"
+              .value=${String(params.maxStudentsPreferred ?? "")}
+              required
+              @input-change=${(e) =>
+                this._updateSchedulingParam("maxStudentsPreferred", e.detail.value)}
+            ></henry-input>
+          </div>
+        `;
+      }
+
+      return "";
+    };
+
     return html`
       <div class="rule ${!isEnabled ? "muted" : ""}">
         <div>
           <div class="rule-title">${rule?.label || rule?.id}</div>
           <div class="rule-desc">${rule?.description || ""}</div>
+          ${renderRuleParamInput()}
         </div>
         <div class="rule-actions">
           <henry-switch
             label="Aktiv"
             .checked=${isEnabled}
             @switch-change=${(e) =>
-              this._toggleRule(rule?.id, e.detail.checked)}
+              this._toggleRule(ruleId, e.detail.checked)}
           ></henry-switch>
           <henry-switch
             label=${isHard ? "Hard" : "Soft"}
             .checked=${isHard}
             @switch-change=${(e) =>
-              this._setRuleKind(rule?.id, e.detail.checked ? "hard" : "soft")}
+              this._setRuleKind(ruleId, e.detail.checked ? "hard" : "soft")}
           ></henry-switch>
           <henry-button
             variant="secondary"

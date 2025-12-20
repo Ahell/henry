@@ -18,7 +18,7 @@ const RULES_DEFAULT = [
   {
     id: "maxStudentsHard",
     label: "Max studenter per kurs (hard)",
-    description: "Över denna gräns är inte tillåtet.",
+    description: "Över denna gräns är inte tillåtet. Gränsen sätts i regeln.",
     enabled: true,
     kind: "hard",
     locked: false,
@@ -85,7 +85,7 @@ const RULES_DEFAULT = [
     id: "avoidOverPreferred",
     label: "Undvik > preferred",
     description:
-      "Undvik att överstiga preferred-gränsen när det finns alternativ.",
+      "Undvik att överstiga preferred-gränsen när det finns alternativ. Gränsen sätts i regeln.",
     enabled: true,
     kind: "soft",
   },
