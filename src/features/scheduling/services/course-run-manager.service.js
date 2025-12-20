@@ -9,6 +9,98 @@ export class CourseRunManager {
     return store.getCourseRuns();
   }
 
+  static _sortedSlotDates() {
+    return [...new Set((store.getSlots() || []).map((s) => s.start_date))].sort();
+  }
+
+  static _slotIdxByDate(slotDates) {
+    return new Map((slotDates || []).map((d, idx) => [String(d), idx]));
+  }
+
+  static _runStartSlotIdx({ run, slotDates, slotIdxByDate, spanByCourseId }) {
+    if (!run) return null;
+    const span = spanByCourseId.get(Number(run.course_id)) || 1;
+
+    // Prefer explicit slot_ids when present.
+    if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+      const idxs = run.slot_ids
+        .map((sid) => store.getSlot(sid)?.start_date)
+        .map((d) => (d ? slotIdxByDate.get(String(d)) : null))
+        .filter((v) => Number.isFinite(v));
+      if (idxs.length > 0) return Math.min(...idxs);
+    }
+
+    const startDate = store.getSlot(run.slot_id)?.start_date;
+    const startIdx = startDate ? slotIdxByDate.get(String(startDate)) : null;
+    if (!Number.isFinite(startIdx)) return null;
+
+    // Normalize weird cases: if slot_id points at something outside known slotDates, ignore.
+    if (startIdx < 0 || startIdx >= slotDates.length) return null;
+    return startIdx;
+  }
+
+  static _runCoveredSlotIdxs({ run, slotDates, slotIdxByDate, spanByCourseId }) {
+    const startIdx = CourseRunManager._runStartSlotIdx({
+      run,
+      slotDates,
+      slotIdxByDate,
+      spanByCourseId,
+    });
+    if (!Number.isFinite(startIdx)) return [];
+
+    const spanFromRun = Number(run?.slot_span);
+    const span =
+      Number.isFinite(spanFromRun) && spanFromRun >= 2
+        ? spanFromRun
+        : spanByCourseId.get(Number(run?.course_id)) || 1;
+
+    const idxs = [];
+    for (let i = 0; i < span; i += 1) idxs.push(startIdx + i);
+    return idxs.filter((i) => i >= 0 && i < slotDates.length);
+  }
+
+  static _hasSkewedSpanOverlap({
+    courseId,
+    candidateStartIdx,
+    candidateSpan,
+    slotDates,
+    slotIdxByDate,
+    spanByCourseId,
+    excludeRunId = null,
+  }) {
+    if (!Number.isFinite(candidateStartIdx) || candidateSpan <= 1) return false;
+
+    const candidateEndExclusive = candidateStartIdx + candidateSpan;
+    for (const run of CourseRunManager._runs() || []) {
+      if (excludeRunId != null && String(run.run_id) === String(excludeRunId)) {
+        continue;
+      }
+      if (Number(run.course_id) !== Number(courseId)) continue;
+
+      const runStartIdx = CourseRunManager._runStartSlotIdx({
+        run,
+        slotDates,
+        slotIdxByDate,
+        spanByCourseId,
+      });
+      if (!Number.isFinite(runStartIdx)) continue;
+      if (runStartIdx === candidateStartIdx) continue; // aligned start is ok
+
+      const runSpanFromRun = Number(run?.slot_span);
+      const runSpan =
+        Number.isFinite(runSpanFromRun) && runSpanFromRun >= 2
+          ? runSpanFromRun
+          : spanByCourseId.get(Number(run?.course_id)) || 1;
+      if (runSpan <= 1) continue;
+
+      const runEndExclusive = runStartIdx + runSpan;
+      const overlaps =
+        candidateStartIdx < runEndExclusive && runStartIdx < candidateEndExclusive;
+      if (overlaps) return true;
+    }
+    return false;
+  }
+
   static _runById(runId) {
     return CourseRunManager._runs().find((r) => String(r.run_id) === String(runId));
   }
@@ -26,55 +118,32 @@ export class CourseRunManager {
 
     if (!course) return;
 
-    const slotsOrdered = (store.getSlots() || [])
-      .slice()
-      .sort(
-        (a, b) =>
-          new Date(a.start_date) - new Date(b.start_date) ||
-          Number(a.slot_id) - Number(b.slot_id)
-      );
-    const slotIndexById = new Map(
-      slotsOrdered.map((s, idx) => [String(s.slot_id), idx])
-    );
-
-    const targetSlotExisting = slotsOrdered.find(
-      (s) => s.start_date === targetSlotDate
-    );
-    const targetSlotIdx = targetSlotExisting
-      ? slotIndexById.get(String(targetSlotExisting.slot_id))
-      : null;
-
-    // 15hp (span>1) courses may only start on the first slot of the span.
-    // If the same course is already running and this slot is a continuation
-    // slot, we must block starting it here.
     const spanForCourse = Number(course?.credits) === 15 ? 2 : 1;
-    if (spanForCourse > 1 && Number.isFinite(targetSlotIdx)) {
-      const hasBlockingContinuation = (CourseRunManager._runs() || []).some(
-        (r) => {
-          if (Number(r.course_id) !== Number(courseId)) return false;
 
-          const idxs = Array.isArray(r.slot_ids) && r.slot_ids.length > 0
-            ? r.slot_ids
-                .map((sid) => slotIndexById.get(String(sid)))
-                .filter((v) => Number.isFinite(v))
-            : (() => {
-                const startIdx = slotIndexById.get(String(r.slot_id));
-                const span = Number(r?.slot_span) >= 2
-                  ? Number(r.slot_span)
-                  : Number(store.getCourse(r.course_id)?.credits) === 15
-                    ? 2
-                    : 1;
-                if (!Number.isFinite(startIdx)) return [];
-                return Array.from({ length: span }, (_, i) => startIdx + i);
-              })();
-
-          if (idxs.length === 0) return false;
-          const startIdx = Math.min(...idxs);
-          return idxs.includes(targetSlotIdx) && startIdx < targetSlotIdx;
-        }
+    if (spanForCourse > 1) {
+      const slotDates = CourseRunManager._sortedSlotDates();
+      const slotIdxByDate = CourseRunManager._slotIdxByDate(slotDates);
+      const spanByCourseId = new Map(
+        (store.getCourses() || []).map((c) => [
+          Number(c.course_id),
+          Number(c?.credits) === 15 ? 2 : 1,
+        ])
       );
+      const candidateStartIdx = slotIdxByDate.get(String(targetSlotDate));
 
-      if (hasBlockingContinuation) return;
+      // Prevent *any* skewed overlap for 15hp courses (offset starts are forbidden).
+      if (
+        CourseRunManager._hasSkewedSpanOverlap({
+          courseId,
+          candidateStartIdx,
+          candidateSpan: spanForCourse,
+          slotDates,
+          slotIdxByDate,
+          spanByCourseId,
+        })
+      ) {
+        return;
+      }
     }
 
     // Prevent cross-cohort drops unless course already exists in slot
@@ -208,49 +277,30 @@ export class CourseRunManager {
         .getSlots()
         .find((s) => s.start_date === targetSlotDate);
 
-      // 15hp (span>1) courses may only start on the first slot of the span.
-      // Block moving a course-run to a continuation slot of an already-running
-      // course span in another cohort.
-      if (spanForCourse > 1 && targetSlot) {
-        const slotsOrdered = (store.getSlots() || [])
-          .slice()
-          .sort(
-            (a, b) =>
-              new Date(a.start_date) - new Date(b.start_date) ||
-              Number(a.slot_id) - Number(b.slot_id)
-          );
-        const slotIndexById = new Map(
-          slotsOrdered.map((s, idx) => [String(s.slot_id), idx])
+      if (spanForCourse > 1) {
+        const slotDates = CourseRunManager._sortedSlotDates();
+        const slotIdxByDate = CourseRunManager._slotIdxByDate(slotDates);
+        const spanByCourseId = new Map(
+          (store.getCourses() || []).map((c) => [
+            Number(c.course_id),
+            Number(c?.credits) === 15 ? 2 : 1,
+          ])
         );
-        const targetSlotIdx = slotIndexById.get(String(targetSlot.slot_id));
+        const candidateStartIdx = slotIdxByDate.get(String(targetSlotDate));
 
-        if (Number.isFinite(targetSlotIdx)) {
-          const hasBlockingContinuation = (CourseRunManager._runs() || []).some(
-            (r) => {
-              if (String(r.run_id) === String(runId)) return false;
-              if (Number(r.course_id) !== Number(run.course_id)) return false;
-
-              const idxs = Array.isArray(r.slot_ids) && r.slot_ids.length > 0
-                ? r.slot_ids
-                    .map((sid) => slotIndexById.get(String(sid)))
-                    .filter((v) => Number.isFinite(v))
-                : (() => {
-                    const startIdx = slotIndexById.get(String(r.slot_id));
-                    const span = Number(r?.slot_span) >= 2
-                      ? Number(r.slot_span)
-                      : Number(store.getCourse(r.course_id)?.credits) === 15
-                        ? 2
-                        : 1;
-                    if (!Number.isFinite(startIdx)) return [];
-                    return Array.from({ length: span }, (_, i) => startIdx + i);
-                  })();
-
-              if (idxs.length === 0) return false;
-              const startIdx = Math.min(...idxs);
-              return idxs.includes(targetSlotIdx) && startIdx < targetSlotIdx;
-            }
-          );
-          if (hasBlockingContinuation) return;
+        // Prevent *any* skewed overlap for 15hp courses (offset starts are forbidden).
+        if (
+          CourseRunManager._hasSkewedSpanOverlap({
+            courseId: run.course_id,
+            candidateStartIdx,
+            candidateSpan: spanForCourse,
+            slotDates,
+            slotIdxByDate,
+            spanByCourseId,
+            excludeRunId: runId,
+          })
+        ) {
+          return;
         }
       }
 
@@ -655,6 +705,7 @@ export class CourseRunManager {
     const totalsBySlotIdx = new Map(); // slotIdx -> Map(courseId -> totalStudents)
     const startsTotalsBySlotIdx = new Map(); // startSlotIdx -> Map(courseId -> totalStudents)
     const blockedStartSlotIdxByCourse = new Map(); // courseId -> Set(slotIdx)
+    const existingStartIdxsByCourse = new Map(); // courseId -> Set(startSlotIdx) for span>1 courses
     const occupiedSlotIdxForTarget = new Set();
     const scheduledCoursesForTarget = new Set();
     const completionEndIdxByCourse = new Map(); // courseId -> end slotIdx
@@ -700,6 +751,13 @@ export class CourseRunManager {
 
       const runStartIdx = runStartIdxFor(run);
       if (Number.isFinite(runStartIdx)) {
+        if ((spanById.get(courseId) || 1) > 1) {
+          if (!existingStartIdxsByCourse.has(courseId)) {
+            existingStartIdxsByCourse.set(courseId, new Set());
+          }
+          existingStartIdxsByCourse.get(courseId).add(runStartIdx);
+        }
+
         slotIdxs.forEach((idx) => {
           if (idx === runStartIdx) return;
           if (!blockedStartSlotIdxByCourse.has(courseId)) {
@@ -757,6 +815,25 @@ export class CourseRunManager {
       if (blockedStartSlotIdxByCourse.get(courseId)?.has(slotIdx)) return false;
       const span = spanById.get(courseId) || 1;
       if (slotIdx + span - 1 >= slotDates.length) return false;
+
+      // For span>1 (15hp) courses: forbid any skewed overlap with existing runs.
+      // If any other cohort has started this course at a different start slot that
+      // overlaps the candidate span, we cannot start here.
+      if (span > 1) {
+        const starts = existingStartIdxsByCourse.get(courseId);
+        if (starts && starts.size > 0) {
+          const candidateEndExclusive = slotIdx + span;
+          for (const otherStartIdx of starts) {
+            if (!Number.isFinite(otherStartIdx)) continue;
+            if (otherStartIdx === slotIdx) continue;
+            const otherEndExclusive = otherStartIdx + span;
+            const overlaps =
+              slotIdx < otherEndExclusive && otherStartIdx < candidateEndExclusive;
+            if (overlaps) return false;
+          }
+        }
+      }
+
       for (let i = 0; i < span; i += 1) {
         if (occupiedSlotIdxForTarget.has(slotIdx + i)) return false;
       }
