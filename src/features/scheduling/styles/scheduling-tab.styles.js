@@ -123,6 +123,7 @@ export const schedulingTabStyles = css`
 	    position: relative;
 	    z-index: 0;
 	    isolation: isolate;
+	    margin-top: var(--space-4);
 	  }
 
 	  .gantt-scroll-wrapper:focus {
