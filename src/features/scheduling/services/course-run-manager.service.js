@@ -598,32 +598,9 @@ export class CourseRunManager {
       courses.map((c) => [Number(c.course_id), Number(c?.credits) === 15 ? 2 : 1])
     );
 
-    // Dependents count (tie-breaker for "important" courses).
-    const dependentsCount = new Map();
-    for (const c of courses) {
-      const prereqs = prereqsById.get(Number(c.course_id)) || [];
-      prereqs.forEach((pid) => {
-        dependentsCount.set(pid, (dependentsCount.get(pid) || 0) + 1);
-      });
-    }
-
-    // Special chain priority: AI180U -> AI192U -> AI182U
-    const findCourseIdByCode = (code) =>
-      courses.find((c) => String(c.code) === String(code))?.course_id ?? null;
-    const ai180Id = findCourseIdByCode("AI180U");
-    const ai192Id = findCourseIdByCode("AI192U");
-    const ai182Id = findCourseIdByCode("AI182U");
-    const otherAi180Dependents = new Set(
-      courses
-        .filter((c) => {
-          if (ai180Id == null) return false;
-          if (Number(c.course_id) === Number(ai192Id)) return false;
-          if (Number(c.course_id) === Number(ai182Id)) return false;
-          const prereqs = prereqsById.get(Number(c.course_id)) || [];
-          return prereqs.some((pid) => String(pid) === String(ai180Id));
-        })
-        .map((c) => Number(c.course_id))
-    );
+    // Auto-fill rule order:
+    // 1) Prerequisite order is ALWAYS a hard constraint (handled in canPlaceCourseAt/isPrereqsMet).
+    // 2) Economy: maximize co-reading across cohorts (alignment), up to max students.
 
     // Build totals per (slotIdx, courseId) across all already scheduled cohorts.
     const cohorts = store.getCohorts() || [];
@@ -769,36 +746,14 @@ export class CourseRunManager {
       return max;
     };
 
-    const shouldPrioritizeChain = () => {
-      if (ai180Id == null) return false;
-      if (ai192Id == null || ai182Id == null) return false;
-      const hasOthers = Array.from(remainingCourseIds).some((id) =>
-        otherAi180Dependents.has(id)
-      );
-      const chainPending = remainingCourseIds.has(Number(ai192Id)) || remainingCourseIds.has(Number(ai182Id));
-      return hasOthers && chainPending;
-    };
-
     const scoreCourse = (courseId, slotIdx) => {
       // Align to courses that *start* in this slot (not continuations of 15hp spans).
       const alignedStudents = startsTotalsBySlotIdx.get(slotIdx)?.get(courseId) || 0;
-      const span = spanById.get(courseId) || 1;
-      const dependents = dependentsCount.get(courseId) || 0;
       const overPreferred = Math.max(0, projectedMaxTotal(courseId, slotIdx) - maxStudentsPreferred);
 
       let score = 0;
-      // Strongly prefer aligning with courses already running in this slot.
+      // Economy first: strongly prefer aligning with courses already starting in this slot.
       score += alignedStudents > 0 ? 100000 + alignedStudents * 10 : 0;
-      // Prefer "important" courses earlier.
-      score += dependents * 20;
-      // Prefer 15hp earlier (reduces fragmentation).
-      score += span >= 2 ? 50 : 0;
-      // Soft: keep AI192U + AI182U early before other AI180U-dependent courses.
-      if (shouldPrioritizeChain()) {
-        if (String(courseId) === String(ai192Id)) score += 5000;
-        if (String(courseId) === String(ai182Id)) score += 4800;
-        if (otherAi180Dependents.has(courseId)) score -= 500;
-      }
       // Soft: avoid exceeding preferred threshold when possible.
       score -= overPreferred * 5;
       return score;
