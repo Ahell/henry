@@ -29,6 +29,8 @@ export class SchedulingTab extends LitElement {
     this._shouldShowTeacherAvailabilityOverlay = false;
     this._autoFillInProgressByCohort = new Set();
     this._didAutoScroll = false;
+    this._availabilityAutoScrollRAF = null;
+    this._availabilityAutoScrollLastTs = 0;
     store.subscribe(() => {
       const next = !!store.editMode;
       if (this.isEditing !== next) {
@@ -67,6 +69,83 @@ export class SchedulingTab extends LitElement {
     // shrinking font-size until each chip fits its own width.
     if (this._dragCourseId && this._shouldShowTeacherAvailabilityOverlay) {
       requestAnimationFrame(() => this._fitAvailabilityHeaderChips());
+      this._ensureAvailabilityHeaderAutoScroll();
+    }
+  }
+
+  _ensureAvailabilityHeaderAutoScroll() {
+    if (this._availabilityAutoScrollRAF) return;
+    this._availabilityAutoScrollLastTs = 0;
+
+    const tick = (ts) => {
+      if (!this._dragCourseId || !this._shouldShowTeacherAvailabilityOverlay) {
+        this._availabilityAutoScrollRAF = null;
+        this._availabilityAutoScrollLastTs = 0;
+        return;
+      }
+
+      const root = this.shadowRoot;
+      const containers = root
+        ? Array.from(root.querySelectorAll(".slot-availability"))
+        : [];
+      if (containers.length) {
+        const last = this._availabilityAutoScrollLastTs || ts;
+        const dt = Math.max(0, (ts - last) / 1000);
+        this._availabilityAutoScrollLastTs = ts;
+
+        const speedPxPerSec = 24;
+
+        containers.forEach((el) => {
+          // Only animate when visible (during drag overlay)
+          if (el.getAttribute("aria-hidden") === "true") return;
+          if (el.matches(":hover")) return; // allow manual reading/scroll
+
+          const max = Math.max(0, el.scrollHeight - el.clientHeight);
+          if (max <= 1) {
+            el.scrollTop = 0;
+            el.dataset.autoScrollDir = "1";
+            el.dataset.autoScrollPos = "0";
+            return;
+          }
+
+          const currentDir = Number(el.dataset.autoScrollDir || "1");
+          let dir =
+            Number.isFinite(currentDir) && currentDir !== 0 ? currentDir : 1;
+
+          const currentPosRaw =
+            el.dataset.autoScrollPos != null ? Number(el.dataset.autoScrollPos) : NaN;
+          let pos = Number.isFinite(currentPosRaw) ? currentPosRaw : el.scrollTop;
+
+          pos += dir * speedPxPerSec * dt;
+
+          if (pos >= max) {
+            pos = max;
+            dir = -1;
+          } else if (pos <= 0) {
+            pos = 0;
+            dir = 1;
+          }
+
+          // Use our own accumulator so we don't get "stuck" on sub-pixel steps.
+          el.scrollTop = pos;
+          el.dataset.autoScrollDir = String(dir);
+          el.dataset.autoScrollPos = String(pos);
+        });
+      } else {
+        this._availabilityAutoScrollLastTs = ts;
+      }
+
+      this._availabilityAutoScrollRAF = requestAnimationFrame(tick);
+    };
+
+    this._availabilityAutoScrollRAF = requestAnimationFrame(tick);
+  }
+
+  _stopAvailabilityHeaderAutoScroll() {
+    if (this._availabilityAutoScrollRAF) {
+      cancelAnimationFrame(this._availabilityAutoScrollRAF);
+      this._availabilityAutoScrollRAF = null;
+      this._availabilityAutoScrollLastTs = 0;
     }
   }
 
@@ -77,22 +156,31 @@ export class SchedulingTab extends LitElement {
     const chips = Array.from(root.querySelectorAll(".availability-chip"));
     if (chips.length === 0) return;
 
-    const fitClasses = [
-      "availability-chip--fit-1",
-      "availability-chip--fit-2",
-      "availability-chip--fit-3",
-      "availability-chip--fit-4",
-    ];
-
     chips.forEach((chip) => {
-      fitClasses.forEach((c) => chip.classList.remove(c));
-
       const textEl = chip.querySelector(".availability-chip-text");
       if (!textEl) return;
 
-      for (let i = 0; i < fitClasses.length; i += 1) {
-        if (textEl.scrollWidth <= textEl.clientWidth) break;
-        chip.classList.add(fitClasses[i]);
+      chip.style.fontSize = "";
+      const basePx = parseFloat(getComputedStyle(chip).fontSize);
+      if (!Number.isFinite(basePx) || basePx <= 0) return;
+
+      const minPx = 9; // ~0.56rem default is ~9px-10px; allow a bit smaller but stay readable.
+      let currentPx = basePx;
+      for (let i = 0; i < 6; i += 1) {
+        const overflow = textEl.scrollWidth - textEl.clientWidth;
+        if (overflow <= 0) break;
+
+        const ratio = textEl.clientWidth / textEl.scrollWidth;
+        if (!Number.isFinite(ratio) || ratio <= 0) break;
+
+        const nextPx = Math.max(minPx, currentPx * ratio * 0.99);
+        if (nextPx >= currentPx - 0.1) {
+          chip.style.fontSize = `${Math.max(minPx, currentPx - 0.2)}px`;
+          currentPx = Math.max(minPx, currentPx - 0.2);
+          continue;
+        }
+        chip.style.fontSize = `${nextPx}px`;
+        currentPx = nextPx;
       }
     });
   }
@@ -1776,6 +1864,7 @@ export class SchedulingTab extends LitElement {
     this._dragCourseId = null;
     this._teacherOverlayChipsBySlotDate = new Map();
     this._shouldShowTeacherAvailabilityOverlay = false;
+    this._stopAvailabilityHeaderAutoScroll();
     this._applyColumnTeacherShortageClasses();
     this.requestUpdate();
   }

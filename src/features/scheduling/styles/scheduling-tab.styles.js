@@ -222,7 +222,18 @@ export const schedulingTabStyles = css`
     box-shadow: none;
     box-sizing: border-box;
     max-width: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge legacy */
+  }
+
+  .slot-availability::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
   }
 
   .slot-warning-pills {
@@ -286,22 +297,6 @@ export const schedulingTabStyles = css`
     box-sizing: border-box;
     position: relative;
     isolation: isolate;
-  }
-
-  .availability-chip--fit-1 {
-    font-size: 0.52rem;
-  }
-
-  .availability-chip--fit-2 {
-    font-size: 0.48rem;
-  }
-
-  .availability-chip--fit-3 {
-    font-size: 0.44rem;
-  }
-
-  .availability-chip--fit-4 {
-    font-size: 0.4rem;
   }
 
   .availability-chip-text {
