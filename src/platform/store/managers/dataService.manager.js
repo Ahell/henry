@@ -271,8 +271,9 @@ export class DataServiceManager {
       // Clear all tables via backend
       await this.dataService.api.resetAllData();
 
-      // Clear frontend data (without seeding) so UI reflects the empty database
-      this.importData({});
+      // Reload canonical state from backend so the UI also reflects persisted
+      // app_settings (e.g. business logic defaults after reset).
+      await this.loadData();
 
       return { success: true, message: "Database reset" };
     } catch (error) {

@@ -4,6 +4,38 @@ import { seedData } from "../data/seedData.js";
 
 const router = express.Router();
 
+const getResetBusinessLogic = () => {
+  const base = seedData?.businessLogic;
+  const rulesRaw = base?.scheduling?.rules;
+  const rules = Array.isArray(rulesRaw) ? rulesRaw : [];
+
+  const normalizedRules = rules
+    .map((r) => ({
+      ...r,
+      enabled: false,
+      kind: "soft",
+    }))
+    .sort((a, b) =>
+      String(a?.label || a?.id || "").localeCompare(
+        String(b?.label || b?.id || ""),
+        "sv",
+        { sensitivity: "base" }
+      )
+    );
+
+  return {
+    version: Number(base?.version) || 1,
+    scheduling: {
+      params: {
+        maxStudentsHard: Number(base?.scheduling?.params?.maxStudentsHard) || 130,
+        maxStudentsPreferred:
+          Number(base?.scheduling?.params?.maxStudentsPreferred) || 100,
+      },
+      rules: normalizedRules,
+    },
+  };
+};
+
 const clearAllTables = () => {
   db.transaction(() => {
     // Delete all data in correct order to handle foreign key constraints
@@ -30,6 +62,18 @@ const clearAllTables = () => {
 router.post("/reset-all", (req, res) => {
   try {
     clearAllTables();
+
+    // Keep app settings seeded even after reset so the UI has a known default state.
+    db.prepare(
+      `
+      INSERT INTO app_settings (key, value)
+      VALUES (@key, @value)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `
+    ).run({
+      key: "business_logic",
+      value: JSON.stringify(getResetBusinessLogic()),
+    });
 
     console.log("Admin: reset all database tables");
     res.json({ success: true, message: "All database tables cleared" });
