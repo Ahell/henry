@@ -1,15 +1,15 @@
 import { css } from "lit";
 
 export const businessLogicTabStyles = css`
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  @import url("/src/styles/tokens.css");
+
+  :host {
+    display: block;
   }
 
   .row {
     display: flex;
-    gap: 1rem;
+    gap: var(--space-4);
     align-items: center;
     flex-wrap: wrap;
   }
@@ -18,39 +18,45 @@ export const businessLogicTabStyles = css`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    width: 100%;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
   }
 
   .rule-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--space-3);
   }
 
   .rule {
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: 1rem;
-    padding: 0.75rem;
-    border: 1px solid #e6e9ef;
-    background: #fff;
+    gap: var(--space-4);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    background: var(--color-background);
   }
 
   .rule-title {
     font-weight: 600;
-    margin-bottom: 0.25rem;
+    margin-bottom: var(--space-1);
   }
 
   .rule-desc {
-    color: #5f6b7a;
-    font-size: 0.9rem;
-    line-height: 1.2rem;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
   }
 
   .rule-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     align-items: center;
     flex-wrap: wrap;
   }

@@ -105,22 +105,41 @@ export class BusinessLogicTab extends LitElement {
         ? html`<div class="${this.messageType}">${this.message}</div>`
         : ""}
 
-      <div class="grid">
-        <henry-panel>
-          <div slot="header" class="panel-header">
-            <henry-text variant="heading-3">Affärslogik</henry-text>
+      <henry-panel>
+        <div slot="header" class="panel-header">
+          <henry-text variant="heading-3">Affärslogik</henry-text>
+          <div class="header-actions">
             ${this.saving
               ? html`<henry-text variant="caption">Sparar…</henry-text>`
               : ""}
+            <henry-button variant="secondary" @click="${this._handleEditClick}">
+              Redigera
+            </henry-button>
           </div>
-          <div class="rule-list">
-            ${rules.map((r, idx) =>
-              this._renderRuleRow(r, idx, rules.length)
-            )}
-          </div>
-        </henry-panel>
-      </div>
+        </div>
+        <div class="rule-list">
+          ${rules.map((r, idx) => this._renderRuleRow(r, idx, rules.length))}
+        </div>
+      </henry-panel>
     `;
+  }
+
+  _handleEditClick() {
+    // The rules are always editable; this button exists for UI consistency.
+    // We use it to move focus to the first editable control.
+    const firstInput = this.renderRoot?.querySelector("henry-input");
+    if (firstInput?.getInput) {
+      try {
+        firstInput.getInput()?.focus?.();
+        return;
+      } catch (err) {
+        /* ignore */
+      }
+    }
+
+    const firstSwitch = this.renderRoot?.querySelector("henry-switch");
+    const nativeSwitch = firstSwitch?.shadowRoot?.querySelector("input");
+    nativeSwitch?.focus?.();
   }
 
   _renderRuleRow(rule, idx, listLength) {
