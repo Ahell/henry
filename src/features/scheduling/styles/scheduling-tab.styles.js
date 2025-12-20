@@ -14,12 +14,6 @@ export const schedulingTabStyles = css`
     --availability-chip-gap: 4px;
   }
 
-  .warning-pills {
-    display: flex;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-  }
-
   .panel-header {
     display: flex;
     justify-content: space-between;
@@ -41,39 +35,6 @@ export const schedulingTabStyles = css`
     display: inline-flex;
     gap: var(--space-2);
     align-items: center;
-  }
-
-	  .warning-pill {
-	    display: inline-flex;
-	    align-items: center;
-	    gap: var(--space-1);
-    background: var(--color-gray-100);
-    color: var(--color-text-primary);
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-full);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-    border: 1px solid var(--color-border);
-  }
-
-  .warning-pill .cohort-name {
-    font-weight: var(--font-weight-semibold);
-  }
-
-  .warning-pill .warning-prefix {
-    font-weight: var(--font-weight-semibold);
-  }
-
-  .warning-pill--hard {
-    background: var(--color-danger-light);
-    color: var(--color-danger-hover);
-    border-color: rgba(239, 68, 68, 0.25);
-  }
-
-  .warning-pill--soft {
-    background: var(--color-warning-light);
-    color: var(--color-warning-hover);
-    border-color: rgba(245, 158, 11, 0.28);
   }
 
   .legend {
@@ -238,14 +199,19 @@ export const schedulingTabStyles = css`
     box-sizing: border-box;
     overflow: hidden;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
     padding: 6px;
+    gap: 6px;
   }
 
   .slot-availability {
     width: 100%;
     display: flex;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
     flex-wrap: wrap;
     align-content: flex-start;
     gap: var(--availability-chip-gap);
@@ -257,6 +223,46 @@ export const schedulingTabStyles = css`
     box-sizing: border-box;
     max-width: 100%;
     overflow: hidden;
+  }
+
+  .slot-warning-pills {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: auto;
+    min-height: 18px;
+  }
+
+  .slot-warning-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.2;
+    border: 1px solid var(--color-border);
+    background: var(--color-gray-100);
+    color: var(--color-text-primary);
+    cursor: help;
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .slot-warning-pill--hard {
+    background: var(--color-danger-light);
+    color: var(--color-danger-hover);
+    border-color: rgba(239, 68, 68, 0.25);
+  }
+
+  .slot-warning-pill--soft {
+    background: var(--color-warning-light);
+    color: var(--color-warning-hover);
+    border-color: rgba(245, 158, 11, 0.28);
   }
 
   .availability-chip {
@@ -503,10 +509,56 @@ export const schedulingTabStyles = css`
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .gantt-table td.cohort-cell .cohort-cell-name {
     flex: 0 0 auto;
+  }
+
+  .gantt-table td.cohort-cell .cohort-warning-markers {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: auto;
+  }
+
+  .gantt-table td.cohort-cell .cohort-warning-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.2;
+    border: 1px solid var(--color-border);
+    background: var(--color-gray-100);
+    color: var(--color-text-primary);
+    cursor: help;
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .gantt-table td.cohort-cell .cohort-warning-pill--hard {
+    background: var(--color-danger-light);
+    color: var(--color-danger-hover);
+    border-color: rgba(239, 68, 68, 0.25);
+  }
+
+  .gantt-table td.cohort-cell .cohort-warning-pill--soft {
+    background: var(--color-warning-light);
+    color: var(--color-warning-hover);
+    border-color: rgba(245, 158, 11, 0.28);
   }
 
   .gantt-table td.cohort-cell .cohort-cell-actions {

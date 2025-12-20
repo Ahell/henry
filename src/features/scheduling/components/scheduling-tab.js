@@ -139,21 +139,24 @@ export class SchedulingTab extends LitElement {
       this._computeMissingAvailableCompatibleTeacherWarnings();
     const emptySlotWarnings = this._computeEmptySlotWarnings();
 
-    const headerWarnings = this._dedupeWarnings([
+    const allWarnings = [
       ...prerequisiteWarnings,
       ...overlapWarnings,
       ...capacityWarnings,
       ...skewedOverlapWarnings,
       ...teacherAvailabilityWarnings,
       ...emptySlotWarnings,
-    ]);
+    ];
+    const cohortMarkersByCohortId =
+      this._buildCohortWarningMarkersByCohortId(allWarnings);
+    const slotCapacityWarningsBySlotDate =
+      this._buildSlotCapacityWarningPillsBySlotDate(capacityWarnings);
 
     return html`
       <henry-panel>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Schemaläggning</henry-text>
           <div class="header-actions">
-            ${this._renderWarningPills(headerWarnings)}
             <div class="header-buttons">
               <henry-button
                 variant="primary"
@@ -183,7 +186,10 @@ export class SchedulingTab extends LitElement {
                 ${slotDates.map(
                   (dateStr) =>
                     html`<th class="slot-col-header">
-                      ${this._renderSlotAvailabilityHeader(dateStr)}
+                      ${this._renderSlotAvailabilityHeader(
+                        dateStr,
+                        slotCapacityWarningsBySlotDate
+                      )}
                     </th>`
                 )}
               </tr>
@@ -198,7 +204,12 @@ export class SchedulingTab extends LitElement {
             </thead>
             <tbody>
               ${cohorts.map((cohort) =>
-                this._renderGanttRow(cohort, slotDates, prerequisiteProblems)
+                this._renderGanttRow(
+                  cohort,
+                  slotDates,
+                  prerequisiteProblems,
+                  cohortMarkersByCohortId
+                )
               )}
             </tbody>
             <tfoot>
@@ -248,7 +259,7 @@ export class SchedulingTab extends LitElement {
         });
       }
 
-      for (const cohortSet of cohortIdsByCourseId.values()) {
+      for (const [courseKey, cohortSet] of cohortIdsByCourseId.entries()) {
         let total = 0;
         cohortSet.forEach((cohortId) => {
           const cohort = store.getCohort(cohortId);
@@ -256,16 +267,40 @@ export class SchedulingTab extends LitElement {
         });
 
         if (total > hard) {
-          warnings.push({ ruleId: "maxStudentsHard", slotDate });
+          cohortSet.forEach((cohortId) => {
+            warnings.push({
+              ruleId: "maxStudentsHard",
+              cohortId,
+              slotDate,
+              courseId: Number(courseKey),
+              total,
+              limit: hard,
+            });
+          });
           continue;
         }
         if (total > preferred) {
-          warnings.push({ ruleId: "avoidOverPreferred", slotDate });
+          cohortSet.forEach((cohortId) => {
+            warnings.push({
+              ruleId: "avoidOverPreferred",
+              cohortId,
+              slotDate,
+              courseId: Number(courseKey),
+              total,
+              limit: preferred,
+            });
+          });
         }
       }
     }
 
     return warnings;
+  }
+
+  _truncatePillLabel(label, maxLen = 14) {
+    const text = String(label || "");
+    if (text.length <= maxLen) return text;
+    return `${text.slice(0, Math.max(0, maxLen - 1))}…`;
   }
 
   _computeSkewed15HpOverlapWarnings() {
@@ -303,11 +338,17 @@ export class SchedulingTab extends LitElement {
       if (!set) continue;
       // Skewed overlap: another run starts one slot earlier for same 15hp course.
       if (!set.has(startIdx - 1)) continue;
+      const slotDate = store.getSlot(run.slot_id)?.start_date;
       const cohortIds = Array.isArray(run.cohorts) ? run.cohorts : [];
       cohortIds
         .filter((id) => id != null)
         .forEach((cohortId) =>
-          warnings.push({ ruleId: "noSkewedOverlap15hp", cohortId })
+          warnings.push({
+            ruleId: "noSkewedOverlap15hp",
+            cohortId,
+            slotDate,
+            courseId: run.course_id,
+          })
         );
     }
 
@@ -337,7 +378,7 @@ export class SchedulingTab extends LitElement {
       );
       if (runsInCohort.length === 0) continue;
 
-      let violated = false;
+      let violation = null;
       for (const run of runsInCohort) {
         if (!run || run.course_id == null || run.slot_id == null) continue;
 
@@ -361,17 +402,19 @@ export class SchedulingTab extends LitElement {
             (t) => !store.isTeacherUnavailable(t.teacher_id, dateStr, slotId)
           );
           if (!hasAnyAvailable) {
-            violated = true;
+            violation = { slotDate: dateStr, courseId: run.course_id };
             break;
           }
         }
-        if (violated) break;
+        if (violation) break;
       }
 
-      if (violated) {
+      if (violation) {
         warnings.push({
           ruleId: "requireAvailableCompatibleTeachers",
           cohortId: cohort.cohort_id,
+          slotDate: violation.slotDate,
+          courseId: violation.courseId,
         });
       }
     }
@@ -448,29 +491,19 @@ export class SchedulingTab extends LitElement {
     (Array.isArray(prerequisiteProblems) ? prerequisiteProblems : []).forEach(
       (p) => {
         if (p?.cohortId == null) return;
-        warnings.push({ ruleId: "prerequisitesOrder", cohortId: p.cohortId });
+        warnings.push({
+          ruleId: "prerequisitesOrder",
+          cohortId: p.cohortId,
+          courseId: p.courseId,
+          courseCode: p.courseCode,
+          courseName: p.courseName,
+          missingPrereqCode: p.missingPrereqCode,
+          missingPrereqName: p.missingPrereqName,
+          type: p.type,
+        });
       }
     );
     return warnings;
-  }
-
-  _dedupeWarnings(warnings) {
-    const out = [];
-    const seen = new Set();
-    (Array.isArray(warnings) ? warnings : []).forEach((w) => {
-      const ruleId = w?.ruleId;
-      const slotDate = w?.slotDate;
-      const cohortId = w?.cohortId;
-      if (!ruleId) return;
-      const keyPart =
-        slotDate != null ? `slot:${slotDate}` : cohortId != null ? `cohort:${cohortId}` : null;
-      if (!keyPart) return;
-      const key = `${ruleId}@@${keyPart}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      out.push({ ruleId, slotDate, cohortId });
-    });
-    return out;
   }
 
   _handleEditClick(e) {
@@ -491,148 +524,273 @@ export class SchedulingTab extends LitElement {
     }
   }
 
-  _renderWarningPills(prerequisiteProblems) {
-    const warnings = Array.isArray(prerequisiteProblems)
-      ? prerequisiteProblems
-      : [];
-    if (warnings.length === 0) return "";
 
+  _buildCohortWarningMarkersByCohortId(warnings) {
     const schedulingRules =
       store.businessLogicManager.getBusinessLogic()?.scheduling?.rules || [];
     const ruleById = new Map(
       schedulingRules.map((r) => [String(r?.id || ""), r]).filter(([id]) => id)
     );
 
+    const slotOnlyRuleIds = new Set(["maxStudentsHard", "avoidOverPreferred"]);
     const conciseLabelByRuleId = {
-      prerequisitesOrder: "Spärrkursordning",
-      maxStudentsHard: "Över maxantal studenter",
-      avoidOverPreferred: "Över föredraget antal studenter",
-      noSkewedOverlap15hp: "15hp överlappar snett",
-      requireAvailableCompatibleTeachers: "Ingen tillgänglig lärare",
+      prerequisitesOrder: "Spärrkurs",
+      noSkewedOverlap15hp: "15hp snett",
+      requireAvailableCompatibleTeachers: "Ingen lärare",
       avoidEmptySlots: "Tom slot",
-      maxOneCoursePerSlot: "Flera kurser i samma period",
+      maxOneCoursePerSlot: "Flera kurser",
     };
 
-    const slotPrefixedRuleIds = new Set(["maxStudentsHard", "avoidOverPreferred"]);
-    const warningsByPrefix = new Map();
+    const groupedByCohort = new Map(); // cohortId -> Map(ruleId -> entry)
 
-    warnings.forEach((w) => {
+    (Array.isArray(warnings) ? warnings : []).forEach((w) => {
+      const cohortId = w?.cohortId;
       const ruleId = w?.ruleId;
-      if (!ruleId) return;
+      if (cohortId == null || !ruleId) return;
+      if (slotOnlyRuleIds.has(String(ruleId))) return;
 
       const rule = ruleById.get(String(ruleId));
       if (!rule || rule.enabled === false) return;
 
-      const prefixInfo = (() => {
-        if (slotPrefixedRuleIds.has(String(ruleId))) {
-          const slotDate = w?.slotDate;
-          if (!slotDate) return null;
-          return {
-            key: `slot:${slotDate}`,
-            prefixType: "slot",
-            prefixText: slotDate,
-            sortKey: slotDate,
-          };
-        }
-
-        const cohortId = w?.cohortId;
-        if (cohortId == null) return null;
-        const cohort = store.getCohort(cohortId);
-        const prefixText = cohort?.name || `Kull ${cohortId}`;
-        const sortKey = String(cohort?.name || "").toLowerCase();
-        return {
-          key: `cohort:${cohortId}`,
-          prefixType: "cohort",
-          prefixText,
-          sortKey,
-          cohortId,
-        };
-      })();
-      if (!prefixInfo) return;
-
-      if (!warningsByPrefix.has(prefixInfo.key)) {
-        warningsByPrefix.set(prefixInfo.key, {
-          hard: new Set(),
-          soft: new Set(),
-          prefixText: prefixInfo.prefixText,
-          prefixType: prefixInfo.prefixType,
-          sortKey: prefixInfo.sortKey,
-          cohortId: prefixInfo.cohortId,
-        });
-      }
-
       const kind =
         String(rule.kind || "soft").toLowerCase() === "hard" ? "hard" : "soft";
-      const label =
+      const label = this._truncatePillLabel(
         conciseLabelByRuleId[String(ruleId)] ||
-        rule.label ||
-        rule.id ||
-        String(ruleId);
+          rule.label ||
+          rule.id ||
+          String(ruleId)
+      );
 
-      warningsByPrefix.get(prefixInfo.key)[kind].add(label);
+      const cohortKey = String(cohortId);
+      if (!groupedByCohort.has(cohortKey)) {
+        groupedByCohort.set(cohortKey, new Map());
+      }
+      const byRule = groupedByCohort.get(cohortKey);
+      const ruleKey = String(ruleId);
+      if (!byRule.has(ruleKey)) {
+        byRule.set(ruleKey, { ruleId: ruleKey, kind, label, contexts: [] });
+      }
+
+      const entry = byRule.get(ruleKey);
+      entry.kind = kind;
+      entry.label = label;
+      entry.contexts.push({
+        slotDate: w?.slotDate,
+        courseId: w?.courseId,
+        courseCode: w?.courseCode,
+        courseName: w?.courseName,
+        missingPrereqCode: w?.missingPrereqCode,
+        missingPrereqName: w?.missingPrereqName,
+        type: w?.type,
+        total: w?.total,
+        limit: w?.limit,
+      });
     });
 
-    const pills = [];
-    for (const grouped of warningsByPrefix.values()) {
-      const hard = Array.from(grouped.hard || []).filter(Boolean);
-      const soft = Array.from(grouped.soft || []).filter(Boolean);
-      if (hard.length)
-        pills.push({
-          prefixText: grouped.prefixText,
-          prefixType: grouped.prefixType,
-          sortKey: grouped.sortKey,
-          cohortId: grouped.cohortId,
-          kind: "hard",
-          labels: hard,
-        });
-      if (soft.length)
-        pills.push({
-          prefixText: grouped.prefixText,
-          prefixType: grouped.prefixType,
-          sortKey: grouped.sortKey,
-          cohortId: grouped.cohortId,
-          kind: "soft",
-          labels: soft,
-        });
+    const markersByCohortId = new Map();
+
+    for (const [cohortKey, byRule] of groupedByCohort.entries()) {
+      const markers = Array.from(byRule.values()).map((entry) => ({
+        ...entry,
+        title: this._formatCohortWarningMarkerTitle(entry),
+      }));
+
+      const kindOrder = { hard: 0, soft: 1 };
+      markers.sort((a, b) => {
+        const kindCmp = (kindOrder[a.kind] ?? 9) - (kindOrder[b.kind] ?? 9);
+        if (kindCmp !== 0) return kindCmp;
+        return String(a.label || "").localeCompare(String(b.label || ""));
+      });
+
+      markersByCohortId.set(cohortKey, markers);
     }
 
-    if (pills.length === 0) return "";
+    return markersByCohortId;
+  }
 
-    const kindOrder = { hard: 0, soft: 1 };
-    pills.sort((a, b) => {
-      if (a.prefixType !== b.prefixType) {
-        // Slot-prefixed warnings (max/preferred) first to make capacity issues obvious.
-        return a.prefixType === "slot" ? -1 : 1;
+  _buildSlotCapacityWarningPillsBySlotDate(capacityWarnings) {
+    const schedulingRules =
+      store.businessLogicManager.getBusinessLogic()?.scheduling?.rules || [];
+    const ruleById = new Map(
+      schedulingRules.map((r) => [String(r?.id || ""), r]).filter(([id]) => id)
+    );
+
+    const labelByRuleId = {
+      maxStudentsHard: "Maxantal",
+      avoidOverPreferred: "Önskat antal",
+    };
+
+    const bySlotDate = new Map(); // slotDate -> { hard: Set, soft: Set, contexts: [] }
+
+    (Array.isArray(capacityWarnings) ? capacityWarnings : []).forEach((w) => {
+      const slotDate = w?.slotDate;
+      const ruleId = w?.ruleId;
+      if (!slotDate || !ruleId) return;
+
+      const rule = ruleById.get(String(ruleId));
+      if (!rule || rule.enabled === false) return;
+
+      if (!bySlotDate.has(String(slotDate))) {
+        bySlotDate.set(String(slotDate), { hard: false, soft: false, contexts: [] });
       }
-      if (a.prefixType === "slot") {
-        const cmp = String(a.prefixText).localeCompare(String(b.prefixText));
-        if (cmp !== 0) return cmp;
-      } else {
-        const aNum = Number(a.cohortId);
-        const bNum = Number(b.cohortId);
-        if (Number.isFinite(aNum) && Number.isFinite(bNum) && aNum !== bNum) {
-          return aNum - bNum;
-        }
-        const cmp = String(a.sortKey || "").localeCompare(String(b.sortKey || ""));
-        if (cmp !== 0) return cmp;
-        const cmpText = String(a.prefixText).localeCompare(String(b.prefixText));
-        if (cmpText !== 0) return cmpText;
-      }
-      return (kindOrder[a.kind] ?? 9) - (kindOrder[b.kind] ?? 9);
+      const entry = bySlotDate.get(String(slotDate));
+      entry.contexts.push(w);
+
+      if (String(ruleId) === "maxStudentsHard") entry.hard = true;
+      if (String(ruleId) === "avoidOverPreferred") entry.soft = true;
     });
 
-    return html`
-      <div class="warning-pills">
-        ${pills.map(
-          (pill) => html`
-            <div class="warning-pill warning-pill--${pill.kind}">
-              <span class="warning-prefix">${pill.prefixText}</span>:
-              ${pill.labels.join(", ")}
-            </div>
-          `
-        )}
-      </div>
-    `;
+    const out = new Map();
+    for (const [slotDate, entry] of bySlotDate.entries()) {
+      const pills = [];
+      const contexts = Array.isArray(entry.contexts) ? entry.contexts : [];
+
+      const buildTitle = (label, filterRuleId) => {
+        const lines = [label];
+        const seen = new Set();
+        contexts
+          .filter((c) => String(c?.ruleId) === filterRuleId)
+          .forEach((ctx) => {
+            const courseId = ctx?.courseId;
+            const key = `${ctx?.slotDate}@@${courseId}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            const course = courseId != null ? store.getCourse(courseId) : null;
+            const code =
+              course?.code || (courseId != null ? `Kurs ${courseId}` : "Kurs");
+            const total = Number(ctx?.total);
+            const limit = Number(ctx?.limit);
+            const totalText = Number.isFinite(total) ? `${total} studenter` : "";
+            const limitText = Number.isFinite(limit) ? `gräns ${limit}` : "";
+            const details = [totalText, limitText].filter(Boolean).join(", ");
+            lines.push(`${code}${details ? ` (${details})` : ""}`);
+          });
+        return lines.join("\n");
+      };
+
+      if (entry.hard) {
+        const label = this._truncatePillLabel(labelByRuleId.maxStudentsHard);
+        pills.push({
+          kind: "hard",
+          label,
+          title: buildTitle(label, "maxStudentsHard"),
+        });
+      } else if (entry.soft) {
+        const label = this._truncatePillLabel(labelByRuleId.avoidOverPreferred);
+        pills.push({
+          kind: "soft",
+          label,
+          title: buildTitle(label, "avoidOverPreferred"),
+        });
+      }
+
+      out.set(String(slotDate), pills);
+    }
+
+    return out;
+  }
+
+  _formatCohortWarningMarkerTitle(entry) {
+    const ruleId = String(entry?.ruleId || "");
+    const label = String(entry?.label || "").trim() || ruleId;
+    const contexts = Array.isArray(entry?.contexts) ? entry.contexts : [];
+
+    const lines = [label];
+
+    const uniqueByKey = (arr, keyFn) => {
+      const out = [];
+      const seen = new Set();
+      arr.forEach((item) => {
+        const key = keyFn(item);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        out.push(item);
+      });
+      return out;
+    };
+
+    const courseLabel = (ctx) => {
+      const courseId = ctx?.courseId;
+      const fromStore = courseId != null ? store.getCourse(courseId) : null;
+      const code = ctx?.courseCode || fromStore?.code || null;
+      const name = ctx?.courseName || fromStore?.name || null;
+      if (code && name) return `${code}: ${name}`;
+      if (code) return code;
+      if (courseId != null) return `Kurs ${courseId}`;
+      return "Kurs";
+    };
+
+    if (ruleId === "maxStudentsHard" || ruleId === "avoidOverPreferred") {
+      const normalized = uniqueByKey(
+        contexts.filter((c) => c?.slotDate && c?.courseId != null),
+        (c) => `${c.slotDate}@@${c.courseId}`
+      );
+      normalized
+        .sort((a, b) => String(a.slotDate).localeCompare(String(b.slotDate)))
+        .forEach((ctx) => {
+          const total = Number(ctx?.total);
+          const limit = Number(ctx?.limit);
+          const totalText = Number.isFinite(total) ? `${total} studenter` : "";
+          const limitText = Number.isFinite(limit) ? `gräns ${limit}` : "";
+          const details = [totalText, limitText].filter(Boolean).join(", ");
+          lines.push(
+            `${ctx.slotDate}: ${courseLabel(ctx)}${details ? ` (${details})` : ""}`
+          );
+        });
+      return lines.join("\n");
+    }
+
+    if (ruleId === "prerequisitesOrder") {
+      const normalized = uniqueByKey(
+        contexts.filter((c) => c?.courseId != null),
+        (c) => `${c.courseId}@@${c.missingPrereqCode || ""}@@${c.type || ""}`
+      );
+      normalized.slice(0, 10).forEach((ctx) => {
+        const course = courseLabel(ctx);
+        const prereq = ctx?.missingPrereqCode || "";
+        const type = String(ctx?.type || "");
+        if (type === "missing") {
+          lines.push(`${course} saknar spärrkurs${prereq ? `: ${prereq}` : ""}`);
+          return;
+        }
+        if (type === "before_prerequisite") {
+          lines.push(
+            `${course} ligger före spärrkurs${prereq ? `: ${prereq}` : ""}`
+          );
+          return;
+        }
+        if (type === "blocked_by_prerequisite_chain") {
+          lines.push(
+            `${course} spärrkedja${prereq ? `: ${prereq}` : ""}`
+          );
+          return;
+        }
+        lines.push(course);
+      });
+      return lines.join("\n");
+    }
+
+    const slotDates = uniqueByKey(
+      contexts.filter((c) => c?.slotDate),
+      (c) => String(c.slotDate)
+    )
+      .map((c) => c.slotDate)
+      .sort((a, b) => String(a).localeCompare(String(b)));
+    if (slotDates.length) {
+      lines.push(`Slots: ${slotDates.join(", ")}`);
+    }
+
+    const courses = uniqueByKey(
+      contexts.filter((c) => c?.courseId != null),
+      (c) => String(c.courseId)
+    )
+      .map((ctx) => courseLabel(ctx))
+      .filter(Boolean);
+    if (courses.length) {
+      lines.push(`Kurser: ${courses.join(", ")}`);
+    }
+
+    return lines.join("\n");
   }
 
   _renderLegend() {
@@ -650,12 +808,13 @@ export class SchedulingTab extends LitElement {
     `;
   }
 
-  _renderSlotAvailabilityHeader(slotDate) {
+  _renderSlotAvailabilityHeader(slotDate, slotCapacityWarningsBySlotDate) {
     const chips = this._teacherOverlayChipsBySlotDate?.get(slotDate) || [];
+    const warningPills =
+      slotCapacityWarningsBySlotDate?.get?.(String(slotDate)) || [];
 
-    if (!this._dragCourseId || !this._shouldShowTeacherAvailabilityOverlay) {
-      return html`<div class="slot-availability-row" aria-hidden="true"></div>`;
-    }
+    const shouldShowChips =
+      !!this._dragCourseId && !!this._shouldShowTeacherAvailabilityOverlay;
 
     const course = store.getCourse(this._dragCourseId);
     const title = course
@@ -664,28 +823,50 @@ export class SchedulingTab extends LitElement {
 
     return html`
       <div class="slot-availability-row" title="${title}">
-        <div class="slot-availability">
-          ${chips.map((chip) => {
-            const status = chip?.status || "compatible";
-            const className = `availability-chip availability-chip--${status}`;
-            return html`
-              <span class="${className}" title="${chip.title}">
-                <span class="availability-chip-text">${chip.label}</span>
-              </span>
-            `;
-          })}
+        <div
+          class="slot-availability"
+          aria-hidden="${shouldShowChips ? "false" : "true"}"
+        >
+          ${shouldShowChips
+            ? chips.map((chip) => {
+                const status = chip?.status || "compatible";
+                const className = `availability-chip availability-chip--${status}`;
+                return html`
+                  <span class="${className}" title="${chip.title}">
+                    <span class="availability-chip-text">${chip.label}</span>
+                  </span>
+                `;
+              })
+            : ""}
+        </div>
+        <div
+          class="slot-warning-pills"
+          aria-hidden="${warningPills.length ? "false" : "true"}"
+        >
+          ${warningPills.map(
+            (pill) => html`
+              <span
+                class="slot-warning-pill slot-warning-pill--${pill.kind}"
+                title="${pill.title}"
+                aria-label="${pill.label}"
+                >${pill.label}</span
+              >
+            `
+          )}
         </div>
       </div>
     `;
   }
 
-  _renderGanttRow(cohort, slotDates, prerequisiteProblems) {
+  _renderGanttRow(cohort, slotDates, prerequisiteProblems, cohortMarkersById) {
     const runsByDate = {};
     const continuationRunsByDate = {};
     const scheduledCourseIds = new Set();
     const autoFillBusy =
       this._autoFillInProgressByCohort.has(String(cohort.cohort_id)) ||
       store.isReconciling;
+    const markers =
+      cohortMarkersById?.get?.(String(cohort.cohort_id)) || [];
 
     store
       .getCourseRuns()
@@ -760,6 +941,21 @@ export class SchedulingTab extends LitElement {
                 ${autoFillBusy ? "Auto-fyll…" : "Auto-fyll"}
               </button>
             </div>
+            ${markers.length
+              ? html`<div class="cohort-warning-markers" aria-label="Varningar">
+                  ${markers.map(
+                    (m) => html`
+                      <span
+                        class="cohort-warning-pill cohort-warning-pill--${m.kind}"
+                        title="${m.title}"
+                        role="note"
+                        aria-label="${m.label}"
+                        >${m.label}</span
+                      >
+                    `
+                  )}
+                </div>`
+              : ""}
           </div>
         </td>
         ${slotDates.map((dateStr, index) => {
@@ -1168,13 +1364,13 @@ export class SchedulingTab extends LitElement {
         }
       }
 
-      for (const [, set] of uniqueCoursesBySlotDate.entries()) {
+      for (const [dateStr, set] of uniqueCoursesBySlotDate.entries()) {
         if (set.size > 1) {
           warnings.push({
             ruleId: "maxOneCoursePerSlot",
             cohortId: cohort.cohort_id,
+            slotDate: dateStr,
           });
-          break;
         }
       }
     }
