@@ -162,16 +162,15 @@ export class SchedulingTab extends LitElement {
             (p) => p.type === "blocked_by_prerequisite_chain"
           ).length;
 
+          const warningParts = [];
+          if (missingCount > 0) warningParts.push(`${missingCount} saknar spärrkurs`);
+          if (beforeCount > 0) warningParts.push("Kurs före spärrkurs");
+          if (chainCount > 0) warningParts.push(`${chainCount} kedjeblockering`);
+
           return html`
             <div class="warning-pill">
               <span class="cohort-name">${cohort.name}</span>:
-              ${missingCount > 0 ? html`${missingCount} saknar spärrkurs` : ""}
-              ${missingCount > 0 && (beforeCount > 0 || chainCount > 0)
-                ? ", "
-                : ""}
-              ${beforeCount > 0 ? html`${beforeCount} före spärrkurs` : ""}
-              ${beforeCount > 0 && chainCount > 0 ? ", " : ""}
-              ${chainCount > 0 ? html`${chainCount} kedjeblockering` : ""}
+              ${warningParts.join(", ")}
             </div>
           `;
         })}
