@@ -31,7 +31,7 @@ export const ganttCourseBlockStyles = css`
   }
 
   .gantt-block.second-block {
-    opacity: 0.85;
+    opacity: 1;
   }
 
   .gantt-block .course-code {
