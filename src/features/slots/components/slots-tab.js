@@ -22,6 +22,7 @@ export class SlotsTab extends LitElement {
 
   static properties = {
     slots: { type: Array },
+    addModalOpen: { type: Boolean },
     message: { type: String },
     messageType: { type: String },
     startOptions: { type: Array },
@@ -36,6 +37,7 @@ export class SlotsTab extends LitElement {
     this.slots = store.getSlots() || [];
     this.startOptions = [];
     this.allowFreeDate = false;
+    this.addModalOpen = false;
     this.formValid = false;
     subscribeToStore(this);
   }
@@ -47,6 +49,24 @@ export class SlotsTab extends LitElement {
 
   _handleInputChange() {
     this._updateFormValidity();
+  }
+
+  async _openAddModal() {
+    this.addModalOpen = true;
+    await this.updateComplete;
+    this.selectedInsertAfter = null;
+    this.startOptions = [];
+    this.allowFreeDate = false;
+    FormService.clearCustomForm(this.shadowRoot, ["insertAfter", "slotStart"]);
+    this._updateFormValidity();
+  }
+
+  _closeAddModal() {
+    this.addModalOpen = false;
+    this.formValid = false;
+    this.selectedInsertAfter = null;
+    this.startOptions = [];
+    this.allowFreeDate = false;
   }
 
   _updateFormValidity() {
@@ -64,56 +84,11 @@ export class SlotsTab extends LitElement {
         : ""}
 
       <henry-panel>
-        <div slot="header">
-          <henry-text variant="heading-3">Lägg till Ny Slot</henry-text>
-        </div>
-
-        <form
-          @submit="${this.handleAddSlot}"
-          @input="${this._handleInputChange}"
-          @change="${this._handleInputChange}"
-          @input-change="${this._handleInputChange}"
-          @select-change="${this._handleInputChange}"
-          @radio-change="${this._handleInputChange}"
-          @textarea-change="${this._handleInputChange}"
-        >
-          <div class="form-row">
-            <henry-select
-              id="insertAfter"
-              label="Infoga efter"
-              .options=${this._getInsertOptions(sorted)}
-              @select-change="${(e) => this._onInsertAfterChange(e)}"
-              required
-            ></henry-select>
-            <henry-select
-              id="slotStart"
-              label="Startdatum"
-              required
-              .options=${this.startOptions}
-              .placeholder=${this.selectedInsertAfter &&
-              (this.startOptions || []).length === 0
-                ? "Inga tillgängliga startdatum för vald position."
-                : "Välj..."}
-            ></henry-select>
-          </div>
-
-          <div class="form-actions">
-            <henry-button
-              type="submit"
-              variant="primary"
-              ?disabled=${!this.formValid ||
-              (!this.allowFreeDate &&
-                this.selectedInsertAfter &&
-                (this.startOptions || []).length === 0)}
-              >Lägg till Slot</henry-button
-            >
-          </div>
-        </form>
-      </henry-panel>
-
-      <henry-panel>
-        <div slot="header">
+        <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga Slots</henry-text>
+          <henry-button variant="primary" @click="${this._openAddModal}">
+            Lägg till slot
+          </henry-button>
         </div>
         <henry-table
           striped
@@ -123,6 +98,71 @@ export class SlotsTab extends LitElement {
           .renderCell="${(row, col) => this._renderTableCell(row, col)}"
         ></henry-table>
       </henry-panel>
+
+      ${this.addModalOpen
+        ? html`
+            <henry-modal
+              open
+              title="Lägg till Slot"
+              @close="${this._closeAddModal}"
+            >
+              <form
+                id="add-slot-form"
+                @submit="${this.handleAddSlot}"
+                @input="${this._handleInputChange}"
+                @change="${this._handleInputChange}"
+                @input-change="${this._handleInputChange}"
+                @select-change="${this._handleInputChange}"
+                @radio-change="${this._handleInputChange}"
+                @textarea-change="${this._handleInputChange}"
+              >
+                <henry-select
+                  id="insertAfter"
+                  label="Infoga efter"
+                  .options=${this._getInsertOptions(sorted)}
+                  @select-change="${(e) => this._onInsertAfterChange(e)}"
+                  required
+                ></henry-select>
+                <henry-select
+                  id="slotStart"
+                  label="Startdatum"
+                  required
+                  .options=${this.startOptions}
+                  .placeholder=${this.selectedInsertAfter &&
+                  (this.startOptions || []).length === 0
+                    ? "Inga tillgängliga startdatum för vald position."
+                    : "Välj..."}
+                ></henry-select>
+              </form>
+
+              <div slot="footer">
+                <henry-button
+                  variant="secondary"
+                  @click="${this._closeAddModal}"
+                >
+                  Avbryt
+                </henry-button>
+                <henry-button
+                  variant="primary"
+                  ?disabled=${!this.formValid ||
+                  (!this.allowFreeDate &&
+                    this.selectedInsertAfter &&
+                    (this.startOptions || []).length === 0)}
+                  @click="${() => {
+                    const form = this.renderRoot?.querySelector("#add-slot-form");
+                    if (form?.requestSubmit) form.requestSubmit();
+                    else
+                      form?.dispatchEvent(
+                        new Event("submit", { bubbles: true, cancelable: true })
+                      );
+                  }}"
+                >
+                  Lägg till slot
+                </henry-button>
+              </div>
+            </henry-modal>
+          `
+        : ""}
     `;
   }
 
@@ -265,6 +305,7 @@ export class SlotsTab extends LitElement {
       await createSlot({ start_date: start });
       FormService.clearCustomForm(root, ["insertAfter", "slotStart"]);
       this._updateFormValidity();
+      this._closeAddModal();
       showSuccessMessage(this, "Slot tillagd!");
     } catch (err) {
       showErrorMessage(this, err.message || "Kunde inte lägga till slot.");

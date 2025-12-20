@@ -24,6 +24,7 @@ export class TeachersTab extends LitElement {
 
   static properties = {
     editingTeacherId: { type: Number },
+    addModalOpen: { type: Boolean },
     message: { type: String },
     messageType: { type: String },
     formValid: { type: Boolean },
@@ -32,6 +33,7 @@ export class TeachersTab extends LitElement {
   constructor() {
     super();
     this.formValid = false;
+    this.addModalOpen = false;
     initializeEditState(this, "editingTeacherId");
     subscribeToStore(this);
   }
@@ -43,6 +45,18 @@ export class TeachersTab extends LitElement {
 
   _handleInputChange() {
     this._updateFormValidity();
+  }
+
+  async _openAddModal() {
+    this.addModalOpen = true;
+    await this.updateComplete;
+    resetTeacherForm(this.shadowRoot);
+    this._updateFormValidity();
+  }
+
+  _closeAddModal() {
+    this.addModalOpen = false;
+    this.formValid = false;
   }
 
   _updateFormValidity() {
@@ -67,56 +81,11 @@ export class TeachersTab extends LitElement {
         : ""}
 
       <henry-panel>
-        <div slot="header">
-          <henry-text variant="heading-3">Lägg till Ny Lärare</henry-text>
-        </div>
-        <form
-          @submit="${this.handleAddTeacher}"
-          @input="${this._handleInputChange}"
-          @change="${this._handleInputChange}"
-          @input-change="${this._handleInputChange}"
-          @select-change="${this._handleInputChange}"
-          @radio-change="${this._handleInputChange}"
-          @textarea-change="${this._handleInputChange}"
-        >
-          <div class="form-row">
-            <henry-input
-              id="teacherName"
-              label="Namn"
-              placeholder="Förnamn Efternamn"
-              required
-            ></henry-input>
-            <henry-radio-group
-              id="teacherDepartment"
-              name="teacherDepartment"
-              label="Avdelning"
-              value="AIJ"
-              required
-              .options=${departments.map((dept) => ({
-                value: dept,
-                label: dept,
-              }))}
-            ></henry-radio-group>
-          </div>
-          <henry-select
-            id="teacherCourses"
-            label="Kompatibla kurser (Ctrl/Cmd+klick för flera)"
-            multiple
-            size="6"
-            .options=${courses.map((course) => ({
-              value: course.course_id.toString(),
-              label: `${course.code} - ${course.name}`,
-            }))}
-          ></henry-select>
-          <henry-button type="submit" variant="primary" ?disabled="${!this.formValid}">
-            Lägg till Lärare
-          </henry-button>
-        </form>
-      </henry-panel>
-
-      <henry-panel>
-        <div slot="header">
+        <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga Lärare</henry-text>
+          <henry-button variant="primary" @click="${this._openAddModal}">
+            Lägg till lärare
+          </henry-button>
         </div>
         <henry-table
           striped
@@ -126,6 +95,78 @@ export class TeachersTab extends LitElement {
           .renderCell="${(row, col) => this._renderTeacherTableCell(row, col)}"
         ></henry-table>
       </henry-panel>
+
+      ${this.addModalOpen
+        ? html`
+            <henry-modal
+              open
+              title="Lägg till Lärare"
+              @close="${this._closeAddModal}"
+            >
+              <form
+                id="add-teacher-form"
+                @submit="${this.handleAddTeacher}"
+                @input="${this._handleInputChange}"
+                @change="${this._handleInputChange}"
+                @input-change="${this._handleInputChange}"
+                @select-change="${this._handleInputChange}"
+                @radio-change="${this._handleInputChange}"
+                @textarea-change="${this._handleInputChange}"
+              >
+                <henry-input
+                  id="teacherName"
+                  label="Namn"
+                  placeholder="Förnamn Efternamn"
+                  required
+                ></henry-input>
+	                <henry-radio-group
+	                  id="teacherDepartment"
+	                  name="teacherDepartment"
+	                  label="Avdelning"
+	                  required
+	                  .options=${departments.map((dept) => ({
+	                    value: dept,
+	                    label: dept,
+	                  }))}
+                ></henry-radio-group>
+                <henry-select
+                  id="teacherCourses"
+                  label="Kompatibla kurser (Ctrl/Cmd+klick för flera)"
+                  multiple
+                  size="6"
+                  .options=${courses.map((course) => ({
+                    value: course.course_id.toString(),
+                    label: `${course.code} - ${course.name}`,
+                  }))}
+                ></henry-select>
+              </form>
+
+              <div slot="footer">
+                <henry-button
+                  variant="secondary"
+                  @click="${this._closeAddModal}"
+                >
+                  Avbryt
+                </henry-button>
+                <henry-button
+                  variant="primary"
+                  ?disabled="${!this.formValid}"
+                  @click="${() => {
+                    const form =
+                      this.renderRoot?.querySelector("#add-teacher-form");
+                    if (form?.requestSubmit) form.requestSubmit();
+                    else
+                      form?.dispatchEvent(
+                        new Event("submit", { bubbles: true, cancelable: true })
+                      );
+                  }}"
+                >
+                  Lägg till lärare
+                </henry-button>
+              </div>
+            </henry-modal>
+          `
+        : ""}
 
       <teacher-modal
         .teacherId="${this.editingTeacherId}"
@@ -225,6 +266,7 @@ export class TeachersTab extends LitElement {
       window.dispatchEvent(
         new CustomEvent("henry:teacher-added", { detail: newTeacher })
       );
+      this._closeAddModal();
       showSuccessMessage(this, "Lärare tillagd!");
     } catch (err) {
       showErrorMessage(this, `Kunde inte lägga till lärare: ${err.message}`);

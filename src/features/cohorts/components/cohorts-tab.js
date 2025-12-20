@@ -24,6 +24,7 @@ export class CohortsTab extends LitElement {
 
   static properties = {
     editingCohortId: { type: Number },
+    addModalOpen: { type: Boolean },
     message: { type: String },
     messageType: { type: String },
     formValid: { type: Boolean },
@@ -32,18 +33,30 @@ export class CohortsTab extends LitElement {
   constructor() {
     super();
     this.formValid = false;
+    this.addModalOpen = false;
     initializeEditState(this, "editingCohortId");
     subscribeToStore(this);
   }
 
   firstUpdated(changedProperties) {
     super.firstUpdated(changedProperties);
-    resetCohortForm(this.shadowRoot);
     this._updateFormValidity();
   }
 
   _handleInputChange() {
     this._updateFormValidity();
+  }
+
+  async _openAddModal() {
+    this.addModalOpen = true;
+    await this.updateComplete;
+    resetCohortForm(this.shadowRoot);
+    this._updateFormValidity();
+  }
+
+  _closeAddModal() {
+    this.addModalOpen = false;
+    this.formValid = false;
   }
 
   _updateFormValidity() {
@@ -56,64 +69,91 @@ export class CohortsTab extends LitElement {
         ? html`<div class="${this.messageType}">${this.message}</div>`
         : ""}
 
-      <henry-panel>
-        <div slot="header">
-          <henry-text variant="heading-3">Lägg till Ny Kull</henry-text>
-        </div>
-        <form
-          @submit="${this.handleAddCohort}"
-          @input="${this._handleInputChange}"
-          @change="${this._handleInputChange}"
-          @input-change="${this._handleInputChange}"
-          @select-change="${this._handleInputChange}"
-          @radio-change="${this._handleInputChange}"
-          @textarea-change="${this._handleInputChange}"
-        >
-          <div class="form-row">
-            <henry-input
-              id="cohortStartDate"
-              type="date"
-              label="Startdatum"
-              required
-            ></henry-input>
-            <henry-input
-              id="cohortSize"
-              type="number"
-              label="Planerat antal studenter"
-              min="1"
-              placeholder="30"
-              required
-            ></henry-input>
-          </div>
-          <henry-button
-            type="submit"
-            variant="primary"
-            ?disabled="${!this.formValid}"
-          >
-            Lägg till Kull
-          </henry-button>
-        </form>
-      </henry-panel>
-
-      <henry-panel>
-        <div slot="header">
-          <henry-text variant="heading-3">Befintliga Kullar</henry-text>
-        </div>
-        <henry-table
-          striped
-          hoverable
+	      <henry-panel>
+	        <div slot="header" class="panel-header">
+	          <henry-text variant="heading-3">Befintliga Kullar</henry-text>
+	          <henry-button variant="primary" @click="${this._openAddModal}">
+	            Lägg till kull
+	          </henry-button>
+	        </div>
+	        <henry-table
+	          striped
+	          hoverable
           .columns="${this._getCohortTableColumns()}"
           .data="${store.getCohorts()
             .slice()
             .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))}"
           .renderCell="${(row, col) => this._renderCohortTableCell(row, col)}"
-        ></henry-table>
-      </henry-panel>
+	        ></henry-table>
+	      </henry-panel>
 
-      <cohort-modal
-        .cohortId="${this.editingCohortId}"
-        .open="${!!this.editingCohortId}"
-        @modal-close="${this.handleCancelEdit}"
+	      ${this.addModalOpen
+	        ? html`
+	            <henry-modal
+	              open
+	              title="Lägg till Kull"
+	              @close="${this._closeAddModal}"
+	            >
+	              <form
+	                id="add-cohort-form"
+	                @submit="${this.handleAddCohort}"
+	                @input="${this._handleInputChange}"
+	                @change="${this._handleInputChange}"
+	                @input-change="${this._handleInputChange}"
+	                @select-change="${this._handleInputChange}"
+	                @radio-change="${this._handleInputChange}"
+	                @textarea-change="${this._handleInputChange}"
+	              >
+	                <henry-input
+	                  id="cohortStartDate"
+	                  type="date"
+	                  label="Startdatum"
+	                  required
+	                ></henry-input>
+	                <henry-input
+	                  id="cohortSize"
+	                  type="number"
+	                  label="Planerat antal studenter"
+	                  min="1"
+	                  placeholder="30"
+	                  required
+	                ></henry-input>
+	              </form>
+
+	              <div slot="footer">
+	                <henry-button
+	                  variant="secondary"
+	                  @click="${this._closeAddModal}"
+	                >
+	                  Avbryt
+	                </henry-button>
+	                <henry-button
+	                  variant="primary"
+	                  ?disabled="${!this.formValid}"
+	                  @click="${() => {
+	                    const form =
+	                      this.renderRoot?.querySelector("#add-cohort-form");
+	                    if (form?.requestSubmit) form.requestSubmit();
+	                    else
+	                      form?.dispatchEvent(
+	                        new Event("submit", {
+	                          bubbles: true,
+	                          cancelable: true,
+	                        })
+	                      );
+	                  }}"
+	                >
+	                  Lägg till kull
+	                </henry-button>
+	              </div>
+	            </henry-modal>
+	          `
+	        : ""}
+
+	      <cohort-modal
+	        .cohortId="${this.editingCohortId}"
+	        .open="${!!this.editingCohortId}"
+	        @modal-close="${this.handleCancelEdit}"
         @modal-save="${this._handleModalSave}"
       ></cohort-modal>
     `;
@@ -176,6 +216,7 @@ export class CohortsTab extends LitElement {
       await createCohortFromForm(root);
       resetCohortForm(root);
       this._updateFormValidity();
+      this._closeAddModal();
       showSuccessMessage(this, "Kull tillagd!");
     } catch (error) {
       showErrorMessage(this, `Fel: ${error.message}`);
