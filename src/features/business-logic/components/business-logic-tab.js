@@ -20,11 +20,22 @@ export class BusinessLogicTab extends LitElement {
     this.message = "";
     this.messageType = "";
     this.saving = false;
+    this._autoSaveTimer = null;
+    this._saveGeneration = 0;
+    this._lastScheduledSaveGeneration = 0;
     subscribeToStore(this);
   }
 
   firstUpdated() {
     this._updateFormValidity();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback && super.disconnectedCallback();
+    if (this._autoSaveTimer) {
+      clearTimeout(this._autoSaveTimer);
+      this._autoSaveTimer = null;
+    }
   }
 
   _updateFormValidity() {
@@ -38,6 +49,48 @@ export class BusinessLogicTab extends LitElement {
       hard > 0 &&
       Number.isFinite(preferred) &&
       preferred > 0;
+  }
+
+  _scheduleAutoSave() {
+    if (this._autoSaveTimer) clearTimeout(this._autoSaveTimer);
+
+    const generation = (this._saveGeneration += 1);
+    this._lastScheduledSaveGeneration = generation;
+
+    this._autoSaveTimer = setTimeout(async () => {
+      // Don’t persist invalid params. Keep UI state; user can correct.
+      this._updateFormValidity();
+      if (!this.formValid) return;
+
+      const myGen = generation;
+      this.saving = true;
+      this.requestUpdate();
+
+      try {
+        await store.saveData({ label: "auto-save-business-logic" });
+        // Clear any previous error message on successful save.
+        if (this.messageType === "error") {
+          this.message = "";
+          this.messageType = "";
+        }
+      } catch (error) {
+        this.message = `Kunde inte spara affärslogik: ${error.message}`;
+        this.messageType = "error";
+        this.requestUpdate();
+        setTimeout(() => {
+          if (this.messageType === "error") {
+            this.message = "";
+            this.messageType = "";
+            this.requestUpdate();
+          }
+        }, 6000);
+      } finally {
+        if (myGen === this._lastScheduledSaveGeneration) {
+          this.saving = false;
+          this.requestUpdate();
+        }
+      }
+    }, 400);
   }
 
   render() {
@@ -54,12 +107,9 @@ export class BusinessLogicTab extends LitElement {
         <henry-panel>
           <div slot="header" class="panel-header">
             <henry-text variant="heading-3">Affärslogik</henry-text>
-            <henry-button
-              variant="primary"
-              ?disabled=${!this.formValid || this.saving}
-              @click=${this._handleSaveClick}
-              >Spara</henry-button
-            >
+            ${this.saving
+              ? html`<henry-text variant="caption">Sparar…</henry-text>`
+              : ""}
           </div>
           <div class="rule-list">
             ${rules.map((r, idx) =>
@@ -167,6 +217,7 @@ export class BusinessLogicTab extends LitElement {
       },
     });
     this._updateFormValidity();
+    this._scheduleAutoSave();
   }
 
   _toggleRule(ruleId, enabled) {
@@ -186,6 +237,7 @@ export class BusinessLogicTab extends LitElement {
         rules: next,
       },
     });
+    this._scheduleAutoSave();
   }
 
   _setRuleKind(ruleId, kind) {
@@ -206,6 +258,7 @@ export class BusinessLogicTab extends LitElement {
         rules: next,
       },
     });
+    this._scheduleAutoSave();
   }
 
   _moveRule(idx, delta) {
@@ -229,33 +282,7 @@ export class BusinessLogicTab extends LitElement {
         rules: list,
       },
     });
-  }
-
-  async _handleSaveClick() {
-    this.saving = true;
-    this.message = "";
-    this.requestUpdate();
-
-    const mutationId = store.applyOptimistic({
-      label: "save-business-logic",
-      rollback: null,
-    });
-
-    try {
-      await store.saveData({ mutationId });
-      this.message = "Affärslogik sparad!";
-      this.messageType = "success";
-    } catch (error) {
-      this.message = `Kunde inte spara affärslogik: ${error.message}`;
-      this.messageType = "error";
-    } finally {
-      this.saving = false;
-      this.requestUpdate();
-      setTimeout(() => {
-        this.message = "";
-        this.requestUpdate();
-      }, 4000);
-    }
+    this._scheduleAutoSave();
   }
 }
 
