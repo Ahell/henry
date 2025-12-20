@@ -290,10 +290,8 @@ export class SchedulingTab extends LitElement {
       <div class="slot-availability-row" title="${title}">
         <div class="slot-availability">
           ${chips.map((chip) => {
-            const className =
-              chip?.status && chip.status !== "available"
-                ? `availability-chip availability-chip--${chip.status}`
-                : "availability-chip availability-chip--available";
+            const status = chip?.status || "compatible";
+            const className = `availability-chip availability-chip--${status}`;
             return html`
               <span class="${className}" title="${chip.title}">
                 <span class="availability-chip-text">${chip.label}</span>
@@ -1201,21 +1199,56 @@ export class SchedulingTab extends LitElement {
     const slot = store.getSlots().find((s) => s.start_date === slotDate);
     if (!slot) return [];
 
-    return getCompatibleTeachersForCourse(courseId).map((teacher) => {
-      const availability = this._teacherAvailabilityForCourseInSlot({
-        teacherId: teacher.teacher_id,
-        slot,
-        slotDate,
-        courseId,
+    const normalizeDate = (v) => (v || "").split("T")[0];
+    const slotDays = (store.getSlotDays(slot.slot_id) || [])
+      .map(normalizeDate)
+      .filter(Boolean);
+
+    const runsCoveringSlot = (store.getCourseRuns() || []).filter((run) =>
+      this._runCoversSlotId(run, slot.slot_id)
+    );
+
+    const isTeacherOccupiedInSlot = (teacherId) =>
+      runsCoveringSlot.some(
+        (run) =>
+          Array.isArray(run.teachers) &&
+          run.teachers.some((tid) => String(tid) === String(teacherId))
+      );
+
+    const hasSlotBusyEntry = (teacherId) =>
+      (store.teacherAvailability || []).some(
+        (a) =>
+          String(a.teacher_id) === String(teacherId) &&
+          String(a.slot_id) === String(slot.slot_id) &&
+          a.type === "busy"
+      );
+
+    const isTeacherMarkedUnavailableInSlot = (teacherId) => {
+      if (hasSlotBusyEntry(teacherId)) return true;
+      if (
+        typeof store.isTeacherUnavailable === "function" &&
+        store.isTeacherUnavailable(teacherId, slotDate, slot.slot_id)
+      ) {
+        return true;
+      }
+      return slotDays.some((day) =>
+        store.isTeacherUnavailableOnDay(teacherId, day)
+      );
+    };
+
+    return getCompatibleTeachersForCourse(courseId)
+      .filter((teacher) => !isTeacherOccupiedInSlot(teacher.teacher_id))
+      .filter((teacher) => !isTeacherMarkedUnavailableInSlot(teacher.teacher_id))
+      .map((teacher) => {
+        const label =
+          (teacher.name || "").split(" ")[0] || teacher.name || "";
+        return {
+          teacherId: teacher.teacher_id,
+          label,
+          status: "drag-available",
+          title: "Tillgänglig",
+        };
       });
-      const label = (teacher.name || "").split(" ")[0] || teacher.name || "";
-      return {
-        teacherId: teacher.teacher_id,
-        label,
-        status: availability.classNameSuffix || "available",
-        title: availability.titleText,
-      };
-    });
   }
 
   _applyColumnTeacherShortageClasses() {

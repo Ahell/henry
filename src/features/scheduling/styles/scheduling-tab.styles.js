@@ -276,6 +276,28 @@ export const schedulingTabStyles = css`
     );
   }
 
+  .availability-chip--drag-available {
+    background: rgba(31, 39, 51, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+  }
+
+  .availability-chip--compatible {
+    background: linear-gradient(
+      135deg,
+      var(--color-info),
+      var(--color-info-hover)
+    );
+  }
+
+  .availability-chip--assigned {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    );
+  }
+
   .availability-chip--course-unavailable {
     background: var(--color-danger);
   }
@@ -320,6 +342,79 @@ export const schedulingTabStyles = css`
       rgba(255, 255, 255, 0.32) 8px,
       rgba(255, 255, 255, 0) 8px,
       rgba(255, 255, 255, 0) 16px
+    );
+    opacity: 0.9;
+  }
+
+  /* Assigned + warning patterns (match summary row) */
+  .availability-chip--assigned-course-unavailable {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    );
+  }
+
+  .availability-chip--assigned-course-unavailable::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.82) 0px,
+      rgba(239, 68, 68, 0.82) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  .availability-chip--assigned-partial-conflict {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    );
+  }
+
+  .availability-chip--assigned-partial-conflict::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.28) 0px,
+      rgba(239, 68, 68, 0.28) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  .availability-chip--assigned-partial-availability {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    );
+  }
+
+  .availability-chip--assigned-partial-availability::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.28) 0px,
+      rgba(59, 130, 246, 0.28) 8px,
+      rgba(59, 130, 246, 0) 8px,
+      rgba(59, 130, 246, 0) 16px
     );
     opacity: 0.9;
   }
