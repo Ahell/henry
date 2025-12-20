@@ -44,8 +44,7 @@ export class BusinessLogicTab extends LitElement {
     const businessLogic = store.businessLogicManager.getBusinessLogic();
     const scheduling = businessLogic?.scheduling || {};
     const params = scheduling?.params || {};
-    const hardRules = scheduling?.hardRules || [];
-    const softRules = scheduling?.softRules || [];
+    const rules = scheduling?.rules || [];
 
     return html`
       ${this.message
@@ -99,22 +98,11 @@ export class BusinessLogicTab extends LitElement {
 
         <henry-panel>
           <div slot="header">
-            <henry-text variant="heading-3">Hard rules</henry-text>
+            <henry-text variant="heading-3">Regler</henry-text>
           </div>
           <div class="rule-list">
-            ${hardRules.map((r, idx) =>
-              this._renderRuleRow(r, idx, "hard", hardRules.length)
-            )}
-          </div>
-        </henry-panel>
-
-        <henry-panel>
-          <div slot="header">
-            <henry-text variant="heading-3">Soft rules (prioritet)</henry-text>
-          </div>
-          <div class="rule-list">
-            ${softRules.map((r, idx) =>
-              this._renderRuleRow(r, idx, "soft", softRules.length)
+            ${rules.map((r, idx) =>
+              this._renderRuleRow(r, idx, rules.length)
             )}
           </div>
         </henry-panel>
@@ -122,8 +110,9 @@ export class BusinessLogicTab extends LitElement {
     `;
   }
 
-  _renderRuleRow(rule, idx, kind, listLength) {
+  _renderRuleRow(rule, idx, listLength) {
     const isEnabled = Boolean(rule?.enabled);
+    const isHard = String(rule?.kind || "soft").toLowerCase() === "hard";
     const isLast = idx === (Number(listLength) || 0) - 1;
     return html`
       <div class="rule ${!isEnabled ? "muted" : ""}">
@@ -136,18 +125,24 @@ export class BusinessLogicTab extends LitElement {
             label="Aktiv"
             .checked=${isEnabled}
             @switch-change=${(e) =>
-              this._toggleRule(kind, rule?.id, e.detail.checked)}
+              this._toggleRule(rule?.id, e.detail.checked)}
+          ></henry-switch>
+          <henry-switch
+            label=${isHard ? "Hard" : "Soft"}
+            .checked=${isHard}
+            @switch-change=${(e) =>
+              this._setRuleKind(rule?.id, e.detail.checked ? "hard" : "soft")}
           ></henry-switch>
           <henry-button
             variant="secondary"
             ?disabled=${idx === 0}
-            @click=${() => this._moveRule(kind, idx, -1)}
+            @click=${() => this._moveRule(idx, -1)}
             >Upp</henry-button
           >
           <henry-button
             variant="secondary"
             ?disabled=${isLast}
-            @click=${() => this._moveRule(kind, idx, +1)}
+            @click=${() => this._moveRule(idx, +1)}
             >Ner</henry-button
           >
         </div>
@@ -177,14 +172,13 @@ export class BusinessLogicTab extends LitElement {
     this._updateFormValidity();
   }
 
-  _toggleRule(kind, ruleId, enabled) {
+  _toggleRule(ruleId, enabled) {
     if (!ruleId) return;
     const current = store.businessLogicManager.getBusinessLogic();
     const scheduling = current?.scheduling || {};
-    const listKey = kind === "hard" ? "hardRules" : "softRules";
-    const list = Array.isArray(scheduling[listKey]) ? scheduling[listKey] : [];
+    const rules = Array.isArray(scheduling.rules) ? scheduling.rules : [];
 
-    const next = list.map((r) =>
+    const next = rules.map((r) =>
       r?.id === ruleId ? { ...r, enabled: Boolean(enabled) } : r
     );
 
@@ -192,17 +186,36 @@ export class BusinessLogicTab extends LitElement {
       ...current,
       scheduling: {
         ...scheduling,
-        [listKey]: next,
+        rules: next,
       },
     });
   }
 
-  _moveRule(kind, idx, delta) {
+  _setRuleKind(ruleId, kind) {
+    if (!ruleId) return;
     const current = store.businessLogicManager.getBusinessLogic();
     const scheduling = current?.scheduling || {};
-    const listKey = kind === "hard" ? "hardRules" : "softRules";
-    const list = Array.isArray(scheduling[listKey])
-      ? scheduling[listKey].slice()
+    const rules = Array.isArray(scheduling.rules) ? scheduling.rules : [];
+    const normalizedKind = String(kind).toLowerCase() === "hard" ? "hard" : "soft";
+
+    const next = rules.map((r) =>
+      r?.id === ruleId ? { ...r, kind: normalizedKind } : r
+    );
+
+    store.businessLogicManager.setBusinessLogic({
+      ...current,
+      scheduling: {
+        ...scheduling,
+        rules: next,
+      },
+    });
+  }
+
+  _moveRule(idx, delta) {
+    const current = store.businessLogicManager.getBusinessLogic();
+    const scheduling = current?.scheduling || {};
+    const list = Array.isArray(scheduling.rules)
+      ? scheduling.rules.slice()
       : [];
 
     const targetIdx = idx + delta;
@@ -216,7 +229,7 @@ export class BusinessLogicTab extends LitElement {
       ...current,
       scheduling: {
         ...scheduling,
-        [listKey]: list,
+        rules: list,
       },
     });
   }

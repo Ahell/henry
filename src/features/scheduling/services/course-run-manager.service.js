@@ -669,12 +669,23 @@ export class CourseRunManager {
     const schedulingLogic = businessLogic?.scheduling || {};
     const schedulingParams = schedulingLogic?.params || {};
 
+    const rulesList = Array.isArray(schedulingLogic.rules)
+      ? schedulingLogic.rules
+      : null;
+
     const hardRuleEnabled = (ruleId) =>
-      Array.isArray(schedulingLogic.hardRules)
-        ? schedulingLogic.hardRules.some(
-            (r) => r?.id === ruleId && r?.enabled !== false
+      rulesList
+        ? rulesList.some(
+            (r) =>
+              r?.id === ruleId &&
+              String(r?.kind || "").toLowerCase() === "hard" &&
+              r?.enabled !== false
           )
-        : false;
+        : Array.isArray(schedulingLogic.hardRules)
+          ? schedulingLogic.hardRules.some(
+              (r) => r?.id === ruleId && r?.enabled !== false
+            )
+          : false;
 
     const configuredMaxHard = Number(schedulingParams.maxStudentsHard);
     const configuredMaxPreferred = Number(schedulingParams.maxStudentsPreferred);
@@ -704,13 +715,24 @@ export class CourseRunManager {
       "avoidEmptySlots",
       "avoidOverPreferred",
     ];
-    const hasSoftRulesConfig = Array.isArray(schedulingLogic.softRules);
-    const softRuleOrder = hasSoftRulesConfig
-      ? schedulingLogic.softRules
-          .filter((r) => r?.enabled !== false)
+    const hasSoftRulesConfig = rulesList
+      ? true
+      : Array.isArray(schedulingLogic.softRules);
+    const softRuleOrder = rulesList
+      ? rulesList
+          .filter(
+            (r) =>
+              String(r?.kind || "").toLowerCase() !== "hard" &&
+              r?.enabled !== false
+          )
           .map((r) => r?.id)
           .filter(Boolean)
-      : defaultSoftRuleOrder;
+      : Array.isArray(schedulingLogic.softRules)
+        ? schedulingLogic.softRules
+            .filter((r) => r?.enabled !== false)
+            .map((r) => r?.id)
+            .filter(Boolean)
+        : defaultSoftRuleOrder;
 
     const cohortId = Number(targetCohortId);
     if (!Number.isFinite(cohortId)) return { mutationId: null };

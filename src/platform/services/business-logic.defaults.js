@@ -1,9 +1,10 @@
-const HARD_RULES_DEFAULT = [
+const RULES_DEFAULT = [
   {
     id: "prerequisitesOrder",
     label: "Spärrkursordning",
     description: "Kurs får inte starta innan alla spärrkurser är klara.",
     enabled: true,
+    kind: "hard",
     locked: true,
   },
   {
@@ -11,6 +12,7 @@ const HARD_RULES_DEFAULT = [
     label: "Max 1 kurs per slot (per kull)",
     description: "En kull får inte läsa två kurser i samma slot.",
     enabled: true,
+    kind: "hard",
     locked: true,
   },
   {
@@ -18,6 +20,7 @@ const HARD_RULES_DEFAULT = [
     label: "Max studenter per kurs (hard)",
     description: "Över denna gräns är inte tillåtet.",
     enabled: true,
+    kind: "hard",
     locked: false,
   },
   {
@@ -26,6 +29,7 @@ const HARD_RULES_DEFAULT = [
     description:
       "Om en 15hp-kurs spänner över två slots måste andra kullar starta den i samma start-slot.",
     enabled: true,
+    kind: "hard",
     locked: true,
   },
   {
@@ -34,17 +38,16 @@ const HARD_RULES_DEFAULT = [
     description:
       "Blockera schemaläggning om ingen kompatibel lärare är tillgänglig i perioden.",
     enabled: false,
+    kind: "hard",
     locked: false,
   },
-];
-
-const SOFT_RULES_DEFAULT = [
   {
     id: "maximizeColocation",
     label: "Samläsning först (matcha slot)",
     description:
       "Välj i första hand en kurs som redan startar i samma slot i andra kullar (gemensam kurs-run = samläsning).",
     enabled: true,
+    kind: "soft",
   },
   {
     id: "preferAvailableCompatibleTeachers",
@@ -52,6 +55,7 @@ const SOFT_RULES_DEFAULT = [
     description:
       "Om möjligt: välj alternativ med fler kompatibla lärare som är tillgängliga i perioden.",
     enabled: true,
+    kind: "soft",
   },
   {
     id: "packTowardHardCap",
@@ -59,6 +63,7 @@ const SOFT_RULES_DEFAULT = [
     description:
       "Om flera val ger samläsning: välj det alternativ som gör att totalen hamnar närmast max (färre parallella kurs-run).",
     enabled: true,
+    kind: "soft",
   },
   {
     id: "futureJoinCapacity",
@@ -66,6 +71,7 @@ const SOFT_RULES_DEFAULT = [
     description:
       "Prioritera val som lämnar kapacitet så kommande kullar kan samläsa samma kurs.",
     enabled: true,
+    kind: "soft",
   },
   {
     id: "avoidEmptySlots",
@@ -73,6 +79,7 @@ const SOFT_RULES_DEFAULT = [
     description:
       "Om flera alternativ finns: prioritera val som gör det mer sannolikt att nästa slot också kan fyllas (minskar luckor).",
     enabled: true,
+    kind: "soft",
   },
   {
     id: "avoidOverPreferred",
@@ -80,6 +87,7 @@ const SOFT_RULES_DEFAULT = [
     description:
       "Undvik att överstiga preferred-gränsen när det finns alternativ.",
     enabled: true,
+    kind: "soft",
   },
 ];
 
@@ -91,25 +99,27 @@ export const DEFAULT_BUSINESS_LOGIC = {
       maxStudentsPreferred: 100,
       futureOnlyReplan: true,
     },
-    hardRules: HARD_RULES_DEFAULT,
-    softRules: SOFT_RULES_DEFAULT,
+    rules: RULES_DEFAULT,
   },
 };
 
-function normalizeRuleList(inputList, defaults) {
+function normalizeRules(inputRules, defaults) {
   const byId = new Map(defaults.map((r) => [r.id, r]));
   const used = new Set();
   const out = [];
 
-  if (Array.isArray(inputList)) {
-    inputList.forEach((r) => {
+  if (Array.isArray(inputRules)) {
+    inputRules.forEach((r) => {
       const id = r?.id;
       if (!byId.has(id) || used.has(id)) return;
       const base = byId.get(id);
       used.add(id);
+      const kindRaw = String(r?.kind || base.kind || "soft").toLowerCase();
+      const kind = kindRaw === "hard" ? "hard" : "soft";
       out.push({
         ...base,
         enabled: r?.enabled ?? base.enabled,
+        kind,
       });
     });
   }
@@ -133,6 +143,24 @@ export function normalizeBusinessLogic(input) {
       ? params.futureOnlyReplan
       : DEFAULT_BUSINESS_LOGIC.scheduling.params.futureOnlyReplan;
 
+  const rules = (() => {
+    if (Array.isArray(scheduling?.rules)) {
+      return normalizeRules(scheduling.rules, DEFAULT_BUSINESS_LOGIC.scheduling.rules);
+    }
+
+    // Backwards compatibility: old payloads with hardRules/softRules arrays.
+    const legacyHard = Array.isArray(scheduling?.hardRules) ? scheduling.hardRules : [];
+    const legacySoft = Array.isArray(scheduling?.softRules) ? scheduling.softRules : [];
+    const merged = [
+      ...legacyHard.map((r) => ({ ...r, kind: "hard" })),
+      ...legacySoft.map((r) => ({ ...r, kind: "soft" })),
+    ];
+    return normalizeRules(merged, DEFAULT_BUSINESS_LOGIC.scheduling.rules);
+  })();
+
+  const hardRules = rules.filter((r) => r.kind === "hard");
+  const softRules = rules.filter((r) => r.kind !== "hard");
+
   return {
     version: 1,
     scheduling: {
@@ -145,14 +173,10 @@ export function normalizeBusinessLogic(input) {
           : DEFAULT_BUSINESS_LOGIC.scheduling.params.maxStudentsPreferred,
         futureOnlyReplan,
       },
-      hardRules: normalizeRuleList(
-        scheduling?.hardRules,
-        DEFAULT_BUSINESS_LOGIC.scheduling.hardRules
-      ),
-      softRules: normalizeRuleList(
-        scheduling?.softRules,
-        DEFAULT_BUSINESS_LOGIC.scheduling.softRules
-      ),
+      rules,
+      // Keep derived lists for backwards compatibility with existing code.
+      hardRules,
+      softRules,
     },
   };
 }
