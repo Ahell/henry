@@ -690,9 +690,13 @@ export class SchedulingTab extends LitElement {
     const slot = store.getSlots().find((s) => s.start_date === slotDate);
     if (!slot) return html`<td class="summary-cell"></td>`;
 
-    const runsInSlot = (store.getCourseRuns() || []).filter((run) =>
-      this._runCoversSlotId(run, slot.slot_id)
-    );
+    const runsInSlot = (store.getCourseRuns() || [])
+      .filter((run) => this._runCoversSlotId(run, slot.slot_id))
+      // Ignore orphan runs with no cohort (they shouldn't count as "scheduled" in the grid)
+      .filter(
+        (run) =>
+          Array.isArray(run.cohorts) && run.cohorts.some((id) => id != null)
+      );
 
     const courseMap = new Map();
     for (const run of runsInSlot) {

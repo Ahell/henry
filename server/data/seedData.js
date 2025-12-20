@@ -3,6 +3,55 @@
  * Contains all courses, cohorts, teachers, slots, and historical course runs
  */
 
+const SLOT_LENGTH_DAYS = 28;
+
+function computeSlotEndDate(startDate, lengthDays = SLOT_LENGTH_DAYS) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startDate);
+  if (!match) {
+    throw new Error(`seedData: ogiltigt start_date "${startDate}"`);
+  }
+  const [, year, month, day] = match;
+  const date = new Date(
+    Date.UTC(Number(year), Number(month) - 1, Number(day))
+  );
+  date.setUTCDate(date.getUTCDate() + Math.max(0, Number(lengthDays) - 1));
+  return date.toISOString().slice(0, 10);
+}
+
+const SLOT_START_DATES = [
+  "2024-06-10",
+  "2024-09-09",
+  "2024-10-07",
+  "2025-01-13",
+  "2025-02-10",
+  "2025-03-10",
+  "2025-04-07",
+  "2025-05-05",
+  "2025-06-02",
+  "2025-08-18",
+  "2025-10-13",
+  "2025-11-10",
+  "2026-02-16",
+  "2026-03-16",
+  "2026-04-13",
+  "2026-05-11",
+  "2026-06-08",
+  "2026-08-17",
+  "2026-09-14",
+  "2026-10-12",
+  "2026-11-09",
+  "2026-12-07",
+  "2027-01-25",
+  "2027-02-22",
+  "2027-03-22",
+  "2027-04-19",
+  "2027-05-17",
+  "2027-06-14",
+  "2027-08-09",
+  "2027-09-06",
+  "2027-10-04",
+];
+
 const seedDataRaw = {
   // All 14 courses
   courses: [
@@ -155,500 +204,14 @@ const seedDataRaw = {
     },
   ],
 
-  // Time slots - calculate end dates (each slot is ~4-5 weeks)
-  slots: [
-    // 2024
-    {
-      start_date: "2024-06-10",
-      end_date: "2024-07-07",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2024-09-09",
-      end_date: "2024-10-06",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2024-10-07",
-      end_date: "2024-11-03",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
+  // Time slots - seed only the dates (each slot is 28 days)
+  slots: SLOT_START_DATES.map((start_date) => ({
+    start_date,
+    end_date: computeSlotEndDate(start_date),
+  })),
 
-    // 2025
-    {
-      start_date: "2025-01-13",
-      end_date: "2025-02-09",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2025-02-10",
-      end_date: "2025-03-09",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2025-03-10",
-      end_date: "2025-04-06",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2025-04-07",
-      end_date: "2025-05-04",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2025-05-05",
-      end_date: "2025-06-01",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2025-06-02",
-      end_date: "2025-06-29",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2025-08-18",
-      end_date: "2025-09-14",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2025-10-13",
-      end_date: "2025-11-09",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2025-11-10",
-      end_date: "2025-12-07",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-
-    // 2026
-    {
-      start_date: "2026-02-16",
-      end_date: "2026-03-15",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2026-03-16",
-      end_date: "2026-04-12",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2026-04-13",
-      end_date: "2026-05-10",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2026-05-11",
-      end_date: "2026-06-07",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2026-06-08",
-      end_date: "2026-07-05",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2026-08-17",
-      end_date: "2026-09-13",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2026-09-14",
-      end_date: "2026-10-11",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2026-10-12",
-      end_date: "2026-11-08",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2026-11-09",
-      end_date: "2026-12-06",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2026-12-07",
-      end_date: "2027-01-03",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-
-    // 2027
-    {
-      start_date: "2027-01-25",
-      end_date: "2027-02-21",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2027-02-22",
-      end_date: "2027-03-21",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2027-03-22",
-      end_date: "2027-04-18",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2027-04-19",
-      end_date: "2027-05-16",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2027-05-17",
-      end_date: "2027-06-13",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2027-06-14",
-      end_date: "2027-07-11",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2027-08-09",
-      end_date: "2027-09-05",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2027-09-06",
-      end_date: "2027-10-03",
-      evening_pattern: "mån/fre",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-    {
-      start_date: "2027-10-04",
-      end_date: "2027-11-01",
-      evening_pattern: "tis/tor",
-      is_placeholder: false,
-      location: "FEI Campus",
-    },
-  ],
-
-  // Historical and planned course runs from feiCourses data
-  courseRuns: [
-    // HT25
-    {
-      course_id: 0,
-      slot_id: 9,
-      teacher_id: 0,
-      cohorts: [8],
-      planned_students: 30,
-      status: "planerad",
-    }, // AI180U
-    {
-      course_id: 1,
-      slot_id: 9,
-      teacher_id: 0,
-      cohorts: [8],
-      planned_students: 30,
-      status: "planerad",
-    }, // AI188U
-    {
-      course_id: 2,
-      slot_id: 9,
-      teacher_id: 4,
-      cohorts: [8],
-      planned_students: 30,
-      status: "planerad",
-    }, // AI183U
-    {
-      course_id: 3,
-      slot_id: 10,
-      teacher_id: 11,
-      cohorts: [8],
-      planned_students: 30,
-      status: "planerad",
-    }, // AI184U
-    {
-      course_id: 4,
-      slot_id: 10,
-      teacher_id: 1,
-      cohorts: [9],
-      planned_students: 28,
-      status: "planerad",
-    }, // AI190U
-    {
-      course_id: 5,
-      slot_id: 10,
-      teacher_id: 0,
-      cohorts: [8],
-      planned_students: 30,
-      status: "planerad",
-    }, // AI192U
-    {
-      course_id: 6,
-      slot_id: 11,
-      teacher_id: 0,
-      cohorts: [8],
-      planned_students: 30,
-      status: "planerad",
-    }, // AI191U
-    {
-      course_id: 7,
-      slot_id: 11,
-      teacher_id: 0,
-      cohorts: [8],
-      planned_students: 30,
-      status: "planerad",
-    }, // AI181U
-    {
-      course_id: 8,
-      slot_id: 12,
-      teacher_id: 4,
-      cohorts: [8],
-      planned_students: 30,
-      status: "planerad",
-    }, // AI185U
-
-    // VT26
-    {
-      course_id: 1,
-      slot_id: 12,
-      teacher_id: 10,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI188U
-    {
-      course_id: 9,
-      slot_id: 13,
-      teacher_id: 1,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI186U
-    {
-      course_id: 10,
-      slot_id: 14,
-      teacher_id: 2,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI182U
-    {
-      course_id: 11,
-      slot_id: 15,
-      teacher_id: 5,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI189U
-    {
-      course_id: 7,
-      slot_id: 15,
-      teacher_id: 0,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI181U
-    {
-      course_id: 10,
-      slot_id: 16,
-      teacher_id: 5,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI182U
-    {
-      course_id: 12,
-      slot_id: 16,
-      teacher_id: 3,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI187U
-
-    // HT26
-    {
-      course_id: 0,
-      slot_id: 17,
-      teacher_id: 0,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI180U
-    {
-      course_id: 2,
-      slot_id: 17,
-      teacher_id: 4,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI183U
-    {
-      course_id: 3,
-      slot_id: 18,
-      teacher_id: 11,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI184U
-    {
-      course_id: 5,
-      slot_id: 19,
-      teacher_id: 0,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI192U
-    {
-      course_id: 11,
-      slot_id: 20,
-      teacher_id: 5,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI189U
-    {
-      course_id: 8,
-      slot_id: 20,
-      teacher_id: 4,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI185U
-    {
-      course_id: 6,
-      slot_id: 21,
-      teacher_id: 1,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI191U
-
-    // VT27
-    {
-      course_id: 1,
-      slot_id: 22,
-      teacher_id: 10,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI188U
-    {
-      course_id: 9,
-      slot_id: 23,
-      teacher_id: 1,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI186U
-    {
-      course_id: 10,
-      slot_id: 23,
-      teacher_id: 5,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI182U
-    {
-      course_id: 4,
-      slot_id: 24,
-      teacher_id: 1,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI190U
-    {
-      course_id: 11,
-      slot_id: 25,
-      teacher_id: 5,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI189U
-    {
-      course_id: 2,
-      slot_id: 25,
-      teacher_id: 4,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI183U
-    {
-      course_id: 10,
-      slot_id: 29,
-      teacher_id: 5,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI182U
-    {
-      course_id: 3,
-      slot_id: 29,
-      teacher_id: 11,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI184U
-    {
-      course_id: 8,
-      slot_id: 30,
-      teacher_id: 4,
-      cohorts: [],
-      planned_students: 0,
-      status: "planerad",
-    }, // AI185U
-  ],
+  // Seed schedule should start empty; scheduling is done in the UI.
+  courseRuns: [],
 };
 
 export const seedData = normalizeSeedData(seedDataRaw);
@@ -709,9 +272,15 @@ function normalizeCourseRuns(courseRunsRaw) {
   const hasZeroBasedCourseIds = runs.some((r) => Number(r.course_id) === 0);
   const offset = hasZeroBasedCourseIds ? 1 : 0;
 
-  return runs.map((r) => ({
-    ...r,
-    course_id:
-      typeof r.course_id === "number" ? r.course_id + offset : r.course_id,
-  }));
+  // Only keep runs that are actually scheduled for at least one cohort.
+  // Cohort-less runs become "orphan" schedule entries (cohort_id NULL) which can
+  // confuse scheduling/summary UI and aren't meaningful in Henry's current model.
+  return runs
+    .map((r) => ({
+      ...r,
+      course_id:
+        typeof r.course_id === "number" ? r.course_id + offset : r.course_id,
+      cohorts: Array.isArray(r.cohorts) ? r.cohorts : [],
+    }))
+    .filter((r) => r.cohorts.some((id) => id != null));
 }
