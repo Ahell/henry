@@ -104,6 +104,9 @@ export const schedulingTabStyles = css`
     border: 1px solid var(--color-border);
     border-radius: 0;
     box-shadow: var(--shadow-xs);
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
   }
 
   .gantt-table {
