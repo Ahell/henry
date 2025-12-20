@@ -130,8 +130,23 @@ export class SchedulingTab extends LitElement {
 
     const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
     const prerequisiteProblems = this._computeSchedulingPrerequisiteProblems();
+    const prerequisiteWarnings =
+      this._computePrerequisiteRuleWarnings(prerequisiteProblems);
     const overlapWarnings = this._computeCohortSlotOverlapWarnings();
-    const headerWarnings = [...prerequisiteProblems, ...overlapWarnings];
+    const capacityWarnings = this._computeCourseRunCapacityWarnings();
+    const skewedOverlapWarnings = this._computeSkewed15HpOverlapWarnings();
+    const teacherAvailabilityWarnings =
+      this._computeMissingAvailableCompatibleTeacherWarnings();
+    const emptySlotWarnings = this._computeEmptySlotWarnings();
+
+    const headerWarnings = this._dedupeWarnings([
+      ...prerequisiteWarnings,
+      ...overlapWarnings,
+      ...capacityWarnings,
+      ...skewedOverlapWarnings,
+      ...teacherAvailabilityWarnings,
+      ...emptySlotWarnings,
+    ]);
 
     return html`
       <henry-panel>
@@ -195,6 +210,269 @@ export class SchedulingTab extends LitElement {
     `;
   }
 
+  _computeCourseRunCapacityWarnings() {
+    const businessLogic = store.businessLogicManager.getBusinessLogic();
+    const params = businessLogic?.scheduling?.params || {};
+    const hardCap = Number(params.maxStudentsHard);
+    const preferredCap = Number(params.maxStudentsPreferred);
+
+    const hard = Number.isFinite(hardCap) ? hardCap : 130;
+    const preferred = Number.isFinite(preferredCap) ? preferredCap : 100;
+
+    const slots = store.getSlots() || [];
+    const warnings = [];
+
+    for (const slot of slots) {
+      const slotDate = slot?.start_date;
+      if (!slotDate) continue;
+
+      // courseId -> Set(cohortId)
+      const cohortIdsByCourseId = new Map();
+      const runsInSlot = (store.getCourseRuns() || [])
+        .filter((run) => this._runCoversSlotId(run, slot.slot_id))
+        .filter(
+          (run) =>
+            run?.course_id != null &&
+            Array.isArray(run.cohorts) &&
+            run.cohorts.some((id) => id != null)
+        );
+
+      for (const run of runsInSlot) {
+        const courseKey = String(run.course_id);
+        if (!cohortIdsByCourseId.has(courseKey)) {
+          cohortIdsByCourseId.set(courseKey, new Set());
+        }
+        const cohortSet = cohortIdsByCourseId.get(courseKey);
+        (run.cohorts || []).forEach((cohortId) => {
+          if (cohortId != null) cohortSet.add(cohortId);
+        });
+      }
+
+      for (const cohortSet of cohortIdsByCourseId.values()) {
+        let total = 0;
+        cohortSet.forEach((cohortId) => {
+          const cohort = store.getCohort(cohortId);
+          if (cohort) total += Number(cohort.planned_size) || 0;
+        });
+
+        if (total > hard) {
+          warnings.push({ ruleId: "maxStudentsHard", slotDate });
+          continue;
+        }
+        if (total > preferred) {
+          warnings.push({ ruleId: "avoidOverPreferred", slotDate });
+        }
+      }
+    }
+
+    return warnings;
+  }
+
+  _computeSkewed15HpOverlapWarnings() {
+    const slotsOrdered = (store.getSlots() || [])
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(a.start_date) - new Date(b.start_date) ||
+          Number(a.slot_id) - Number(b.slot_id)
+      );
+    const indexBySlotId = new Map(
+      slotsOrdered.map((s, idx) => [String(s.slot_id), idx])
+    );
+
+    const runs = (store.getCourseRuns() || []).filter((run) => {
+      if (!run || run.course_id == null || run.slot_id == null) return false;
+      return this._getRunSpan(run) >= 2;
+    });
+
+    const startIdxByCourseId = new Map(); // courseId -> Set(startIdx)
+
+    runs.forEach((run) => {
+      const startIdx = indexBySlotId.get(String(run.slot_id));
+      if (!Number.isFinite(startIdx)) return;
+      const key = String(run.course_id);
+      if (!startIdxByCourseId.has(key)) startIdxByCourseId.set(key, new Set());
+      startIdxByCourseId.get(key).add(startIdx);
+    });
+
+    const warnings = [];
+    for (const run of runs) {
+      const startIdx = indexBySlotId.get(String(run.slot_id));
+      if (!Number.isFinite(startIdx)) continue;
+      const set = startIdxByCourseId.get(String(run.course_id));
+      if (!set) continue;
+      // Skewed overlap: another run starts one slot earlier for same 15hp course.
+      if (!set.has(startIdx - 1)) continue;
+      const cohortIds = Array.isArray(run.cohorts) ? run.cohorts : [];
+      cohortIds
+        .filter((id) => id != null)
+        .forEach((cohortId) =>
+          warnings.push({ ruleId: "noSkewedOverlap15hp", cohortId })
+        );
+    }
+
+    return warnings;
+  }
+
+  _computeMissingAvailableCompatibleTeacherWarnings() {
+    const rules =
+      store.businessLogicManager.getBusinessLogic()?.scheduling?.rules || [];
+    const requireRule = rules.find(
+      (r) => r?.id === "requireAvailableCompatibleTeachers"
+    );
+    // If rule isn't enabled, skip computing to avoid noise.
+    if (requireRule && requireRule.enabled === false) return [];
+
+    const warnings = [];
+    const slots = store.getSlots() || [];
+    const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
+    const slotByStartDate = new Map(slots.map((s) => [s.start_date, s]));
+    const teachers = store.getTeachers() || [];
+
+    for (const cohort of store.getCohorts() || []) {
+      if (!cohort || cohort.cohort_id == null) continue;
+
+      const runsInCohort = (store.getCourseRuns() || []).filter((r) =>
+        this._runHasCohort(r, cohort.cohort_id)
+      );
+      if (runsInCohort.length === 0) continue;
+
+      let violated = false;
+      for (const run of runsInCohort) {
+        if (!run || run.course_id == null || run.slot_id == null) continue;
+
+        const dates = this._getRunSlotDates(run, slotDates);
+        if (dates.length === 0) continue;
+
+        const compatibleTeachers = teachers.filter(
+          (t) =>
+            Array.isArray(t.compatible_courses) &&
+            t.compatible_courses.includes(run.course_id)
+        );
+        if (compatibleTeachers.length === 0) {
+          violated = true;
+          break;
+        }
+
+        for (const dateStr of dates) {
+          const slot = slotByStartDate.get(dateStr);
+          const slotId = slot?.slot_id ?? null;
+          const hasAnyAvailable = compatibleTeachers.some(
+            (t) => !store.isTeacherUnavailable(t.teacher_id, dateStr, slotId)
+          );
+          if (!hasAnyAvailable) {
+            violated = true;
+            break;
+          }
+        }
+        if (violated) break;
+      }
+
+      if (violated) {
+        warnings.push({
+          ruleId: "requireAvailableCompatibleTeachers",
+          cohortId: cohort.cohort_id,
+        });
+      }
+    }
+
+    return warnings;
+  }
+
+  _computeEmptySlotWarnings() {
+    const warnings = [];
+    const slots = (store.getSlots() || [])
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(a.start_date) - new Date(b.start_date) ||
+          Number(a.slot_id) - Number(b.slot_id)
+      );
+    if (slots.length === 0) return warnings;
+
+    const cohorts = store.getCohorts() || [];
+    for (const cohort of cohorts) {
+      if (!cohort || cohort.cohort_id == null) continue;
+
+      const cohortStart = this._parseDateOnly(cohort.start_date);
+      const startIdx = (() => {
+        if (!cohortStart) return 0;
+        for (let i = 0; i < slots.length; i += 1) {
+          const d = this._parseDateOnly(slots[i]?.start_date);
+          if (d && d >= cohortStart) return i;
+        }
+        return slots.length; // start after all slots
+      })();
+      if (startIdx >= slots.length) continue;
+
+      const coveredIdx = new Set();
+      (store.getCourseRuns() || [])
+        .filter((r) => this._runHasCohort(r, cohort.cohort_id))
+        .forEach((run) => {
+          const startIndex = slots.findIndex(
+            (s) => String(s.slot_id) === String(run.slot_id)
+          );
+          if (startIndex < 0) return;
+          const span = this._getRunSpan(run);
+          for (let i = startIndex; i < startIndex + span; i += 1) {
+            coveredIdx.add(i);
+          }
+        });
+
+      const afterStartCovered = Array.from(coveredIdx).filter((i) => i >= startIdx);
+      if (afterStartCovered.length < 2) continue;
+      const min = Math.min(...afterStartCovered);
+      const max = Math.max(...afterStartCovered);
+      let hasGap = false;
+      for (let i = min; i <= max; i += 1) {
+        if (!coveredIdx.has(i)) {
+          hasGap = true;
+          break;
+        }
+      }
+      if (hasGap) {
+        warnings.push({ ruleId: "avoidEmptySlots", cohortId: cohort.cohort_id });
+      }
+    }
+
+    return warnings;
+  }
+
+  _computePrerequisiteRuleWarnings(prerequisiteProblems) {
+    const rules =
+      store.businessLogicManager.getBusinessLogic()?.scheduling?.rules || [];
+    const prereqRule = rules.find((r) => r?.id === "prerequisitesOrder");
+    if (prereqRule && prereqRule.enabled === false) return [];
+
+    const warnings = [];
+    (Array.isArray(prerequisiteProblems) ? prerequisiteProblems : []).forEach(
+      (p) => {
+        if (p?.cohortId == null) return;
+        warnings.push({ ruleId: "prerequisitesOrder", cohortId: p.cohortId });
+      }
+    );
+    return warnings;
+  }
+
+  _dedupeWarnings(warnings) {
+    const out = [];
+    const seen = new Set();
+    (Array.isArray(warnings) ? warnings : []).forEach((w) => {
+      const ruleId = w?.ruleId;
+      const slotDate = w?.slotDate;
+      const cohortId = w?.cohortId;
+      if (!ruleId) return;
+      const keyPart =
+        slotDate != null ? `slot:${slotDate}` : cohortId != null ? `cohort:${cohortId}` : null;
+      if (!keyPart) return;
+      const key = `${ruleId}@@${keyPart}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({ ruleId, slotDate, cohortId });
+    });
+    return out;
+  }
+
   _handleEditClick(e) {
     const next =
       typeof e?.detail?.checked === "boolean"
@@ -214,53 +492,145 @@ export class SchedulingTab extends LitElement {
   }
 
   _renderWarningPills(prerequisiteProblems) {
-    prerequisiteProblems = Array.isArray(prerequisiteProblems)
+    const warnings = Array.isArray(prerequisiteProblems)
       ? prerequisiteProblems
       : [];
-    if (prerequisiteProblems.length === 0) return "";
+    if (warnings.length === 0) return "";
 
-    const problemsByCohort = new Map();
-    prerequisiteProblems.forEach((problem) => {
-      if (!problemsByCohort.has(problem.cohortId)) {
-        problemsByCohort.set(problem.cohortId, []);
+    const schedulingRules =
+      store.businessLogicManager.getBusinessLogic()?.scheduling?.rules || [];
+    const ruleById = new Map(
+      schedulingRules.map((r) => [String(r?.id || ""), r]).filter(([id]) => id)
+    );
+
+    const conciseLabelByRuleId = {
+      prerequisitesOrder: "Spärrkursordning",
+      maxStudentsHard: "Över maxantal studenter",
+      avoidOverPreferred: "Över föredraget antal studenter",
+      noSkewedOverlap15hp: "15hp överlappar snett",
+      requireAvailableCompatibleTeachers: "Ingen tillgänglig lärare",
+      avoidEmptySlots: "Tom slot",
+      maxOneCoursePerSlot: "Flera kurser i samma period",
+    };
+
+    const slotPrefixedRuleIds = new Set(["maxStudentsHard", "avoidOverPreferred"]);
+    const warningsByPrefix = new Map();
+
+    warnings.forEach((w) => {
+      const ruleId = w?.ruleId;
+      if (!ruleId) return;
+
+      const rule = ruleById.get(String(ruleId));
+      if (!rule || rule.enabled === false) return;
+
+      const prefixInfo = (() => {
+        if (slotPrefixedRuleIds.has(String(ruleId))) {
+          const slotDate = w?.slotDate;
+          if (!slotDate) return null;
+          return {
+            key: `slot:${slotDate}`,
+            prefixType: "slot",
+            prefixText: slotDate,
+            sortKey: slotDate,
+          };
+        }
+
+        const cohortId = w?.cohortId;
+        if (cohortId == null) return null;
+        const cohort = store.getCohort(cohortId);
+        const prefixText = cohort?.name || `Kull ${cohortId}`;
+        const sortKey = String(cohort?.name || "").toLowerCase();
+        return {
+          key: `cohort:${cohortId}`,
+          prefixType: "cohort",
+          prefixText,
+          sortKey,
+          cohortId,
+        };
+      })();
+      if (!prefixInfo) return;
+
+      if (!warningsByPrefix.has(prefixInfo.key)) {
+        warningsByPrefix.set(prefixInfo.key, {
+          hard: new Set(),
+          soft: new Set(),
+          prefixText: prefixInfo.prefixText,
+          prefixType: prefixInfo.prefixType,
+          sortKey: prefixInfo.sortKey,
+          cohortId: prefixInfo.cohortId,
+        });
       }
-      problemsByCohort.get(problem.cohortId).push(problem);
+
+      const kind =
+        String(rule.kind || "soft").toLowerCase() === "hard" ? "hard" : "soft";
+      const label =
+        conciseLabelByRuleId[String(ruleId)] ||
+        rule.label ||
+        rule.id ||
+        String(ruleId);
+
+      warningsByPrefix.get(prefixInfo.key)[kind].add(label);
+    });
+
+    const pills = [];
+    for (const grouped of warningsByPrefix.values()) {
+      const hard = Array.from(grouped.hard || []).filter(Boolean);
+      const soft = Array.from(grouped.soft || []).filter(Boolean);
+      if (hard.length)
+        pills.push({
+          prefixText: grouped.prefixText,
+          prefixType: grouped.prefixType,
+          sortKey: grouped.sortKey,
+          cohortId: grouped.cohortId,
+          kind: "hard",
+          labels: hard,
+        });
+      if (soft.length)
+        pills.push({
+          prefixText: grouped.prefixText,
+          prefixType: grouped.prefixType,
+          sortKey: grouped.sortKey,
+          cohortId: grouped.cohortId,
+          kind: "soft",
+          labels: soft,
+        });
+    }
+
+    if (pills.length === 0) return "";
+
+    const kindOrder = { hard: 0, soft: 1 };
+    pills.sort((a, b) => {
+      if (a.prefixType !== b.prefixType) {
+        // Slot-prefixed warnings (max/preferred) first to make capacity issues obvious.
+        return a.prefixType === "slot" ? -1 : 1;
+      }
+      if (a.prefixType === "slot") {
+        const cmp = String(a.prefixText).localeCompare(String(b.prefixText));
+        if (cmp !== 0) return cmp;
+      } else {
+        const aNum = Number(a.cohortId);
+        const bNum = Number(b.cohortId);
+        if (Number.isFinite(aNum) && Number.isFinite(bNum) && aNum !== bNum) {
+          return aNum - bNum;
+        }
+        const cmp = String(a.sortKey || "").localeCompare(String(b.sortKey || ""));
+        if (cmp !== 0) return cmp;
+        const cmpText = String(a.prefixText).localeCompare(String(b.prefixText));
+        if (cmpText !== 0) return cmpText;
+      }
+      return (kindOrder[a.kind] ?? 9) - (kindOrder[b.kind] ?? 9);
     });
 
     return html`
       <div class="warning-pills">
-        ${Array.from(problemsByCohort.entries()).map(([cohortId, problems]) => {
-          const cohort = store.getCohort(cohortId);
-          if (!cohort) return "";
-
-          const missingCount = problems.filter(
-            (p) => p.type === "missing"
-          ).length;
-          const beforeCount = problems.filter(
-            (p) => p.type === "before_prerequisite"
-          ).length;
-          const chainCount = problems.filter(
-            (p) => p.type === "blocked_by_prerequisite_chain"
-          ).length;
-          const hasOverlap = problems.some(
-            (p) => p.type === "multiple_courses_in_slot"
-          );
-
-          const warningParts = [];
-          if (missingCount > 0)
-            warningParts.push(`${missingCount} saknar spärrkurs`);
-          if (beforeCount > 0) warningParts.push("Kurs före spärrkurs");
-          if (chainCount > 0)
-            warningParts.push(`${chainCount} kedjeblockering`);
-          if (hasOverlap) warningParts.push("Flera kurser i samma period");
-
-          return html`
-            <div class="warning-pill">
-              <span class="cohort-name">${cohort.name}</span>:
-              ${warningParts.join(", ")}
+        ${pills.map(
+          (pill) => html`
+            <div class="warning-pill warning-pill--${pill.kind}">
+              <span class="warning-prefix">${pill.prefixText}</span>:
+              ${pill.labels.join(", ")}
             </div>
-          `;
-        })}
+          `
+        )}
       </div>
     `;
   }
@@ -798,16 +1168,15 @@ export class SchedulingTab extends LitElement {
         }
       }
 
-      const hasOverlap = Array.from(uniqueCoursesBySlotDate.values()).some(
-        (set) => set.size > 1
-      );
-      if (!hasOverlap) continue;
-
-      warnings.push({
-        type: "multiple_courses_in_slot",
-        cohortId: cohort.cohort_id,
-        cohortName: cohort.name,
-      });
+      for (const [, set] of uniqueCoursesBySlotDate.entries()) {
+        if (set.size > 1) {
+          warnings.push({
+            ruleId: "maxOneCoursePerSlot",
+            cohortId: cohort.cohort_id,
+          });
+          break;
+        }
+      }
     }
 
     return warnings;

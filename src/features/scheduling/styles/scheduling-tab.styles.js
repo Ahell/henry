@@ -43,21 +43,37 @@ export const schedulingTabStyles = css`
     align-items: center;
   }
 
-  .warning-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    background: var(--color-danger-light);
-    color: var(--color-danger-hover);
+	  .warning-pill {
+	    display: inline-flex;
+	    align-items: center;
+	    gap: var(--space-1);
+    background: var(--color-gray-100);
+    color: var(--color-text-primary);
     padding: var(--space-1) var(--space-3);
     border-radius: var(--radius-full);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-medium);
-    border: 1px solid rgba(239, 68, 68, 0.25);
+    border: 1px solid var(--color-border);
   }
 
   .warning-pill .cohort-name {
     font-weight: var(--font-weight-semibold);
+  }
+
+  .warning-pill .warning-prefix {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .warning-pill--hard {
+    background: var(--color-danger-light);
+    color: var(--color-danger-hover);
+    border-color: rgba(239, 68, 68, 0.25);
+  }
+
+  .warning-pill--soft {
+    background: var(--color-warning-light);
+    color: var(--color-warning-hover);
+    border-color: rgba(245, 158, 11, 0.28);
   }
 
   .legend {
