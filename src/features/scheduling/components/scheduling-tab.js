@@ -22,14 +22,20 @@ export class SchedulingTab extends LitElement {
 
   constructor() {
     super();
-    this.isEditing = false;
+    this.isEditing = !!store.editMode;
     this._dragDropManager = new DragDropManager(this);
     this._dragCourseId = null;
     this._teacherOverlayChipsBySlotDate = new Map();
     this._shouldShowTeacherAvailabilityOverlay = false;
     this._autoFillInProgressByCohort = new Set();
     this._didAutoScroll = false;
-    store.subscribe(() => this.requestUpdate());
+    store.subscribe(() => {
+      const next = !!store.editMode;
+      if (this.isEditing !== next) {
+        this.setEditMode(next);
+      }
+      this.requestUpdate();
+    });
   }
 
   _scrollToToday() {
@@ -139,11 +145,6 @@ export class SchedulingTab extends LitElement {
                 @click=${() => this._scrollToToday()}
                 >Idag</henry-button
               >
-              <henry-switch
-                label="Redigera"
-                .checked=${this.isEditing}
-                @switch-change=${this._handleEditClick}
-              ></henry-switch>
             </div>
           </div>
         </div>
@@ -199,11 +200,16 @@ export class SchedulingTab extends LitElement {
       typeof e?.detail?.checked === "boolean"
         ? !!e.detail.checked
         : !this.isEditing;
+    this.setEditMode(next);
+  }
+
+  setEditMode(enabled) {
+    const next = !!enabled;
+    if (this.isEditing === next) return;
     this.isEditing = next;
     if (!next) {
       // Ensure any in-progress drag state and overlays are cleared when leaving edit mode.
       this._dragDropManager?.handleDragEnd?.();
-      return;
     }
   }
 

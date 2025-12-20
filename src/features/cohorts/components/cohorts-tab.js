@@ -64,6 +64,7 @@ export class CohortsTab extends LitElement {
   }
 
   render() {
+    const canEdit = !!store.editMode;
     return html`
       ${this.message
         ? html`<div class="${this.messageType}">${this.message}</div>`
@@ -72,7 +73,11 @@ export class CohortsTab extends LitElement {
 	      <henry-panel>
 	        <div slot="header" class="panel-header">
 	          <henry-text variant="heading-3">Befintliga Kullar</henry-text>
-	          <henry-button variant="primary" @click="${this._openAddModal}">
+	          <henry-button
+	            variant="primary"
+	            ?disabled=${!canEdit}
+	            @click="${this._openAddModal}"
+	          >
 	            Lägg till kull
 	          </henry-button>
 	        </div>
@@ -129,7 +134,7 @@ export class CohortsTab extends LitElement {
 	                </henry-button>
 	                <henry-button
 	                  variant="primary"
-	                  ?disabled="${!this.formValid}"
+	                  ?disabled="${!this.formValid || !canEdit}"
 	                  @click="${() => {
 	                    const form =
 	                      this.renderRoot?.querySelector("#add-cohort-form");
@@ -185,6 +190,7 @@ export class CohortsTab extends LitElement {
             <henry-button
               variant="secondary"
               size="small"
+              ?disabled=${!store.editMode}
               @click="${() => this.handleEditCohort(cohort.cohort_id)}"
             >
               Redigera
@@ -192,6 +198,7 @@ export class CohortsTab extends LitElement {
             <henry-button
               variant="danger"
               size="small"
+              ?disabled=${!store.editMode}
               @click="${() => this.handleDeleteCohort(cohort.cohort_id)}"
             >
               Ta bort
@@ -206,6 +213,7 @@ export class CohortsTab extends LitElement {
 
   async handleAddCohort(e) {
     e.preventDefault();
+    if (!store.editMode) return;
     const root = this.shadowRoot;
     try {
       if (!FormService.isFormValid(root)) {
@@ -224,6 +232,7 @@ export class CohortsTab extends LitElement {
   }
 
   handleEditCohort(cohortId) {
+    if (!store.editMode) return;
     this.editingCohortId = cohortId;
   }
 
@@ -232,6 +241,7 @@ export class CohortsTab extends LitElement {
   }
 
   async _handleModalSave(e) {
+    if (!store.editMode) return;
     const { cohortId } = e.detail;
     try {
       await updateCohortFromForm(e.currentTarget, cohortId);
@@ -243,6 +253,7 @@ export class CohortsTab extends LitElement {
   }
 
   async handleDeleteCohort(cohortId) {
+    if (!store.editMode) return;
     const cohort = store.getCohort(cohortId);
     if (!cohort) return;
 
@@ -264,6 +275,12 @@ export class CohortsTab extends LitElement {
     } catch (error) {
       showErrorMessage(this, `Fel: ${error.message}`);
     }
+  }
+
+  updated() {
+    if (store.editMode) return;
+    if (this.addModalOpen) this.addModalOpen = false;
+    if (this.editingCohortId != null) this.editingCohortId = null;
   }
 }
 

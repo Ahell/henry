@@ -28,6 +28,9 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
 
 export class DataStore {
   constructor() {
+    // Global UI state (not persisted)
+    this.editMode = false;
+
     this.cohorts = [];
     this.slots = [];
     this.prerequisiteProblems = [];
@@ -143,6 +146,13 @@ export class DataStore {
 
   notify() {
     this.events.notify();
+  }
+
+  setEditMode(enabled) {
+    const next = !!enabled;
+    if (this.editMode === next) return;
+    this.editMode = next;
+    this.notify();
   }
 
   async saveData({ mutationId, label } = {}) {

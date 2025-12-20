@@ -72,6 +72,7 @@ export class TeachersTab extends LitElement {
   }
 
   render() {
+    const canEdit = !!store.editMode;
     const departments = ["AIJ", "AIE", "AF"];
     const courses = store.getCourses();
 
@@ -83,7 +84,11 @@ export class TeachersTab extends LitElement {
       <henry-panel>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga Lärare</henry-text>
-          <henry-button variant="primary" @click="${this._openAddModal}">
+          <henry-button
+            variant="primary"
+            ?disabled=${!canEdit}
+            @click="${this._openAddModal}"
+          >
             Lägg till lärare
           </henry-button>
         </div>
@@ -150,7 +155,7 @@ export class TeachersTab extends LitElement {
                 </henry-button>
                 <henry-button
                   variant="primary"
-                  ?disabled="${!this.formValid}"
+                  ?disabled="${!this.formValid || !canEdit}"
                   @click="${() => {
                     const form =
                       this.renderRoot?.querySelector("#add-teacher-form");
@@ -178,6 +183,7 @@ export class TeachersTab extends LitElement {
   }
 
   async _handleModalSave(e) {
+    if (!store.editMode) return;
     const { teacherId, formData } = e.detail;
     try {
       const { mutationId } = TeacherFormService.updateTeacher(teacherId, formData);
@@ -230,6 +236,7 @@ export class TeachersTab extends LitElement {
             <henry-button
               variant="secondary"
               size="small"
+              ?disabled=${!store.editMode}
               @click="${() => this.handleEditTeacher(teacher.teacher_id)}"
             >
               Redigera
@@ -237,6 +244,7 @@ export class TeachersTab extends LitElement {
             <henry-button
               variant="danger"
               size="small"
+              ?disabled=${!store.editMode}
               @click="${() =>
                 this.handleDeleteTeacher(teacher.teacher_id, teacher.name)}"
             >
@@ -252,6 +260,7 @@ export class TeachersTab extends LitElement {
 
   async handleAddTeacher(e) {
     e.preventDefault();
+    if (!store.editMode) return;
     const root = this.shadowRoot;
 
     try {
@@ -274,6 +283,7 @@ export class TeachersTab extends LitElement {
   }
 
   handleEditTeacher(teacherId) {
+    if (!store.editMode) return;
     this.editingTeacherId = teacherId;
   }
 
@@ -282,6 +292,7 @@ export class TeachersTab extends LitElement {
   }
 
   async handleDeleteTeacher(teacherId, teacherName) {
+    if (!store.editMode) return;
     if (
       !confirm(`Är du säker på att du vill ta bort läraren "${teacherName}"?`)
     ) {
@@ -296,6 +307,12 @@ export class TeachersTab extends LitElement {
     } catch (err) {
       showErrorMessage(this, `Kunde inte ta bort läraren: ${err.message}`);
     }
+  }
+
+  updated() {
+    if (store.editMode) return;
+    if (this.addModalOpen) this.addModalOpen = false;
+    if (this.editingTeacherId != null) this.editingTeacherId = null;
   }
 }
 

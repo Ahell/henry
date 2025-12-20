@@ -101,6 +101,7 @@ export class CoursesTab extends LitElement {
   }
 
   render() {
+    const canEdit = !!store.editMode;
     return html`
       ${this.message
         ? html`<div class="${this.messageType}">${this.message}</div>`
@@ -109,7 +110,11 @@ export class CoursesTab extends LitElement {
       <henry-panel>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga Kurser</henry-text>
-          <henry-button variant="primary" @click="${this._openAddModal}">
+          <henry-button
+            variant="primary"
+            ?disabled=${!canEdit}
+            @click="${this._openAddModal}"
+          >
             Lägg till kurs
           </henry-button>
         </div>
@@ -197,7 +202,7 @@ export class CoursesTab extends LitElement {
                 </henry-button>
                 <henry-button
                   variant="primary"
-                  ?disabled="${!this.formValid}"
+                  ?disabled="${!this.formValid || !canEdit}"
                   @click="${() => {
                     const form =
                       this.renderRoot?.querySelector("#add-course-form");
@@ -225,6 +230,7 @@ export class CoursesTab extends LitElement {
   }
 
   _handleModalSave(e) {
+    if (!store.editMode) return;
     const { courseId, formData } = e.detail;
     (async () => {
       try {
@@ -285,6 +291,7 @@ export class CoursesTab extends LitElement {
             <henry-button
               variant="secondary"
               size="small"
+              ?disabled=${!store.editMode}
               @click="${() => this.handleEditCourse(course.course_id)}"
             >
               Redigera
@@ -292,6 +299,7 @@ export class CoursesTab extends LitElement {
             <henry-button
               variant="danger"
               size="small"
+              ?disabled=${!store.editMode}
               @click="${() => this.handleDeleteCourse(course.course_id)}"
             >
               Ta bort
@@ -339,6 +347,7 @@ export class CoursesTab extends LitElement {
 
   async handleAddCourse(e) {
     e.preventDefault();
+    if (!store.editMode) return;
     const root = this.shadowRoot;
 
     try {
@@ -361,6 +370,7 @@ export class CoursesTab extends LitElement {
   }
 
   handleEditCourse(courseId) {
+    if (!store.editMode) return;
     this.editingCourseId = courseId;
   }
 
@@ -369,6 +379,7 @@ export class CoursesTab extends LitElement {
   }
 
   async handleDeleteCourse(courseId) {
+    if (!store.editMode) return;
     const course = store.getCourse(courseId);
     const courseName = course ? course.name : "Okänd kurs";
     if (
@@ -385,6 +396,12 @@ export class CoursesTab extends LitElement {
     } catch (err) {
       showErrorMessage(this, `Kunde inte ta bort kursen: ${err.message}`);
     }
+  }
+
+  updated() {
+    if (store.editMode) return;
+    if (this.addModalOpen) this.addModalOpen = false;
+    if (this.editingCourseId != null) this.editingCourseId = null;
   }
 }
 

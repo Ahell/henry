@@ -185,6 +185,15 @@
         border-color: rgba(255, 255, 255, 0.22);
       }
 
+      henry-switch.nav-edit-switch {
+        --color-text-primary: rgba(255, 255, 255, 0.88);
+        --color-border: rgba(255, 255, 255, 0.22);
+        --color-gray-200: rgba(255, 255, 255, 0.18);
+        /* Use blue for "on" to match header actions */
+        --color-success: rgba(59, 130, 246, 0.75);
+        --color-success-hover: rgba(59, 130, 246, 0.9);
+      }
+
       main {
         background: transparent;
         border: none;
@@ -267,6 +276,11 @@
           >
             Återställ Databas
           </button>
+          <henry-switch
+            id="navEditMode"
+            class="nav-edit-switch"
+            label="Redigera"
+          ></henry-switch>
           <button class="nav-btn active" data-section="admin">
             Admin Grunddata
           </button>

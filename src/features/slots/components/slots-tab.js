@@ -74,6 +74,7 @@ export class SlotsTab extends LitElement {
   }
 
   render() {
+    const canEdit = !!store.editMode;
     const sorted = (this.slots || [])
       .slice()
       .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
@@ -86,7 +87,11 @@ export class SlotsTab extends LitElement {
       <henry-panel>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga Slots</henry-text>
-          <henry-button variant="primary" @click="${this._openAddModal}">
+          <henry-button
+            variant="primary"
+            ?disabled=${!canEdit}
+            @click="${this._openAddModal}"
+          >
             Lägg till slot
           </henry-button>
         </div>
@@ -147,6 +152,7 @@ export class SlotsTab extends LitElement {
                 <henry-button
                   variant="primary"
                   ?disabled=${!this.formValid ||
+                  !canEdit ||
                   (!this.allowFreeDate &&
                     this.selectedInsertAfter &&
                     (this.startOptions || []).length === 0)}
@@ -282,6 +288,7 @@ export class SlotsTab extends LitElement {
             <henry-button
               variant="danger"
               size="small"
+              ?disabled=${!store.editMode}
               @click="${() => this.handleDeleteSlot(slot.slot_id)}"
               >Ta bort</henry-button
             >
@@ -295,6 +302,7 @@ export class SlotsTab extends LitElement {
 
   async handleAddSlot(e) {
     e.preventDefault();
+    if (!store.editMode) return;
     const root = this.shadowRoot;
     if (!FormService.isFormValid(root)) {
       FormService.reportFormValidity(root);
@@ -315,6 +323,7 @@ export class SlotsTab extends LitElement {
   }
 
   async handleDeleteSlot(slotId) {
+    if (!store.editMode) return;
     const runs = store.getCourseRunsBySlot(slotId);
     if (runs && runs.length > 0) {
       showErrorMessage(
@@ -335,6 +344,11 @@ export class SlotsTab extends LitElement {
     } catch (err) {
       showErrorMessage(this, err.message || "Kunde inte ta bort slot.");
     }
+  }
+
+  updated() {
+    if (store.editMode) return;
+    if (this.addModalOpen) this.addModalOpen = false;
   }
 }
 

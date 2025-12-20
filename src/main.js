@@ -35,6 +35,7 @@ const setStatus = (message) => {
 
 const loadBtn = document.getElementById("navLoadTestData");
 const resetBtn = document.getElementById("navResetDatabase");
+const editSwitch = document.getElementById("navEditMode");
 let busy = false;
 
 const setBusy = (isBusy) => {
@@ -90,6 +91,15 @@ if (resetBtn) {
     } finally {
       setBusy(false);
     }
+  });
+}
+
+if (editSwitch) {
+  editSwitch.checked = !!store.editMode;
+  editSwitch.addEventListener("switch-change", (e) => {
+    const enabled = !!e?.detail?.checked;
+    store.setEditMode(enabled);
+    editSwitch.checked = !!store.editMode;
   });
 }
 

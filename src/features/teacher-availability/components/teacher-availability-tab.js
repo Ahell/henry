@@ -22,7 +22,7 @@ export class TeacherAvailabilityTab extends LitElement {
 
   constructor() {
     super();
-    this.isPainting = false;
+    this.isPainting = !!store.editMode;
     this.paintMode = null;
     this.teachers = [];
     this.slots = [];
@@ -31,6 +31,11 @@ export class TeacherAvailabilityTab extends LitElement {
     this._detailSlotDate = null;
     this._updateData();
     store.subscribe(() => {
+      const next = !!store.editMode;
+      if (this.isPainting !== next) {
+        this.isPainting = next;
+        if (!next) this.paintMode = null;
+      }
       this._updateData();
       this.requestUpdate();
     });
@@ -61,11 +66,6 @@ export class TeacherAvailabilityTab extends LitElement {
             <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
           </div>
           <div class="header-actions">
-            <henry-switch
-              label="Redigera"
-              .checked=${this.isPainting}
-              @switch-change=${this._handleEditAvailabilityToggle}
-            ></henry-switch>
             <div class="paint-status"></div>
           </div>
         </div>
@@ -192,8 +192,12 @@ export class TeacherAvailabilityTab extends LitElement {
       typeof e?.detail?.checked === "boolean"
         ? !!e.detail.checked
         : !this.isPainting;
-    this.isPainting = next;
-    if (!next) this.paintMode = null;
+    this.setEditMode(next);
+  }
+
+  setEditMode(enabled) {
+    this.isPainting = !!enabled;
+    if (!enabled) this.paintMode = null;
   }
 
   _handleAvailabilityChanged() {
@@ -208,7 +212,8 @@ export class TeacherAvailabilityTab extends LitElement {
 
   _handlePaintStateChanged(e) {
     const detail = e?.detail || {};
-    this.isPainting = !!detail.isPainting;
+    // Keep isPainting controlled by global edit mode (store.editMode).
+    this.isPainting = !!store.editMode;
     this.paintMode = detail.paintMode || null;
   }
 

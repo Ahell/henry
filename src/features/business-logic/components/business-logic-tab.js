@@ -21,11 +21,15 @@ export class BusinessLogicTab extends LitElement {
     this.message = "";
     this.messageType = "";
     this.saving = false;
-    this.isEditing = false;
+    this.isEditing = !!store.editMode;
     this._autoSaveTimer = null;
     this._saveGeneration = 0;
     this._lastScheduledSaveGeneration = 0;
     subscribeToStore(this);
+    store.subscribe(() => {
+      const next = !!store.editMode;
+      if (this.isEditing !== next) this.setEditMode(next);
+    });
   }
 
   firstUpdated() {
@@ -114,11 +118,6 @@ export class BusinessLogicTab extends LitElement {
             ${this.saving
               ? html`<henry-text variant="caption">Sparar…</henry-text>`
               : ""}
-            <henry-switch
-              label="Redigera"
-              .checked=${this.isEditing}
-              @switch-change="${this._handleEditClick}"
-            ></henry-switch>
           </div>
         </div>
         <div class="rule-list">
@@ -133,23 +132,13 @@ export class BusinessLogicTab extends LitElement {
       typeof e?.detail?.checked === "boolean"
         ? !!e.detail.checked
         : !this.isEditing;
+    this.setEditMode(next);
+  }
+
+  setEditMode(enabled) {
+    const next = !!enabled;
+    if (this.isEditing === next) return;
     this.isEditing = next;
-    if (!next) return;
-
-    // Move focus to the first editable control.
-    const firstInput = this.renderRoot?.querySelector("henry-input");
-    if (firstInput?.getInput) {
-      try {
-        firstInput.getInput()?.focus?.();
-        return;
-      } catch (err) {
-        /* ignore */
-      }
-    }
-
-    const firstSwitch = this.renderRoot?.querySelector("henry-switch");
-    const nativeSwitch = firstSwitch?.shadowRoot?.querySelector("input");
-    nativeSwitch?.focus?.();
   }
 
   _renderRuleRow(rule, idx, listLength) {
