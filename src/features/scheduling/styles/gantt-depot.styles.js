@@ -39,7 +39,8 @@ export const ganttDepotStyles = css`
     box-sizing: border-box;
     box-shadow: var(--shadow-xs);
     border: 1px solid rgba(255, 255, 255, 0.22);
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    transition: transform var(--transition-fast),
+      box-shadow var(--transition-fast);
   }
 
   .depot-block:hover {
