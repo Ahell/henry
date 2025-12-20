@@ -52,12 +52,14 @@ export class BusinessLogicTab extends LitElement {
   }
 
   _scheduleAutoSave() {
+    if (store.isReconciling) return;
     if (this._autoSaveTimer) clearTimeout(this._autoSaveTimer);
 
     const generation = (this._saveGeneration += 1);
     this._lastScheduledSaveGeneration = generation;
 
     this._autoSaveTimer = setTimeout(async () => {
+      if (store.isReconciling) return;
       // Don’t persist invalid params. Keep UI state; user can correct.
       this._updateFormValidity();
       if (!this.formValid) return;

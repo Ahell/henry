@@ -270,8 +270,8 @@ const seedDataRaw = {
           label: "Kräv tillgänglig kompatibel lärare",
           description:
             "Hard: blockera schemaläggning om ingen kompatibel lärare är tillgänglig i perioden. Soft: prioritera val som har fler tillgängliga kompatibla lärare.",
-          enabled: false,
-          kind: "hard",
+          enabled: true,
+          kind: "soft",
           locked: false,
         },
         {

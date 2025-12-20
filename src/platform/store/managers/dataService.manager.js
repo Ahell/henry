@@ -255,6 +255,7 @@ export class DataServiceManager {
 
   // Load seed data into database via backend
   async loadSeedDataToDatabase() {
+    this.store._beginReconciling();
     try {
       await this.dataService.loadTestData();
       await this.loadData();
@@ -262,11 +263,14 @@ export class DataServiceManager {
     } catch (error) {
       console.error("Failed to load seed data:", error);
       throw error;
+    } finally {
+      this.store._endReconciling();
     }
   }
 
   // Reset database without loading seed data
   async resetDatabase() {
+    this.store._beginReconciling();
     try {
       // Clear all tables via backend
       await this.dataService.api.resetAllData();
@@ -279,6 +283,8 @@ export class DataServiceManager {
     } catch (error) {
       console.error("Failed to reset database:", error);
       throw error;
+    } finally {
+      this.store._endReconciling();
     }
   }
 
