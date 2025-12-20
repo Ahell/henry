@@ -146,7 +146,7 @@ export class BusinessLogicTab extends LitElement {
               this._toggleRule(ruleId, e.detail.checked)}
           ></henry-switch>
           <henry-switch
-            label=${isHard ? "Hard" : "Soft"}
+            label="Hard"
             .checked=${isHard}
             @switch-change=${(e) =>
               this._setRuleKind(ruleId, e.detail.checked ? "hard" : "soft")}

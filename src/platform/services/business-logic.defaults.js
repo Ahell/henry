@@ -36,7 +36,7 @@ const RULES_DEFAULT = [
     id: "requireAvailableCompatibleTeachers",
     label: "Kräv tillgänglig kompatibel lärare",
     description:
-      "Blockera schemaläggning om ingen kompatibel lärare är tillgänglig i perioden.",
+      "Hard: blockera schemaläggning om ingen kompatibel lärare är tillgänglig i perioden. Soft: prioritera val som har fler tillgängliga kompatibla lärare.",
     enabled: false,
     kind: "hard",
     locked: false,
@@ -46,14 +46,6 @@ const RULES_DEFAULT = [
     label: "Samläsning först (matcha slot)",
     description:
       "Välj i första hand en kurs som redan startar i samma slot i andra kullar (gemensam kurs-run = samläsning).",
-    enabled: true,
-    kind: "soft",
-  },
-  {
-    id: "preferAvailableCompatibleTeachers",
-    label: "Prioritera tillgänglig kompatibel lärare",
-    description:
-      "Om möjligt: välj alternativ med fler kompatibla lärare som är tillgängliga i perioden.",
     enabled: true,
     kind: "soft",
   },

@@ -709,7 +709,6 @@ export class CourseRunManager {
 
     const defaultSoftRuleOrder = [
       "maximizeColocation",
-      "preferAvailableCompatibleTeachers",
       "packTowardHardCap",
       "futureJoinCapacity",
       "avoidEmptySlots",
@@ -1199,7 +1198,7 @@ export class CourseRunManager {
           if (ruleId === "maximizeColocation") {
             return startsTotalsBySlotIdx.get(slotIdx)?.get(courseId) || 0;
           }
-          if (ruleId === "preferAvailableCompatibleTeachers") {
+          if (ruleId === "requireAvailableCompatibleTeachers") {
             const span = spanById.get(courseId) || 1;
             const base = getAvailableCompatibleTeachersForCourseInSlot(
               courseId,
