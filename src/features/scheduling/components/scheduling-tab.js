@@ -690,9 +690,9 @@ export class SchedulingTab extends LitElement {
     const slot = store.getSlots().find((s) => s.start_date === slotDate);
     if (!slot) return html`<td class="summary-cell"></td>`;
 
-    const runsInSlot = store
-      .getCourseRuns()
-      .filter((r) => String(r.slot_id) === String(slot.slot_id));
+    const runsInSlot = (store.getCourseRuns() || []).filter((run) =>
+      this._runCoversSlotId(run, slot.slot_id)
+    );
 
     const courseMap = new Map();
     for (const run of runsInSlot) {
@@ -755,18 +755,32 @@ export class SchedulingTab extends LitElement {
                       const isAssigned = assignedTeacherIds.includes(
                         teacher.teacher_id
                       );
-                      const isUnavailable = store.isTeacherUnavailable(
-                        teacher.teacher_id,
-                        slotDate
+                      const availability = this._teacherAvailabilityForCourseInSlot(
+                        {
+                          teacherId: teacher.teacher_id,
+                          slot,
+                          slotDate,
+                          courseId: course.course_id,
+                        }
                       );
-                      const disabled = isUnavailable && !isAssigned;
+                      const disabled =
+                        availability.classNameSuffix === "course-unavailable" &&
+                        !isAssigned;
                       const inputId = `summary-${slotDate}-${course.course_id}-${teacher.teacher_id}`;
+                      const baseClass = isAssigned
+                        ? "assigned-course"
+                        : "has-course";
+                      const rowClassName = [
+                        "summary-teacher-row",
+                        baseClass,
+                        availability.classNameSuffix,
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
                       return html`
                         <div
-                          class="summary-teacher-row ${isAssigned ? "assigned" : ""}"
-                          title=${isUnavailable
-                            ? "Otillgänglig i perioden"
-                            : "Tillgänglig"}
+                          class="${rowClassName}"
+                          title=${availability.titleText}
                         >
                           <input
                             type="checkbox"
@@ -791,6 +805,71 @@ export class SchedulingTab extends LitElement {
         })}
       </td>
     `;
+  }
+
+  _runCoversSlotId(run, slotId) {
+    if (!run || slotId == null) return false;
+    if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+      return run.slot_ids.some((id) => String(id) === String(slotId));
+    }
+    return String(run.slot_id) === String(slotId);
+  }
+
+  _teacherAvailabilityForCourseInSlot({ teacherId, slot, slotDate, courseId }) {
+    const normalizeDate = (v) => (v || "").split("T")[0];
+    const slotDays = (store.getSlotDays(slot.slot_id) || [])
+      .map(normalizeDate)
+      .filter(Boolean);
+
+    const hasSlotBusyEntry = (store.teacherAvailability || []).some(
+      (a) =>
+        String(a.teacher_id) === String(teacherId) &&
+        String(a.slot_id) === String(slot.slot_id) &&
+        a.type === "busy"
+    );
+
+    const isUnavailableOnDay = (day) =>
+      hasSlotBusyEntry || store.isTeacherUnavailableOnDay(teacherId, day);
+
+    const unavailableDaysInSlot = hasSlotBusyEntry
+      ? slotDays
+      : slotDays.filter((d) => store.isTeacherUnavailableOnDay(teacherId, d));
+
+    let classNameSuffix = "";
+    if (unavailableDaysInSlot.length > 0) {
+      const activeDays = (
+        store.getActiveCourseDaysInSlot(slot.slot_id, courseId) || []
+      )
+        .map(normalizeDate)
+        .filter(Boolean)
+        .filter((d) => slotDays.includes(d));
+
+      if (activeDays.length > 0) {
+        const unavailableActiveDays = activeDays.filter((d) =>
+          isUnavailableOnDay(d)
+        );
+        if (unavailableActiveDays.length === 0) {
+          classNameSuffix = "partial-availability";
+        } else if (unavailableActiveDays.length === activeDays.length) {
+          classNameSuffix = "course-unavailable";
+        } else {
+          classNameSuffix = "partial-conflict";
+        }
+      }
+    }
+
+    const titleText =
+      classNameSuffix === "course-unavailable"
+        ? "Otillgänglig för kursens kursdagar"
+        : classNameSuffix === "partial-conflict"
+          ? "Delvis otillgänglig för kursens kursdagar"
+          : classNameSuffix === "partial-availability"
+            ? "Otillgänglig i perioden (men inte på kursens kursdagar)"
+            : store.isTeacherUnavailable(teacherId, slotDate, slot.slot_id)
+              ? "Otillgänglig i perioden"
+              : "Tillgänglig";
+
+    return { classNameSuffix, titleText };
   }
 
   _getCourseColor(course) {

@@ -190,12 +190,35 @@ export class CourseRunManager {
     const previousState = new Map();
     const slot = store.getSlots().find((s) => s.start_date === slotDate);
 
-    if (slot) {
-      const allRunsInSlot = store.getCourseRuns().filter((r) => r.slot_id === slot.slot_id);
-      allRunsInSlot.forEach((run) => {
-        previousState.set(run.run_id, {
-          teachers: run.teachers ? [...run.teachers] : [],
-        });
+    const runCoversSlotId = (run, slotId) => {
+      if (!run || slotId == null) return false;
+      if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+        return run.slot_ids.some((id) => String(id) === String(slotId));
+      }
+      return String(run.slot_id) === String(slotId);
+    };
+
+    const coveredSlotIds = new Set();
+    if (slot?.slot_id != null) coveredSlotIds.add(slot.slot_id);
+    (runs || []).forEach((r) => {
+      if (!r) return;
+      if (Array.isArray(r.slot_ids) && r.slot_ids.length > 0) {
+        r.slot_ids.forEach((sid) => coveredSlotIds.add(sid));
+      } else if (r.slot_id != null) {
+        coveredSlotIds.add(r.slot_id);
+      }
+    });
+
+    for (const slotId of coveredSlotIds) {
+      const allRunsCoveringSlot = store
+        .getCourseRuns()
+        .filter((r) => runCoversSlotId(r, slotId));
+      allRunsCoveringSlot.forEach((run) => {
+        if (!previousState.has(run.run_id)) {
+          previousState.set(run.run_id, {
+            teachers: run.teachers ? [...run.teachers] : [],
+          });
+        }
       });
     }
 
@@ -221,20 +244,18 @@ export class CourseRunManager {
 
     try {
       if (checked) {
-        // When assigning a teacher, remove them from other courses in same slot
-        if (slot) {
-          const allRunsInSlot = store
+        // When assigning a teacher, remove them from other courses in the same
+        // slot period(s). For spanning runs (e.g. 15hp), this applies to all
+        // covered slot_ids so a teacher can't be double-booked in the tail slot.
+        const targetCourseId = runs.length > 0 ? runs[0].course_id : null;
+        for (const slotId of coveredSlotIds) {
+          const allRunsCoveringSlot = store
             .getCourseRuns()
-            .filter((r) => r.slot_id === slot.slot_id);
+            .filter((r) => runCoversSlotId(r, slotId));
 
-          const targetCourseId = runs.length > 0 ? runs[0].course_id : null;
-
-          for (const otherRun of allRunsInSlot) {
+          for (const otherRun of allRunsCoveringSlot) {
             if (otherRun.course_id !== targetCourseId && otherRun.teachers) {
-              const wasAssigned = otherRun.teachers.includes(teacherId);
-              otherRun.teachers = otherRun.teachers.filter(
-                (id) => id !== teacherId
-              );
+              otherRun.teachers = otherRun.teachers.filter((id) => id !== teacherId);
             }
           }
         }
