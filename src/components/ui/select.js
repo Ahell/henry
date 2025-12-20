@@ -82,11 +82,20 @@ export class HenrySelect extends LitElement {
       padding: var(--space-2);
     }
 
-    select[multiple] {
-      min-height: 100px;
-      padding: var(--space-2);
-    }
-  `;
+	    select[multiple] {
+	      min-height: 100px;
+	      padding: var(--space-2);
+	    }
+
+	    /* Listbox mode (single select with size > 1) */
+	    select.listbox {
+	      height: calc(
+	        var(--henry-select-visible-options, 6) *
+	          var(--henry-select-row-height, 36px)
+	      );
+	      overflow-y: auto;
+	    }
+	  `;
   constructor() {
     super();
     this.label = "";
@@ -103,17 +112,21 @@ export class HenrySelect extends LitElement {
   }
 
 	  render() {
+	    const listbox = !this.multiple && Number(this.size) > 1;
+	    const listboxStyle = listbox
+	      ? `--henry-select-visible-options: ${Number(this.size)};`
+	      : "";
 	    const selectEl = this.multiple
 	      ? html`
-          <select
-            ?disabled=${this.disabled}
-            ?required=${this.required}
-            ?multiple=${this.multiple}
-            size=${this.size}
-            id=${this.id}
-            name=${this.name || this.id}
-            @change=${this._handleChange}
-          >
+	          <select
+	            ?disabled=${this.disabled}
+	            ?required=${this.required}
+	            ?multiple=${this.multiple}
+	            size=${this.size}
+	            id=${this.id}
+	            name=${this.name || this.id}
+	            @change=${this._handleChange}
+	          >
             ${this.options && this.options.length > 0
               ? this.options.map(
                   (opt) => html`
@@ -128,6 +141,8 @@ export class HenrySelect extends LitElement {
 	      : html`
 	          <select
 	            .value=${this.value}
+	            class=${listbox ? "listbox" : ""}
+	            style=${listboxStyle}
 	            ?disabled=${this.disabled}
 	            ?required=${this.required}
 	            ?multiple=${this.multiple}
@@ -136,18 +151,18 @@ export class HenrySelect extends LitElement {
 	            name=${this.name || this.id}
 	            @change=${this._handleChange}
 	          >
-	            ${this.placeholder
-	              ? this.hidePlaceholder
-	                ? html`<option value="" disabled hidden ?selected=${!this.value}
-	                    >${this.placeholder}</option
-	                  >`
-	                : html`<option value="">${this.placeholder}</option>`
-	              : ""}
+	            ${this.hidePlaceholder
+	              ? html`<option value="" disabled hidden ?selected=${!this.value}
+	                  >${this.placeholder || ""}</option
+	                >`
+	              : this.placeholder
+	                ? html`<option value="">${this.placeholder}</option>`
+	                : ""}
 	            ${this.options && this.options.length > 0
 	              ? this.options.map(
 	                  (opt) => html`
 	                    <option value="${opt.value}" ?selected="${opt.selected}">
-                      ${opt.label}
+	                      ${opt.label}
                     </option>
                   `
                 )
