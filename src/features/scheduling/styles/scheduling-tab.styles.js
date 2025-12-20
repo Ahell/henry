@@ -98,8 +98,8 @@ export const schedulingTabStyles = css`
 
   .gantt-scroll-wrapper {
     overflow-x: auto;
-    overflow-y: auto;
-    max-height: calc(100vh - 220px);
+    overflow-y: visible;
+    max-height: none;
     background: var(--color-background);
     border: 1px solid var(--color-border);
     border-radius: 0;
