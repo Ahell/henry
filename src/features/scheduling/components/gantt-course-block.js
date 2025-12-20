@@ -122,20 +122,18 @@ export class GanttCourseBlock extends LitElement {
 
     const title = `${course.code}: ${course.name}${prereqInfo}${teacherInfo}`;
 
-    const draggable = !this.isSecondBlock;
-
     return html`
       <div
         class="gantt-block ${blockClasses.join(" ")} ${this.isSecondBlock
           ? "second-block"
           : ""}"
         style="${inlineStyle}"
-        draggable="${draggable}"
+        draggable="true"
         data-run-id="${this.run.run_id}"
         data-cohort-id="${this.cohortId}"
         title="${title}"
-        @dragstart="${draggable ? this._handleDragStart : undefined}"
-        @dragend="${draggable ? this._handleDragEnd : undefined}"
+        @dragstart="${this._handleDragStart}"
+        @dragend="${this._handleDragEnd}"
       >
         ${hasTeacherShortage
           ? html`<span class="teacher-warning-badge" aria-label="Lärarvarning"
@@ -153,7 +151,11 @@ export class GanttCourseBlock extends LitElement {
     const cohortId = e.currentTarget?.dataset?.cohortId;
     if (runId == null || cohortId == null) return;
 
-    e.dataTransfer.setData("text/plain", JSON.stringify({ runId, cohortId }));
+    const slotOffset = this.isSecondBlock ? 1 : 0;
+    e.dataTransfer.setData(
+      "text/plain",
+      JSON.stringify({ runId, cohortId, slotOffset })
+    );
     e.dataTransfer.effectAllowed = "move";
     e.currentTarget.classList.add("dragging");
 
@@ -164,6 +166,7 @@ export class GanttCourseBlock extends LitElement {
           runId: parseInt(runId),
           cohortId: parseInt(cohortId),
           courseId: this.run?.course_id,
+          slotOffset,
         },
         bubbles: true,
         composed: true,

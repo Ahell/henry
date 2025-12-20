@@ -11,6 +11,7 @@ export class DragDropManager {
       draggingFromDepot: false,
       draggingFromCohortId: null,
       draggingCourseId: null,
+      draggingSlotOffset: 0,
       draggedCells: [],
     };
   }
@@ -23,6 +24,7 @@ export class DragDropManager {
     this.state.draggingFromDepot = true;
     this.state.draggingFromCohortId = cohortId;
     this.state.draggingCourseId = courseId;
+    this.state.draggingSlotOffset = 0;
 
     // Trigger teacher availability overlay for all cohorts
     this.component._showAvailableTeachersForDragAllCohorts(courseId);
@@ -32,10 +34,13 @@ export class DragDropManager {
    * Handle drag start from existing course run
    */
   handleCourseDragStart(e) {
-    const { courseId, cohortId } = e.detail;
+    const { courseId, cohortId, slotOffset } = e.detail;
     this.state.draggingFromDepot = false;
     this.state.draggingFromCohortId = cohortId;
     this.state.draggingCourseId = courseId;
+    this.state.draggingSlotOffset = Number.isFinite(Number(slotOffset))
+      ? Number(slotOffset)
+      : 0;
 
     // Trigger teacher availability overlay for specific cohort
     this.component._showAvailableTeachersForDrag(cohortId, courseId);
@@ -48,6 +53,7 @@ export class DragDropManager {
     this.state.draggingFromDepot = false;
     this.state.draggingFromCohortId = null;
     this.state.draggingCourseId = null;
+    this.state.draggingSlotOffset = 0;
 
     // Clear teacher availability overlays
     this.component._clearAvailableTeachersOverlays();

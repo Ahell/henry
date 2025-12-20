@@ -369,6 +369,19 @@ export class SchedulingTab extends LitElement {
     }
   }
 
+  _adjustSlotDateForDrag(slotDate) {
+    const offset = Number(this._dragDropManager?.state?.draggingSlotOffset || 0);
+    if (!offset) return slotDate;
+
+    const slotDates = [
+      ...new Set((store.getSlots() || []).map((s) => s.start_date)),
+    ].sort();
+    const idx = slotDates.indexOf(slotDate);
+    const adjustedIdx = idx - offset;
+    if (idx === -1 || adjustedIdx < 0) return null;
+    return slotDates[adjustedIdx] || null;
+  }
+
   _handleSlotCellDragOver(e) {
     const td = e.currentTarget;
     if (!td || td.dataset.disabled === "true") {
@@ -379,9 +392,28 @@ export class SchedulingTab extends LitElement {
     // Allow dropping anywhere inside the td (not just over the inner content).
     e.preventDefault();
 
+    const adjustedSlotDate = this._adjustSlotDateForDrag(td.dataset.slotDate);
+    if (!adjustedSlotDate) {
+      td.classList.remove("drag-over");
+      td.classList.add("drag-over-invalid");
+      if (e?.dataTransfer) e.dataTransfer.dropEffect = "none";
+      return;
+    }
+
+    // If dragging the latter part of a 15hp span, validate against the *start* slot.
+    const adjustedTd = this.shadowRoot?.querySelector(
+      `.gantt-table td.slot-cell[data-cohort-id="${td.dataset.cohortId}"][data-slot-date="${adjustedSlotDate}"]`
+    );
+    if (adjustedTd?.dataset?.disabled === "true") {
+      td.classList.remove("drag-over");
+      td.classList.add("drag-over-invalid");
+      if (e?.dataTransfer) e.dataTransfer.dropEffect = "none";
+      return;
+    }
+
     this._dragDropManager.handleCellDragOver({
       detail: {
-        slotDate: td.dataset.slotDate,
+        slotDate: adjustedSlotDate,
         cohortId: Number(td.dataset.cohortId),
         cell: td,
       },
@@ -405,11 +437,14 @@ export class SchedulingTab extends LitElement {
     const data = this._parseDragDataFromEvent(e);
     if (!data) return;
 
+    const adjustedSlotDate = this._adjustSlotDateForDrag(td.dataset.slotDate);
+    if (!adjustedSlotDate) return;
+
     // Reuse the same drop logic & cleanup (including overlay clearing).
     await this._handleCellDrop({
       detail: {
         data,
-        slotDate: td.dataset.slotDate,
+        slotDate: adjustedSlotDate,
         cohortId: Number(td.dataset.cohortId),
         cell: td,
       },
