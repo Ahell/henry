@@ -2,8 +2,6 @@ import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
 import { TeacherFormService } from "./teacher-form.service.js";
 
-const DEFAULT_DEPARTMENT = "AIJ";
-
 export async function createTeacherFromForm(root) {
   const teacher = FormService.extractFormData(root, {
     name: "teacherName",
@@ -37,7 +35,6 @@ export function resetTeacherForm(root) {
     "teacherName",
     "teacherDepartment",
   ]);
-  FormService.setCustomInput(root, "teacherDepartment", DEFAULT_DEPARTMENT);
 }
 
 export async function deleteTeacherById(teacherId) {
