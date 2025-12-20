@@ -15,6 +15,7 @@ export class GanttCourseBlock extends LitElement {
     run: { type: Object },
     cohortId: { type: Number },
     prerequisiteProblems: { type: Array },
+    isSecondBlock: { type: Boolean },
   };
 
   static styles = ganttCourseBlockStyles;
@@ -24,6 +25,7 @@ export class GanttCourseBlock extends LitElement {
     this.run = null;
     this.cohortId = null;
     this.prerequisiteProblems = [];
+    this.isSecondBlock = false;
   }
 
   render() {
@@ -120,16 +122,20 @@ export class GanttCourseBlock extends LitElement {
 
     const title = `${course.code}: ${course.name}${prereqInfo}${teacherInfo}`;
 
+    const draggable = !this.isSecondBlock;
+
     return html`
       <div
-        class="gantt-block ${blockClasses.join(" ")}"
+        class="gantt-block ${blockClasses.join(" ")} ${this.isSecondBlock
+          ? "second-block"
+          : ""}"
         style="${inlineStyle}"
-        draggable="true"
+        draggable="${draggable}"
         data-run-id="${this.run.run_id}"
         data-cohort-id="${this.cohortId}"
         title="${title}"
-        @dragstart="${this._handleDragStart}"
-        @dragend="${this._handleDragEnd}"
+        @dragstart="${draggable ? this._handleDragStart : undefined}"
+        @dragend="${draggable ? this._handleDragEnd : undefined}"
       >
         ${hasTeacherShortage
           ? html`<span class="teacher-warning-badge" aria-label="Lärarvarning"

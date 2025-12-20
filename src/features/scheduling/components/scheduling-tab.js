@@ -238,6 +238,7 @@ export class SchedulingTab extends LitElement {
 
   _renderGanttRow(cohort, slotDates, prerequisiteProblems) {
     const runsByDate = {};
+    const continuationRunsByDate = {};
     const scheduledCourseIds = new Set();
 
     store
@@ -249,12 +250,22 @@ export class SchedulingTab extends LitElement {
 
         scheduledCourseIds.add(run.course_id);
 
-        if (slot) {
-          if (!runsByDate[slot.start_date]) {
-            runsByDate[slot.start_date] = [];
+        if (!slot) return;
+
+        const runSlotDates = this._getRunSlotDates(run, slotDates);
+        if (runSlotDates.length === 0) return;
+
+        runSlotDates.forEach((dateStr, idx) => {
+          if (idx === 0) {
+            if (!runsByDate[dateStr]) runsByDate[dateStr] = [];
+            runsByDate[dateStr].push(run);
+            return;
           }
-          runsByDate[slot.start_date].push(run);
-        }
+          if (!continuationRunsByDate[dateStr]) {
+            continuationRunsByDate[dateStr] = [];
+          }
+          continuationRunsByDate[dateStr].push(run);
+        });
       });
 
     return html`
@@ -306,7 +317,7 @@ export class SchedulingTab extends LitElement {
                 .slotDate="${dateStr}"
                 .cohortId="${cohort.cohort_id}"
                 .runs="${runs}"
-                .continuationRuns="${[]}"
+                .continuationRuns="${continuationRunsByDate[dateStr] || []}"
                 .isBeforeCohortStart="${isBeforeCohortStart}"
                 .isCohortStartSlot="${isCohortStartSlot}"
                 .cohortStartDate="${cohort.start_date}"
@@ -317,6 +328,35 @@ export class SchedulingTab extends LitElement {
         })}
       </tr>
     `;
+  }
+
+  _getRunSpan(run) {
+    const spanFromRun = Number(run?.slot_span);
+    if (Number.isFinite(spanFromRun) && spanFromRun >= 2) return spanFromRun;
+
+    const course = store.getCourse(run?.course_id);
+    const credits = Number(course?.credits);
+    return credits === 15 ? 2 : 1;
+  }
+
+  _getRunSlotDates(run, slotDates) {
+    if (!run) return [];
+
+    // Prefer explicit slot_ids when present (backend provides these).
+    if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+      const fromIds = run.slot_ids
+        .map((slotId) => store.getSlot(slotId)?.start_date)
+        .filter(Boolean);
+      if (fromIds.length > 0) return fromIds;
+    }
+
+    const startDate = store.getSlot(run.slot_id)?.start_date;
+    if (!startDate) return [];
+
+    const span = this._getRunSpan(run);
+    const idx = slotDates.indexOf(startDate);
+    if (idx === -1) return [startDate];
+    return slotDates.slice(idx, idx + span);
   }
 
   _parseDragDataFromEvent(e) {
@@ -383,6 +423,7 @@ export class SchedulingTab extends LitElement {
    */
   _computeSchedulingPrerequisiteProblems() {
     const problems = [];
+    const slotDates = [...new Set((store.getSlots() || []).map((s) => s.start_date))].sort();
 
     const runsByCohort = new Map();
     for (const run of store.getCourseRuns() || []) {
@@ -445,8 +486,7 @@ export class SchedulingTab extends LitElement {
           const prereqSlot = store.getSlot(prereqRun.slot_id);
           if (!prereqSlot) continue;
 
-          const prereqRange = getSlotRange(prereqSlot);
-          const prereqEndDate = prereqRange?.end;
+          const prereqEndDate = this._getRunEndDate(prereqRun, slotDates);
 
           if (prereqEndDate && runDate <= prereqEndDate) {
             const problem = {
@@ -529,23 +569,42 @@ export class SchedulingTab extends LitElement {
     return problems;
   }
 
+  _getRunEndDate(run, slotDates) {
+    const dates = this._getRunSlotDates(run, slotDates);
+    const lastDate = dates.length ? dates[dates.length - 1] : null;
+
+    const lastSlot =
+      (lastDate
+        ? (store.getSlots() || []).find((s) => s.start_date === lastDate)
+        : null) || store.getSlot(run?.slot_id);
+
+    const range = getSlotRange(lastSlot);
+    return range?.end || null;
+  }
+
   _computeCohortSlotOverlapWarnings() {
     const warnings = [];
+    const slotDates = [...new Set((store.getSlots() || []).map((s) => s.start_date))].sort();
 
     for (const cohort of store.getCohorts() || []) {
       const runsInCohort = (store.getCourseRuns() || []).filter((r) =>
         this._runHasCohort(r, cohort.cohort_id)
       );
 
-      const uniqueCoursesBySlotId = new Map();
+      const uniqueCoursesBySlotDate = new Map();
       for (const run of runsInCohort) {
-        if (run?.slot_id == null || run?.course_id == null) continue;
-        const courseIds = uniqueCoursesBySlotId.get(run.slot_id) || new Set();
-        courseIds.add(run.course_id);
-        uniqueCoursesBySlotId.set(run.slot_id, courseIds);
+        if (run?.course_id == null) continue;
+        const dates = this._getRunSlotDates(run, slotDates);
+        if (dates.length === 0) continue;
+
+        for (const dateStr of dates) {
+          const courseIds = uniqueCoursesBySlotDate.get(dateStr) || new Set();
+          courseIds.add(run.course_id);
+          uniqueCoursesBySlotDate.set(dateStr, courseIds);
+        }
       }
 
-      const hasOverlap = Array.from(uniqueCoursesBySlotId.values()).some(
+      const hasOverlap = Array.from(uniqueCoursesBySlotDate.values()).some(
         (set) => set.size > 1
       );
       if (!hasOverlap) continue;
