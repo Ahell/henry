@@ -166,7 +166,7 @@ export const schedulingTabStyles = css`
     height: var(--gantt-date-row-height);
     z-index: 11;
     vertical-align: middle;
-    text-align: left;
+    text-align: center;
   }
 
   .gantt-table thead tr.date-row th .slot-date {

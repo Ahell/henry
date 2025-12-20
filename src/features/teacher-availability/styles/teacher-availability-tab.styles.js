@@ -37,6 +37,13 @@ export const teacherAvailabilityTabStyles = css`
     min-width: 0;
   }
 
+  .header-buttons {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    flex: 0 0 auto;
+  }
+
   .paint-status {
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);

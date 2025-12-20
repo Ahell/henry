@@ -319,7 +319,9 @@ export class SchedulingTab extends LitElement {
                 ${slotDates.map(
                   (dateStr) =>
                     html`<th class="slot-col-header">
-                      <div class="slot-date">${dateStr}</div>
+                      <div class="slot-date">
+                        ${this._formatDateYYMMDD(dateStr)}
+                      </div>
                     </th>`
                 )}
               </tr>
@@ -899,7 +901,9 @@ export class SchedulingTab extends LitElement {
       .map((c) => c.slotDate)
       .sort((a, b) => String(a).localeCompare(String(b)));
     if (slotDates.length) {
-      lines.push(`Slots: ${slotDates.join(", ")}`);
+      lines.push(
+        `Slots: ${slotDates.map((d) => this._formatDateYYMMDD(d)).join(", ")}`
+      );
     }
 
     const courses = uniqueByKey(
@@ -1515,6 +1519,17 @@ export class SchedulingTab extends LitElement {
       return null;
     }
     return new Date(year, month - 1, day);
+  }
+
+  _formatDateYYMMDD(dateStr) {
+    if (typeof dateStr !== "string") return "";
+    const normalized = dateStr.split("T")[0];
+    const parts = normalized.split("-");
+    if (parts.length !== 3) return dateStr;
+    const [yyyy, mm, dd] = parts;
+    const yy = String(yyyy).slice(-2);
+    if (!yy || !mm || !dd) return dateStr;
+    return `${yy}${mm}${dd}`;
   }
 
   _runHasCohort(run, cohortId) {

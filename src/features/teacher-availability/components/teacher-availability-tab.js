@@ -41,6 +41,69 @@ export class TeacherAvailabilityTab extends LitElement {
     });
   }
 
+  _scrollToToday() {
+    const tableEl = this.shadowRoot?.querySelector("teacher-availability-table");
+    const tableRoot = tableEl?.shadowRoot;
+    const container = tableRoot?.querySelector(".table-container");
+    if (!container) return;
+
+    // Prefer measuring actual rendered column width (works for both overview + detail view).
+    const columnWidthPx = (() => {
+      const th = container.querySelector(
+        ".teacher-timeline-table thead th.slot-header"
+      );
+      const w = th?.getBoundingClientRect?.().width;
+      return Number.isFinite(w) && w > 0 ? w : 120;
+    })();
+
+    const today = (() => {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    })();
+
+    const dates = (() => {
+      if (this._isDetailView && this._detailSlotId != null) {
+        const days = store.getSlotDays(this._detailSlotId) || [];
+        return days.filter(Boolean).sort();
+      }
+      return [...new Set((store.getSlots() || []).map((s) => s.start_date))]
+        .filter(Boolean)
+        .sort();
+    })();
+
+    if (dates.length === 0) return;
+
+    let targetIdx = 0;
+    for (let i = 0; i < dates.length; i += 1) {
+      const d = this._parseDateOnly(dates[i]);
+      if (d && d <= today) targetIdx = i;
+    }
+
+    const beforeIdx = Math.max(0, targetIdx - 1);
+    const left = Math.max(0, beforeIdx * columnWidthPx);
+
+    requestAnimationFrame(() => {
+      container.scrollLeft = left;
+    });
+  }
+
+  _parseDateOnly(dateStr) {
+    if (typeof dateStr !== "string") return null;
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return null;
+    const year = Number(parts[0]);
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    if (
+      !Number.isFinite(year) ||
+      !Number.isFinite(month) ||
+      !Number.isFinite(day)
+    ) {
+      return null;
+    }
+    return new Date(year, month - 1, day);
+  }
+
   _updateData() {
     this.teachers = store.getTeachers();
     this.slots = store.getSlots();
@@ -67,6 +130,13 @@ export class TeacherAvailabilityTab extends LitElement {
           </div>
           <div class="header-actions">
             <div class="paint-status"></div>
+            <div class="header-buttons">
+              <henry-button
+                variant="primary"
+                @click=${() => this._scrollToToday()}
+                >Idag</henry-button
+              >
+            </div>
           </div>
         </div>
 
