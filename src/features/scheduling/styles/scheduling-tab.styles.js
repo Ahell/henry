@@ -334,7 +334,7 @@ export const schedulingTabStyles = css`
 
   .gantt-table tbody td.slot-cell gantt-cell {
     display: block;
-    height: auto;
+    height: 100%;
   }
 
   .gantt-table

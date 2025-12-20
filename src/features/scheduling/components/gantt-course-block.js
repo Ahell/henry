@@ -131,9 +131,6 @@ export class GanttCourseBlock extends LitElement {
         @dragstart="${this._handleDragStart}"
         @dragend="${this._handleDragEnd}"
       >
-        ${hasMissingPrereq || hasBeforePrereqProblem || hasChainBlockedProblem
-          ? html`<span class="warning-icon">⚠️</span>`
-          : ""}
         ${hasTeacherShortage
           ? html`<span class="teacher-warning-badge" aria-label="Lärarvarning"
               >!</span

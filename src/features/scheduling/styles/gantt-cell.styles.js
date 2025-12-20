@@ -6,11 +6,12 @@ export const ganttCellStyles = css`
   :host {
     display: block;
     position: relative;
+    height: 100%;
   }
 
   .cell-content {
     min-height: 44px;
-    max-height: var(--gantt-row-height);
+    height: 100%;
     position: relative;
     padding: var(--space-2) var(--space-1);
     display: flex;
