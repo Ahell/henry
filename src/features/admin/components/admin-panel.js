@@ -16,17 +16,11 @@ export class AdminPanel extends LitElement {
 
   static properties = {
     activeTab: { type: String },
-    loading: { type: Boolean },
-    message: { type: String },
-    messageType: { type: String },
   };
 
   constructor() {
     super();
     this.activeTab = "courses";
-    this.loading = false;
-    this.message = "";
-    this.messageType = "";
     this.tabs = [
       {
         key: "courses",
@@ -67,101 +61,8 @@ export class AdminPanel extends LitElement {
     store.subscribe(() => this.requestUpdate());
   }
 
-  async handleLoadSeedData() {
-    if (
-      !confirm(
-        "Detta kommer att ERSÄTTA ALL data i databasen med testdata.\n\nVill du fortsätta?"
-      )
-    ) {
-      return;
-    }
-
-    this.loading = true;
-    this.message = "";
-    this.requestUpdate();
-
-    try {
-      await store.dataServiceManager.loadSeedDataToDatabase();
-      this.message = "Testdata laddad till databasen!";
-      this.messageType = "success";
-    } catch (error) {
-      this.message = `Fel vid laddning av testdata: ${error.message}`;
-      this.messageType = "error";
-    } finally {
-      this.loading = false;
-      this.requestUpdate();
-
-      // Clear message after 5 seconds
-      setTimeout(() => {
-        this.message = "";
-        this.requestUpdate();
-      }, 5000);
-    }
-  }
-
-  async handleResetDatabase() {
-    if (
-      !confirm(
-        "Detta kommer att RADERA ALL DATA från databasen.\n\nDenna åtgärd kan inte ångras!\n\nVill du fortsätta?"
-      )
-    ) {
-      return;
-    }
-
-    this.loading = true;
-    this.message = "";
-    this.requestUpdate();
-
-    try {
-      await store.dataServiceManager.resetDatabase();
-      this.message =
-        'Databas återställd. Klicka "Ladda Testdata" om du vill fylla den.';
-      this.messageType = "success";
-    } catch (error) {
-      this.message = `Fel vid återställning: ${error.message}`;
-      this.messageType = "error";
-    } finally {
-      this.loading = false;
-      this.requestUpdate();
-
-      // Clear message after 5 seconds
-      setTimeout(() => {
-        this.message = "";
-        this.requestUpdate();
-      }, 5000);
-    }
-  }
-
   render() {
     return html`
-      <!-- Data Management Panel -->
-      <div class="data-management">
-        <span class="data-management-label">Testdata:</span>
-        <div class="button-group">
-          <henry-button
-            variant="primary"
-            size="small"
-            ?disabled=${this.loading}
-            @click=${this.handleLoadSeedData}
-          >
-            ${this.loading ? "Laddar..." : "Ladda Testdata"}
-          </henry-button>
-          <henry-button
-            variant="danger"
-            size="small"
-            ?disabled=${this.loading}
-            @click=${this.handleResetDatabase}
-          >
-            ${this.loading ? "Återställer..." : "Återställ Databas"}
-          </henry-button>
-        </div>
-        ${this.message
-          ? html`
-              <div class="message ${this.messageType}">${this.message}</div>
-            `
-          : ""}
-      </div>
-
       <!-- Tabs -->
       <div class="tabs">
         ${repeat(

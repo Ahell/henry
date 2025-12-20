@@ -97,6 +97,50 @@
         box-shadow: none;
       }
 
+      nav .nav-action {
+        color: white;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        font-weight: var(--font-weight-semibold);
+      }
+
+      nav .nav-action:hover {
+        background: rgba(255, 255, 255, 0.18);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      nav .nav-action:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      nav .nav-action--primary {
+        background: rgba(59, 130, 246, 0.55);
+        border-color: rgba(59, 130, 246, 0.8);
+      }
+
+      nav .nav-action--primary:hover:not(:disabled) {
+        background: rgba(59, 130, 246, 0.7);
+      }
+
+      nav .nav-action--danger {
+        background: rgba(239, 68, 68, 0.55);
+        border-color: rgba(239, 68, 68, 0.85);
+      }
+
+      nav .nav-action--danger:hover:not(:disabled) {
+        background: rgba(239, 68, 68, 0.7);
+      }
+
+      .nav-status {
+        margin-left: var(--space-2);
+        color: rgba(255, 255, 255, 0.82);
+        font-size: var(--font-size-xs);
+        white-space: nowrap;
+      }
+
       main {
         background: white;
         border: 1px solid var(--color-border);
@@ -162,9 +206,24 @@
           <h1>Henry Course Planner</h1>
         </div>
         <nav>
+          <button
+            id="navLoadTestData"
+            class="nav-action nav-action--primary"
+            type="button"
+          >
+            Ladda Testdata
+          </button>
+          <button
+            id="navResetDatabase"
+            class="nav-action nav-action--danger"
+            type="button"
+          >
+            Återställ Databas
+          </button>
           <button class="nav-btn active" data-section="admin">
             Admin Grunddata
           </button>
+          <span id="navStatus" class="nav-status"></span>
         </nav>
       </div>
     </header>
