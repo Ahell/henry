@@ -146,7 +146,7 @@ export function getDetailDayCellPresentation({
  * Decide presentation for an overview cell (slot-level view).
  * Pure function: queries `store` but does NOT mutate state.
  * @param {{teacher:object, slot:object, slotDate:string, store:object}} options
- * @returns {{className:string,title:string,content:string,isLocked:boolean}}
+ * @returns {{className:string,title:string,content:string,isLocked:boolean,courseIds:number[],assignedCourseIds:number[]}}
  */
 export function getOverviewCellPresentation({
   teacher,
@@ -177,6 +177,7 @@ export function getOverviewCellPresentation({
   let title = "";
   let isLocked = false;
   let courseIds = [];
+  let assignedCourseIds = [];
 
   const uniqueCourseIdsInRuns = (runs) => {
     const seen = new Set();
@@ -201,22 +202,33 @@ export function getOverviewCellPresentation({
       .map((id) => store.getCourse(id)?.name)
       .filter(Boolean);
 
-  if (isAssigned) {
-    courseIds = uniqueCourseIdsInRuns(assignedRuns);
-    const codes = courseCodesForIds(courseIds);
-    const names = courseNamesForIds(courseIds);
+  assignedCourseIds = uniqueCourseIdsInRuns(assignedRuns);
+  const compatibleCourseIdsInSlot = uniqueCourseIdsInRuns(compatibleRuns);
+  const courseIdsInCell = [
+    ...assignedCourseIds,
+    ...compatibleCourseIdsInSlot.filter((id) => !assignedCourseIds.includes(id)),
+  ];
 
-    className = appendClass(className, "assigned-course");
+  if (courseIdsInCell.length > 0) {
+    courseIds = courseIdsInCell;
+    const codes = courseCodesForIds(courseIdsInCell);
     content = codes.join(", ");
-    title = names.length ? `Tilldelad: ${names.join(", ")}` : "";
-  } else if (compatibleRuns.length > 0) {
-    courseIds = uniqueCourseIdsInRuns(compatibleRuns);
-    const codes = courseCodesForIds(courseIds);
-    const names = courseNamesForIds(courseIds);
 
-    className = appendClass(className, "has-course");
-    content = codes.join(", ");
-    title = names.join(", ");
+    if (isAssigned) {
+      className = appendClass(className, "assigned-course");
+      const assignedNames = courseNamesForIds(assignedCourseIds);
+      const otherNames = courseNamesForIds(
+        courseIdsInCell.filter((id) => !assignedCourseIds.includes(id))
+      );
+      title = assignedNames.length ? `Tilldelad: ${assignedNames.join(", ")}` : "";
+      if (otherNames.length) {
+        title = title ? `${title}\nÖvriga: ${otherNames.join(", ")}` : `Övriga: ${otherNames.join(", ")}`;
+      }
+    } else {
+      className = appendClass(className, "has-course");
+      const names = courseNamesForIds(courseIdsInCell);
+      title = names.join(", ");
+    }
   }
 
   if (isUnavailable && !isAssigned) {
@@ -227,7 +239,7 @@ export function getOverviewCellPresentation({
   // Ensure leading/trailing whitespace trimmed
   className = className.trim();
 
-  return { className, title, content, isLocked, courseIds };
+  return { className, title, content, isLocked, courseIds, assignedCourseIds };
 }
 
 const appendClass = (current, next) => (current ? `${current} ${next}` : next);

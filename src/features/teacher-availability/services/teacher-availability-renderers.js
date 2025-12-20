@@ -330,6 +330,9 @@ export function renderTeacherCell(component, teacher, slotDate) {
   const courseIds = Array.isArray(presentation?.courseIds)
     ? presentation.courseIds
     : [];
+  const assignedCourseIds = Array.isArray(presentation?.assignedCourseIds)
+    ? presentation.assignedCourseIds
+    : [];
   const slotDays = (store.getSlotDays(slot.slot_id) || [])
     .map(normalizeDate)
     .filter(Boolean);
@@ -377,10 +380,15 @@ export function renderTeacherCell(component, teacher, slotDate) {
           .map((id) => {
             const text = store.getCourse(id)?.code || String(id);
             if (!text) return null;
+            const assignmentToken = assignedCourseIds.includes(id)
+              ? "segment-assigned"
+              : "segment-compatible";
             return {
               text,
               badgeText: "",
-              classNameSuffix: courseAvailabilityClass(id),
+              classNameSuffix: [assignmentToken, courseAvailabilityClass(id)]
+                .filter(Boolean)
+                .join(" "),
             };
           })
           .filter(Boolean)

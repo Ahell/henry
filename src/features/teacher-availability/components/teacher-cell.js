@@ -42,6 +42,9 @@ export class TeacherCell extends LitElement {
     // Ensure host element carries base class
     this.classList.add("teacher-cell");
 
+    const hasSegments = Array.isArray(this.segments) && this.segments.length > 0;
+    this.classList.toggle("has-segments", hasSegments);
+
     const codeCount = this._getCodeCount();
     this.classList.toggle("many-codes", codeCount > 3);
     if (codeCount > 3) {

@@ -171,6 +171,20 @@ export const teacherAvailabilityTableStyles = css`
     position: relative;
   }
 
+  /* When rendering multiple course codes (stack), let content use full area. */
+  .teacher-cell.has-segments {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .teacher-cell.has-segments.assigned-course,
+  .teacher-cell.has-segments.has-course,
+  .teacher-cell.has-segments.unavailable {
+    background: transparent !important;
+    box-shadow: none;
+    border-color: transparent;
+  }
+
   .teacher-cell.assigned-course {
     background: linear-gradient(
       135deg,
@@ -251,8 +265,40 @@ export const teacherAvailabilityTableStyles = css`
     gap: 3px;
   }
 
+  .teacher-cell.has-segments .course-stack {
+    inset: 0;
+    padding: 0;
+    box-sizing: border-box;
+    gap: 2px;
+  }
+
   .teacher-cell.many-codes .course-stack {
     gap: 2px;
+  }
+
+  .teacher-cell.has-segments.many-codes .course-stack {
+    gap: 2px;
+  }
+
+  /* Segment base colors (per course) */
+  .teacher-cell .course-segment.segment-assigned {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    );
+    color: white;
+    border-color: transparent;
+  }
+
+  .teacher-cell .course-segment.segment-compatible {
+    background: linear-gradient(
+      135deg,
+      var(--color-info),
+      var(--color-info-hover)
+    );
+    color: white;
+    border-color: transparent;
   }
 
   .teacher-cell .course-segment {
@@ -263,14 +309,14 @@ export const teacherAvailabilityTableStyles = css`
     justify-content: center;
     position: relative;
     overflow: hidden;
-    padding: 0 6px;
+    padding: 0;
     background: transparent;
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: var(--radius-sm);
   }
 
   .teacher-cell.many-codes .course-segment {
-    padding: 0 4px;
+    padding: 0;
   }
 
   .teacher-cell .course-segment-text {
@@ -375,6 +421,26 @@ export const teacherAvailabilityTableStyles = css`
     color: white;
   }
 
+  /* Assigned + Krock (delvis): green base + light red stripes */
+  .teacher-cell .course-segment.segment-assigned.partial-conflict {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    );
+  }
+
+  .teacher-cell .course-segment.segment-assigned.partial-conflict::after {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.28) 0px,
+      rgba(239, 68, 68, 0.28) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
   .teacher-cell .course-segment.partial-conflict .course-segment-text {
     color: white;
   }
@@ -389,6 +455,43 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-cell .course-segment.course-unavailable {
     background: var(--color-danger);
     color: white;
+  }
+
+  /* Assigned + Otillgänglig (hela kursen): green base + strong red stripes */
+  .teacher-cell .course-segment.segment-assigned.course-unavailable {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    );
+  }
+
+  .teacher-cell .course-segment.segment-assigned.course-unavailable::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.82) 0px,
+      rgba(239, 68, 68, 0.82) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  /* Assigned + Info (utanför kursdagar): green base + light blue stripes */
+  .teacher-cell .course-segment.segment-assigned.partial-availability::after {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.28) 0px,
+      rgba(59, 130, 246, 0.28) 8px,
+      rgba(59, 130, 246, 0) 8px,
+      rgba(59, 130, 246, 0) 16px
+    );
+    opacity: 0.9;
   }
 
   .teacher-cell .course-segment.course-unavailable .course-segment-text {
@@ -448,54 +551,6 @@ export const teacherAvailabilityTableStyles = css`
 
   /* 3) Tilldelad + Info (utanför kursdagar): green + light blue stripes */
   .teacher-cell.assigned-course.partial-availability::after {
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(59, 130, 246, 0.28) 0px,
-      rgba(59, 130, 246, 0.28) 8px,
-      rgba(59, 130, 246, 0) 8px,
-      rgba(59, 130, 246, 0) 16px
-    );
-    opacity: 0.9;
-  }
-
-  /* Course stack segments inside an assigned cell */
-  .teacher-cell.assigned-course .course-segment.course-unavailable {
-    background: transparent;
-  }
-
-  .teacher-cell.assigned-course .course-segment.course-unavailable::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.82) 0px,
-      rgba(239, 68, 68, 0.82) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
-  }
-
-  .teacher-cell.assigned-course .course-segment.partial-conflict {
-    background: transparent;
-    color: white;
-  }
-
-  .teacher-cell.assigned-course .course-segment.partial-conflict::after {
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.28) 0px,
-      rgba(239, 68, 68, 0.28) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
-  }
-
-  .teacher-cell.assigned-course .course-segment.partial-availability::after {
     background: repeating-linear-gradient(
       135deg,
       rgba(59, 130, 246, 0.28) 0px,
