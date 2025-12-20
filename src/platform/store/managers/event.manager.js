@@ -89,7 +89,7 @@ export class EventManager {
     this.listeners.forEach((l) => l());
 
     // Auto-save after notifications unless we are reconciling with backend
-    if (!this.store.isReconciling) {
+    if (!this.store.isReconciling && !this.store.isAutoSaveSuspended) {
       this.store.saveData().catch((err) => console.error("Auto-save failed:", err));
     }
 

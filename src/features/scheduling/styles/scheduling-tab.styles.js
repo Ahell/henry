@@ -421,6 +421,11 @@ export const schedulingTabStyles = css`
     line-height: 1.2;
   }
 
+  .gantt-table td.cohort-cell .cohort-autofill-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
   .gantt-table td.cohort-cell .cohort-autofill-button:hover {
     background: rgba(37, 99, 235, 0.1);
     border-color: rgba(37, 99, 235, 0.5);

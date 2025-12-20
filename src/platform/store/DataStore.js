@@ -35,6 +35,7 @@ export class DataStore {
     this._pendingMutations = new Map();
     this._lastCommittedMutationId = 0;
     this._isReconciling = false;
+    this._autoSaveSuspendedCount = 0;
 
     // Initialize services
     this.validator = new DataValidator(this);
@@ -193,6 +194,18 @@ export class DataStore {
 
   get isReconciling() {
     return this._isReconciling;
+  }
+
+  beginAutoSaveSuspension() {
+    this._autoSaveSuspendedCount += 1;
+  }
+
+  endAutoSaveSuspension() {
+    this._autoSaveSuspendedCount = Math.max(0, this._autoSaveSuspendedCount - 1);
+  }
+
+  get isAutoSaveSuspended() {
+    return this._autoSaveSuspendedCount > 0;
   }
 
   /**

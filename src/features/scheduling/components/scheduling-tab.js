@@ -24,6 +24,7 @@ export class SchedulingTab extends LitElement {
     this._dragCourseId = null;
     this._teacherOverlayChipsBySlotDate = new Map();
     this._shouldShowTeacherAvailabilityOverlay = false;
+    this._autoFillInProgressByCohort = new Set();
     store.subscribe(() => this.requestUpdate());
   }
 
@@ -224,6 +225,9 @@ export class SchedulingTab extends LitElement {
     const runsByDate = {};
     const continuationRunsByDate = {};
     const scheduledCourseIds = new Set();
+    const autoFillBusy =
+      this._autoFillInProgressByCohort.has(String(cohort.cohort_id)) ||
+      store.isReconciling;
 
     store
       .getCourseRuns()
@@ -285,6 +289,7 @@ export class SchedulingTab extends LitElement {
               <button
                 class="cohort-autofill-button"
                 type="button"
+                ?disabled=${autoFillBusy}
                 title="Auto-fyll schema för denna kull"
                 @click=${(e) => {
                   e.preventDefault();
@@ -292,7 +297,7 @@ export class SchedulingTab extends LitElement {
                   this._handleAutoFillCohortClick(cohort.cohort_id);
                 }}
               >
-                Auto-fyll
+                ${autoFillBusy ? "Auto-fyll…" : "Auto-fyll"}
               </button>
             </div>
           </div>
@@ -358,11 +363,21 @@ export class SchedulingTab extends LitElement {
   }
 
   async _handleAutoFillCohortClickAsync(cohortId) {
+    const key = String(cohortId);
+    if (this._autoFillInProgressByCohort.has(key) || store.isReconciling) {
+      return;
+    }
+
+    this._autoFillInProgressByCohort.add(key);
+    this.requestUpdate();
     try {
       await CourseRunManager.autoFillCohortSchedule(cohortId);
       this.requestUpdate();
     } catch (error) {
       console.error("Kunde inte auto-fylla kullens schema:", error);
+    } finally {
+      this._autoFillInProgressByCohort.delete(key);
+      this.requestUpdate();
     }
   }
 

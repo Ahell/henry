@@ -1106,6 +1106,7 @@ export class CourseRunManager {
       ...csd,
     }));
 
+    store.beginAutoSaveSuspension();
     const mutationId = store.applyOptimistic({
       label: "auto-fill-cohort",
       rollback: () => {
@@ -1331,6 +1332,8 @@ export class CourseRunManager {
     } catch (error) {
       await store.rollback(mutationId);
       throw error;
+    } finally {
+      store.endAutoSaveSuspension();
     }
   }
 }
