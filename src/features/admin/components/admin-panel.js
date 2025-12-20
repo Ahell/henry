@@ -1,5 +1,4 @@
 import { LitElement, html } from "lit";
-import { repeat } from "lit/directives/repeat.js";
 import { store } from "../../../platform/store/DataStore.js";
 import "../../../components/ui/index.js";
 import "../../teacher-availability/index.js";
@@ -61,25 +60,27 @@ export class AdminPanel extends LitElement {
     store.subscribe(() => this.requestUpdate());
   }
 
-  render() {
-    return html`
-      <!-- Tabs -->
-      <div class="tabs">
-        ${repeat(
-          this.tabs,
-          (tab) => tab.key,
-          (tab) => html`
-            <button
-              class="tab-button ${this.activeTab === tab.key ? "active" : ""}"
-              @click="${() => (this.activeTab = tab.key)}"
-            >
-              ${tab.label}
-            </button>
-          `
-        )}
-      </div>
+  getTabsMeta() {
+    return (this.tabs || []).map((t) => ({ key: t.key, label: t.label }));
+  }
 
-      ${this.tabs.find((tab) => tab.key === this.activeTab)?.component || ""}
+  updated(changed) {
+    if (changed.has("activeTab")) {
+      this.dispatchEvent(
+        new CustomEvent("admin-tab-changed", {
+          bubbles: true,
+          composed: true,
+          detail: { activeTab: this.activeTab },
+        })
+      );
+    }
+  }
+
+  render() {
+    const active =
+      this.tabs.find((tab) => tab.key === this.activeTab) || this.tabs[0];
+    return html`
+      ${active?.component || ""}
     `;
   }
 }

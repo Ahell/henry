@@ -92,3 +92,46 @@ if (resetBtn) {
     }
   });
 }
+
+// Admin tabs in header (controlled by <admin-panel>)
+const adminTabsEl = document.getElementById("adminTabs");
+
+const renderAdminTabs = (tabs = [], activeKey) => {
+  if (!adminTabsEl) return;
+  adminTabsEl.innerHTML = "";
+
+  (tabs || []).forEach((t) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `admin-tab-btn${t.key === activeKey ? " active" : ""}`;
+    btn.textContent = t.label;
+    btn.dataset.adminTab = t.key;
+    btn.addEventListener("click", () => {
+      const panel = document.querySelector("admin-panel");
+      if (!panel) return;
+      panel.activeTab = t.key;
+      // Optimistically update UI; admin-panel will also emit event.
+      highlightAdminTab(t.key);
+    });
+    adminTabsEl.appendChild(btn);
+  });
+};
+
+const highlightAdminTab = (activeKey) => {
+  if (!adminTabsEl) return;
+  adminTabsEl.querySelectorAll(".admin-tab-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.adminTab === activeKey);
+  });
+};
+
+customElements.whenDefined("admin-panel").then(() => {
+  const panel = document.querySelector("admin-panel");
+  if (!panel || !adminTabsEl) return;
+
+  const tabs = typeof panel.getTabsMeta === "function" ? panel.getTabsMeta() : [];
+  renderAdminTabs(tabs, panel.activeTab);
+
+  panel.addEventListener("admin-tab-changed", (e) => {
+    highlightAdminTab(e.detail?.activeTab);
+  });
+});
