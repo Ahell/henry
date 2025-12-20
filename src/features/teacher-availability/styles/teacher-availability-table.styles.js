@@ -237,7 +237,10 @@ export const teacherAvailabilityTableStyles = css`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: clamp(10px, 0.95rem, var(--font-size-sm));
+    font-size: var(
+      --teacher-cell-code-font-size,
+      clamp(10px, 0.95rem, var(--font-size-sm))
+    );
   }
 
   .teacher-cell .course-stack {
@@ -246,6 +249,10 @@ export const teacherAvailabilityTableStyles = css`
     display: flex;
     flex-direction: column;
     gap: 3px;
+  }
+
+  .teacher-cell.many-codes .course-stack {
+    gap: 2px;
   }
 
   .teacher-cell .course-segment {
@@ -262,13 +269,20 @@ export const teacherAvailabilityTableStyles = css`
     border-radius: var(--radius-sm);
   }
 
+  .teacher-cell.many-codes .course-segment {
+    padding: 0 4px;
+  }
+
   .teacher-cell .course-segment-text {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-weight: var(--font-weight-semibold);
-    font-size: clamp(10px, 0.95rem, var(--font-size-sm));
+    font-size: var(
+      --teacher-cell-code-font-size,
+      clamp(10px, 0.95rem, var(--font-size-sm))
+    );
     position: relative;
     z-index: 1;
   }

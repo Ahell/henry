@@ -42,6 +42,16 @@ export class TeacherCell extends LitElement {
     // Ensure host element carries base class
     this.classList.add("teacher-cell");
 
+    const codeCount = this._getCodeCount();
+    this.classList.toggle("many-codes", codeCount > 3);
+    if (codeCount > 3) {
+      const fontSize =
+        codeCount === 4 ? "0.64rem" : codeCount === 5 ? "0.58rem" : "0.52rem";
+      this.style.setProperty("--teacher-cell-code-font-size", fontSize);
+    } else {
+      this.style.removeProperty("--teacher-cell-code-font-size");
+    }
+
     // Update suffix classes (like 'unavailable', 'teaching-day-default')
     const nextTokens = this.classNameSuffix
       ? this.classNameSuffix.split(" ").filter(Boolean)
@@ -63,6 +73,19 @@ export class TeacherCell extends LitElement {
     this._setAttr("data-is-detail", this.isDetail ? "true" : "false");
     this._setAttr("data-is-locked", this.isLocked ? "true" : "false");
     this._setAttr("title", this.titleText ?? "");
+  }
+
+  _getCodeCount() {
+    if (Array.isArray(this.segments) && this.segments.length > 0) {
+      return this.segments.filter((s) => (s?.text || "").trim()).length;
+    }
+    const raw = String(this.content || "");
+    if (!raw.trim()) return 0;
+    const parts = raw
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return parts.length;
   }
 
   connectedCallback() {

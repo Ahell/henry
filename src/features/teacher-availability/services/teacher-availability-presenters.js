@@ -178,26 +178,41 @@ export function getOverviewCellPresentation({
   let isLocked = false;
   let courseIds = [];
 
+  const uniqueCourseIdsInRuns = (runs) => {
+    const seen = new Set();
+    const result = [];
+    for (const run of runs || []) {
+      if (!run || run.course_id == null) continue;
+      const key = String(run.course_id);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push(run.course_id);
+    }
+    return result;
+  };
+
+  const courseCodesForIds = (ids) =>
+    (ids || [])
+      .map((id) => store.getCourse(id)?.code)
+      .filter(Boolean);
+
+  const courseNamesForIds = (ids) =>
+    (ids || [])
+      .map((id) => store.getCourse(id)?.name)
+      .filter(Boolean);
+
   if (isAssigned) {
-    const codes = assignedRuns
-      .map((run) => store.getCourse(run.course_id)?.code)
-      .filter(Boolean);
-    const names = assignedRuns
-      .map((run) => store.getCourse(run.course_id)?.name)
-      .filter(Boolean);
-    courseIds = assignedRuns.map((run) => run.course_id).filter(Boolean);
+    courseIds = uniqueCourseIdsInRuns(assignedRuns);
+    const codes = courseCodesForIds(courseIds);
+    const names = courseNamesForIds(courseIds);
 
     className = appendClass(className, "assigned-course");
     content = codes.join(", ");
     title = names.length ? `Tilldelad: ${names.join(", ")}` : "";
   } else if (compatibleRuns.length > 0) {
-    const codes = compatibleRuns
-      .map((run) => store.getCourse(run.course_id)?.code)
-      .filter(Boolean);
-    const names = compatibleRuns
-      .map((run) => store.getCourse(run.course_id)?.name)
-      .filter(Boolean);
-    courseIds = compatibleRuns.map((run) => run.course_id).filter(Boolean);
+    courseIds = uniqueCourseIdsInRuns(compatibleRuns);
+    const codes = courseCodesForIds(courseIds);
+    const names = courseNamesForIds(courseIds);
 
     className = appendClass(className, "has-course");
     content = codes.join(", ");
