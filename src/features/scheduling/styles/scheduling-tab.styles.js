@@ -209,20 +209,14 @@ export const schedulingTabStyles = css`
     flex-wrap: wrap;
     align-content: flex-start;
     gap: var(--availability-chip-gap);
-    padding: 6px;
-    border-radius: var(--radius-md);
-    background: rgba(16, 185, 129, 0.92);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
     color: #fff;
-    box-shadow: var(--shadow-xs);
+    box-shadow: none;
     box-sizing: border-box;
     max-width: 100%;
     overflow: hidden;
-  }
-
-  .slot-availability.is-empty {
-    background: rgba(239, 68, 68, 0.16);
-    color: var(--color-danger-hover);
-    border: 1px solid rgba(239, 68, 68, 0.18);
   }
 
   .availability-chip {
@@ -232,26 +226,78 @@ export const schedulingTabStyles = css`
     width: calc((100% - var(--availability-chip-gap)) / 2);
     padding: 2px 6px;
     border-radius: var(--radius-full);
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(15, 23, 42, 0.18);
     color: #fff;
     font-size: 0.6rem;
     line-height: 1.1;
-    white-space: nowrap;
+    white-space: normal;
     overflow: hidden;
     text-overflow: ellipsis;
-    justify-content: center;
+    justify-content: flex-start;
     box-sizing: border-box;
+    position: relative;
+    isolation: isolate;
   }
 
-  .availability-chip.is-empty {
-    background: rgba(239, 68, 68, 0.06);
-    color: var(--color-danger-hover);
-    border: 1px solid rgba(239, 68, 68, 0.12);
+  .availability-chip-text {
+    position: relative;
+    z-index: 1;
   }
 
-  .availability-chip.is-more {
-    background: rgba(255, 255, 255, 0.22);
-    font-weight: var(--font-weight-semibold);
+  .availability-chip--available {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    );
+  }
+
+  .availability-chip--course-unavailable {
+    background: var(--color-danger);
+  }
+
+  .availability-chip--partial-conflict {
+    background: var(--color-danger);
+  }
+
+  .availability-chip--partial-conflict::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.22) 0px,
+      rgba(255, 255, 255, 0.22) 8px,
+      rgba(255, 255, 255, 0) 8px,
+      rgba(255, 255, 255, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  .availability-chip--partial-availability {
+    background: linear-gradient(
+      135deg,
+      var(--color-info),
+      var(--color-info-hover)
+    );
+  }
+
+  .availability-chip--partial-availability::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.32) 0px,
+      rgba(255, 255, 255, 0.32) 8px,
+      rgba(255, 255, 255, 0) 8px,
+      rgba(255, 255, 255, 0) 16px
+    );
+    opacity: 0.9;
   }
 
   .gantt-table th.cohort-header {

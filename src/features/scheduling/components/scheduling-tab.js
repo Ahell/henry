@@ -8,7 +8,6 @@ import "./gantt-cell.js";
 import { schedulingTabStyles } from "../styles/scheduling-tab.styles.js";
 import { getSlotRange } from "../../../utils/date-utils.js";
 import {
-  getAvailableCompatibleTeachersForCourseInSlot,
   getCompatibleTeachersForCourse,
 } from "../services/teacher-availability.service.js";
 
@@ -23,7 +22,8 @@ export class SchedulingTab extends LitElement {
     super();
     this._dragDropManager = new DragDropManager(this);
     this._dragCourseId = null;
-    this._availableTeachersBySlotDate = new Map();
+    this._teacherOverlayChipsBySlotDate = new Map();
+    this._shouldShowTeacherAvailabilityOverlay = false;
     store.subscribe(() => this.requestUpdate());
   }
 
@@ -192,45 +192,29 @@ export class SchedulingTab extends LitElement {
   }
 
   _renderSlotAvailabilityHeader(slotDate) {
-    const availableTeachers =
-      this._availableTeachersBySlotDate?.get(slotDate) || [];
+    const chips = this._teacherOverlayChipsBySlotDate?.get(slotDate) || [];
 
     if (!this._dragCourseId || !this._shouldShowTeacherAvailabilityOverlay) {
       return html`<div class="slot-availability-row" aria-hidden="true"></div>`;
     }
 
-    const compatibleTeachers = getCompatibleTeachersForCourse(this._dragCourseId);
-    const compatibleCount = compatibleTeachers.length;
-
-    const maxShown = 6;
-    const shown = availableTeachers.slice(0, maxShown);
-    const remaining = Math.max(0, availableTeachers.length - shown.length);
-
-    const hasNoCompatible = compatibleCount === 0;
-    const isEmpty = hasNoCompatible || availableTeachers.length === 0;
-
     const course = store.getCourse(this._dragCourseId);
-    const title = course
-      ? `${course.code}: ${availableTeachers.length}/${compatibleCount} tillgängliga`
-      : `${availableTeachers.length}/${compatibleCount} tillgängliga`;
+    const title = course ? `${course.code}: kompatibla lärare` : "Kompatibla lärare";
 
     return html`
       <div class="slot-availability-row" title="${title}">
-        <div class="slot-availability ${isEmpty ? "is-empty" : ""}">
-          ${hasNoCompatible
-            ? html`<span class="availability-chip is-empty">Inga kompatibla</span>`
-            : availableTeachers.length === 0
-              ? html`<span class="availability-chip is-empty"
-                  >Inga tillgängliga</span
-                >`
-              : html`${shown.map((t) => {
-                  const firstName = (t.name || "").split(" ")[0] || t.name;
-                  return html`<span class="availability-chip">${firstName}</span>`;
-                })}${remaining > 0
-                  ? html`<span class="availability-chip is-more"
-                      >+${remaining}</span
-                    >`
-                  : ""}`}
+        <div class="slot-availability">
+          ${chips.map((chip) => {
+            const className =
+              chip?.status && chip.status !== "available"
+                ? `availability-chip availability-chip--${chip.status}`
+                : "availability-chip availability-chip--available";
+            return html`
+              <span class="${className}" title="${chip.title}">
+                <span class="availability-chip-text">${chip.label}</span>
+              </span>
+            `;
+          })}
         </div>
       </div>
     `;
@@ -990,9 +974,9 @@ export class SchedulingTab extends LitElement {
 
   _clearAvailableTeachersOverlays() {
     this._dragCourseId = null;
-    this._availableTeachersBySlotDate = new Map();
+    this._teacherOverlayChipsBySlotDate = new Map();
     this._shouldShowTeacherAvailabilityOverlay = false;
-    this._applyColumnTeacherShortageClasses(new Map());
+    this._applyColumnTeacherShortageClasses();
     this.requestUpdate();
   }
 
@@ -1005,65 +989,45 @@ export class SchedulingTab extends LitElement {
     const map = new Map();
 
     slotDates.forEach((slotDate) => {
-      map.set(slotDate, this._computeAvailableTeachers(courseId, slotDate));
+      map.set(slotDate, this._computeTeacherOverlayChips(courseId, slotDate));
     });
 
     const compatibleCount = getCompatibleTeachersForCourse(courseId).length;
-    const hasAnyAvailable = Array.from(map.values()).some(
-      (teachers) => Array.isArray(teachers) && teachers.length > 0
-    );
-    this._shouldShowTeacherAvailabilityOverlay =
-      compatibleCount > 0 && hasAnyAvailable;
+    this._shouldShowTeacherAvailabilityOverlay = compatibleCount > 0;
 
-    this._availableTeachersBySlotDate = map;
-    this._applyColumnTeacherShortageClasses(map);
+    this._teacherOverlayChipsBySlotDate = map;
+    this._applyColumnTeacherShortageClasses();
     this.requestUpdate();
   }
 
-  _computeAvailableTeachers(courseId, slotDate) {
+  _computeTeacherOverlayChips(courseId, slotDate) {
     const slot = store.getSlots().find((s) => s.start_date === slotDate);
     if (!slot) return [];
 
-    const existingRunsForCourse = store
-      .getCourseRuns()
-      .filter(
-        (r) => String(r.slot_id) === String(slot.slot_id) && r.course_id === courseId
-      );
-
-    const teachersAlreadyTeachingThisCourse = new Set();
-    existingRunsForCourse.forEach((r) => {
-      if (Array.isArray(r.teachers)) {
-        r.teachers.forEach((tid) => teachersAlreadyTeachingThisCourse.add(tid));
-      }
-    });
-
-    return getAvailableCompatibleTeachersForCourseInSlot(courseId, slotDate, {
-      includeTeacherIds: Array.from(teachersAlreadyTeachingThisCourse),
+    return getCompatibleTeachersForCourse(courseId).map((teacher) => {
+      const availability = this._teacherAvailabilityForCourseInSlot({
+        teacherId: teacher.teacher_id,
+        slot,
+        slotDate,
+        courseId,
+      });
+      const label = (teacher.name || "").split(" ")[0] || teacher.name || "";
+      return {
+        teacherId: teacher.teacher_id,
+        label,
+        status: availability.classNameSuffix || "available",
+        title: availability.titleText,
+      };
     });
   }
 
-  _applyColumnTeacherShortageClasses(availableTeachersBySlotDate) {
+  _applyColumnTeacherShortageClasses() {
     if (!this.shadowRoot) return;
 
     // Clear all existing shortage marks first.
     this.shadowRoot
       .querySelectorAll(".gantt-table td.slot-cell.no-teachers-available")
       .forEach((td) => td.classList.remove("no-teachers-available"));
-
-    if (!this._dragCourseId || !this._shouldShowTeacherAvailabilityOverlay) {
-      return;
-    }
-
-    for (const [slotDate, teachers] of availableTeachersBySlotDate.entries()) {
-      if (Array.isArray(teachers) && teachers.length > 0) continue;
-
-      this.shadowRoot
-        .querySelectorAll(`.gantt-table td.slot-cell[data-slot-date="${slotDate}"]`)
-        .forEach((td) => {
-          if (td.dataset.disabled === "true") return;
-          td.classList.add("no-teachers-available");
-        });
-    }
   }
 }
 
