@@ -108,43 +108,47 @@ export class SchedulingTab extends LitElement {
     const cohorts = store.getCohorts();
     const slots = store.getSlots();
 
-    if (slots.length === 0) {
-      return html`
-        <henry-panel>
-          <div slot="header">
-            <henry-text variant="heading-3">Gantt-vy</henry-text>
-          </div>
-          <p>Inga slots tillgängliga.</p>
-        </henry-panel>
-      `;
-    }
+	    if (slots.length === 0) {
+	      return html`
+	        <henry-panel>
+	          <div slot="header">
+	            <henry-text variant="heading-3">Schemaläggning</henry-text>
+	          </div>
+	          <p>Inga slots tillgängliga.</p>
+	        </henry-panel>
+	      `;
+	    }
 
     const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
     const prerequisiteProblems = this._computeSchedulingPrerequisiteProblems();
     const overlapWarnings = this._computeCohortSlotOverlapWarnings();
     const headerWarnings = [...prerequisiteProblems, ...overlapWarnings];
 
-    return html`
-      <henry-panel>
-        <div slot="header">
-          <div class="header-wrapper">
-            <henry-text variant="heading-3">Schemaläggning</henry-text>
-            <div class="header-actions">
-              ${this._renderWarningPills(headerWarnings)}
-              <henry-button
-                variant="secondary"
-                size="small"
-                @click=${() => this._scrollToToday()}
-                >Idag</henry-button
-              >
-            </div>
-          </div>
-        </div>
-
-        <div class="gantt-scroll-wrapper">
-          <table
-            class="gantt-table"
-            style="--gantt-slot-count: ${slotDates.length};"
+	    return html`
+	      <henry-panel>
+	        <div slot="header" class="panel-header">
+	          <henry-text variant="heading-3">Schemaläggning</henry-text>
+	          <div class="header-actions">
+	            ${this._renderWarningPills(headerWarnings)}
+	            <div class="header-buttons">
+	              <henry-button
+	                variant="secondary"
+	                @click=${() => this._handleEditClick()}
+	                >Redigera</henry-button
+	              >
+	              <henry-button
+	                variant="secondary"
+	                @click=${() => this._scrollToToday()}
+	                >Idag</henry-button
+	              >
+	            </div>
+	          </div>
+	        </div>
+	
+	        <div class="gantt-scroll-wrapper" tabindex="0">
+	          <table
+	            class="gantt-table"
+	            style="--gantt-slot-count: ${slotDates.length};"
           >
             <colgroup>
               <col style="width: var(--gantt-depot-width);" />
@@ -183,9 +187,14 @@ export class SchedulingTab extends LitElement {
             </tfoot>
           </table>
         </div>
-      </henry-panel>
-    `;
-  }
+	      </henry-panel>
+	    `;
+	  }
+
+	  _handleEditClick() {
+	    const wrapper = this.shadowRoot?.querySelector(".gantt-scroll-wrapper");
+	    wrapper?.focus?.();
+	  }
 
   _renderWarningPills(prerequisiteProblems) {
     prerequisiteProblems = Array.isArray(prerequisiteProblems)

@@ -14,31 +14,38 @@ export const schedulingTabStyles = css`
     --availability-chip-gap: 4px;
   }
 
-  .warning-pills {
-    display: flex;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-  }
+	  .warning-pills {
+	    display: flex;
+	    gap: var(--space-2);
+	    flex-wrap: wrap;
+	  }
 
-  .header-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--space-4);
-  }
+	  .panel-header {
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	    gap: var(--space-4);
+	    flex-wrap: wrap;
+	  }
 
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
+	  .header-actions {
+	    display: flex;
+	    align-items: center;
+	    gap: var(--space-2);
+	    flex-wrap: wrap;
+	    justify-content: flex-end;
+	  }
 
-  .warning-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
+	  .header-buttons {
+	    display: inline-flex;
+	    gap: var(--space-2);
+	    align-items: center;
+	  }
+
+	  .warning-pill {
+	    display: inline-flex;
+	    align-items: center;
+	    gap: var(--space-1);
     background: var(--color-danger-light);
     color: var(--color-danger-hover);
     padding: var(--space-1) var(--space-3);
@@ -104,18 +111,22 @@ export const schedulingTabStyles = css`
     border: 2px dashed rgba(255, 255, 255, 0.7);
   }
 
-  .gantt-scroll-wrapper {
-    overflow-x: auto;
-    overflow-y: visible;
-    max-height: none;
-    background: var(--color-background);
-    border: 1px solid var(--color-border);
-    border-radius: 0;
-    box-shadow: var(--shadow-xs);
-    position: relative;
-    z-index: 0;
-    isolation: isolate;
-  }
+	  .gantt-scroll-wrapper {
+	    overflow-x: auto;
+	    overflow-y: visible;
+	    max-height: none;
+	    background: var(--color-background);
+	    border: 1px solid var(--color-border);
+	    border-radius: 0;
+	    box-shadow: var(--shadow-xs);
+	    position: relative;
+	    z-index: 0;
+	    isolation: isolate;
+	  }
+
+	  .gantt-scroll-wrapper:focus {
+	    outline: none;
+	  }
 
   .gantt-table {
     border-collapse: separate;
