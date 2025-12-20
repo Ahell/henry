@@ -5,13 +5,12 @@ export const ganttDepotStyles = css`
 
   :host {
     display: block;
-    height: 100%;
     min-height: 20px;
   }
 
   .cohort-depot-content {
-    height: 100%;
     min-height: 20px;
+    max-height: var(--gantt-row-height);
     overflow: auto;
     padding: var(--space-2);
     display: flex;

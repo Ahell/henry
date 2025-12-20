@@ -293,7 +293,7 @@ export const schedulingTabStyles = css`
 
   .gantt-table td.depot-cell gantt-depot {
     display: block;
-    height: 100%;
+    height: auto;
   }
 
   .gantt-table td.depot-cell.drag-over {
@@ -305,7 +305,7 @@ export const schedulingTabStyles = css`
     min-width: var(--gantt-cohort-width);
     width: var(--gantt-cohort-width);
     text-align: left;
-    padding: var(--space-3);
+    padding: var(--space-2);
     font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-xs);
     color: var(--color-text-primary);
@@ -314,6 +314,8 @@ export const schedulingTabStyles = css`
     left: var(--gantt-depot-width);
     z-index: 5;
     box-shadow: 6px 0 12px rgba(31, 39, 51, 0.06);
+    vertical-align: top;
+    line-height: 1.2;
   }
 
   .gantt-table td.slot-cell {
@@ -327,12 +329,12 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table tbody td {
-    height: var(--gantt-row-height);
+    height: auto;
   }
 
   .gantt-table tbody td.slot-cell gantt-cell {
     display: block;
-    height: 100%;
+    height: auto;
   }
 
   .gantt-table tbody tr:hover td.slot-cell:not(.disabled-slot):not(.no-teachers-available) {
