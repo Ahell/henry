@@ -77,13 +77,14 @@ export class HenryModal extends LitElement {
       }
     }
 
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--space-6);
-      border-bottom: 1px solid var(--color-border);
-    }
+	    .modal-header {
+	      display: flex;
+	      justify-content: flex-start;
+	      align-items: center;
+	      padding: var(--space-6);
+	      border-bottom: 1px solid var(--color-border);
+	      gap: var(--space-4);
+	    }
 
     .modal-title {
       margin: 0;
@@ -92,28 +93,11 @@ export class HenryModal extends LitElement {
       color: var(--color-text-primary);
     }
 
-    .close-button {
-      background: none;
-      border: none;
-      font-size: var(--font-size-2xl);
-      color: var(--color-text-secondary);
-      cursor: pointer;
-      padding: var(--space-2);
-      line-height: 1;
-      transition: var(--transition-fast);
-      border-radius: var(--radius-sm);
-    }
-
-    .close-button:hover {
-      background: var(--color-gray-100);
-      color: var(--color-text-primary);
-    }
-
-    .modal-body {
-      padding: var(--space-6);
-      overflow-y: auto;
-      flex: 1;
-    }
+	    .modal-body {
+	      padding: var(--space-6);
+	      overflow-y: auto;
+	      flex: 1;
+	    }
 
     .modal-footer {
       padding: var(--space-6);
@@ -142,16 +126,9 @@ export class HenryModal extends LitElement {
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div class="modal-header">
-          <h2 class="modal-title" id="modal-title">${this.title}</h2>
-          <button
-            class="close-button"
-            @click="${this.close}"
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
+	        <div class="modal-header">
+	          <h2 class="modal-title" id="modal-title">${this.title}</h2>
+	        </div>
         <div class="modal-body">
           <slot></slot>
         </div>
