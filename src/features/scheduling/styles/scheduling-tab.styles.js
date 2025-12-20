@@ -185,8 +185,7 @@ export const schedulingTabStyles = css`
   }
 
   .slot-date {
-    font-family: var(--font-family-mono);
-    font-variant-numeric: tabular-nums;
+    font-family: var(--font-family-base);
     color: var(--color-text-primary);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
@@ -305,6 +304,7 @@ export const schedulingTabStyles = css`
     width: var(--gantt-cohort-width);
     text-align: left;
     padding: var(--space-2);
+    padding-left: var(--space-3);
     font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-xs);
     color: var(--color-text-primary);

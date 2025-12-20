@@ -12,7 +12,7 @@ export const ganttDepotStyles = css`
     min-height: 20px;
     max-height: var(--gantt-row-height);
     overflow: auto;
-    padding: var(--space-2);
+    padding: var(--space-2) var(--space-3);
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
@@ -22,7 +22,8 @@ export const ganttDepotStyles = css`
     color: var(--color-success-hover);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);
-    padding: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    text-align: left;
   }
 
   .depot-block {
