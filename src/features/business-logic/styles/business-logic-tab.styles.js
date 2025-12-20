@@ -14,6 +14,14 @@ export const businessLogicTabStyles = css`
     flex-wrap: wrap;
   }
 
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+  }
+
   .rule-list {
     display: flex;
     flex-direction: column;

@@ -16,6 +16,15 @@ const RULES_DEFAULT = [
     locked: true,
   },
   {
+    id: "dontMovePlacedCourses",
+    label: "Ändra inte utplacerade kurser (auto-fyll)",
+    description:
+      "Auto-fyll flyttar/ersätter inte redan utplacerade kurser för kullen; fyller endast tomma slots.",
+    enabled: true,
+    kind: "hard",
+    locked: false,
+  },
+  {
     id: "maxStudentsHard",
     label: "Max studenter per kurs (hard)",
     description: "Över denna gräns är inte tillåtet. Gränsen sätts i regeln.",
@@ -81,7 +90,6 @@ export const DEFAULT_BUSINESS_LOGIC = {
     params: {
       maxStudentsHard: 130,
       maxStudentsPreferred: 100,
-      futureOnlyReplan: true,
     },
     rules: RULES_DEFAULT,
   },
@@ -163,10 +171,6 @@ export function normalizeBusinessLogic(input) {
 
   const maxStudentsHardRaw = Number(params.maxStudentsHard);
   const maxStudentsPreferredRaw = Number(params.maxStudentsPreferred);
-  const futureOnlyReplan =
-    typeof params.futureOnlyReplan === "boolean"
-      ? params.futureOnlyReplan
-      : DEFAULT_BUSINESS_LOGIC.scheduling.params.futureOnlyReplan;
 
   const rules = (() => {
     if (Array.isArray(scheduling?.rules)) {
@@ -196,7 +200,6 @@ export function normalizeBusinessLogic(input) {
         maxStudentsPreferred: Number.isFinite(maxStudentsPreferredRaw)
           ? maxStudentsPreferredRaw
           : DEFAULT_BUSINESS_LOGIC.scheduling.params.maxStudentsPreferred,
-        futureOnlyReplan,
       },
       rules,
       // Keep derived lists for backwards compatibility with existing code.

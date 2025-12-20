@@ -689,10 +689,6 @@ export class CourseRunManager {
 
     const configuredMaxHard = Number(schedulingParams.maxStudentsHard);
     const configuredMaxPreferred = Number(schedulingParams.maxStudentsPreferred);
-    const futureOnlyReplanEnabled =
-      typeof schedulingParams.futureOnlyReplan === "boolean"
-        ? schedulingParams.futureOnlyReplan
-        : true;
 
     const effectiveMaxStudentsHard =
       maxStudentsHard != null && Number.isFinite(Number(maxStudentsHard))
@@ -706,6 +702,17 @@ export class CourseRunManager {
       : Number.isFinite(configuredMaxPreferred)
           ? configuredMaxPreferred
           : 100;
+
+    const dontMovePlacedCoursesEnabled = (() => {
+      if (rulesList) {
+        return rulesList.some(
+          (r) => r?.id === "dontMovePlacedCourses" && r?.enabled !== false
+        );
+      }
+      // Backwards-compat: if this rule doesn't exist, keep previous default behavior
+      // where auto-fill generally avoids rewriting by default via future-only replanning.
+      return true;
+    })();
 
     const defaultSoftRuleOrder = [
       "economyColocationPacking",
@@ -785,25 +792,7 @@ export class CourseRunManager {
         r.cohorts.some((id) => String(id) === String(cohortId))
     );
 
-    // We are only allowed to change course placement in slots AFTER today's date.
-    // Auto-fill will therefore keep any existing placements up to and including
-    // today, and only (re)plan from the first slot whose start_date is > today.
-    const today = (() => {
-      const now = new Date();
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    })();
-    const firstSlotAfterTodayIdx = (() => {
-      const idx = slotDates.findIndex((d) => {
-        const sd = parseDateOnly(d);
-        return sd ? sd > today : false;
-      });
-      return idx === -1 ? slotDates.length : idx;
-    })();
-    const planningStartIdx = (() => {
-      if (!futureOnlyReplanEnabled) return startSlotIdx;
-      if (!cohortHasAnyScheduledCourse) return startSlotIdx;
-      return Math.max(startSlotIdx, firstSlotAfterTodayIdx);
-    })();
+    const planningStartIdx = startSlotIdx;
 
     const courses = store.getCourses() || [];
     const courseById = new Map(courses.map((c) => [Number(c.course_id), c]));
@@ -836,18 +825,13 @@ export class CourseRunManager {
       return Number.isFinite(startIdx) ? startIdx : null;
     };
 
-    const shouldRemoveFromTargetAfterToday = (run) => {
+    const shouldRemoveFromTarget = (run) => {
       if (!cohortHasAnyScheduledCourse) return false;
-      if (!futureOnlyReplanEnabled) {
-        const cohortsInRun = Array.isArray(run?.cohorts) ? run.cohorts : [];
-        if (!cohortsInRun.some((id) => String(id) === String(cohortId))) {
-          return false;
-        }
-        const runStartIdx = runStartIdxFor(run);
-        return Number.isFinite(runStartIdx) && runStartIdx >= startSlotIdx;
-      }
+      if (dontMovePlacedCoursesEnabled) return false;
       const cohortsInRun = Array.isArray(run?.cohorts) ? run.cohorts : [];
-      if (!cohortsInRun.some((id) => String(id) === String(cohortId))) return false;
+      if (!cohortsInRun.some((id) => String(id) === String(cohortId))) {
+        return false;
+      }
       const runStartIdx = runStartIdxFor(run);
       return Number.isFinite(runStartIdx) && runStartIdx >= planningStartIdx;
     };
@@ -887,10 +871,10 @@ export class CourseRunManager {
       if (!courseById.has(courseId)) continue;
 
       // Simulate "future-only" replanning for this cohort:
-      // If this run would be removed (because it starts after today), it should
-      // not affect totals/scoring/occupied slots.
+      // If this run would be removed (because we are replanning), it should not
+      // affect totals/scoring/occupied slots.
       const cohortsInRunRaw = Array.isArray(run.cohorts) ? run.cohorts : [];
-      const willRemoveTarget = shouldRemoveFromTargetAfterToday(run);
+      const willRemoveTarget = shouldRemoveFromTarget(run);
       const cohortsInRun = willRemoveTarget
         ? cohortsInRunRaw.filter((id) => String(id) !== String(cohortId))
         : cohortsInRunRaw;
@@ -1133,14 +1117,20 @@ export class CourseRunManager {
     });
 
     try {
-      // Step 0: Remove this cohort's runs that start after today (future-only replanning).
-      if (cohortHasAnyScheduledCourse && planningStartIdx < slotDates.length) {
+      // Step 0: Optional replanning. If enabled, remove this cohort's placements from the
+      // planning window and refill. If disabled, keep already placed courses and only
+      // fill empty slots.
+      if (
+        !dontMovePlacedCoursesEnabled &&
+        cohortHasAnyScheduledCourse &&
+        planningStartIdx < slotDates.length
+      ) {
         const runs = CourseRunManager._runs();
         let didChange = false;
 
         for (let idx = runs.length - 1; idx >= 0; idx -= 1) {
           const run = runs[idx];
-          if (!shouldRemoveFromTargetAfterToday(run)) continue;
+          if (!shouldRemoveFromTarget(run)) continue;
 
           const cohortsInRun = Array.isArray(run?.cohorts) ? run.cohorts : [];
           const nextCohorts = cohortsInRun.filter(

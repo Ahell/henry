@@ -43,7 +43,6 @@ export class BusinessLogicTab extends LitElement {
   render() {
     const businessLogic = store.businessLogicManager.getBusinessLogic();
     const scheduling = businessLogic?.scheduling || {};
-    const params = scheduling?.params || {};
     const rules = scheduling?.rules || [];
 
     return html`
@@ -53,30 +52,14 @@ export class BusinessLogicTab extends LitElement {
 
       <div class="grid">
         <henry-panel>
-          <div slot="header">
+          <div slot="header" class="panel-header">
             <henry-text variant="heading-3">Affärslogik</henry-text>
-          </div>
-          <div class="row">
-            <henry-switch
-              label="Optimera endast efter idag"
-              .checked=${Boolean(params.futureOnlyReplan)}
-              @switch-change=${(e) =>
-                this._updateSchedulingParam("futureOnlyReplan", e.detail.checked)}
-            ></henry-switch>
-          </div>
-          <div class="row">
             <henry-button
               variant="primary"
               ?disabled=${!this.formValid || this.saving}
               @click=${this._handleSaveClick}
-              >Spara affärslogik</henry-button
+              >Spara</henry-button
             >
-          </div>
-        </henry-panel>
-
-        <henry-panel>
-          <div slot="header">
-            <henry-text variant="heading-3">Regler</henry-text>
           </div>
           <div class="rule-list">
             ${rules.map((r, idx) =>
@@ -173,12 +156,8 @@ export class BusinessLogicTab extends LitElement {
     const scheduling = current?.scheduling || {};
     const params = { ...(scheduling?.params || {}) };
 
-    if (key === "futureOnlyReplan") {
-      params.futureOnlyReplan = Boolean(value);
-    } else {
-      const n = Number(value);
-      params[key] = Number.isFinite(n) ? n : value;
-    }
+    const n = Number(value);
+    params[key] = Number.isFinite(n) ? n : value;
 
     store.businessLogicManager.setBusinessLogic({
       ...current,
