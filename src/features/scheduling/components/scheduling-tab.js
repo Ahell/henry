@@ -74,19 +74,11 @@ export class SchedulingTab extends LitElement {
         <div slot="header">
           <div class="header-wrapper">
             <henry-text variant="heading-3">
-              Gantt-vy: Planeringsöversikt
+              Schemaläggning
             </henry-text>
             ${this._renderWarningPills(headerWarnings)}
           </div>
         </div>
-        <p
-          style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-4);"
-        >
-          Dra kurser från kullens depå till schemat. Kurser försvinner från
-          depån när de schemaläggs.
-        </p>
-
-        ${this._renderLegend()}
 
         <div class="gantt-scroll-wrapper">
           <table
