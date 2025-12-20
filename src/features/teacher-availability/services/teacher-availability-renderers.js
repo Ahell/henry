@@ -12,6 +12,7 @@ import {
   exitDetailView,
   toggleTeachingDay,
 } from "./teacher-availability-view-state.js";
+import { getRunsCoveringSlotId } from "./run-coverage.js";
 
 export function renderDetailView(component) {
   const daysFromStore = store.getSlotDays(
@@ -37,9 +38,7 @@ export function renderDetailView(component) {
   const slotRuns = slot
     ? Array.from(
         new Map(
-          store
-            .getCourseRuns()
-            .filter((run) => run.slot_id === slot.slot_id)
+          getRunsCoveringSlotId(store.getCourseRuns(), slot.slot_id)
             .map((run) => [
               run.course_id,
               {

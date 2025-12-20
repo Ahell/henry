@@ -1,4 +1,5 @@
 import { isDayUnavailableConsideringSlot } from "./helpers.js";
+import { getRunsCoveringSlotId } from "./run-coverage.js";
 
 /**
  * Decide presentation for a day header in the detail view.
@@ -156,7 +157,7 @@ export function getOverviewCellPresentation({
   const compatibleCourseIds = teacher.compatible_courses || [];
   const courseRuns = store.getCourseRuns();
 
-  const runsInSlot = courseRuns.filter((r) => r.slot_id === slot.slot_id);
+  const runsInSlot = getRunsCoveringSlotId(courseRuns, slot.slot_id);
   const compatibleRuns = runsInSlot.filter((r) =>
     compatibleCourseIds.includes(r.course_id)
   );

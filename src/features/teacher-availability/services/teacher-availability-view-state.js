@@ -1,4 +1,5 @@
 import { store } from "../../../platform/store/DataStore.js";
+import { getRunsCoveringSlotId } from "./run-coverage.js";
 
 export const enterDetailView = (component, slotDate, slotId) => {
   component._detailSlotDate = slotDate;
@@ -43,9 +44,7 @@ export const toggleTeachingDay = (component, dateStr, courseId = null) => {
   if (component._applyToAllCourses) {
     const courseIdsInSlot = Array.from(
       new Set(
-        store
-          .getCourseRuns()
-          .filter((run) => String(run.slot_id) === String(slotId))
+        getRunsCoveringSlotId(store.getCourseRuns(), slotId)
           .map((run) => run.course_id)
           .filter((id) => id != null)
       )
