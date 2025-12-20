@@ -114,11 +114,11 @@ export class BusinessLogicTab extends LitElement {
             ${this.saving
               ? html`<henry-text variant="caption">Sparar…</henry-text>`
               : ""}
-	            <henry-switch
-	              label="Redigera"
-	              .checked=${this.isEditing}
-	              @switch-change="${this._handleEditClick}"
-	            ></henry-switch>
+            <henry-switch
+              label="Redigera"
+              .checked=${this.isEditing}
+              @switch-change="${this._handleEditClick}"
+            ></henry-switch>
           </div>
         </div>
         <div class="rule-list">
@@ -130,7 +130,9 @@ export class BusinessLogicTab extends LitElement {
 
   _handleEditClick(e) {
     const next =
-      typeof e?.detail?.checked === "boolean" ? !!e.detail.checked : !this.isEditing;
+      typeof e?.detail?.checked === "boolean"
+        ? !!e.detail.checked
+        : !this.isEditing;
     this.isEditing = next;
     if (!next) return;
 
@@ -151,7 +153,8 @@ export class BusinessLogicTab extends LitElement {
   }
 
   _renderRuleRow(rule, idx, listLength) {
-    const params = store.businessLogicManager.getBusinessLogic()?.scheduling?.params || {};
+    const params =
+      store.businessLogicManager.getBusinessLogic()?.scheduling?.params || {};
     const isEnabled = Boolean(rule?.enabled);
     const isHard = String(rule?.kind || "soft").toLowerCase() === "hard";
     const isLast = idx === (Number(listLength) || 0) - 1;
@@ -188,7 +191,10 @@ export class BusinessLogicTab extends LitElement {
             required
             ?disabled=${disabled}
             @input-change=${(e) =>
-              this._updateSchedulingParam("maxStudentsPreferred", e.detail.value)}
+              this._updateSchedulingParam(
+                "maxStudentsPreferred",
+                e.detail.value
+              )}
           ></henry-input>
         `;
       }
@@ -208,8 +214,7 @@ export class BusinessLogicTab extends LitElement {
             label="Aktiv"
             .checked=${isEnabled}
             ?disabled=${disabled}
-            @switch-change=${(e) =>
-              this._toggleRule(ruleId, e.detail.checked)}
+            @switch-change=${(e) => this._toggleRule(ruleId, e.detail.checked)}
           ></henry-switch>
           <henry-switch
             label="Hard"
@@ -282,7 +287,8 @@ export class BusinessLogicTab extends LitElement {
     const current = store.businessLogicManager.getBusinessLogic();
     const scheduling = current?.scheduling || {};
     const rules = Array.isArray(scheduling.rules) ? scheduling.rules : [];
-    const normalizedKind = String(kind).toLowerCase() === "hard" ? "hard" : "soft";
+    const normalizedKind =
+      String(kind).toLowerCase() === "hard" ? "hard" : "soft";
 
     const next = rules.map((r) =>
       r?.id === ruleId ? { ...r, kind: normalizedKind } : r

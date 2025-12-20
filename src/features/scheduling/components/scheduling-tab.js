@@ -7,9 +7,7 @@ import "./gantt-depot.js";
 import "./gantt-cell.js";
 import { schedulingTabStyles } from "../styles/scheduling-tab.styles.js";
 import { getSlotRange } from "../../../utils/date-utils.js";
-import {
-  getCompatibleTeachersForCourse,
-} from "../services/teacher-availability.service.js";
+import { getCompatibleTeachersForCourse } from "../services/teacher-availability.service.js";
 
 /**
  * Scheduling Tab - Gantt view for course planning
@@ -113,47 +111,47 @@ export class SchedulingTab extends LitElement {
     const cohorts = store.getCohorts();
     const slots = store.getSlots();
 
-	    if (slots.length === 0) {
-	      return html`
-	        <henry-panel>
-	          <div slot="header">
-	            <henry-text variant="heading-3">Schemaläggning</henry-text>
-	          </div>
-	          <p>Inga slots tillgängliga.</p>
-	        </henry-panel>
-	      `;
-	    }
+    if (slots.length === 0) {
+      return html`
+        <henry-panel>
+          <div slot="header">
+            <henry-text variant="heading-3">Schemaläggning</henry-text>
+          </div>
+          <p>Inga slots tillgängliga.</p>
+        </henry-panel>
+      `;
+    }
 
     const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
     const prerequisiteProblems = this._computeSchedulingPrerequisiteProblems();
     const overlapWarnings = this._computeCohortSlotOverlapWarnings();
     const headerWarnings = [...prerequisiteProblems, ...overlapWarnings];
 
-	    return html`
-	      <henry-panel>
-	        <div slot="header" class="panel-header">
-	          <henry-text variant="heading-3">Schemaläggning</henry-text>
-	          <div class="header-actions">
-	            ${this._renderWarningPills(headerWarnings)}
-	            <div class="header-buttons">
-	              <henry-button
-	                variant="primary"
-	                @click=${() => this._scrollToToday()}
-	                >Idag</henry-button
-	              >
-	              <henry-switch
-	                label="Redigera"
-	                .checked=${this.isEditing}
-	                @switch-change=${this._handleEditClick}
-	              ></henry-switch>
-	            </div>
-	          </div>
-	        </div>
-	
-	        <div class="gantt-scroll-wrapper" tabindex="0">
-	          <table
-	            class="gantt-table"
-	            style="--gantt-slot-count: ${slotDates.length};"
+    return html`
+      <henry-panel>
+        <div slot="header" class="panel-header">
+          <henry-text variant="heading-3">Schemaläggning</henry-text>
+          <div class="header-actions">
+            ${this._renderWarningPills(headerWarnings)}
+            <div class="header-buttons">
+              <henry-button
+                variant="primary"
+                @click=${() => this._scrollToToday()}
+                >Idag</henry-button
+              >
+              <henry-switch
+                label="Redigera"
+                .checked=${this.isEditing}
+                @switch-change=${this._handleEditClick}
+              ></henry-switch>
+            </div>
+          </div>
+        </div>
+
+        <div class="gantt-scroll-wrapper" tabindex="0">
+          <table
+            class="gantt-table"
+            style="--gantt-slot-count: ${slotDates.length};"
           >
             <colgroup>
               <col style="width: var(--gantt-depot-width);" />
@@ -192,13 +190,15 @@ export class SchedulingTab extends LitElement {
             </tfoot>
           </table>
         </div>
-	      </henry-panel>
-	    `;
-	  }
+      </henry-panel>
+    `;
+  }
 
   _handleEditClick(e) {
     const next =
-      typeof e?.detail?.checked === "boolean" ? !!e.detail.checked : !this.isEditing;
+      typeof e?.detail?.checked === "boolean"
+        ? !!e.detail.checked
+        : !this.isEditing;
     this.isEditing = next;
     if (!next) {
       // Ensure any in-progress drag state and overlays are cleared when leaving edit mode.
@@ -241,9 +241,11 @@ export class SchedulingTab extends LitElement {
           );
 
           const warningParts = [];
-          if (missingCount > 0) warningParts.push(`${missingCount} saknar spärrkurs`);
+          if (missingCount > 0)
+            warningParts.push(`${missingCount} saknar spärrkurs`);
           if (beforeCount > 0) warningParts.push("Kurs före spärrkurs");
-          if (chainCount > 0) warningParts.push(`${chainCount} kedjeblockering`);
+          if (chainCount > 0)
+            warningParts.push(`${chainCount} kedjeblockering`);
           if (hasOverlap) warningParts.push("Flera kurser i samma period");
 
           return html`
@@ -280,7 +282,9 @@ export class SchedulingTab extends LitElement {
     }
 
     const course = store.getCourse(this._dragCourseId);
-    const title = course ? `${course.code}: kompatibla lärare` : "Kompatibla lärare";
+    const title = course
+      ? `${course.code}: kompatibla lärare`
+      : "Kompatibla lärare";
 
     return html`
       <div class="slot-availability-row" title="${title}">
@@ -507,7 +511,9 @@ export class SchedulingTab extends LitElement {
   }
 
   _adjustSlotDateForDrag(slotDate) {
-    const offset = Number(this._dragDropManager?.state?.draggingSlotOffset || 0);
+    const offset = Number(
+      this._dragDropManager?.state?.draggingSlotOffset || 0
+    );
     if (!offset) return slotDate;
 
     const slotDates = [
@@ -600,7 +606,9 @@ export class SchedulingTab extends LitElement {
    */
   _computeSchedulingPrerequisiteProblems() {
     const problems = [];
-    const slotDates = [...new Set((store.getSlots() || []).map((s) => s.start_date))].sort();
+    const slotDates = [
+      ...new Set((store.getSlots() || []).map((s) => s.start_date)),
+    ].sort();
 
     const runsByCohort = new Map();
     for (const run of store.getCourseRuns() || []) {
@@ -695,7 +703,10 @@ export class SchedulingTab extends LitElement {
           const course = courseById.get(run.course_id);
           if (!course) continue;
           if (problemCourseIds.has(course.course_id)) continue;
-          if (!Array.isArray(course.prerequisites) || course.prerequisites.length === 0) {
+          if (
+            !Array.isArray(course.prerequisites) ||
+            course.prerequisites.length === 0
+          ) {
             continue;
           }
 
@@ -761,7 +772,9 @@ export class SchedulingTab extends LitElement {
 
   _computeCohortSlotOverlapWarnings() {
     const warnings = [];
-    const slotDates = [...new Set((store.getSlots() || []).map((s) => s.start_date))].sort();
+    const slotDates = [
+      ...new Set((store.getSlots() || []).map((s) => s.start_date)),
+    ].sort();
 
     for (const cohort of store.getCohorts() || []) {
       const runsInCohort = (store.getCourseRuns() || []).filter((r) =>
@@ -889,7 +902,9 @@ export class SchedulingTab extends LitElement {
                 <span class="course-name" title="${course.name}"
                   >${course.code}</span
                 >
-                <span class="participant-count">${item.totalParticipants} st</span>
+                <span class="participant-count"
+                  >${item.totalParticipants} st</span
+                >
               </div>
 
               <div class="summary-teacher-list">
@@ -899,14 +914,13 @@ export class SchedulingTab extends LitElement {
                       const isAssigned = assignedTeacherIds.includes(
                         teacher.teacher_id
                       );
-                      const availability = this._teacherAvailabilityForCourseInSlot(
-                        {
+                      const availability =
+                        this._teacherAvailabilityForCourseInSlot({
                           teacherId: teacher.teacher_id,
                           slot,
                           slotDate,
                           courseId: course.course_id,
-                        }
-                      );
+                        });
                       const baseClass = isAssigned
                         ? "assigned-course"
                         : "has-course";
@@ -922,14 +936,14 @@ export class SchedulingTab extends LitElement {
                           class="${rowClassName}"
                           title=${availability.titleText}
                         >
-	                          <button
-	                            class="summary-teacher-pill"
-	                            type="button"
-	                            ?disabled=${!this.isEditing}
-	                            aria-pressed=${isAssigned ? "true" : "false"}
-	                            @click=${() =>
-	                              this._toggleTeacherAssignment({
-	                                runs: item.runs,
+                          <button
+                            class="summary-teacher-pill"
+                            type="button"
+                            ?disabled=${!this.isEditing}
+                            aria-pressed=${isAssigned ? "true" : "false"}
+                            @click=${() =>
+                              this._toggleTeacherAssignment({
+                                runs: item.runs,
                                 teacherId: teacher.teacher_id,
                                 checked: !isAssigned,
                                 slotDate,
@@ -967,7 +981,9 @@ export class SchedulingTab extends LitElement {
           new Date(a.start_date) - new Date(b.start_date) ||
           Number(a.slot_id) - Number(b.slot_id)
       );
-    const indexById = new Map(ordered.map((s, idx) => [String(s.slot_id), idx]));
+    const indexById = new Map(
+      ordered.map((s, idx) => [String(s.slot_id), idx])
+    );
     const startIdx = indexById.get(String(run.slot_id));
     const targetIdx = indexById.get(String(slotId));
     if (!Number.isFinite(startIdx) || !Number.isFinite(targetIdx)) return false;
@@ -1021,12 +1037,12 @@ export class SchedulingTab extends LitElement {
       classNameSuffix === "course-unavailable"
         ? "Otillgänglig för kursens kursdagar"
         : classNameSuffix === "partial-conflict"
-          ? "Delvis otillgänglig för kursens kursdagar"
-          : classNameSuffix === "partial-availability"
-            ? "Otillgänglig i perioden (men inte på kursens kursdagar)"
-            : store.isTeacherUnavailable(teacherId, slotDate, slot.slot_id)
-              ? "Otillgänglig i perioden"
-              : "Tillgänglig";
+        ? "Delvis otillgänglig för kursens kursdagar"
+        : classNameSuffix === "partial-availability"
+        ? "Otillgänglig i perioden (men inte på kursens kursdagar)"
+        : store.isTeacherUnavailable(teacherId, slotDate, slot.slot_id)
+        ? "Otillgänglig i perioden"
+        : "Tillgänglig";
 
     return { classNameSuffix, titleText };
   }

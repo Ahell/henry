@@ -55,20 +55,20 @@ export class TeacherAvailabilityTab extends LitElement {
     const paintStatus = "";
 
     return html`
-	      <henry-panel>
-	        <div slot="header" class="panel-header">
-	          <div class="header-text">
-	            <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
-	          </div>
-	          <div class="header-actions">
-	            <henry-switch
-	              label="Redigera"
-	              .checked=${this.isPainting}
-	              @switch-change=${this._handleEditAvailabilityToggle}
-	            ></henry-switch>
-	            <div class="paint-status"></div>
-	          </div>
-	        </div>
+      <henry-panel>
+        <div slot="header" class="panel-header">
+          <div class="header-text">
+            <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
+          </div>
+          <div class="header-actions">
+            <henry-switch
+              label="Redigera"
+              .checked=${this.isPainting}
+              @switch-change=${this._handleEditAvailabilityToggle}
+            ></henry-switch>
+            <div class="paint-status"></div>
+          </div>
+        </div>
 
         <div class="layout-stack">
           <div class="legend-row">
@@ -187,12 +187,14 @@ export class TeacherAvailabilityTab extends LitElement {
     );
   }
 
-	  _handleEditAvailabilityToggle(e) {
-	    const next =
-	      typeof e?.detail?.checked === "boolean" ? !!e.detail.checked : !this.isPainting;
-	    this.isPainting = next;
-	    if (!next) this.paintMode = null;
-	  }
+  _handleEditAvailabilityToggle(e) {
+    const next =
+      typeof e?.detail?.checked === "boolean"
+        ? !!e.detail.checked
+        : !this.isPainting;
+    this.isPainting = next;
+    if (!next) this.paintMode = null;
+  }
 
   _handleAvailabilityChanged() {
     // Table component handles the store update, we just need to refresh
