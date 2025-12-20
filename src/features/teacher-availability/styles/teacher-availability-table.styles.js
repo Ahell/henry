@@ -381,6 +381,117 @@ export const teacherAvailabilityTableStyles = css`
     color: white;
   }
 
+  /* === Assigned course + availability warnings ===
+     Keep "assigned" (green) base and overlay colored stripes instead of
+     switching to a full red background. */
+
+  /* 1) Tilldelad + Otillgänglig (hela kursen): green + strong red stripes */
+  .teacher-cell.assigned-course.course-unavailable {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    ) !important;
+    box-shadow: var(--shadow-success);
+  }
+
+  .teacher-cell.assigned-course.course-unavailable::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.55) 0px,
+      rgba(239, 68, 68, 0.55) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  /* 2) Tilldelad + Krock (delvis): green + light red stripes */
+  .teacher-cell.assigned-course.partial-conflict {
+    background: linear-gradient(
+      135deg,
+      var(--color-success),
+      var(--color-success-hover)
+    ) !important;
+    box-shadow: var(--shadow-success);
+  }
+
+  .teacher-cell.assigned-course.partial-conflict::after {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.28) 0px,
+      rgba(239, 68, 68, 0.28) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  /* 3) Tilldelad + Info (utanför kursdagar): green + light blue stripes */
+  .teacher-cell.assigned-course.partial-availability::after {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.28) 0px,
+      rgba(59, 130, 246, 0.28) 8px,
+      rgba(59, 130, 246, 0) 8px,
+      rgba(59, 130, 246, 0) 16px
+    );
+    opacity: 0.9;
+  }
+
+  /* Course stack segments inside an assigned cell */
+  .teacher-cell.assigned-course .course-segment.course-unavailable {
+    background: transparent;
+  }
+
+  .teacher-cell.assigned-course .course-segment.course-unavailable::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.55) 0px,
+      rgba(239, 68, 68, 0.55) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  .teacher-cell.assigned-course .course-segment.partial-conflict {
+    background: transparent;
+    color: white;
+  }
+
+  .teacher-cell.assigned-course .course-segment.partial-conflict::after {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.28) 0px,
+      rgba(239, 68, 68, 0.28) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  .teacher-cell.assigned-course .course-segment.partial-availability::after {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.28) 0px,
+      rgba(59, 130, 246, 0.28) 8px,
+      rgba(59, 130, 246, 0) 8px,
+      rgba(59, 130, 246, 0) 16px
+    );
+    opacity: 0.9;
+  }
+
   .teacher-cell .course-segment.partial-conflict::after {
     content: "";
     position: absolute;
