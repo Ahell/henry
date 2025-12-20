@@ -7,7 +7,7 @@ export const schedulingTabStyles = css`
     display: block;
     --gantt-depot-width: 240px;
     --gantt-cohort-width: 96px;
-    --gantt-slot-width: 120px;
+    --gantt-slot-width: 170px;
     --gantt-row-height: 160px;
     --gantt-availability-row-height: 78px;
     --gantt-date-row-height: 32px;
@@ -268,26 +268,52 @@ export const schedulingTabStyles = css`
   .availability-chip {
     display: inline-flex;
     align-items: center;
-    flex: 0 0 calc((100% - var(--availability-chip-gap)) / 2);
-    width: calc((100% - var(--availability-chip-gap)) / 2);
-    padding: 2px 6px;
+    /* Aim for 3 chips per row in the slot header overlay */
+    flex: 0 0 calc((100% - (var(--availability-chip-gap) * 2)) / 3);
+    width: calc((100% - (var(--availability-chip-gap) * 2)) / 3);
+    padding: 2px 5px;
     border-radius: var(--radius-full);
     background: rgba(15, 23, 42, 0.18);
     color: #fff;
-    font-size: 0.6rem;
-    line-height: 1.1;
-    white-space: normal;
+    font-size: 0.56rem;
+    line-height: 1.05;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: keep-all;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: clip;
     justify-content: flex-start;
     box-sizing: border-box;
     position: relative;
     isolation: isolate;
   }
 
+  .availability-chip--fit-1 {
+    font-size: 0.52rem;
+  }
+
+  .availability-chip--fit-2 {
+    font-size: 0.48rem;
+  }
+
+  .availability-chip--fit-3 {
+    font-size: 0.44rem;
+  }
+
+  .availability-chip--fit-4 {
+    font-size: 0.4rem;
+  }
+
   .availability-chip-text {
     position: relative;
     z-index: 1;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: keep-all;
+    overflow: hidden;
+    text-overflow: clip;
+    display: block;
+    min-width: 0;
   }
 
   .availability-chip--available {
@@ -819,6 +845,11 @@ export const schedulingTabStyles = css`
     color: #fff;
     position: relative;
     z-index: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
+    word-break: keep-all;
   }
 
   .gantt-table tfoot .summary-course .summary-teacher-pill:focus-visible {

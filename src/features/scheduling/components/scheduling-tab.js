@@ -51,15 +51,49 @@ export class SchedulingTab extends LitElement {
 
   updated() {
     // Auto-scroll horizontally once per mount, after the table exists.
-    if (this._didAutoScroll) return;
-    const wrapper = this.shadowRoot?.querySelector(".gantt-scroll-wrapper");
-    if (!wrapper) return;
-    const slots = store.getSlots() || [];
-    if (slots.length === 0) return;
-    const left = this._getTodayScrollLeft(slots);
-    requestAnimationFrame(() => {
-      wrapper.scrollLeft = left;
-      this._didAutoScroll = true;
+    if (!this._didAutoScroll) {
+      const wrapper = this.shadowRoot?.querySelector(".gantt-scroll-wrapper");
+      const slots = store.getSlots() || [];
+      if (wrapper && slots.length) {
+        const left = this._getTodayScrollLeft(slots);
+        requestAnimationFrame(() => {
+          wrapper.scrollLeft = left;
+          this._didAutoScroll = true;
+        });
+      }
+    }
+
+    // Ensure teacher chips in slot header are readable without ellipsis by
+    // shrinking font-size until each chip fits its own width.
+    if (this._dragCourseId && this._shouldShowTeacherAvailabilityOverlay) {
+      requestAnimationFrame(() => this._fitAvailabilityHeaderChips());
+    }
+  }
+
+  _fitAvailabilityHeaderChips() {
+    const root = this.shadowRoot;
+    if (!root) return;
+
+    const chips = Array.from(root.querySelectorAll(".availability-chip"));
+    if (chips.length === 0) return;
+
+    const fitClasses = [
+      "availability-chip--fit-1",
+      "availability-chip--fit-2",
+      "availability-chip--fit-3",
+      "availability-chip--fit-4",
+    ];
+
+    chips.forEach((chip) => {
+      fitClasses.forEach((c) => chip.classList.remove(c));
+
+      const textEl = chip.querySelector(".availability-chip-text");
+      if (!textEl) return;
+
+      for (let i = 0; i < fitClasses.length; i += 1) {
+        if (textEl.scrollWidth <= textEl.clientWidth) break;
+        chip.classList.add(fitClasses[i]);
+      }
     });
   }
 
