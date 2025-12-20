@@ -10,8 +10,8 @@ export const teacherAvailabilityTabStyles = css`
   .panel-header {
     display: flex;
     justify-content: space-between;
-    gap: var(--space-6);
-    align-items: flex-start;
+    gap: var(--space-4);
+    align-items: center;
     flex-wrap: wrap;
   }
 
@@ -29,10 +29,11 @@ export const teacherAvailabilityTabStyles = css`
 
   .header-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: var(--space-2);
-    align-items: flex-end;
-    min-width: 240px;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
   }
 
   .paint-status {
