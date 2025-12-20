@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Henry Course Planner - Kursplanering för FEI</title>
+    <title>FEI Kursplanerare</title>
     <link rel="stylesheet" href="/src/styles/tokens.css" />
     <link rel="stylesheet" href="/src/styles/theme.css" />
     <style>
@@ -40,16 +40,17 @@
         max-width: 1800px;
         margin: 0 auto;
         display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: var(--space-4);
-      }
-
-      .header-top {
-        display: flex;
         align-items: center;
         justify-content: space-between;
         gap: var(--space-4);
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        min-width: 0;
       }
 
       .brand h1 {
@@ -78,6 +79,10 @@
         background: transparent;
         padding: 0;
         border: none;
+      }
+
+      nav.header-right {
+        justify-content: flex-end;
       }
 
       nav button {
@@ -149,7 +154,7 @@
       }
 
       .admin-tabs {
-        display: flex;
+        display: inline-flex;
         gap: 6px;
         flex-wrap: wrap;
         align-items: center;
@@ -241,32 +246,32 @@
   <body>
     <header>
       <div class="header-inner">
-        <div class="header-top">
+        <div class="header-left">
           <div class="brand">
-            <h1>Henry Course Planner</h1>
+            <h1>FEI Kursplanerare</h1>
           </div>
-          <nav>
-            <button
-              id="navLoadTestData"
-              class="nav-action nav-action--primary"
-              type="button"
-            >
-              Ladda Testdata
-            </button>
-            <button
-              id="navResetDatabase"
-              class="nav-action nav-action--danger"
-              type="button"
-            >
-              Återställ Databas
-            </button>
-            <button class="nav-btn active" data-section="admin">
-              Admin Grunddata
-            </button>
-            <span id="navStatus" class="nav-status"></span>
-          </nav>
+          <div id="adminTabs" class="admin-tabs" aria-label="Admin tabs"></div>
         </div>
-        <div id="adminTabs" class="admin-tabs" aria-label="Admin tabs"></div>
+        <nav class="header-right">
+          <button
+            id="navLoadTestData"
+            class="nav-action nav-action--primary"
+            type="button"
+          >
+            Ladda Testdata
+          </button>
+          <button
+            id="navResetDatabase"
+            class="nav-action nav-action--danger"
+            type="button"
+          >
+            Återställ Databas
+          </button>
+          <button class="nav-btn active" data-section="admin">
+            Admin Grunddata
+          </button>
+          <span id="navStatus" class="nav-status"></span>
+        </nav>
       </div>
     </header>
 
@@ -285,7 +290,7 @@
     </div>
 
     <footer>
-      <p>Henry Course Planner v1.0 | Byggd med Lit 3 | © 2025</p>
+      <p>FEI Kursplanerare v1.0 | Byggd med Lit 3 | © 2025</p>
     </footer>
 
     <script type="module" src="/src/main.js"></script>
