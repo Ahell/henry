@@ -66,6 +66,8 @@ export class SchedulingTab extends LitElement {
 
     const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
     const prerequisiteProblems = this._computeSchedulingPrerequisiteProblems();
+    const overlapWarnings = this._computeCohortSlotOverlapWarnings();
+    const headerWarnings = [...prerequisiteProblems, ...overlapWarnings];
 
     return html`
       <henry-panel>
@@ -74,7 +76,7 @@ export class SchedulingTab extends LitElement {
             <henry-text variant="heading-3">
               Gantt-vy: Planeringsöversikt
             </henry-text>
-            ${this._renderWarningPills(prerequisiteProblems)}
+            ${this._renderWarningPills(headerWarnings)}
           </div>
         </div>
         <p
@@ -161,11 +163,15 @@ export class SchedulingTab extends LitElement {
           const chainCount = problems.filter(
             (p) => p.type === "blocked_by_prerequisite_chain"
           ).length;
+          const hasOverlap = problems.some(
+            (p) => p.type === "multiple_courses_in_slot"
+          );
 
           const warningParts = [];
           if (missingCount > 0) warningParts.push(`${missingCount} saknar spärrkurs`);
           if (beforeCount > 0) warningParts.push("Kurs före spärrkurs");
           if (chainCount > 0) warningParts.push(`${chainCount} kedjeblockering`);
+          if (hasOverlap) warningParts.push("Flera kurser i samma period");
 
           return html`
             <div class="warning-pill">
@@ -529,6 +535,37 @@ export class SchedulingTab extends LitElement {
     }
 
     return problems;
+  }
+
+  _computeCohortSlotOverlapWarnings() {
+    const warnings = [];
+
+    for (const cohort of store.getCohorts() || []) {
+      const runsInCohort = (store.getCourseRuns() || []).filter((r) =>
+        this._runHasCohort(r, cohort.cohort_id)
+      );
+
+      const uniqueCoursesBySlotId = new Map();
+      for (const run of runsInCohort) {
+        if (run?.slot_id == null || run?.course_id == null) continue;
+        const courseIds = uniqueCoursesBySlotId.get(run.slot_id) || new Set();
+        courseIds.add(run.course_id);
+        uniqueCoursesBySlotId.set(run.slot_id, courseIds);
+      }
+
+      const hasOverlap = Array.from(uniqueCoursesBySlotId.values()).some(
+        (set) => set.size > 1
+      );
+      if (!hasOverlap) continue;
+
+      warnings.push({
+        type: "multiple_courses_in_slot",
+        cohortId: cohort.cohort_id,
+        cohortName: cohort.name,
+      });
+    }
+
+    return warnings;
   }
 
   _parseDateOnly(dateStr) {
