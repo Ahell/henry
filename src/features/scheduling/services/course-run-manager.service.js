@@ -673,19 +673,47 @@ export class CourseRunManager {
       ? schedulingLogic.rules
       : null;
 
-    const hardRuleEnabled = (ruleId) =>
-      rulesList
-        ? rulesList.some(
-            (r) =>
-              r?.id === ruleId &&
-              String(r?.kind || "").toLowerCase() === "hard" &&
-              r?.enabled !== false
-          )
-        : Array.isArray(schedulingLogic.hardRules)
-          ? schedulingLogic.hardRules.some(
-              (r) => r?.id === ruleId && r?.enabled !== false
-            )
-          : false;
+    const ruleMetaById = (() => {
+      const m = new Map();
+      if (rulesList) {
+        rulesList.forEach((r, idx) => {
+          const id = r?.id;
+          if (!id) return;
+          m.set(String(id), {
+            enabled: r?.enabled !== false,
+            kind: String(r?.kind || "soft").toLowerCase() === "hard" ? "hard" : "soft",
+            index: idx,
+          });
+        });
+      } else {
+        // Backwards compat (older payload structure)
+        (Array.isArray(schedulingLogic.hardRules) ? schedulingLogic.hardRules : []).forEach(
+          (r, idx) => {
+            const id = r?.id;
+            if (!id) return;
+            m.set(String(id), { enabled: r?.enabled !== false, kind: "hard", index: idx });
+          }
+        );
+        (Array.isArray(schedulingLogic.softRules) ? schedulingLogic.softRules : []).forEach(
+          (r, idx) => {
+            const id = r?.id;
+            if (!id || m.has(String(id))) return;
+            m.set(String(id), { enabled: r?.enabled !== false, kind: "soft", index: 10_000 + idx });
+          }
+        );
+      }
+      return m;
+    })();
+
+    const isRuleEnabled = (ruleId) => {
+      const meta = ruleMetaById.get(String(ruleId));
+      return meta ? meta.enabled !== false : false;
+    };
+
+    const isRuleHard = (ruleId) => {
+      const meta = ruleMetaById.get(String(ruleId));
+      return meta ? meta.kind === "hard" && meta.enabled !== false : false;
+    };
 
     const configuredMaxHard = Number(schedulingParams.maxStudentsHard);
     const configuredMaxPreferred = Number(schedulingParams.maxStudentsPreferred);
@@ -704,40 +732,55 @@ export class CourseRunManager {
           : 100;
 
     const dontMovePlacedCoursesEnabled = (() => {
-      if (rulesList) {
-        return rulesList.some(
-          (r) => r?.id === "dontMovePlacedCourses" && r?.enabled !== false
-        );
-      }
-      // Backwards-compat: if this rule doesn't exist, keep previous default behavior
-      // where auto-fill generally avoids rewriting by default via future-only replanning.
-      return true;
+      // "Dont move placed courses" must be hard to act as a constraint.
+      // If it's soft, it should not override any enabled hard constraints.
+      return isRuleHard("dontMovePlacedCourses");
     })();
 
-    const defaultSoftRuleOrder = [
+    // Rule precedence:
+    // - Any enabled HARD rule must outrank any enabled SOFT rule (even if the
+    //   user ordered the soft rule above in the UI).
+    // - Within each kind, preserve the UI order.
+    const defaultRuleOrder = [
+      "requireAvailableCompatibleTeachers",
       "economyColocationPacking",
       "futureJoinCapacity",
       "avoidEmptySlots",
       "avoidOverPreferred",
     ];
-    const hasSoftRulesConfig = rulesList
-      ? true
-      : Array.isArray(schedulingLogic.softRules);
-    const softRuleOrder = rulesList
-      ? rulesList
-          .filter(
-            (r) =>
-              String(r?.kind || "").toLowerCase() !== "hard" &&
-              r?.enabled !== false
-          )
-          .map((r) => r?.id)
-          .filter(Boolean)
-      : Array.isArray(schedulingLogic.softRules)
-        ? schedulingLogic.softRules
-            .filter((r) => r?.enabled !== false)
-            .map((r) => r?.id)
-            .filter(Boolean)
-        : defaultSoftRuleOrder;
+    const metricSupported = new Set([
+      "economyColocationPacking",
+      "requireAvailableCompatibleTeachers",
+      "futureJoinCapacity",
+      "avoidEmptySlots",
+      "avoidOverPreferred",
+    ]);
+    const ruleOrder = (() => {
+      if (rulesList) {
+        const enriched = rulesList
+          .map((r, idx) => ({
+            id: r?.id,
+            enabled: r?.enabled !== false,
+            kind:
+              String(r?.kind || "soft").toLowerCase() === "hard" ? "hard" : "soft",
+            index: idx,
+          }))
+          .filter((r) => r.id && r.enabled && metricSupported.has(String(r.id)));
+
+        // Hard before soft, regardless of index. Preserve relative order within each group.
+        enriched.sort((a, b) => {
+          const aw = a.kind === "hard" ? 0 : 1;
+          const bw = b.kind === "hard" ? 0 : 1;
+          if (aw !== bw) return aw - bw;
+          return a.index - b.index;
+        });
+
+        return enriched.map((r) => String(r.id));
+      }
+
+      // Legacy payload: keep original default order.
+      return defaultRuleOrder.filter((id) => metricSupported.has(id));
+    })();
 
     const cohortId = Number(targetCohortId);
     if (!Number.isFinite(cohortId)) return { mutationId: null };
@@ -950,7 +993,7 @@ export class CourseRunManager {
       const span = spanById.get(courseId) || 1;
       if (slotIdx + span - 1 >= slotDates.length) return false;
 
-      if (hardRuleEnabled("requireAvailableCompatibleTeachers")) {
+      if (isRuleHard("requireAvailableCompatibleTeachers")) {
         const base = getAvailableCompatibleTeachersForCourseInSlot(
           courseId,
           slotDates[slotIdx]
@@ -1000,6 +1043,17 @@ export class CourseRunManager {
         const idx = slotIdx + i;
         const cur = totalsBySlotIdx.get(idx)?.get(courseId) || 0;
         if (cur + cohortSize > effectiveMaxStudentsHard) return false;
+      }
+      return true;
+    };
+
+    const fitsPreferredAt = (courseId, slotIdx) => {
+      const cohortSize = Number(cohort.planned_size) || 0;
+      const span = spanById.get(courseId) || 1;
+      for (let i = 0; i < span; i += 1) {
+        const idx = slotIdx + i;
+        const cur = totalsBySlotIdx.get(idx)?.get(courseId) || 0;
+        if (cur + cohortSize > effectiveMaxStudentsPreferred) return false;
       }
       return true;
     };
@@ -1177,12 +1231,15 @@ export class CourseRunManager {
         if (remainingCourseIds.size === 0) break;
         if (occupiedSlotIdxForTarget.has(slotIdx)) continue;
 
+        const mustRespectPreferred = isRuleHard("avoidOverPreferred");
         const eligible = Array.from(remainingCourseIds).filter(
-          (cid) => canPlaceCourseAt(cid, slotIdx) && fitsCapacityAt(cid, slotIdx)
+          (cid) =>
+            canPlaceCourseAt(cid, slotIdx) &&
+            fitsCapacityAt(cid, slotIdx) &&
+            (!mustRespectPreferred || fitsPreferredAt(cid, slotIdx))
         );
         if (eligible.length === 0) continue;
 
-        const ruleOrder = hasSoftRulesConfig ? softRuleOrder : defaultSoftRuleOrder;
         const packEconomyTowardPreferred = (() => {
           const economyIdx = ruleOrder.indexOf("economyColocationPacking");
           const avoidPreferredIdx = ruleOrder.indexOf("avoidOverPreferred");
