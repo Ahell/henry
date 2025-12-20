@@ -301,6 +301,9 @@ export class SchedulingTab extends LitElement {
               data-slot-date="${dateStr}"
               data-cohort-id="${cohort.cohort_id}"
               data-disabled="${isBeforeCohortStart}"
+              @dragover="${this._handleSlotCellDragOver}"
+              @dragleave="${this._handleSlotCellDragLeave}"
+              @drop="${this._handleSlotCellDrop}"
             >
               <gantt-cell
                 .slotDate="${dateStr}"
@@ -317,6 +320,63 @@ export class SchedulingTab extends LitElement {
         })}
       </tr>
     `;
+  }
+
+  _parseDragDataFromEvent(e) {
+    try {
+      const raw = e?.dataTransfer?.getData("text/plain");
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  _handleSlotCellDragOver(e) {
+    const td = e.currentTarget;
+    if (!td || td.dataset.disabled === "true") {
+      if (e?.dataTransfer) e.dataTransfer.dropEffect = "none";
+      return;
+    }
+
+    // Allow dropping anywhere inside the td (not just over the inner content).
+    e.preventDefault();
+
+    this._dragDropManager.handleCellDragOver({
+      detail: {
+        slotDate: td.dataset.slotDate,
+        cohortId: Number(td.dataset.cohortId),
+        cell: td,
+      },
+    });
+  }
+
+  _handleSlotCellDragLeave(e) {
+    const td = e.currentTarget;
+    if (!td) return;
+    this._dragDropManager.handleCellDragLeave({
+      detail: { cell: td },
+    });
+  }
+
+  async _handleSlotCellDrop(e) {
+    const td = e.currentTarget;
+    if (!td || td.dataset.disabled === "true") return;
+
+    e.preventDefault();
+
+    const data = this._parseDragDataFromEvent(e);
+    if (!data) return;
+
+    // Reuse the same drop logic & cleanup (including overlay clearing).
+    await this._handleCellDrop({
+      detail: {
+        data,
+        slotDate: td.dataset.slotDate,
+        cohortId: Number(td.dataset.cohortId),
+        cell: td,
+      },
+    });
   }
 
   /**

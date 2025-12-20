@@ -35,12 +35,7 @@ export class GanttCell extends LitElement {
 
   render() {
     return html`
-      <div
-        class="cell-content"
-        @dragover="${this._handleDragOver}"
-        @dragleave="${this._handleDragLeave}"
-        @drop="${this._handleDrop}"
-      >
+      <div class="cell-content">
         ${this.isCohortStartSlot
           ? html`<span class="cohort-start-marker"
               >Start ${this.cohortStartDate}</span
@@ -68,69 +63,6 @@ export class GanttCell extends LitElement {
         )}
       </div>
     `;
-  }
-
-  _handleDragOver(e) {
-    if (this.isBeforeCohortStart) {
-      e.dataTransfer.dropEffect = "none";
-      return;
-    }
-
-    e.preventDefault();
-
-    // Dispatch event to parent for validation
-    this.dispatchEvent(
-      new CustomEvent("cell-drag-over", {
-        detail: {
-          slotDate: this.slotDate,
-          cohortId: this.cohortId,
-          cell: this,
-        },
-        bubbles: true,
-        composed: true,
-      })
-    );
-  }
-
-  _handleDragLeave(e) {
-    this.dispatchEvent(
-      new CustomEvent("cell-drag-leave", {
-        detail: { cell: this },
-        bubbles: true,
-        composed: true,
-      })
-    );
-  }
-
-  _handleDrop(e) {
-    if (this.isBeforeCohortStart) {
-      return;
-    }
-
-    e.preventDefault();
-
-    let data;
-    try {
-      const rawData = e.dataTransfer.getData("text/plain");
-      data = JSON.parse(rawData);
-    } catch (err) {
-      console.error("Error parsing drag data:", err);
-      return;
-    }
-
-    // Dispatch event to parent to handle the drop
-    this.dispatchEvent(
-      new CustomEvent("cell-drop", {
-        detail: {
-          data,
-          slotDate: this.slotDate,
-          cohortId: this.cohortId,
-          cell: this,
-        },
-        bubbles: true,
-        composed: true,
-      })
-    );
   }
 }
 
