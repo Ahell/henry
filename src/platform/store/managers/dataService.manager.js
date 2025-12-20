@@ -14,6 +14,7 @@ export class DataServiceManager {
 
   hydrate(data) {
     // Load data from backend
+    this.store.businessLogicManager.load(data.businessLogic);
     this.store.coursesManager.load(data.courses, data.coursePrerequisites);
     this.store.teachersManager.load(data.teachers, data.teacherCourses);
     this.store.examDatesManager.load(data.examDates || []);
@@ -164,6 +165,7 @@ export class DataServiceManager {
       courseSlots: cohortSlotCourses,
       slotDays: this.store.slotDays,
       courseSlotDays: this.store.courseSlotDays,
+      businessLogic: this.store.businessLogicManager.getBusinessLogic(),
     };
   }
 
@@ -179,6 +181,7 @@ export class DataServiceManager {
     this.store.examDatesManager.load([]); // Clear examDates
     this.store.teachingDaysManager.loadSlotDays([]); // Clear slotDays
     this.store.teachingDaysManager.loadCourseSlotDays([]); // Clear courseSlotDays
+    this.store.businessLogicManager.load(data.businessLogic);
 
     if (data.courses) {
       this.store.coursesManager.load(
@@ -246,6 +249,7 @@ export class DataServiceManager {
       courseSlots: this.store.courseRunsManager.courseSlots,
       slotDays: this.store.slotDays,
       courseSlotDays: this.store.courseSlotDays,
+      businessLogic: this.store.businessLogicManager.getBusinessLogic(),
     };
   }
 

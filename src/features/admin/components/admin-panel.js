@@ -4,6 +4,7 @@ import { store } from "../../../platform/store/DataStore.js";
 import "../../../components/ui/index.js";
 import "../../teacher-availability/index.js";
 import "../../scheduling/index.js";
+import "../../business-logic/index.js";
 import "../../courses/components/courses-tab.js";
 import "../../teachers/components/teachers-tab.js";
 import "../../cohorts/components/cohorts-tab.js";
@@ -56,6 +57,11 @@ export class AdminPanel extends LitElement {
         key: "scheduling",
         label: "Schemaläggning",
         component: html`<scheduling-tab></scheduling-tab>`,
+      },
+      {
+        key: "businessLogic",
+        label: "Affärslogik",
+        component: html`<business-logic-tab></business-logic-tab>`,
       },
     ];
     store.subscribe(() => this.requestUpdate());

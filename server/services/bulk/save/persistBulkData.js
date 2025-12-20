@@ -12,6 +12,7 @@ import { insertTeacherAvailability } from "./db/insertTeacherAvailability.js";
 import { insertCourseSlots } from "./db/insertCourseSlots.js";
 import { insertCourseSlotDays } from "./db/insertCourseSlotDays.js";
 import { insertCourseRunSlots } from "./db/insertCourseRunSlots.js";
+import { upsertAppSetting } from "./db/upsertAppSetting.js";
 
 export async function persistBulkData(payload = {}) {
   const normalized = normalizeBulkPayload(payload);
@@ -52,6 +53,10 @@ export async function persistBulkData(payload = {}) {
       normalized.remapCourseSlotId
     );
     insertCourseRunSlots(normalized.courseRunSlotsRows);
+
+    if (payload.businessLogic != null) {
+      upsertAppSetting("business_logic", JSON.stringify(payload.businessLogic));
+    }
   });
 
   tx();

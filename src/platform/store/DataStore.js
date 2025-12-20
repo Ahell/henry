@@ -9,6 +9,7 @@ import { SlotsManager } from "./managers/slots.manager.js";
 import { AvailabilityManager } from "./managers/availability.manager.js";
 import { ExamDatesManager } from "./managers/examDates.manager.js";
 import { TeachingDaysManager } from "./managers/teachingDays.manager.js";
+import { BusinessLogicManager } from "./managers/businessLogic.manager.js";
 
 import { showAlert } from "../../utils/ui.js";
 
@@ -47,6 +48,7 @@ export class DataStore {
       this.events,
       this.coursesManager
     );
+    this.businessLogicManager = new BusinessLogicManager(this.events);
     this.courseRunsManager = new CourseRunsManager(this.events);
     this.slotsManager = new SlotsManager(this.events, this.courseRunsManager);
     this.cohortsManager = new CohortsManager(

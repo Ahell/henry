@@ -590,8 +590,39 @@ export class CourseRunManager {
    */
   static async autoFillCohortSchedule(
     targetCohortId,
-    { maxStudentsHard = 130, maxStudentsPreferred = 100 } = {}
+    { maxStudentsHard, maxStudentsPreferred } = {}
   ) {
+    const businessLogic = store.businessLogicManager?.getBusinessLogic?.();
+    const schedulingLogic = businessLogic?.scheduling || {};
+    const schedulingParams = schedulingLogic?.params || {};
+
+    const configuredMaxHard = Number(schedulingParams.maxStudentsHard);
+    const configuredMaxPreferred = Number(schedulingParams.maxStudentsPreferred);
+    const futureOnlyReplanEnabled =
+      typeof schedulingParams.futureOnlyReplan === "boolean"
+        ? schedulingParams.futureOnlyReplan
+        : true;
+
+    const effectiveMaxStudentsHard =
+      maxStudentsHard != null && Number.isFinite(Number(maxStudentsHard))
+        ? Number(maxStudentsHard)
+        : Number.isFinite(configuredMaxHard)
+          ? configuredMaxHard
+          : 130;
+    const effectiveMaxStudentsPreferred =
+      maxStudentsPreferred != null && Number.isFinite(Number(maxStudentsPreferred))
+        ? Number(maxStudentsPreferred)
+      : Number.isFinite(configuredMaxPreferred)
+          ? configuredMaxPreferred
+          : 100;
+
+    const softRuleOrder = Array.isArray(schedulingLogic.softRules)
+      ? schedulingLogic.softRules
+          .filter((r) => r?.enabled !== false)
+          .map((r) => r?.id)
+          .filter(Boolean)
+      : [];
+
     const cohortId = Number(targetCohortId);
     if (!Number.isFinite(cohortId)) return { mutationId: null };
 
@@ -659,9 +690,11 @@ export class CourseRunManager {
       });
       return idx === -1 ? slotDates.length : idx;
     })();
-    const planningStartIdx = cohortHasAnyScheduledCourse
-      ? Math.max(startSlotIdx, firstSlotAfterTodayIdx)
-      : startSlotIdx;
+    const planningStartIdx = (() => {
+      if (!futureOnlyReplanEnabled) return startSlotIdx;
+      if (!cohortHasAnyScheduledCourse) return startSlotIdx;
+      return Math.max(startSlotIdx, firstSlotAfterTodayIdx);
+    })();
 
     const courses = store.getCourses() || [];
     const courseById = new Map(courses.map((c) => [Number(c.course_id), c]));
@@ -696,6 +729,14 @@ export class CourseRunManager {
 
     const shouldRemoveFromTargetAfterToday = (run) => {
       if (!cohortHasAnyScheduledCourse) return false;
+      if (!futureOnlyReplanEnabled) {
+        const cohortsInRun = Array.isArray(run?.cohorts) ? run.cohorts : [];
+        if (!cohortsInRun.some((id) => String(id) === String(cohortId))) {
+          return false;
+        }
+        const runStartIdx = runStartIdxFor(run);
+        return Number.isFinite(runStartIdx) && runStartIdx >= startSlotIdx;
+      }
       const cohortsInRun = Array.isArray(run?.cohorts) ? run.cohorts : [];
       if (!cohortsInRun.some((id) => String(id) === String(cohortId))) return false;
       const runStartIdx = runStartIdxFor(run);
@@ -847,7 +888,7 @@ export class CourseRunManager {
       for (let i = 0; i < span; i += 1) {
         const idx = slotIdx + i;
         const cur = totalsBySlotIdx.get(idx)?.get(courseId) || 0;
-        if (cur + cohortSize > maxStudentsHard) return false;
+        if (cur + cohortSize > effectiveMaxStudentsHard) return false;
       }
       return true;
     };
@@ -898,26 +939,6 @@ export class CourseRunManager {
         sum += size;
       }
       return sum;
-    };
-
-    const scoreCourse = (courseId, slotIdx) => {
-      // Align to courses that *start* in this slot (not continuations of 15hp spans).
-      const alignedStudents = startsTotalsBySlotIdx.get(slotIdx)?.get(courseId) || 0;
-      const projected = projectedMaxTotal(courseId, slotIdx);
-      const overPreferred = Math.max(0, projectedMaxTotal(courseId, slotIdx) - maxStudentsPreferred);
-
-      let score = 0;
-      // Economy first: strongly prefer aligning with courses already starting in this slot.
-      score += alignedStudents > 0 ? 100000 + alignedStudents * 10 : 0;
-      // Prefer packing runs closer to the hard cap (fewer separate runs overall).
-      score += projected * 2;
-      // Forward-looking: leave room for upcoming cohorts (that have started by this slot)
-      // to also align in this same run later.
-      const remainingCapacity = maxStudentsHard - projected;
-      score += potentialFutureJoinStudents(slotIdx, remainingCapacity) * 5;
-      // Soft: avoid exceeding preferred threshold when possible.
-      score -= overPreferred * 5;
-      return score;
     };
 
     const teachersToAssignForCourseInSlot = (courseId, slotId) => {
@@ -1043,7 +1064,54 @@ export class CourseRunManager {
         );
         if (eligible.length === 0) continue;
 
-        eligible.sort((a, b) => scoreCourse(b, slotIdx) - scoreCourse(a, slotIdx));
+        const ruleOrder =
+          softRuleOrder.length > 0
+            ? softRuleOrder
+            : [
+                "maximizeColocation",
+                "packTowardHardCap",
+                "futureJoinCapacity",
+                "avoidOverPreferred",
+              ];
+
+        const metric = (ruleId, courseId) => {
+          if (ruleId === "maximizeColocation") {
+            return startsTotalsBySlotIdx.get(slotIdx)?.get(courseId) || 0;
+          }
+          if (ruleId === "packTowardHardCap") {
+            return projectedMaxTotal(courseId, slotIdx) || 0;
+          }
+          if (ruleId === "futureJoinCapacity") {
+            const projected = projectedMaxTotal(courseId, slotIdx) || 0;
+            const remainingCapacity = effectiveMaxStudentsHard - projected;
+            return potentialFutureJoinStudents(slotIdx, remainingCapacity) || 0;
+          }
+          if (ruleId === "avoidOverPreferred") {
+            return Math.max(
+              0,
+              projectedMaxTotal(courseId, slotIdx) -
+                effectiveMaxStudentsPreferred
+            );
+          }
+          return 0;
+        };
+
+        const compareCourseIds = (a, b) => {
+          for (const ruleId of ruleOrder) {
+            const va = metric(ruleId, a);
+            const vb = metric(ruleId, b);
+            if (va === vb) continue;
+
+            // All but avoidOverPreferred are "maximize".
+            if (ruleId === "avoidOverPreferred") {
+              return va - vb;
+            }
+            return vb - va;
+          }
+          return Number(a) - Number(b);
+        };
+
+        eligible.sort(compareCourseIds);
         const chosen = eligible[0];
         placeCourse(chosen, slotIdx);
       }

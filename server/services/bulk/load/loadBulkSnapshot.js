@@ -5,6 +5,7 @@ import {
   getCourseRunSlots,
   getCourseSlotDays,
   getCourses,
+  getAppSetting,
   getSlotDays,
   getSlots,
   getTeacherCourses,
@@ -25,6 +26,7 @@ export function loadBulkSnapshot() {
     slotDays: aux.slotDays,
     teacherDayUnavailability: aux.teacherDayUnavailability,
   });
+  const businessLogic = loadBusinessLogic();
 
   logBulkLoadStats({
     ...base,
@@ -37,6 +39,7 @@ export function loadBulkSnapshot() {
     ...scheduling,
     ...availability,
     ...aux,
+    ...businessLogic,
   });
 }
 
@@ -82,6 +85,17 @@ function loadAuxTables(courses) {
   };
 }
 
+function loadBusinessLogic() {
+  const raw = getAppSetting("business_logic");
+  if (!raw) return { businessLogic: null };
+  try {
+    return { businessLogic: JSON.parse(raw) };
+  } catch (error) {
+    console.warn("Failed to parse business_logic setting:", error);
+    return { businessLogic: null };
+  }
+}
+
 function logBulkLoadStats({ courses, cohorts, teachers, slots, courseRuns, courseRunSlots, teacherAvailability }) {
   console.log("Bulk load successful:", {
     courses: courses.length,
@@ -110,5 +124,6 @@ function buildSnapshot(data) {
     teacherDayUnavailability: data.teacherDayUnavailability,
     courseSlotDays: data.courseSlotDays,
     coursePrerequisites: data.coursePrerequisites,
+    businessLogic: data.businessLogic,
   };
 }

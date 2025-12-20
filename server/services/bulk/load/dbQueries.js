@@ -18,3 +18,7 @@ export const getTeacherDayUnavailability = () =>
   all("SELECT * FROM teacher_day_unavailability");
 export const getCoursePrerequisites = () =>
   all("SELECT * FROM course_prerequisites");
+
+export const getAppSetting = (key) =>
+  db.prepare("SELECT value FROM app_settings WHERE key = ?").get(key)?.value ??
+  null;

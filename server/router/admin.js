@@ -23,6 +23,7 @@ const clearAllTables = () => {
     db.prepare("DELETE FROM cohorts").run();
     db.prepare("DELETE FROM teachers").run();
     db.prepare("DELETE FROM courses").run();
+    db.prepare("DELETE FROM app_settings").run();
   })();
 };
 
