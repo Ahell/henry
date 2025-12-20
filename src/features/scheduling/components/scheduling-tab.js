@@ -195,7 +195,7 @@ export class SchedulingTab extends LitElement {
     const availableTeachers =
       this._availableTeachersBySlotDate?.get(slotDate) || [];
 
-    if (!this._dragCourseId) {
+    if (!this._dragCourseId || !this._shouldShowTeacherAvailabilityOverlay) {
       return html`<div class="slot-availability-row" aria-hidden="true"></div>`;
     }
 
@@ -993,6 +993,7 @@ export class SchedulingTab extends LitElement {
   _clearAvailableTeachersOverlays() {
     this._dragCourseId = null;
     this._availableTeachersBySlotDate = new Map();
+    this._shouldShowTeacherAvailabilityOverlay = false;
     this._applyColumnTeacherShortageClasses(new Map());
     this.requestUpdate();
   }
@@ -1008,6 +1009,13 @@ export class SchedulingTab extends LitElement {
     slotDates.forEach((slotDate) => {
       map.set(slotDate, this._computeAvailableTeachers(courseId, slotDate));
     });
+
+    const compatibleCount = getCompatibleTeachersForCourse(courseId).length;
+    const hasAnyAvailable = Array.from(map.values()).some(
+      (teachers) => Array.isArray(teachers) && teachers.length > 0
+    );
+    this._shouldShowTeacherAvailabilityOverlay =
+      compatibleCount > 0 && hasAnyAvailable;
 
     this._availableTeachersBySlotDate = map;
     this._applyColumnTeacherShortageClasses(map);
@@ -1044,7 +1052,9 @@ export class SchedulingTab extends LitElement {
       .querySelectorAll(".gantt-table td.slot-cell.no-teachers-available")
       .forEach((td) => td.classList.remove("no-teachers-available"));
 
-    if (!this._dragCourseId) return;
+    if (!this._dragCourseId || !this._shouldShowTeacherAvailabilityOverlay) {
+      return;
+    }
 
     for (const [slotDate, teachers] of availableTeachersBySlotDate.entries()) {
       if (Array.isArray(teachers) && teachers.length > 0) continue;
