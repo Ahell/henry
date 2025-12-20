@@ -589,6 +589,30 @@ export class CourseRunManager {
       return idx === -1 ? slotDates.length : idx;
     })();
 
+    const cohortHasAnyScheduledCourse = (CourseRunManager._runs() || []).some(
+      (r) =>
+        Array.isArray(r?.cohorts) &&
+        r.cohorts.some((id) => String(id) === String(cohortId))
+    );
+
+    // We are only allowed to change course placement in slots AFTER today's date.
+    // Auto-fill will therefore keep any existing placements up to and including
+    // today, and only (re)plan from the first slot whose start_date is > today.
+    const today = (() => {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    })();
+    const firstSlotAfterTodayIdx = (() => {
+      const idx = slotDates.findIndex((d) => {
+        const sd = parseDateOnly(d);
+        return sd ? sd > today : false;
+      });
+      return idx === -1 ? slotDates.length : idx;
+    })();
+    const planningStartIdx = cohortHasAnyScheduledCourse
+      ? Math.max(startSlotIdx, firstSlotAfterTodayIdx)
+      : startSlotIdx;
+
     const courses = store.getCourses() || [];
     const courseById = new Map(courses.map((c) => [Number(c.course_id), c]));
     const prereqsById = new Map(
@@ -607,6 +631,26 @@ export class CourseRunManager {
     const cohortSizeById = new Map(
       cohorts.map((c) => [String(c.cohort_id), Number(c.planned_size) || 0])
     );
+
+    const runStartIdxFor = (run) => {
+      if (!run) return null;
+      if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+        const idxs = run.slot_ids
+          .map((sid) => slotIndexById.get(String(sid)))
+          .filter((v) => Number.isFinite(v));
+        if (idxs.length > 0) return Math.min(...idxs);
+      }
+      const startIdx = slotIndexById.get(String(run.slot_id));
+      return Number.isFinite(startIdx) ? startIdx : null;
+    };
+
+    const shouldRemoveFromTargetAfterToday = (run) => {
+      if (!cohortHasAnyScheduledCourse) return false;
+      const cohortsInRun = Array.isArray(run?.cohorts) ? run.cohorts : [];
+      if (!cohortsInRun.some((id) => String(id) === String(cohortId))) return false;
+      const runStartIdx = runStartIdxFor(run);
+      return Number.isFinite(runStartIdx) && runStartIdx >= planningStartIdx;
+    };
 
     const totalsBySlotIdx = new Map(); // slotIdx -> Map(courseId -> totalStudents)
     const startsTotalsBySlotIdx = new Map(); // startSlotIdx -> Map(courseId -> totalStudents)
@@ -637,26 +681,24 @@ export class CourseRunManager {
       return idxs.filter((i) => i >= 0 && i < slotDates.length);
     };
 
-    const startSlotIdxForRun = (run) => {
-      if (!run) return null;
-      if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
-        const idxs = run.slot_ids
-          .map((sid) => slotIndexById.get(String(sid)))
-          .filter((v) => Number.isFinite(v));
-        if (idxs.length > 0) return Math.min(...idxs);
-      }
-      const startIdx = slotIndexById.get(String(run.slot_id));
-      return Number.isFinite(startIdx) ? startIdx : null;
-    };
-
     for (const run of CourseRunManager._runs() || []) {
       const courseId = Number(run.course_id);
       if (!courseById.has(courseId)) continue;
 
+      // Simulate "future-only" replanning for this cohort:
+      // If this run would be removed (because it starts after today), it should
+      // not affect totals/scoring/occupied slots.
+      const cohortsInRunRaw = Array.isArray(run.cohorts) ? run.cohorts : [];
+      const willRemoveTarget = shouldRemoveFromTargetAfterToday(run);
+      const cohortsInRun = willRemoveTarget
+        ? cohortsInRunRaw.filter((id) => String(id) !== String(cohortId))
+        : cohortsInRunRaw;
+      if (cohortsInRun.length === 0) continue;
+
       const slotIdxs = coveredSlotIdxsForRun(run);
       if (slotIdxs.length === 0) continue;
 
-      const runStartIdx = startSlotIdxForRun(run);
+      const runStartIdx = runStartIdxFor(run);
       if (Number.isFinite(runStartIdx)) {
         slotIdxs.forEach((idx) => {
           if (idx === runStartIdx) return;
@@ -667,7 +709,6 @@ export class CourseRunManager {
         });
       }
 
-      const cohortsInRun = Array.isArray(run.cohorts) ? run.cohorts : [];
       for (const cid of cohortsInRun) {
         if (cid == null) continue;
         const size = cohortSizeById.get(String(cid)) || 0;
@@ -746,14 +787,57 @@ export class CourseRunManager {
       return max;
     };
 
+    // Forward-looking economy scoring:
+    // Prefer choices that still leave capacity for upcoming cohorts to align
+    // with the same (course, slot start) later.
+    const futureCohortMeta = (cohorts || [])
+      .filter((c) => Number(c?.cohort_id) > Number(cohortId))
+      .map((c) => ({
+        size: Number(c?.planned_size) || 0,
+        start: parseDateOnly(c?.start_date),
+      }))
+      .filter((c) => Number.isFinite(c.size) && c.size > 0 && c.start);
+
+    const futureSizesBySlotIdx = new Map();
+    slotDates.forEach((d, idx) => {
+      const sd = parseDateOnly(d);
+      if (!sd) {
+        futureSizesBySlotIdx.set(idx, []);
+        return;
+      }
+      const sizes = futureCohortMeta
+        .filter((c) => c.start <= sd)
+        .map((c) => c.size)
+        .sort((a, b) => a - b);
+      futureSizesBySlotIdx.set(idx, sizes);
+    });
+
+    const potentialFutureJoinStudents = (slotIdx, remainingCapacity) => {
+      if (!Number.isFinite(remainingCapacity) || remainingCapacity <= 0) return 0;
+      const sizes = futureSizesBySlotIdx.get(slotIdx) || [];
+      let sum = 0;
+      for (const size of sizes) {
+        if (sum + size > remainingCapacity) break;
+        sum += size;
+      }
+      return sum;
+    };
+
     const scoreCourse = (courseId, slotIdx) => {
       // Align to courses that *start* in this slot (not continuations of 15hp spans).
       const alignedStudents = startsTotalsBySlotIdx.get(slotIdx)?.get(courseId) || 0;
+      const projected = projectedMaxTotal(courseId, slotIdx);
       const overPreferred = Math.max(0, projectedMaxTotal(courseId, slotIdx) - maxStudentsPreferred);
 
       let score = 0;
       // Economy first: strongly prefer aligning with courses already starting in this slot.
       score += alignedStudents > 0 ? 100000 + alignedStudents * 10 : 0;
+      // Prefer packing runs closer to the hard cap (fewer separate runs overall).
+      score += projected * 2;
+      // Forward-looking: leave room for upcoming cohorts (that have started by this slot)
+      // to also align in this same run later.
+      const remainingCapacity = maxStudentsHard - projected;
+      score += potentialFutureJoinStudents(slotIdx, remainingCapacity) * 5;
       // Soft: avoid exceeding preferred threshold when possible.
       score -= overPreferred * 5;
       return score;
@@ -824,8 +908,56 @@ export class CourseRunManager {
     });
 
     try {
+      // Step 0: Remove this cohort's runs that start after today (future-only replanning).
+      if (cohortHasAnyScheduledCourse && planningStartIdx < slotDates.length) {
+        const runs = CourseRunManager._runs();
+        let didChange = false;
+
+        for (let idx = runs.length - 1; idx >= 0; idx -= 1) {
+          const run = runs[idx];
+          if (!shouldRemoveFromTargetAfterToday(run)) continue;
+
+          const cohortsInRun = Array.isArray(run?.cohorts) ? run.cohorts : [];
+          const nextCohorts = cohortsInRun.filter(
+            (id) => String(id) !== String(cohortId)
+          );
+          run.cohorts = nextCohorts;
+          didChange = true;
+
+          if (nextCohorts.length === 0) {
+            runs.splice(idx, 1);
+          }
+        }
+
+        // Clean up courseSlots + courseSlotDays for removed (course_id, slot_id) keys
+        if (didChange) {
+          const remainingKeys = new Set(
+            (runs || [])
+              .filter((r) => r?.course_id != null && r?.slot_id != null)
+              .map((r) => `${r.course_id}-${r.slot_id}`)
+          );
+
+          const currentCourseSlots = store.courseRunsManager.courseSlots || [];
+          const removedCourseSlotIds = new Set();
+          const keptCourseSlots = currentCourseSlots.filter((cs) => {
+            const keep = remainingKeys.has(`${cs.course_id}-${cs.slot_id}`);
+            if (!keep && cs?.course_slot_id != null) {
+              removedCourseSlotIds.add(cs.course_slot_id);
+            }
+            return keep;
+          });
+
+          store.courseRunsManager.courseSlots = keptCourseSlots;
+          if (removedCourseSlotIds.size > 0) {
+            store.courseSlotDays = (store.courseSlotDays || []).filter(
+              (csd) => !removedCourseSlotIds.has(csd.course_slot_id)
+            );
+          }
+        }
+      }
+
       // Fill earliest possible, leaving gaps only if no valid course can be placed.
-      for (let slotIdx = startSlotIdx; slotIdx < slotDates.length; slotIdx += 1) {
+      for (let slotIdx = planningStartIdx; slotIdx < slotDates.length; slotIdx += 1) {
         if (remainingCourseIds.size === 0) break;
         if (occupiedSlotIdxForTarget.has(slotIdx)) continue;
 
