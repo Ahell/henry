@@ -98,35 +98,33 @@ export class BusinessLogicTab extends LitElement {
     const renderRuleParamInput = () => {
       if (ruleId === "maxStudentsHard") {
         return html`
-          <div class="row">
-            <henry-input
-              id="maxStudentsHard"
-              label="Hard cap"
-              type="number"
-              min="1"
-              .value=${String(params.maxStudentsHard ?? "")}
-              required
-              @input-change=${(e) =>
-                this._updateSchedulingParam("maxStudentsHard", e.detail.value)}
-            ></henry-input>
-          </div>
+          <henry-input
+            id="maxStudentsHard"
+            placeholder="Hard cap"
+            type="number"
+            min="1"
+            style="width: 120px;"
+            .value=${String(params.maxStudentsHard ?? "")}
+            required
+            @input-change=${(e) =>
+              this._updateSchedulingParam("maxStudentsHard", e.detail.value)}
+          ></henry-input>
         `;
       }
 
       if (ruleId === "avoidOverPreferred") {
         return html`
-          <div class="row">
-            <henry-input
-              id="maxStudentsPreferred"
-              label="Preferred cap"
-              type="number"
-              min="1"
-              .value=${String(params.maxStudentsPreferred ?? "")}
-              required
-              @input-change=${(e) =>
-                this._updateSchedulingParam("maxStudentsPreferred", e.detail.value)}
-            ></henry-input>
-          </div>
+          <henry-input
+            id="maxStudentsPreferred"
+            placeholder="Preferred cap"
+            type="number"
+            min="1"
+            style="width: 140px;"
+            .value=${String(params.maxStudentsPreferred ?? "")}
+            required
+            @input-change=${(e) =>
+              this._updateSchedulingParam("maxStudentsPreferred", e.detail.value)}
+          ></henry-input>
         `;
       }
 
@@ -138,9 +136,9 @@ export class BusinessLogicTab extends LitElement {
         <div>
           <div class="rule-title">${rule?.label || rule?.id}</div>
           <div class="rule-desc">${rule?.description || ""}</div>
-          ${renderRuleParamInput()}
         </div>
         <div class="rule-actions">
+          ${renderRuleParamInput()}
           <henry-switch
             label="Aktiv"
             .checked=${isEnabled}

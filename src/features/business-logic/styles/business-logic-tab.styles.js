@@ -44,10 +44,14 @@ export const businessLogicTabStyles = css`
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .rule-actions henry-input {
+    margin-bottom: 0;
   }
 
   .muted {
     opacity: 0.7;
   }
 `;
-
