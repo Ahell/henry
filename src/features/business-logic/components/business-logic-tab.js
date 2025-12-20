@@ -61,7 +61,6 @@ export class BusinessLogicTab extends LitElement {
             <henry-switch
               label="Optimera endast efter idag"
               .checked=${Boolean(params.futureOnlyReplan)}
-              disabled
               @switch-change=${(e) =>
                 this._updateSchedulingParam("futureOnlyReplan", e.detail.checked)}
             ></henry-switch>
@@ -124,7 +123,6 @@ export class BusinessLogicTab extends LitElement {
   }
 
   _renderRuleRow(rule, idx, kind, listLength) {
-    const isLocked = Boolean(rule?.locked);
     const isEnabled = Boolean(rule?.enabled);
     const isLast = idx === (Number(listLength) || 0) - 1;
     return html`
@@ -137,7 +135,6 @@ export class BusinessLogicTab extends LitElement {
           <henry-switch
             label="Aktiv"
             .checked=${isEnabled}
-            ?disabled=${isLocked}
             @switch-change=${(e) =>
               this._toggleRule(kind, rule?.id, e.detail.checked)}
           ></henry-switch>

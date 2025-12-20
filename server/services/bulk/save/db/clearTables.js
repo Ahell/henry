@@ -15,6 +15,6 @@ export function clearBulkTables() {
     "slot_days",
     "course_slot_days",
     "course_prerequisites",
+    "app_settings",
   ].forEach((table) => db.prepare(`DELETE FROM ${table}`).run());
 }
-

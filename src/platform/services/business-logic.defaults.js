@@ -28,21 +28,36 @@ const HARD_RULES_DEFAULT = [
     enabled: true,
     locked: true,
   },
+  {
+    id: "requireAvailableCompatibleTeachers",
+    label: "Kräv tillgänglig kompatibel lärare",
+    description:
+      "Blockera schemaläggning om ingen kompatibel lärare är tillgänglig i perioden.",
+    enabled: false,
+    locked: false,
+  },
 ];
 
 const SOFT_RULES_DEFAULT = [
   {
     id: "maximizeColocation",
-    label: "Samläsning först",
+    label: "Samläsning först (matcha slot)",
     description:
-      "Prioritera att flera kullar läser samma kurs i samma slot (upp till maxantal).",
+      "Välj i första hand en kurs som redan startar i samma slot i andra kullar (gemensam kurs-run = samläsning).",
+    enabled: true,
+  },
+  {
+    id: "preferAvailableCompatibleTeachers",
+    label: "Prioritera tillgänglig kompatibel lärare",
+    description:
+      "Om möjligt: välj alternativ med fler kompatibla lärare som är tillgängliga i perioden.",
     enabled: true,
   },
   {
     id: "packTowardHardCap",
-    label: "Packa mot maxantal",
+    label: "Packa inom samläsning (mot max)",
     description:
-      "När samläsning är möjlig, packa en kurs-run närmare maxantal studenter.",
+      "Om flera val ger samläsning: välj det alternativ som gör att totalen hamnar närmast max (färre parallella kurs-run).",
     enabled: true,
   },
   {
@@ -50,6 +65,13 @@ const SOFT_RULES_DEFAULT = [
     label: "Framåtblick: lämna plats",
     description:
       "Prioritera val som lämnar kapacitet så kommande kullar kan samläsa samma kurs.",
+    enabled: true,
+  },
+  {
+    id: "avoidEmptySlots",
+    label: "Undvik tomma slots",
+    description:
+      "Om flera alternativ finns: prioritera val som gör det mer sannolikt att nästa slot också kan fyllas (minskar luckor).",
     enabled: true,
   },
   {
@@ -106,9 +128,10 @@ export function normalizeBusinessLogic(input) {
 
   const maxStudentsHardRaw = Number(params.maxStudentsHard);
   const maxStudentsPreferredRaw = Number(params.maxStudentsPreferred);
-  // Hard constraint: we may only change scheduling in slots after today.
-  // Keep this locked on even if older payloads try to disable it.
-  const futureOnlyReplan = true;
+  const futureOnlyReplan =
+    typeof params.futureOnlyReplan === "boolean"
+      ? params.futureOnlyReplan
+      : DEFAULT_BUSINESS_LOGIC.scheduling.params.futureOnlyReplan;
 
   return {
     version: 1,

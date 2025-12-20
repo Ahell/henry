@@ -1,4 +1,5 @@
 import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
+import { getAvailableCompatibleTeachersForCourseInSlot } from "./teacher-availability.service.js";
 
 /**
  * Course Run Manager Service
@@ -143,6 +144,39 @@ export class CourseRunManager {
         })
       ) {
         return;
+      }
+    }
+
+    // Business logic hard-rule: require at least one available compatible teacher (optional).
+    const businessLogic = store.businessLogicManager?.getBusinessLogic?.();
+    const schedulingLogic = businessLogic?.scheduling || {};
+    const requireTeachersEnabled = Array.isArray(schedulingLogic.hardRules)
+      ? schedulingLogic.hardRules.some(
+          (r) => r?.id === "requireAvailableCompatibleTeachers" && r?.enabled !== false
+        )
+      : false;
+
+    if (requireTeachersEnabled) {
+      const slotDates = CourseRunManager._sortedSlotDates();
+      const slotIdxByDate = CourseRunManager._slotIdxByDate(slotDates);
+      const startIdx = slotIdxByDate.get(String(targetSlotDate));
+      if (Number.isFinite(startIdx)) {
+        const ids0 = new Set(
+          getAvailableCompatibleTeachersForCourseInSlot(courseId, slotDates[startIdx]).map(
+            (t) => t.teacher_id
+          )
+        );
+        let intersection = ids0;
+        for (let i = 1; i < spanForCourse; i += 1) {
+          const date = slotDates[startIdx + i];
+          const ids = new Set(
+            getAvailableCompatibleTeachersForCourseInSlot(courseId, date).map(
+              (t) => t.teacher_id
+            )
+          );
+          intersection = new Set([...intersection].filter((id) => ids.has(id)));
+        }
+        if (intersection.size === 0) return;
       }
     }
 
@@ -301,6 +335,45 @@ export class CourseRunManager {
           })
         ) {
           return;
+        }
+      }
+
+      // Business logic hard-rule: require at least one available compatible teacher (optional).
+      {
+        const businessLogic = store.businessLogicManager?.getBusinessLogic?.();
+        const schedulingLogic = businessLogic?.scheduling || {};
+        const requireTeachersEnabled = Array.isArray(schedulingLogic.hardRules)
+          ? schedulingLogic.hardRules.some(
+              (r) => r?.id === "requireAvailableCompatibleTeachers" && r?.enabled !== false
+            )
+          : false;
+
+        if (requireTeachersEnabled) {
+          const slotDates = CourseRunManager._sortedSlotDates();
+          const slotIdxByDate = CourseRunManager._slotIdxByDate(slotDates);
+          const startIdx = slotIdxByDate.get(String(targetSlotDate));
+          if (Number.isFinite(startIdx)) {
+            const ids0 = new Set(
+              getAvailableCompatibleTeachersForCourseInSlot(
+                run.course_id,
+                slotDates[startIdx]
+              ).map((t) => t.teacher_id)
+            );
+            let intersection = ids0;
+            for (let i = 1; i < spanForCourse; i += 1) {
+              const date = slotDates[startIdx + i];
+              const ids = new Set(
+                getAvailableCompatibleTeachersForCourseInSlot(
+                  run.course_id,
+                  date
+                ).map((t) => t.teacher_id)
+              );
+              intersection = new Set(
+                [...intersection].filter((id) => ids.has(id))
+              );
+            }
+            if (intersection.size === 0) return;
+          }
         }
       }
 
@@ -596,6 +669,13 @@ export class CourseRunManager {
     const schedulingLogic = businessLogic?.scheduling || {};
     const schedulingParams = schedulingLogic?.params || {};
 
+    const hardRuleEnabled = (ruleId) =>
+      Array.isArray(schedulingLogic.hardRules)
+        ? schedulingLogic.hardRules.some(
+            (r) => r?.id === ruleId && r?.enabled !== false
+          )
+        : false;
+
     const configuredMaxHard = Number(schedulingParams.maxStudentsHard);
     const configuredMaxPreferred = Number(schedulingParams.maxStudentsPreferred);
     const futureOnlyReplanEnabled =
@@ -616,12 +696,21 @@ export class CourseRunManager {
           ? configuredMaxPreferred
           : 100;
 
-    const softRuleOrder = Array.isArray(schedulingLogic.softRules)
+    const defaultSoftRuleOrder = [
+      "maximizeColocation",
+      "preferAvailableCompatibleTeachers",
+      "packTowardHardCap",
+      "futureJoinCapacity",
+      "avoidEmptySlots",
+      "avoidOverPreferred",
+    ];
+    const hasSoftRulesConfig = Array.isArray(schedulingLogic.softRules);
+    const softRuleOrder = hasSoftRulesConfig
       ? schedulingLogic.softRules
           .filter((r) => r?.enabled !== false)
           .map((r) => r?.id)
           .filter(Boolean)
-      : [];
+      : defaultSoftRuleOrder;
 
     const cohortId = Number(targetCohortId);
     if (!Number.isFinite(cohortId)) return { mutationId: null };
@@ -857,6 +946,24 @@ export class CourseRunManager {
       const span = spanById.get(courseId) || 1;
       if (slotIdx + span - 1 >= slotDates.length) return false;
 
+      if (hardRuleEnabled("requireAvailableCompatibleTeachers")) {
+        const base = getAvailableCompatibleTeachersForCourseInSlot(
+          courseId,
+          slotDates[slotIdx]
+        ).map((t) => t.teacher_id);
+        let intersection = new Set(base);
+        for (let i = 1; i < span; i += 1) {
+          const date = slotDates[slotIdx + i];
+          const ids = new Set(
+            getAvailableCompatibleTeachersForCourseInSlot(courseId, date).map(
+              (t) => t.teacher_id
+            )
+          );
+          intersection = new Set([...intersection].filter((id) => ids.has(id)));
+        }
+        if (intersection.size === 0) return false;
+      }
+
       // For span>1 (15hp) courses: forbid any skewed overlap with existing runs.
       // If any other cohort has started this course at a different start slot that
       // overlaps the candidate span, we cannot start here.
@@ -1064,19 +1171,32 @@ export class CourseRunManager {
         );
         if (eligible.length === 0) continue;
 
-        const ruleOrder =
-          softRuleOrder.length > 0
-            ? softRuleOrder
-            : [
-                "maximizeColocation",
-                "packTowardHardCap",
-                "futureJoinCapacity",
-                "avoidOverPreferred",
-              ];
+        const ruleOrder = hasSoftRulesConfig ? softRuleOrder : defaultSoftRuleOrder;
 
         const metric = (ruleId, courseId) => {
           if (ruleId === "maximizeColocation") {
             return startsTotalsBySlotIdx.get(slotIdx)?.get(courseId) || 0;
+          }
+          if (ruleId === "preferAvailableCompatibleTeachers") {
+            const span = spanById.get(courseId) || 1;
+            const base = getAvailableCompatibleTeachersForCourseInSlot(
+              courseId,
+              slotDates[slotIdx]
+            ).map((t) => t.teacher_id);
+            let intersection = new Set(base);
+            for (let i = 1; i < span; i += 1) {
+              const date = slotDates[slotIdx + i];
+              const ids = new Set(
+                getAvailableCompatibleTeachersForCourseInSlot(
+                  courseId,
+                  date
+                ).map((t) => t.teacher_id)
+              );
+              intersection = new Set(
+                [...intersection].filter((id) => ids.has(id))
+              );
+            }
+            return intersection.size;
           }
           if (ruleId === "packTowardHardCap") {
             return projectedMaxTotal(courseId, slotIdx) || 0;
@@ -1085,6 +1205,73 @@ export class CourseRunManager {
             const projected = projectedMaxTotal(courseId, slotIdx) || 0;
             const remainingCapacity = effectiveMaxStudentsHard - projected;
             return potentialFutureJoinStudents(slotIdx, remainingCapacity) || 0;
+          }
+          if (ruleId === "avoidEmptySlots") {
+            const chosenSpan = spanById.get(courseId) || 1;
+            const nextIdx = slotIdx + chosenSpan;
+            if (nextIdx >= slotDates.length) return 0;
+
+            const chosenEndIdx = slotIdx + chosenSpan - 1;
+            const isOccupiedAt = (idx) =>
+              occupiedSlotIdxForTarget.has(idx) ||
+              (idx >= slotIdx && idx <= chosenEndIdx);
+
+            const doneAtFor = (cid) => {
+              if (String(cid) === String(courseId)) return chosenEndIdx;
+              return completionEndIdxByCourse.get(Number(cid));
+            };
+
+            const prereqsMetAtNext = (candidateCourseId) => {
+              const prereqs = prereqsById.get(candidateCourseId) || [];
+              return prereqs.every((pid) => {
+                const doneAt = doneAtFor(pid);
+                return Number.isFinite(doneAt) && doneAt < nextIdx;
+              });
+            };
+
+            let eligibleCount = 0;
+            for (const candidateCourseId of remainingCourseIds) {
+              if (String(candidateCourseId) === String(courseId)) continue;
+              if (blockedStartSlotIdxByCourse.get(candidateCourseId)?.has(nextIdx)) {
+                continue;
+              }
+
+              const candidateSpan = spanById.get(candidateCourseId) || 1;
+              if (nextIdx + candidateSpan - 1 >= slotDates.length) continue;
+
+              // Check skewed-overlap constraint for 15hp courses using existing start idxs.
+              if (candidateSpan > 1) {
+                const starts = existingStartIdxsByCourse.get(candidateCourseId);
+                if (starts && starts.size > 0) {
+                  const candidateEndExclusive = nextIdx + candidateSpan;
+                  let overlaps = false;
+                  for (const otherStartIdx of starts) {
+                    if (!Number.isFinite(otherStartIdx)) continue;
+                    if (otherStartIdx === nextIdx) continue;
+                    const otherEndExclusive = otherStartIdx + candidateSpan;
+                    if (nextIdx < otherEndExclusive && otherStartIdx < candidateEndExclusive) {
+                      overlaps = true;
+                      break;
+                    }
+                  }
+                  if (overlaps) continue;
+                }
+              }
+
+              let conflict = false;
+              for (let i = 0; i < candidateSpan; i += 1) {
+                if (isOccupiedAt(nextIdx + i)) {
+                  conflict = true;
+                  break;
+                }
+              }
+              if (conflict) continue;
+              if (!prereqsMetAtNext(candidateCourseId)) continue;
+              if (!fitsCapacityAt(candidateCourseId, nextIdx)) continue;
+
+              eligibleCount += 1;
+            }
+            return eligibleCount;
           }
           if (ruleId === "avoidOverPreferred") {
             return Math.max(
