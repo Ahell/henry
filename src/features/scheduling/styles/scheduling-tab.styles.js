@@ -705,6 +705,12 @@ export const schedulingTabStyles = css`
     color: var(--color-text-secondary);
     background: var(--color-gray-50);
     border-top: 1px solid var(--color-border);
+    position: sticky;
+    left: 0;
+    z-index: 6;
+    min-width: calc(var(--gantt-depot-width) + var(--gantt-cohort-width));
+    width: calc(var(--gantt-depot-width) + var(--gantt-cohort-width));
+    box-shadow: 6px 0 12px rgba(31, 39, 51, 0.06);
   }
 
   .gantt-table tfoot .summary-cell {
