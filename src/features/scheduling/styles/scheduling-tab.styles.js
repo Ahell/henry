@@ -8,7 +8,7 @@ export const schedulingTabStyles = css`
     --gantt-depot-width: 240px;
     --gantt-cohort-width: 96px;
     --gantt-slot-width: 120px;
-    --gantt-row-height: 220px;
+    --gantt-row-height: 160px;
     --gantt-availability-row-height: 78px;
     --gantt-date-row-height: 32px;
     --availability-chip-gap: 4px;
@@ -442,7 +442,7 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table tbody td {
-    height: auto;
+    height: var(--gantt-row-height);
   }
 
   .gantt-table tbody td.slot-cell gantt-cell {

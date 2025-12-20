@@ -13,7 +13,7 @@ export const ganttCellStyles = css`
     min-height: 44px;
     height: 100%;
     position: relative;
-    padding: var(--space-2) var(--space-1);
+    padding: var(--space-1) var(--space-1);
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
