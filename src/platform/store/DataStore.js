@@ -29,7 +29,7 @@ export const DEFAULT_SLOT_LENGTH_DAYS = 28;
 export class DataStore {
   constructor() {
     // Global UI state (not persisted)
-    this.editMode = false;
+    this.editMode = true;
 
     this.cohorts = [];
     this.slots = [];
