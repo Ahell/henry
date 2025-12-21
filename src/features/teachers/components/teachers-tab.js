@@ -1,4 +1,5 @@
 import { LitElement, html } from "lit";
+import { keyed } from "lit/directives/keyed.js";
 import { store } from "../../../platform/store/DataStore.js";
 import {
   showSuccessMessage,
@@ -186,14 +187,17 @@ export class TeachersTab extends LitElement {
                   }))}
                 ></henry-select>
 
-                <henry-select
-                  id="teacherExaminatorCourses"
-                  label="Examinator för kurser"
-                  multiple
-                  size="6"
-                  .options=${examinatorCourseOptions}
-                ></henry-select>
-              </form>
+	                ${keyed(
+	                  this.selectedNewCompatibleCourseIds.join(","),
+	                  html`<henry-select
+	                    id="teacherExaminatorCourses"
+	                    label="Examinator för kurser"
+	                    multiple
+	                    size="6"
+	                    .options=${examinatorCourseOptions}
+	                  ></henry-select>`
+	                )}
+	              </form>
 
               <div slot="footer">
                 <henry-button

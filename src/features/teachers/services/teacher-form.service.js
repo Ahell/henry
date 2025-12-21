@@ -67,12 +67,14 @@ export class TeacherFormService {
         Boolean
       );
       nextIds.forEach((courseId) => {
+        const numericCourseId = Number(courseId);
+        if (!Number.isFinite(numericCourseId)) return;
         const current = store.getCourseExaminatorTeacherId(courseId);
         // Don't steal examinator roles from other teachers for "add teacher"
         if (current != null && String(current) !== String(newTeacher.teacher_id)) {
           return;
         }
-        store.setCourseExaminator(courseId, newTeacher.teacher_id);
+        store.setCourseExaminator(numericCourseId, newTeacher.teacher_id);
       });
     }
 
@@ -130,13 +132,17 @@ export class TeacherFormService {
       // Assign selected courses to this teacher
       nextIds.forEach((courseId) => {
         if (!courseId) return;
-        store.setCourseExaminator(courseId, teacherId);
+        const numericCourseId = Number(courseId);
+        if (!Number.isFinite(numericCourseId)) return;
+        store.setCourseExaminator(numericCourseId, teacherId);
       });
 
       // Unassign courses that were previously assigned to this teacher
       current.forEach((courseId) => {
         if (!nextIds.has(courseId)) {
-          store.clearCourseExaminator(courseId);
+          const numericCourseId = Number(courseId);
+          if (!Number.isFinite(numericCourseId)) return;
+          store.clearCourseExaminator(numericCourseId);
         }
       });
     }

@@ -1,4 +1,5 @@
 import { LitElement, html } from "lit";
+import { keyed } from "lit/directives/keyed.js";
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
 import { TeacherFormService } from "../services/teacher-form.service.js";
@@ -169,13 +170,16 @@ export class TeacherModal extends LitElement {
               }))}
             ></henry-select>
 
-            <henry-select
-              id="edit-examinator-courses"
-              label="Examinator för kurser"
-              multiple
-              size="8"
-              .options=${examinatorCourseOptions}
-            ></henry-select>
+            ${keyed(
+              `${this.teacherId}:${this.selectedCompatibleCourseIds.join(",")}`,
+              html`<henry-select
+                id="edit-examinator-courses"
+                label="Examinator för kurser"
+                multiple
+                size="8"
+                .options=${examinatorCourseOptions}
+              ></henry-select>`
+            )}
           </div>
         </form>
 
