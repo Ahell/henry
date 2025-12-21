@@ -38,7 +38,7 @@ export class AdminPanel extends LitElement {
       },
       {
         key: "slots",
-        label: "Slots",
+        label: "Kursperioder",
         component: html`<slots-tab></slots-tab>`,
       },
       {

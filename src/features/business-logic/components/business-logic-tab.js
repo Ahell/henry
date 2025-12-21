@@ -113,7 +113,9 @@ export class BusinessLogicTab extends LitElement {
 
       <henry-panel>
         <div slot="header" class="panel-header">
-          <henry-text variant="heading-3">Affärslogik</henry-text>
+          <henry-text variant="heading-3"
+            >Affärslogik - Prioriteringsordning för auto-fyll</henry-text
+          >
           <div class="header-actions">
             ${this.saving
               ? html`<henry-text variant="caption">Sparar…</henry-text>`

@@ -86,13 +86,13 @@ export class SlotsTab extends LitElement {
 
       <henry-panel>
         <div slot="header" class="panel-header">
-          <henry-text variant="heading-3">Befintliga Slots</henry-text>
+          <henry-text variant="heading-3">Befintliga kursperioder</henry-text>
           <henry-button
             variant="primary"
             ?disabled=${!canEdit}
             @click="${this._openAddModal}"
           >
-            Lägg till slot
+            Lägg till kursperiod
           </henry-button>
         </div>
         <henry-table
@@ -108,7 +108,7 @@ export class SlotsTab extends LitElement {
         ? html`
             <henry-modal
               open
-              title="Lägg till Slot"
+              title="Lägg till kursperiod"
               @close="${this._closeAddModal}"
             >
               <form
@@ -123,7 +123,7 @@ export class SlotsTab extends LitElement {
               >
                 <henry-select
                   id="insertAfter"
-                  label="Infoga efter"
+                  label="Infoga efter kursperiod"
                   size="6"
                   placeholder=""
                   ?hidePlaceholder=${true}
@@ -165,7 +165,7 @@ export class SlotsTab extends LitElement {
                       );
                   }}"
                 >
-                  Lägg till slot
+                  Lägg till kursperiod
                 </henry-button>
               </div>
             </henry-modal>
@@ -183,7 +183,7 @@ export class SlotsTab extends LitElement {
       const s = sorted[i];
       opts.push({
         value: String(s.slot_id),
-        label: `Efter slot ${i + 1} — ${s.start_date}`,
+        label: `Efter kursperiod ${i + 1} — ${s.start_date}`,
       });
     }
     return opts;

@@ -109,7 +109,7 @@ export class CoursesTab extends LitElement {
 
       <henry-panel>
         <div slot="header" class="panel-header">
-          <henry-text variant="heading-3">Befintliga Kurser</henry-text>
+          <henry-text variant="heading-3">Befintliga kurser</henry-text>
           <henry-button
             variant="primary"
             ?disabled=${!canEdit}
@@ -127,63 +127,63 @@ export class CoursesTab extends LitElement {
         ></henry-table>
       </henry-panel>
 
-	      ${this.addModalOpen
-	        ? html`
-	            <henry-modal
-	              open
-	              title="Lägg till Kurs"
-	              @close="${this._closeAddModal}"
-	            >
-	              <form
-	                id="add-course-form"
-	                @submit="${this.handleAddCourse}"
-	                @input="${this._handleInputChange}"
-	                @change="${this._handleInputChange}"
-	                @input-change="${this._handleInputChange}"
-	                @select-change="${this._handleInputChange}"
-	                @radio-change="${this._handleInputChange}"
-	                @textarea-change="${this._handleInputChange}"
-	              >
-	                <henry-input
-	                  id="courseCode"
-	                  label="Kurskod"
-	                  placeholder="T.ex. AI180U"
-	                  required
-	                ></henry-input>
-	                <henry-input
-	                  id="courseName"
-	                  label="Kursnamn"
-	                  placeholder="T.ex. Juridisk översiktskurs"
-	                  required
-	                ></henry-input>
+      ${this.addModalOpen
+        ? html`
+            <henry-modal
+              open
+              title="Lägg till Kurs"
+              @close="${this._closeAddModal}"
+            >
+              <form
+                id="add-course-form"
+                @submit="${this.handleAddCourse}"
+                @input="${this._handleInputChange}"
+                @change="${this._handleInputChange}"
+                @input-change="${this._handleInputChange}"
+                @select-change="${this._handleInputChange}"
+                @radio-change="${this._handleInputChange}"
+                @textarea-change="${this._handleInputChange}"
+              >
+                <henry-input
+                  id="courseCode"
+                  label="Kurskod"
+                  placeholder="T.ex. AI180U"
+                  required
+                ></henry-input>
+                <henry-input
+                  id="courseName"
+                  label="Kursnamn"
+                  placeholder="T.ex. Juridisk översiktskurs"
+                  required
+                ></henry-input>
 
-	                <henry-radio-group
-	                  id="courseCredits"
-	                  name="courseCredits"
-	                  label="Högskolepoäng"
-	                  required
-	                  .options=${[
-	                    { value: "7.5", label: "7,5 hp" },
-	                    { value: "15", label: "15 hp" },
-	                  ]}
-	                ></henry-radio-group>
-	                <henry-select
-	                  id="prerequisites"
-	                  label="Spärrkurser (kurser som måste läsas före)"
-	                  multiple
-	                  size="5"
-	                  .options=${store
-	                    .getCourses()
-	                    .filter((c) => c && c.course_id != null)
-	                    .map((c) => ({
-	                      value: String(c.course_id),
-	                      label: `${c.code ?? "OKÄND"} - ${c.name ?? ""}`,
-	                    }))}
-	                ></henry-select>
+                <henry-radio-group
+                  id="courseCredits"
+                  name="courseCredits"
+                  label="Högskolepoäng"
+                  required
+                  .options=${[
+                    { value: "7.5", label: "7,5 hp" },
+                    { value: "15", label: "15 hp" },
+                  ]}
+                ></henry-radio-group>
+                <henry-select
+                  id="prerequisites"
+                  label="Spärrkurser (kurser som måste läsas före)"
+                  multiple
+                  size="5"
+                  .options=${store
+                    .getCourses()
+                    .filter((c) => c && c.course_id != null)
+                    .map((c) => ({
+                      value: String(c.course_id),
+                      label: `${c.code ?? "OKÄND"} - ${c.name ?? ""}`,
+                    }))}
+                ></henry-select>
 
-	                <henry-select
-	                  id="courseTeachers"
-	                  label="Kompatibla lärare (Ctrl/Cmd+klick för flera)"
+                <henry-select
+                  id="courseTeachers"
+                  label="Kompatibla lärare (Ctrl/Cmd+klick för flera)"
                   multiple
                   size="5"
                   .options=${store.getTeachers().map((teacher) => ({

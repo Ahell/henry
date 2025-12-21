@@ -83,7 +83,7 @@ export class TeachersTab extends LitElement {
 
       <henry-panel>
         <div slot="header" class="panel-header">
-          <henry-text variant="heading-3">Befintliga Lärare</henry-text>
+          <henry-text variant="heading-3">Befintliga lärare</henry-text>
           <henry-button
             variant="primary"
             ?disabled=${!canEdit}
@@ -124,15 +124,15 @@ export class TeachersTab extends LitElement {
                   placeholder="Förnamn Efternamn"
                   required
                 ></henry-input>
-	                <henry-radio-group
-	                  id="teacherDepartment"
-	                  name="teacherDepartment"
-	                  label="Avdelning"
-	                  required
-	                  .options=${departments.map((dept) => ({
-	                    value: dept,
-	                    label: dept,
-	                  }))}
+                <henry-radio-group
+                  id="teacherDepartment"
+                  name="teacherDepartment"
+                  label="Avdelning"
+                  required
+                  .options=${departments.map((dept) => ({
+                    value: dept,
+                    label: dept,
+                  }))}
                 ></henry-radio-group>
                 <henry-select
                   id="teacherCourses"
@@ -186,7 +186,10 @@ export class TeachersTab extends LitElement {
     if (!store.editMode) return;
     const { teacherId, formData } = e.detail;
     try {
-      const { mutationId } = TeacherFormService.updateTeacher(teacherId, formData);
+      const { mutationId } = TeacherFormService.updateTeacher(
+        teacherId,
+        formData
+      );
       await store.saveData({ mutationId });
       this.editingTeacherId = null;
       showSuccessMessage(this, "Lärare uppdaterad!");

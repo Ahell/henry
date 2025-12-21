@@ -70,95 +70,96 @@ export class CohortsTab extends LitElement {
         ? html`<div class="${this.messageType}">${this.message}</div>`
         : ""}
 
-	      <henry-panel>
-	        <div slot="header" class="panel-header">
-	          <henry-text variant="heading-3">Befintliga Kullar</henry-text>
-	          <henry-button
-	            variant="primary"
-	            ?disabled=${!canEdit}
-	            @click="${this._openAddModal}"
-	          >
-	            Lägg till kull
-	          </henry-button>
-	        </div>
-	        <henry-table
-	          striped
-	          hoverable
+      <henry-panel>
+        <div slot="header" class="panel-header">
+          <henry-text variant="heading-3">Befintliga kullar</henry-text>
+          <henry-button
+            variant="primary"
+            ?disabled=${!canEdit}
+            @click="${this._openAddModal}"
+          >
+            Lägg till kull
+          </henry-button>
+        </div>
+        <henry-table
+          striped
+          hoverable
           .columns="${this._getCohortTableColumns()}"
-          .data="${store.getCohorts()
+          .data="${store
+            .getCohorts()
             .slice()
             .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))}"
           .renderCell="${(row, col) => this._renderCohortTableCell(row, col)}"
-	        ></henry-table>
-	      </henry-panel>
+        ></henry-table>
+      </henry-panel>
 
-	      ${this.addModalOpen
-	        ? html`
-	            <henry-modal
-	              open
-	              title="Lägg till Kull"
-	              @close="${this._closeAddModal}"
-	            >
-	              <form
-	                id="add-cohort-form"
-	                @submit="${this.handleAddCohort}"
-	                @input="${this._handleInputChange}"
-	                @change="${this._handleInputChange}"
-	                @input-change="${this._handleInputChange}"
-	                @select-change="${this._handleInputChange}"
-	                @radio-change="${this._handleInputChange}"
-	                @textarea-change="${this._handleInputChange}"
-	              >
-	                <henry-input
-	                  id="cohortStartDate"
-	                  type="date"
-	                  label="Startdatum"
-	                  required
-	                ></henry-input>
-	                <henry-input
-	                  id="cohortSize"
-	                  type="number"
-	                  label="Planerat antal studenter"
-	                  min="1"
-	                  placeholder="30"
-	                  required
-	                ></henry-input>
-	              </form>
+      ${this.addModalOpen
+        ? html`
+            <henry-modal
+              open
+              title="Lägg till Kull"
+              @close="${this._closeAddModal}"
+            >
+              <form
+                id="add-cohort-form"
+                @submit="${this.handleAddCohort}"
+                @input="${this._handleInputChange}"
+                @change="${this._handleInputChange}"
+                @input-change="${this._handleInputChange}"
+                @select-change="${this._handleInputChange}"
+                @radio-change="${this._handleInputChange}"
+                @textarea-change="${this._handleInputChange}"
+              >
+                <henry-input
+                  id="cohortStartDate"
+                  type="date"
+                  label="Startdatum"
+                  required
+                ></henry-input>
+                <henry-input
+                  id="cohortSize"
+                  type="number"
+                  label="Planerat antal studenter"
+                  min="1"
+                  placeholder="30"
+                  required
+                ></henry-input>
+              </form>
 
-	              <div slot="footer">
-	                <henry-button
-	                  variant="secondary"
-	                  @click="${this._closeAddModal}"
-	                >
-	                  Avbryt
-	                </henry-button>
-	                <henry-button
-	                  variant="primary"
-	                  ?disabled="${!this.formValid || !canEdit}"
-	                  @click="${() => {
-	                    const form =
-	                      this.renderRoot?.querySelector("#add-cohort-form");
-	                    if (form?.requestSubmit) form.requestSubmit();
-	                    else
-	                      form?.dispatchEvent(
-	                        new Event("submit", {
-	                          bubbles: true,
-	                          cancelable: true,
-	                        })
-	                      );
-	                  }}"
-	                >
-	                  Lägg till kull
-	                </henry-button>
-	              </div>
-	            </henry-modal>
-	          `
-	        : ""}
+              <div slot="footer">
+                <henry-button
+                  variant="secondary"
+                  @click="${this._closeAddModal}"
+                >
+                  Avbryt
+                </henry-button>
+                <henry-button
+                  variant="primary"
+                  ?disabled="${!this.formValid || !canEdit}"
+                  @click="${() => {
+                    const form =
+                      this.renderRoot?.querySelector("#add-cohort-form");
+                    if (form?.requestSubmit) form.requestSubmit();
+                    else
+                      form?.dispatchEvent(
+                        new Event("submit", {
+                          bubbles: true,
+                          cancelable: true,
+                        })
+                      );
+                  }}"
+                >
+                  Lägg till kull
+                </henry-button>
+              </div>
+            </henry-modal>
+          `
+        : ""}
 
-	      <cohort-modal
-	        .cohortId="${this.editingCohortId}"
-	        .open="${!!this.editingCohortId}"
-	        @modal-close="${this.handleCancelEdit}"
+      <cohort-modal
+        .cohortId="${this.editingCohortId}"
+        .open="${!!this.editingCohortId}"
+        @modal-close="${this.handleCancelEdit}"
         @modal-save="${this._handleModalSave}"
       ></cohort-modal>
     `;
