@@ -168,7 +168,6 @@ export class TeacherAvailabilityTab extends LitElement {
             .teachers=${this.teachers}
             .slots=${this.slots}
             .isPainting=${this.isPainting}
-            @availability-changed="${this._handleAvailabilityChanged}"
             @paint-session-ended="${this._handlePaintSessionEnded}"
             @paint-state-changed="${this._handlePaintStateChanged}"
             @detail-view-changed="${this._handleDetailViewChanged}"
@@ -394,11 +393,6 @@ export class TeacherAvailabilityTab extends LitElement {
   setEditMode(enabled) {
     this.isPainting = !!enabled;
     if (!enabled) this.paintMode = null;
-  }
-
-  _handleAvailabilityChanged() {
-    // Table component handles the store update, we just need to refresh
-    this.requestUpdate();
   }
 
   _handlePaintSessionEnded() {

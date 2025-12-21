@@ -179,7 +179,7 @@ export const teacherAvailabilityTableStyles = css`
 
   .teacher-cell.has-segments.assigned-course,
   .teacher-cell.has-segments.has-course,
-  .teacher-cell[data-is-detail="false"].has-segments.unavailable {
+  .teacher-cell.has-segments.unavailable {
     background: transparent !important;
     box-shadow: none;
     border-color: transparent;

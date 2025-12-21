@@ -65,8 +65,6 @@ export function renderDetailView(component) {
         renderDayCell(component, teacher, dateStr, component._detailCourseFilter)}
       @cell-mousedown=${(e) => component._handleCellMouseDown(e)}
       @cell-enter=${(e) => component._handleCellMouseEnter(e)}
-      @mouseup=${(e) => component._handlePaintEnd(e)}
-      @mouseleave=${(e) => component._handlePaintEnd(e)}
     ></detail-table>
   `;
 }
@@ -253,10 +251,13 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
           : isOccupiedByOther
           ? "segment-compatible-occupied"
           : "segment-compatible-free";
+        const availabilityToken = hasAvailability ? "course-unavailable" : "";
         segments.push({
           text: getCode(id),
           badgeText: isExam ? "Exam" : "",
-          classNameSuffix: assignmentToken,
+          classNameSuffix: [assignmentToken, availabilityToken]
+            .filter(Boolean)
+            .join(" "),
         });
       });
     } else if (filteredCourseIds.length === 1) {
@@ -284,6 +285,15 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
         (cls) =>
           !cls.startsWith("teaching-day") && !cls.startsWith("exam-date")
       )
+      .join(" ");
+  }
+
+  // In detail view, if we are rendering a stacked course cell (segments),
+  // unavailability should be reflected on the segments, not as a full-cell red background.
+  if (segments.length > 0 && effectiveClassName.includes("unavailable")) {
+    effectiveClassName = effectiveClassName
+      .split(" ")
+      .filter((cls) => cls !== "unavailable")
       .join(" ");
   }
   const combinedClassName = [
@@ -459,8 +469,6 @@ export function renderOverviewView(component, slotDates) {
         renderTeacherCell(component, teacher, slotDate)}
       @cell-mousedown=${(e) => component._handleCellMouseDown(e)}
       @cell-enter=${(e) => component._handleCellMouseEnter(e)}
-      @mouseup=${(e) => component._handlePaintEnd(e)}
-      @mouseleave=${(e) => component._handlePaintEnd(e)}
     ></overview-table>
   `;
 }

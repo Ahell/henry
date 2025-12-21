@@ -4,6 +4,15 @@ import {
   convertSlotEntryToDayEntriesAndRemove,
 } from "./helpers.js";
 
+const schedulePaintUpdate = (component) => {
+  if (component._paintUpdateScheduled) return;
+  component._paintUpdateScheduled = true;
+  requestAnimationFrame(() => {
+    component._paintUpdateScheduled = false;
+    component.requestUpdate();
+  });
+};
+
 const dispatchPaintState = (component) => {
   component.dispatchEvent(
     new CustomEvent("paint-state-changed", {
@@ -49,6 +58,13 @@ const ensureAvailabilityMutation = (component) => {
     return component._availabilityMutationId;
   }
 
+  // Painting triggers lots of mutations; suspend auto-save during the session
+  // and persist once on paint end.
+  if (!component._autoSaveSuspendedForPaint) {
+    store.beginAutoSaveSuspension();
+    component._autoSaveSuspendedForPaint = true;
+  }
+
   // Capture initial state of teacher availability for rollback
   const previousAvailability = store.teacherAvailability.map((entry) => ({
     ...entry,
@@ -58,6 +74,7 @@ const ensureAvailabilityMutation = (component) => {
     label: "teacher-availability",
     rollback: () => {
       store.teacherAvailability = previousAvailability;
+      schedulePaintUpdate(component);
     },
   });
 
@@ -73,6 +90,11 @@ const persistAvailabilityMutation = async (component) => {
   } catch (err) {
     await store.rollback(mutationId);
     console.error("Failed to spara lärartillgänglighet:", err);
+  } finally {
+    if (component._autoSaveSuspendedForPaint) {
+      store.endAutoSaveSuspension();
+      component._autoSaveSuspendedForPaint = false;
+    }
   }
 };
 
@@ -105,13 +127,7 @@ export function handleCellMouseDown(component, e) {
 
       component._paintMode = "remove";
       component._isMouseDown = true;
-      component.requestUpdate();
-
-      component.dispatchEvent(
-        new CustomEvent("availability-changed", {
-          detail: { teacherId, date, unavailable: false },
-        })
-      );
+      schedulePaintUpdate(component);
       dispatchPaintState(component);
       return;
     }
@@ -125,13 +141,7 @@ export function handleCellMouseDown(component, e) {
 
     store.toggleTeacherAvailabilityForDay(teacherId, date);
     component._isMouseDown = true;
-    component.requestUpdate();
-
-    component.dispatchEvent(
-      new CustomEvent("availability-changed", {
-        detail: { teacherId, date, unavailable: !isCurrentlyUnavailable },
-      })
-    );
+    schedulePaintUpdate(component);
     dispatchPaintState(component);
     return;
   }
@@ -157,17 +167,7 @@ export function handleCellMouseDown(component, e) {
     slotIdLocal
   );
   component._isMouseDown = true;
-  component.requestUpdate();
-
-  component.dispatchEvent(
-    new CustomEvent("availability-changed", {
-      detail: {
-        teacherId,
-        slotDate: slotDateLocal,
-        unavailable: !isCurrentlyUnavailable,
-      },
-    })
-  );
+  schedulePaintUpdate(component);
   dispatchPaintState(component);
 }
 
@@ -209,12 +209,7 @@ export function handleCellMouseEnter(component, e) {
 
     if (component._paintMode === "add" && !isCurrentlyUnavailable) {
       store.toggleTeacherAvailabilityForDay(teacherId, date);
-      component.requestUpdate();
-      component.dispatchEvent(
-        new CustomEvent("availability-changed", {
-          detail: { teacherId, date, unavailable: true },
-        })
-      );
+      schedulePaintUpdate(component);
     } else if (
       component._paintMode === "remove" &&
       isCurrentlyUnavailable
@@ -231,13 +226,7 @@ export function handleCellMouseEnter(component, e) {
         store.toggleTeacherAvailabilityForDay(teacherId, date);
       }
 
-      component.requestUpdate();
-
-      component.dispatchEvent(
-        new CustomEvent("availability-changed", {
-          detail: { teacherId, date, unavailable: false },
-        })
-      );
+      schedulePaintUpdate(component);
     }
     return;
   }
@@ -261,26 +250,14 @@ export function handleCellMouseEnter(component, e) {
       slotDateLocal,
       slotIdLocal
     );
-    component.requestUpdate();
-
-    component.dispatchEvent(
-      new CustomEvent("availability-changed", {
-        detail: { teacherId, slotDate: slotDateLocal, unavailable: true },
-      })
-    );
+    schedulePaintUpdate(component);
   } else if (component._paintMode === "remove" && isCurrentlyUnavailable) {
     store.toggleTeacherAvailabilityForSlot(
       teacherId,
       slotDateLocal,
       slotIdLocal
     );
-    component.requestUpdate();
-
-    component.dispatchEvent(
-      new CustomEvent("availability-changed", {
-        detail: { teacherId, slotDate: slotDateLocal, unavailable: false },
-      })
-    );
+    schedulePaintUpdate(component);
   }
 }
 
@@ -296,6 +273,7 @@ export async function handlePaintEnd(component) {
 
 export function handlePaintChangeRequest(component, e) {
   const payload = e?.detail || {};
+  const wasPainting = !!component.isPainting;
   if (payload.isPainting !== undefined) {
     component.isPainting = payload.isPainting;
   }
@@ -310,4 +288,9 @@ export function handlePaintChangeRequest(component, e) {
 
   component.requestUpdate();
   dispatchPaintState(component);
+
+  // If painting got turned off while we have a pending optimistic mutation, persist it.
+  if (wasPainting && !component.isPainting && component._availabilityMutationId) {
+    persistAvailabilityMutation(component);
+  }
 }

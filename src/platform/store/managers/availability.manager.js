@@ -10,6 +10,12 @@ export class AvailabilityManager {
     this.teacherAvailability = [];
   }
 
+  _shouldNotify() {
+    // During paint operations we suspend autosave; we also suppress global notify
+    // so we don't run validations/re-renders for every single painted cell.
+    return !(this.events?.store?.isAutoSaveSuspended);
+  }
+
   /**
    * Load teacher availability data from backend
    * @param {Array} teacherAvailability - Array of availability records
@@ -40,7 +46,7 @@ export class AvailabilityManager {
       type: availability.type || "busy",
     };
     this.teacherAvailability.push(newAvailability);
-    this.events.notify();
+    if (this._shouldNotify()) this.events.notify();
     return newAvailability;
   }
 
@@ -72,7 +78,7 @@ export class AvailabilityManager {
     const index = this.teacherAvailability.findIndex((a) => a.id === id);
     if (index !== -1) {
       this.teacherAvailability.splice(index, 1);
-      this.events.notify();
+      if (this._shouldNotify()) this.events.notify();
       return true;
     }
     return false;
@@ -111,7 +117,7 @@ export class AvailabilityManager {
         }
         return true;
       });
-      this.events.notify();
+      if (this._shouldNotify()) this.events.notify();
       return;
     }
 

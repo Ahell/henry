@@ -75,6 +75,17 @@ export class TeacherAvailabilityTable extends LitElement {
     this._onStoreChange();
 
     // Listen for availability changes dispatched by paint handlers
+    this._onGlobalMouseUp = () => {
+      if (!this._isMouseDown) return;
+      // End paint session even if the mouse is released outside the table.
+      this._handlePaintEnd();
+    };
+    this._onGlobalBlur = () => {
+      if (!this._isMouseDown) return;
+      this._handlePaintEnd();
+    };
+    window.addEventListener("mouseup", this._onGlobalMouseUp);
+    window.addEventListener("blur", this._onGlobalBlur);
   }
 
   disconnectedCallback() {
@@ -83,6 +94,14 @@ export class TeacherAvailabilityTable extends LitElement {
     if (this._onStoreChange) {
       store.unsubscribe(this._onStoreChange);
       this._onStoreChange = null;
+    }
+    if (this._onGlobalMouseUp) {
+      window.removeEventListener("mouseup", this._onGlobalMouseUp);
+      this._onGlobalMouseUp = null;
+    }
+    if (this._onGlobalBlur) {
+      window.removeEventListener("blur", this._onGlobalBlur);
+      this._onGlobalBlur = null;
     }
   }
 
