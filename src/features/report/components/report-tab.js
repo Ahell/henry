@@ -12,6 +12,13 @@ export class ReportTab extends LitElement {
     department: { type: String },
     teacherId: { type: String },
     query: { type: String },
+    codeQuery: { type: String },
+    courseQuery: { type: String },
+    examinatorQuery: { type: String },
+    kursansvarigQuery: { type: String },
+    startFrom: { type: String },
+    startTo: { type: String },
+    _showAdvancedFilters: { type: Boolean },
     _rows: { type: Array },
   };
 
@@ -22,6 +29,13 @@ export class ReportTab extends LitElement {
     this.department = "";
     this.teacherId = "";
     this.query = "";
+    this.codeQuery = "";
+    this.courseQuery = "";
+    this.examinatorQuery = "";
+    this.kursansvarigQuery = "";
+    this.startFrom = "";
+    this.startTo = "";
+    this._showAdvancedFilters = false;
     this._rows = [];
     this._refresh();
     store.subscribe(() => {
@@ -195,15 +209,60 @@ export class ReportTab extends LitElement {
 
   _filteredRows() {
     const q = String(this.query || "").trim().toLowerCase();
+    const codeQ = String(this.codeQuery || "").trim().toLowerCase();
+    const courseQ = String(this.courseQuery || "").trim().toLowerCase();
+    const examinatorQ = String(this.examinatorQuery || "").trim().toLowerCase();
+    const kursansvarigQ = String(this.kursansvarigQuery || "")
+      .trim()
+      .toLowerCase();
+    const startFrom = String(this.startFrom || "").trim();
+    const startTo = String(this.startTo || "").trim();
+
     return (this._rows || []).filter((r) => {
       if (this.year && String(r.year) !== String(this.year)) return false;
       if (this.term && String(r.term) !== String(this.term)) return false;
       if (this.department && String(r.avd) !== String(this.department)) return false;
       if (this.teacherId && !(r.teacherIds || []).includes(String(this.teacherId))) return false;
+      if (startFrom && String(r.start || "") < startFrom) return false;
+      if (startTo && String(r.start || "") > startTo) return false;
+      if (codeQ && !String(r.code || "").toLowerCase().includes(codeQ)) return false;
+      if (courseQ && !String(r.courseName || "").toLowerCase().includes(courseQ))
+        return false;
+      if (
+        examinatorQ &&
+        !String(r.examinator || "").toLowerCase().includes(examinatorQ)
+      ) {
+        return false;
+      }
+      if (
+        kursansvarigQ &&
+        !String(r.kursansvarig || "").toLowerCase().includes(kursansvarigQ)
+      ) {
+        return false;
+      }
       if (!q) return true;
       const hay = `${r.avd} ${r.code} ${r.courseName} ${r.examinator} ${r.kursansvarig} ${r.start} ${r.end} ${r.term} ${r.year}`.toLowerCase();
       return hay.includes(q);
     });
+  }
+
+  _toggleAdvancedFilters() {
+    this._showAdvancedFilters = !this._showAdvancedFilters;
+  }
+
+  _clearFilters() {
+    this.year = "";
+    this.term = "";
+    this.department = "";
+    this.teacherId = "";
+    this.query = "";
+    this.codeQuery = "";
+    this.courseQuery = "";
+    this.examinatorQuery = "";
+    this.kursansvarigQuery = "";
+    this.startFrom = "";
+    this.startTo = "";
+    this._showAdvancedFilters = false;
   }
 
   _yearOptions() {
@@ -272,63 +331,136 @@ export class ReportTab extends LitElement {
         </div>
 
         <div class="filters">
-          <henry-select
-            id="reportYear"
-            label="År"
-            size="1"
-            placeholder=""
-            ?hidePlaceholder=${true}
-            .options=${this._yearOptions()}
-            @select-change=${(e) => {
-              this.year = e?.detail?.value ?? "";
-            }}
-          ></henry-select>
+          <div class="filters-bar">
+            <henry-input
+              id="reportQuery"
+              class="search"
+              label="Sök"
+              placeholder="Sök på kod, kurs, lärare..."
+              @input-change=${(e) => {
+                this.query = e?.detail?.value ?? "";
+              }}
+            ></henry-input>
 
-          <henry-select
-            id="reportTerm"
-            label="Termin"
-            size="1"
-            placeholder=""
-            ?hidePlaceholder=${true}
-            .options=${this._termOptions()}
-            @select-change=${(e) => {
-              this.term = e?.detail?.value ?? "";
-            }}
-          ></henry-select>
+            <henry-select
+              id="reportYear"
+              label="År"
+              size="1"
+              placeholder=""
+              ?hidePlaceholder=${true}
+              .options=${this._yearOptions()}
+              @select-change=${(e) => {
+                this.year = e?.detail?.value ?? "";
+              }}
+            ></henry-select>
 
-          <henry-select
-            id="reportDept"
-            label="Avdelning"
-            size="1"
-            placeholder=""
-            ?hidePlaceholder=${true}
-            .options=${this._departmentOptions()}
-            @select-change=${(e) => {
-              this.department = e?.detail?.value ?? "";
-            }}
-          ></henry-select>
+            <henry-select
+              id="reportTerm"
+              label="Termin"
+              size="1"
+              placeholder=""
+              ?hidePlaceholder=${true}
+              .options=${this._termOptions()}
+              @select-change=${(e) => {
+                this.term = e?.detail?.value ?? "";
+              }}
+            ></henry-select>
 
-          <henry-select
-            id="reportTeacher"
-            label="Lärare"
-            size="1"
-            placeholder=""
-            ?hidePlaceholder=${true}
-            .options=${this._teacherOptions()}
-            @select-change=${(e) => {
-              this.teacherId = e?.detail?.value ?? "";
-            }}
-          ></henry-select>
+            <div class="filters-actions">
+              <henry-button
+                variant="secondary"
+                @click=${this._toggleAdvancedFilters}
+                >${this._showAdvancedFilters ? "Dölj filter" : "Avancerat"}</henry-button
+              >
+              <henry-button variant="secondary" @click=${this._clearFilters}
+                >Rensa</henry-button
+              >
+            </div>
+          </div>
 
-          <henry-input
-            id="reportQuery"
-            class="search"
-            label="Sök"
-            placeholder="Sök på kod, kurs, lärare..."
-            @input-change=${(e) => {
-              this.query = e?.detail?.value ?? "";
-            }}
-          ></henry-input>
+          ${this._showAdvancedFilters
+            ? html`
+                <div class="filters-advanced" role="group" aria-label="Filter">
+                  <henry-select
+                    id="reportDept"
+                    label="Avdelning"
+                    size="1"
+                    placeholder=""
+                    ?hidePlaceholder=${true}
+                    .options=${this._departmentOptions()}
+                    @select-change=${(e) => {
+                      this.department = e?.detail?.value ?? "";
+                    }}
+                  ></henry-select>
+
+                  <henry-select
+                    id="reportTeacher"
+                    label="Lärare"
+                    size="1"
+                    placeholder=""
+                    ?hidePlaceholder=${true}
+                    .options=${this._teacherOptions()}
+                    @select-change=${(e) => {
+                      this.teacherId = e?.detail?.value ?? "";
+                    }}
+                  ></henry-select>
+
+                  <henry-input
+                    id="reportCode"
+                    label="Kod"
+                    placeholder="AI123U"
+                    @input-change=${(e) => {
+                      this.codeQuery = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportCourse"
+                    label="Kurs"
+                    placeholder="Allmän fastighetsrätt"
+                    @input-change=${(e) => {
+                      this.courseQuery = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportExaminator"
+                    label="Examinator"
+                    placeholder="Namn"
+                    @input-change=${(e) => {
+                      this.examinatorQuery = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportResponsible"
+                    label="Kursansvarig"
+                    placeholder="Namn"
+                    @input-change=${(e) => {
+                      this.kursansvarigQuery = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportStartFrom"
+                    label="Kursstart från"
+                    type="date"
+                    @input-change=${(e) => {
+                      this.startFrom = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportStartTo"
+                    label="Kursstart till"
+                    type="date"
+                    @input-change=${(e) => {
+                      this.startTo = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+                </div>
+              `
+            : null}
         </div>
 
         <henry-table
