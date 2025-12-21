@@ -3,6 +3,7 @@ import {
   store,
   DEFAULT_SLOT_LENGTH_DAYS,
 } from "../../../platform/store/DataStore.js";
+import { getRunsCoveringSlotId } from "../services/run-coverage.js";
 import "../../../components/ui/index.js";
 import "./teacher-availability-table.js";
 import { teacherAvailabilityTabStyles } from "../styles/teacher-availability-tab.styles.js";
@@ -16,6 +17,8 @@ export class TeacherAvailabilityTab extends LitElement {
     _isDetailView: { type: Boolean },
     _detailSlotId: { type: Number },
     _detailSlotDate: { type: String },
+    _detailCourseFilter: { type: Number },
+    _applyToAllCourses: { type: Boolean },
   };
 
   static styles = teacherAvailabilityTabStyles;
@@ -29,6 +32,8 @@ export class TeacherAvailabilityTab extends LitElement {
     this._isDetailView = false;
     this._detailSlotId = null;
     this._detailSlotDate = null;
+    this._detailCourseFilter = null;
+    this._applyToAllCourses = true;
     this._updateData();
     store.subscribe(() => {
       const next = !!store.editMode;
@@ -126,7 +131,11 @@ export class TeacherAvailabilityTab extends LitElement {
       <henry-panel>
         <div slot="header" class="panel-header">
           <div class="header-text">
-            <henry-text variant="heading-3">Lärartillgänglighet</henry-text>
+            <henry-text variant="heading-3"
+              >${this._isDetailView
+                ? "Lärartillgänglighet inom kursperiod"
+                : "Lärartillgänglighet"}</henry-text
+            >
           </div>
           <div class="header-actions">
             <div class="paint-status"></div>
@@ -146,16 +155,13 @@ export class TeacherAvailabilityTab extends LitElement {
         <div class="layout-stack">
           <div class="legend-row">
             <div class="legend-left">
+              ${this._isDetailView ? this._renderDetailControls() : null}
               ${this._renderLegend(this._isDetailView)}
             </div>
-            ${this._isDetailView
-              ? null
-              : html`
-                  <div class="legend-right">
-                    <span class="legend-chip">${this.teachers.length} lärare</span>
-                    <span class="legend-chip">${daysLabel}</span>
-                  </div>
-                `}
+            <div class="legend-right">
+              <span class="legend-chip">${this.teachers.length} lärare</span>
+              <span class="legend-chip">${daysLabel}</span>
+            </div>
           </div>
 
           <teacher-availability-table
@@ -172,6 +178,93 @@ export class TeacherAvailabilityTab extends LitElement {
     `;
   }
 
+  _getDetailCourses() {
+    if (!this._isDetailView || this._detailSlotId == null) return [];
+
+    const runs = getRunsCoveringSlotId(store.getCourseRuns(), this._detailSlotId);
+    const byCourseId = new Map();
+    runs.forEach((run) => {
+      const courseId = run?.course_id;
+      if (courseId == null) return;
+      const course = store.getCourse(courseId);
+      if (!course?.code) return;
+      byCourseId.set(Number(courseId), {
+        course_id: Number(courseId),
+        code: course.code,
+        name: course.name || "",
+      });
+    });
+
+    return Array.from(byCourseId.values()).sort((a, b) =>
+      String(a.code || "").localeCompare(String(b.code || ""), "sv-SE")
+    );
+  }
+
+  _renderDetailControls() {
+    const courses = this._getDetailCourses();
+    const showCourseSelect = courses.length > 1;
+    const showApplyToAll =
+      courses.length > 1 && (this._detailCourseFilter == null);
+
+    if (!showCourseSelect && !showApplyToAll) return null;
+
+    return html`
+      ${showCourseSelect
+        ? html`
+            <label class="legend-chip select-chip" title="Filtrera kurs i detaljvy">
+              <span class="select-label">Kurser</span>
+              <select
+                @change=${this._handleDetailCourseFilterChange}
+                .value=${this._detailCourseFilter ?? "all"}
+              >
+                <option value="all">Alla kurser</option>
+                ${courses.map(
+                  (c) =>
+                    html`<option value=${c.course_id}>
+                      ${c.code || c.name || c.course_id}
+                    </option>`
+                )}
+              </select>
+            </label>
+          `
+        : null}
+
+      ${showApplyToAll
+        ? html`
+            <henry-switch
+              label="Applicera på alla kurser"
+              label-position="right"
+              .checked=${this._applyToAllCourses}
+              @switch-change=${this._handleApplyToAllCoursesChange}
+            ></henry-switch>
+          `
+        : null}
+    `;
+  }
+
+  _syncDetailControlsToTable() {
+    const table = this.renderRoot?.querySelector?.("teacher-availability-table");
+    if (!table) return;
+    if (table.setDetailCourseFilter) {
+      table.setDetailCourseFilter(this._detailCourseFilter ?? "all");
+    }
+    if (table.setApplyToAllCourses) {
+      table.setApplyToAllCourses(this._applyToAllCourses);
+    }
+  }
+
+  _handleDetailCourseFilterChange(e) {
+    const raw = e?.target?.value ?? "all";
+    const next = raw === "all" ? null : Number(raw);
+    this._detailCourseFilter = Number.isNaN(next) ? null : next;
+    this._syncDetailControlsToTable();
+  }
+
+  _handleApplyToAllCoursesChange(e) {
+    this._applyToAllCourses = !!e?.detail?.checked;
+    this._syncDetailControlsToTable();
+  }
+
   _exitDetailView() {
     const table = this.renderRoot?.querySelector?.("teacher-availability-table");
     if (table?.exitDetailView) {
@@ -183,6 +276,8 @@ export class TeacherAvailabilityTab extends LitElement {
     this._isDetailView = false;
     this._detailSlotId = null;
     this._detailSlotDate = null;
+    this._detailCourseFilter = null;
+    this._applyToAllCourses = true;
     this.requestUpdate();
   }
 
@@ -323,6 +418,14 @@ export class TeacherAvailabilityTab extends LitElement {
     this._isDetailView = !!detail.active;
     this._detailSlotId = detail.slotId != null ? Number(detail.slotId) : null;
     this._detailSlotDate = detail.slotDate || null;
+    if (this._isDetailView) {
+      this._detailCourseFilter = null;
+      this._applyToAllCourses = true;
+      this.updateComplete.then(() => this._syncDetailControlsToTable());
+    } else {
+      this._detailCourseFilter = null;
+      this._applyToAllCourses = true;
+    }
     this.requestUpdate();
   }
 }

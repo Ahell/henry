@@ -77,6 +77,35 @@ export const teacherAvailabilityTabStyles = css`
     color: var(--color-text-primary);
   }
 
+  .select-chip {
+    cursor: pointer;
+  }
+
+  .select-chip:focus-within {
+    box-shadow: var(--input-focus-ring);
+    border-color: var(--color-primary-500);
+  }
+
+  .select-label {
+    color: var(--color-text-secondary);
+    font-weight: 600;
+  }
+
+  .select-chip select {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    min-width: 150px;
+  }
+
+  .select-chip select:focus-visible {
+    outline: none;
+  }
+
   .legend-swatch {
     width: 16px;
     height: 12px;

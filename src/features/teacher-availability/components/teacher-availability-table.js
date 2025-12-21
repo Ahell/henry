@@ -121,6 +121,18 @@ export class TeacherAvailabilityTable extends LitElement {
     exitDetailView(this);
   }
 
+  setDetailCourseFilter(courseId) {
+    const next =
+      courseId == null || courseId === "all" ? null : Number(courseId);
+    this._detailCourseFilter = Number.isNaN(next) ? null : next;
+    this.requestUpdate();
+  }
+
+  setApplyToAllCourses(checked) {
+    this._applyToAllCourses = !!checked;
+    this.requestUpdate();
+  }
+
   _handleCellMouseDown(e) {
     handleCellMouseDown(this, e);
   }

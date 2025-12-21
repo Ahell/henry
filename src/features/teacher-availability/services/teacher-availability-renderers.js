@@ -52,18 +52,6 @@ export function renderDetailView(component) {
     : [];
 
   return html`
-    <detail-view-header
-      slotTitle="${formatSlotDate(component._detailSlotDate)}"
-      .daysLength=${days.length}
-      .teachersCount=${Array.isArray(component.teachers) ? component.teachers.length : 0}
-      .courseFilter=${component._detailCourseFilter}
-      .applyToAllCourses=${component._applyToAllCourses}
-      .courses=${slotRuns}
-      @exit-detail=${() => exitDetailView(component)}
-      @course-filter-change=${(e) => component._handleCourseFilterChange(e)}
-      @apply-to-all-change=${(e) => component._handleApplyToAllChange(e)}
-    ></detail-view-header>
-
     <detail-table
       .teachers=${component.teachers}
       .days=${days}
