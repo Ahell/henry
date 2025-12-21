@@ -28,12 +28,16 @@ export class TeachersTab extends LitElement {
     message: { type: String },
     messageType: { type: String },
     formValid: { type: Boolean },
+    selectedNewCompatibleCourseIds: { type: Array },
+    selectedNewExaminatorCourseIds: { type: Array },
   };
 
   constructor() {
     super();
     this.formValid = false;
     this.addModalOpen = false;
+    this.selectedNewCompatibleCourseIds = [];
+    this.selectedNewExaminatorCourseIds = [];
     initializeEditState(this, "editingTeacherId");
     subscribeToStore(this);
   }
@@ -51,12 +55,16 @@ export class TeachersTab extends LitElement {
     this.addModalOpen = true;
     await this.updateComplete;
     resetTeacherForm(this.shadowRoot);
+    this.selectedNewCompatibleCourseIds = [];
+    this.selectedNewExaminatorCourseIds = [];
     this._updateFormValidity();
   }
 
   _closeAddModal() {
     this.addModalOpen = false;
     this.formValid = false;
+    this.selectedNewCompatibleCourseIds = [];
+    this.selectedNewExaminatorCourseIds = [];
   }
 
   _updateFormValidity() {
@@ -71,10 +79,40 @@ export class TeachersTab extends LitElement {
     this.formValid = TeacherFormService.isTeacherNameUnique(name);
   }
 
+  _handleAddModalSelectChange(e) {
+    const targetId = e?.target?.id;
+    const values = Array.isArray(e?.detail?.values) ? e.detail.values : null;
+    if (!targetId || !values) return;
+    if (targetId === "teacherCourses") {
+      const nextCompat = values.map(String);
+      this.selectedNewCompatibleCourseIds = nextCompat;
+      this.selectedNewExaminatorCourseIds = (this.selectedNewExaminatorCourseIds || []).filter(
+        (id) => nextCompat.includes(String(id))
+      );
+      return;
+    }
+    if (targetId === "teacherExaminatorCourses") {
+      this.selectedNewExaminatorCourseIds = values.map(String);
+    }
+  }
+
   render() {
     const canEdit = !!store.editMode;
     const departments = ["AIJ", "AIE", "AF"];
     const courses = store.getCourses();
+    const compatibleSet = new Set(
+      (this.selectedNewCompatibleCourseIds || []).map(String)
+    );
+    const examinatorCourseOptions = (courses || [])
+      .filter((c) => compatibleSet.has(String(c.course_id)))
+      .filter((c) => store.getCourseExaminatorTeacherId(c.course_id) == null)
+      .map((c) => ({
+        value: c.course_id.toString(),
+        label: `${c.code} - ${c.name}`,
+        selected: this.selectedNewExaminatorCourseIds.includes(
+          c.course_id.toString()
+        ),
+      }));
 
     return html`
       ${this.message
@@ -114,7 +152,10 @@ export class TeachersTab extends LitElement {
                 @input="${this._handleInputChange}"
                 @change="${this._handleInputChange}"
                 @input-change="${this._handleInputChange}"
-                @select-change="${this._handleInputChange}"
+                @select-change="${(e) => {
+                  this._handleAddModalSelectChange(e);
+                  this._handleInputChange();
+                }}"
                 @radio-change="${this._handleInputChange}"
                 @textarea-change="${this._handleInputChange}"
               >
@@ -143,6 +184,14 @@ export class TeachersTab extends LitElement {
                     value: course.course_id.toString(),
                     label: `${course.code} - ${course.name}`,
                   }))}
+                ></henry-select>
+
+                <henry-select
+                  id="teacherExaminatorCourses"
+                  label="Examinator för kurser"
+                  multiple
+                  size="6"
+                  .options=${examinatorCourseOptions}
                 ></henry-select>
               </form>
 

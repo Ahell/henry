@@ -65,7 +65,12 @@ export class TeacherModal extends LitElement {
     const values = Array.isArray(e?.detail?.values) ? e.detail.values : null;
     if (!targetId || !values) return;
     if (targetId === "edit-courses") {
-      this.selectedCompatibleCourseIds = values.map(String);
+      const nextCompat = values.map(String);
+      this.selectedCompatibleCourseIds = nextCompat;
+      // Keep examinator selection consistent with compatibility selection
+      this.selectedExaminatorCourseIds = (this.selectedExaminatorCourseIds || []).filter(
+        (id) => nextCompat.includes(String(id))
+      );
       return;
     }
     if (targetId === "edit-examinator-courses") {
@@ -93,6 +98,22 @@ export class TeacherModal extends LitElement {
     if (!teacher) return html``;
 
     const departments = ["AIJ", "AIE", "AF"];
+    const compatibleSet = new Set(
+      (this.selectedCompatibleCourseIds || []).map(String)
+    );
+    const examinatorCourseOptions = (store.getCourses() || [])
+      .filter((c) => compatibleSet.has(String(c.course_id)))
+      .filter((c) => {
+        const tid = store.getCourseExaminatorTeacherId(c.course_id);
+        return tid == null || String(tid) === String(this.teacherId);
+      })
+      .map((c) => ({
+        value: c.course_id.toString(),
+        label: `${c.code} - ${c.name}`,
+        selected: this.selectedExaminatorCourseIds.includes(
+          c.course_id.toString()
+        ),
+      }));
 
     return html`
       <henry-modal
@@ -153,13 +174,7 @@ export class TeacherModal extends LitElement {
               label="Examinator för kurser"
               multiple
               size="8"
-              .options=${store.getCourses().map((c) => ({
-                value: c.course_id.toString(),
-                label: `${c.code} - ${c.name}`,
-                selected: this.selectedExaminatorCourseIds.includes(
-                  c.course_id.toString()
-                ),
-              }))}
+              .options=${examinatorCourseOptions}
             ></henry-select>
           </div>
         </form>

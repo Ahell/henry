@@ -7,6 +7,10 @@ export async function createTeacherFromForm(root) {
     name: "teacherName",
     home_department: { id: "teacherDepartment", type: "radio" },
     compatible_courses: { id: "teacherCourses", type: "select-multiple" },
+    examinator_courses: {
+      id: "teacherExaminatorCourses",
+      type: "select-multiple",
+    },
   });
 
   // Validate teacher name
@@ -23,8 +27,11 @@ export async function createTeacherFromForm(root) {
     throw new Error("Avdelning måste väljas.");
   }
 
-  const { teacher: newTeacher, mutationId } =
-    TeacherFormService.createTeacher(teacher);
+  const { examinator_courses, ...teacherData } = teacher || {};
+  const { teacher: newTeacher, mutationId } = TeacherFormService.createTeacher(
+    teacherData,
+    examinator_courses
+  );
   await store.saveData({ mutationId });
   return newTeacher;
 }
@@ -32,6 +39,7 @@ export async function createTeacherFromForm(root) {
 export function resetTeacherForm(root) {
   FormService.clearCustomForm(root, [
     "teacherCourses",
+    "teacherExaminatorCourses",
     "teacherName",
     "teacherDepartment",
   ]);

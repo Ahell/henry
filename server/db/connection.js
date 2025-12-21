@@ -42,17 +42,41 @@ function resolveDbPath() {
         fs.renameSync(candidate, preferredPath);
       } catch (e) {
         // If we cannot move it (permissions, locked file), keep using the legacy path.
+        ensureDbAlias(legacyRootPath, candidate);
         return candidate;
       }
     }
   }
 
+  // Developer convenience: keep a stable `henry.db` at repo root that points to
+  // the actual runtime database in `server/var/henry.db`.
+  ensureDbAlias(legacyRootPath, preferredPath);
   return preferredPath;
 }
 
 function ensureParentDir(filePath) {
   const dir = path.dirname(filePath);
   fs.mkdirSync(dir, { recursive: true });
+}
+
+function ensureDbAlias(aliasPath, targetPath) {
+  try {
+    // If an old empty placeholder exists, remove it so the alias can be created.
+    if (fs.existsSync(aliasPath)) {
+      const stat = fs.lstatSync(aliasPath);
+      if (stat.isSymbolicLink()) return;
+      if (stat.isFile() && stat.size === 0) {
+        fs.unlinkSync(aliasPath);
+      } else {
+        // Don't overwrite real DB files.
+        return;
+      }
+    }
+
+    fs.symlinkSync(targetPath, aliasPath);
+  } catch {
+    // ignore (non-critical)
+  }
 }
 
 function pickExistingDb(paths) {

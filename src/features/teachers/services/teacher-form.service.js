@@ -34,20 +34,49 @@ export class TeacherFormService {
   /**
    * Create a new teacher with optimistic updates
    * @param {Object} teacherData - Teacher data
+   * @param {Array|null} examinatorCourseIds - Course IDs the teacher should be examinator for
    * @returns {Object} Created teacher and mutation ID
    */
-  static createTeacher(teacherData) {
+  static createTeacher(teacherData, examinatorCourseIds = null) {
     const nextName = String(teacherData?.name ?? "").trim();
     if (!nextName) throw new Error("Lärarens namn måste anges.");
     this.assertTeacherNameUnique(nextName);
 
-    const result = BaseFormService.create("add-teacher", teacherData, {
-      add: (data) => store.addTeacher(data),
-      delete: (id) => store.deleteTeacher(id),
-      getIdField: "teacher_id",
+    const previousCourseExaminators = Array.isArray(
+      store.coursesManager.courseExaminators
+    )
+      ? store.coursesManager.courseExaminators.map((x) => ({ ...x }))
+      : [];
+
+    let newTeacher = null;
+    const mutationId = store.applyOptimistic({
+      label: "add-teacher",
+      rollback: () => {
+        if (newTeacher?.teacher_id != null) {
+          store.deleteTeacher(newTeacher.teacher_id);
+        }
+        store.coursesManager.courseExaminators = previousCourseExaminators;
+        store.coursesManager.ensureExaminatorsFromNormalized();
+      },
     });
 
-    return { teacher: result.entity, mutationId: result.mutationId };
+    newTeacher = store.addTeacher(teacherData);
+
+    if (Array.isArray(examinatorCourseIds)) {
+      const nextIds = Array.from(new Set(examinatorCourseIds.map(String))).filter(
+        Boolean
+      );
+      nextIds.forEach((courseId) => {
+        const current = store.getCourseExaminatorTeacherId(courseId);
+        // Don't steal examinator roles from other teachers for "add teacher"
+        if (current != null && String(current) !== String(newTeacher.teacher_id)) {
+          return;
+        }
+        store.setCourseExaminator(courseId, newTeacher.teacher_id);
+      });
+    }
+
+    return { teacher: newTeacher, mutationId };
   }
 
   /**

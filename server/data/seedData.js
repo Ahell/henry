@@ -151,66 +151,77 @@ const seedDataRaw = {
       name: "Annina Persson",
       home_department: "AIJ",
       compatible_courses: [4, 5, 6, 7, 10],
+      examinator_courses: [],
     },
     {
       name: "Anna Broback",
       home_department: "AIE",
       compatible_courses: [9, 13],
+      examinator_courses: [],
     },
     {
       name: "Annika Gram",
       home_department: "AF",
       compatible_courses: [4, 6, 10],
+      examinator_courses: [],
     },
     {
       name: "Henry Muyingo",
       home_department: "AIJ",
       compatible_courses: [5, 6],
+      examinator_courses: [],
     },
     {
       name: "Jonny Flodin",
       home_department: "AIJ",
       compatible_courses: [3, 5, 7, 12],
+      examinator_courses: [],
     },
     {
       name: "Ny adjunkt",
       home_department: "AIE",
       compatible_courses: [3, 5, 7],
+      examinator_courses: [],
     },
     {
       name: "Tim",
       home_department: "AIJ",
       compatible_courses: [3, 5, 7, 8, 12],
+      examinator_courses: [],
     },
     {
       name: "Rickard Engström",
       home_department: "AIE",
       compatible_courses: [2, 4, 10],
+      examinator_courses: [],
     },
     {
       name: "Torun Widström",
       home_department: "AF",
       compatible_courses: [3, 4, 5, 6, 7],
+      examinator_courses: [],
     },
     {
       name: "Inga-Lill Söderberg",
       home_department: "AIE",
       compatible_courses: [4, 5, 6, 7],
+      examinator_courses: [],
     },
     {
       name: "Ulrika Myślinski",
       home_department: "AIJ",
       compatible_courses: [3, 4, 5, 6, 7],
+      examinator_courses: [],
     },
     {
       name: "Jenny Paulsson",
       home_department: "AIJ",
       compatible_courses: [1, 9],
+      examinator_courses: [],
     },
   ],
 
-  // One examinator per course (teacher_id is 1-based index into teachers array)
-  // Deterministic: pick the first compatible teacher for each course_id.
+  // Examinators are edited by the user in the app (do not seed any defaults).
   courseExaminators: [],
 
   // Time slots - seed only the dates (each slot is 28 days)
@@ -326,11 +337,7 @@ function normalizeSeedData(raw) {
   const courses = normalizeCourses(raw.courses || []);
   const coursePrerequisites = buildCoursePrerequisites(courses);
   const courseRuns = normalizeCourseRuns(raw.courseRuns || []);
-  const courseExaminators = normalizeCourseExaminators({
-    courses,
-    teachersRaw: raw.teachers || [],
-    courseExaminatorsRaw: raw.courseExaminators,
-  });
+  const courseExaminators = normalizeCourseExaminators(raw.courseExaminators);
 
   return {
     ...raw,
@@ -397,36 +404,12 @@ function normalizeCourseRuns(courseRunsRaw) {
     .filter((r) => r.cohorts.some((id) => id != null));
 }
 
-function normalizeCourseExaminators({
-  courses = [],
-  teachersRaw = [],
-  courseExaminatorsRaw,
-} = {}) {
-  if (Array.isArray(courseExaminatorsRaw) && courseExaminatorsRaw.length > 0) {
-    return courseExaminatorsRaw
-      .map((row) => ({
-        course_id: row?.course_id,
-        teacher_id: row?.teacher_id,
-      }))
-      .filter((row) => row.course_id != null && row.teacher_id != null);
-  }
-
-  const rows = [];
-  const byCourseId = new Map();
-
-  (teachersRaw || []).forEach((t, idx) => {
-    const teacherId = idx + 1;
-    (t?.compatible_courses || []).forEach((courseId) => {
-      const key = String(courseId);
-      if (!byCourseId.has(key)) byCourseId.set(key, teacherId);
-    });
-  });
-
-  (courses || []).forEach((c) => {
-    const teacherId = byCourseId.get(String(c.course_id));
-    if (teacherId == null) return;
-    rows.push({ course_id: c.course_id, teacher_id: teacherId });
-  });
-
-  return rows;
+function normalizeCourseExaminators(courseExaminatorsRaw) {
+  if (!Array.isArray(courseExaminatorsRaw)) return [];
+  return courseExaminatorsRaw
+    .map((row) => ({
+      course_id: row?.course_id,
+      teacher_id: row?.teacher_id,
+    }))
+    .filter((row) => row.course_id != null && row.teacher_id != null);
 }
