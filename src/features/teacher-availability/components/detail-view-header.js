@@ -33,9 +33,6 @@ export class DetailViewHeader extends LitElement {
       <div class="detail-view-header">
         <div class="title-block">
           <div class="detail-view-title">${this.slotTitle}</div>
-          ${this.daysLength
-            ? html`<span class="pill">${this.daysLength} dagar</span>`
-            : ""}
           ${showCourseSelect
             ? html`
                 <label class="pill select-pill">
@@ -67,13 +64,8 @@ export class DetailViewHeader extends LitElement {
             : ""}
         </div>
         <div class="detail-view-actions">
-          <henry-button
-            variant="secondary"
-            size="small"
-            @click="${this._exitDetailView}"
-          >
-            Avsluta detaljläge
-          </henry-button>
+          <span class="pill">12 lärare</span>
+          <span class="pill">28 dagar</span>
         </div>
       </div>
     `;

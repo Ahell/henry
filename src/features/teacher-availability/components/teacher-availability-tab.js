@@ -133,8 +133,8 @@ export class TeacherAvailabilityTab extends LitElement {
             <div class="header-buttons">
               <henry-button
                 variant="primary"
-                @click=${() => this._scrollToToday()}
-                >Idag</henry-button
+                @click=${this._isDetailView ? this._exitDetailView : () => this._scrollToToday()}
+                >${this._isDetailView ? 'Avsluta detaljläge' : 'Idag'}</henry-button
               >
             </div>
           </div>
@@ -163,6 +163,10 @@ export class TeacherAvailabilityTab extends LitElement {
         </div>
       </henry-panel>
     `;
+  }
+
+  _exitDetailView() {
+    this.dispatchEvent(new CustomEvent('detail-view-changed', { detail: { active: false }, bubbles: true, composed: true }));
   }
 
   _getDaysLabel() {
