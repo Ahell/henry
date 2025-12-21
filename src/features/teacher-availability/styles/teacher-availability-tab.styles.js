@@ -102,41 +102,61 @@ export const teacherAvailabilityTabStyles = css`
     );
   }
 
+  .legend-swatch--compatible-occupied {
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-info), #64748b 48%),
+      color-mix(in srgb, var(--color-info-hover), #64748b 48%)
+    );
+  }
+
   .legend-swatch--unavailable {
     background: var(--color-danger);
+  }
+
+  .legend-swatch--course-unavailable {
+    background: repeating-linear-gradient(
+        135deg,
+        rgba(239, 68, 68, 0.82) 0px,
+        rgba(239, 68, 68, 0.82) 8px,
+        rgba(239, 68, 68, 0) 8px,
+        rgba(239, 68, 68, 0) 16px
+      ),
+      linear-gradient(135deg, var(--color-info), var(--color-info-hover));
   }
 
   .legend-swatch--partial-conflict {
     background: repeating-linear-gradient(
         135deg,
-        rgba(255, 255, 255, 0.22) 0px,
-        rgba(255, 255, 255, 0.22) 8px,
-        rgba(255, 255, 255, 0) 8px,
-        rgba(255, 255, 255, 0) 16px
+        rgba(239, 68, 68, 0.28) 0px,
+        rgba(239, 68, 68, 0.28) 8px,
+        rgba(239, 68, 68, 0) 8px,
+        rgba(239, 68, 68, 0) 16px
       ),
-      var(--color-danger);
+      linear-gradient(135deg, var(--color-info), var(--color-info-hover));
   }
 
   .legend-swatch--partial-availability {
     background: repeating-linear-gradient(
         135deg,
-        rgba(255, 255, 255, 0.32) 0px,
-        rgba(255, 255, 255, 0.32) 8px,
-        rgba(255, 255, 255, 0) 8px,
-        rgba(255, 255, 255, 0) 16px
+        rgba(59, 130, 246, 0.28) 0px,
+        rgba(59, 130, 246, 0.28) 8px,
+        rgba(59, 130, 246, 0) 8px,
+        rgba(59, 130, 246, 0) 16px
       ),
-      var(--color-info);
+      linear-gradient(135deg, var(--color-info), var(--color-info-hover));
   }
 
-  .legend-swatch--grey-stripes {
+  .legend-swatch--no-course-partial {
+    border-color: rgba(239, 68, 68, 0.22);
     background: repeating-linear-gradient(
         135deg,
-        rgba(255, 255, 255, 0.4) 0px,
-        rgba(255, 255, 255, 0.4) 8px,
-        rgba(255, 255, 255, 0) 8px,
-        rgba(255, 255, 255, 0) 16px
+        rgba(239, 68, 68, 0.22) 0px,
+        rgba(239, 68, 68, 0.22) 8px,
+        transparent 8px,
+        transparent 16px
       ),
-      var(--color-gray-400);
+      #ffffff;
   }
 
   .legend-left {

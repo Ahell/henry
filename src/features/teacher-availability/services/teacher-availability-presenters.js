@@ -231,7 +231,10 @@ export function getOverviewCellPresentation({
     }
   }
 
-  if (isUnavailable && !isAssigned) {
+  // Only use a full "unavailable" cell state when there are no course codes to show.
+  // If there are course codes, unavailability/conflicts are communicated via per-course overlays.
+  const hasAnyCourseInCell = courseIdsInCell.length > 0;
+  if (isUnavailable && !hasAnyCourseInCell) {
     className = appendClass(className, "unavailable");
     title = title ? `${title} (Upptagen)` : "Upptagen";
   }

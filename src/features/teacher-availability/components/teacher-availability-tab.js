@@ -182,18 +182,18 @@ export class TeacherAvailabilityTab extends LitElement {
     if (isDetailView) {
       const items = [
         {
-          label: "Tilldelad kurs",
-          meta: "Läraren är tilldelad kursen denna dag",
+          label: "Tilldelad",
+          meta: "Läraren är tilldelad kursen",
           swatchClass: "legend-swatch--assigned",
         },
         {
-          label: "Kompatibel kurs",
-          meta: "Läraren är kompatibel med kursen denna dag",
+          label: "Kompatibel",
+          meta: "Läraren är kompatibel med kursen",
           swatchClass: "legend-swatch--compatible",
         },
         {
-          label: "Otillgänglig dag",
-          meta: "Läraren är markerad som upptagen denna dag",
+          label: "Otillgänglig",
+          meta: "Läraren är markerad som upptagen",
           swatchClass: "legend-swatch--unavailable",
         },
       ];
@@ -213,34 +213,44 @@ export class TeacherAvailabilityTab extends LitElement {
 
     const items = [
       {
-        label: "Tilldelad kurs",
-        meta: "Läraren är tilldelad kursen i perioden",
+        label: "Tilldelad",
+        meta: "Tilldelad till kursen",
         swatchClass: "legend-swatch--assigned",
       },
       {
-        label: "Kompatibel kurs",
-        meta: "Matchar lärarens kompetens men ej tilldelad",
+        label: "Kompatibel (ledig)",
+        meta: "Kompatibel och inte upptagen av annan kurs i slotten",
         swatchClass: "legend-swatch--compatible",
       },
       {
-        label: "Otillgänglig (hela kursen)",
-        meta: "Alla aktiva kursdagar i perioden är otillgängliga",
-        swatchClass: "legend-swatch--unavailable",
+        label: "Kompatibel (upptagen)",
+        meta: "Kompatibel men upptagen av annan kurs i slotten",
+        swatchClass: "legend-swatch--compatible-occupied",
       },
       {
         label: "Krock (delvis)",
-        meta: "Otillgänglighet överlappar vissa aktiva kursdagar",
+        meta: "Otillgänglig på vissa aktiva kursdagar (röda ränder)",
         swatchClass: "legend-swatch--partial-conflict",
       },
       {
-        label: "Info (utanför kursdagar)",
-        meta: "Otillgänglighet finns i perioden men inte på kursens aktiva kursdagar",
+        label: "Otillgänglig (kurs)",
+        meta: "Otillgänglig på alla aktiva kursdagar (starka röda ränder)",
+        swatchClass: "legend-swatch--course-unavailable",
+      },
+      {
+        label: "Info (utanför)",
+        meta: "Otillgänglighet finns i perioden men inte på kursens aktiva dagar (blå ränder)",
         swatchClass: "legend-swatch--partial-availability",
       },
       {
-        label: "Grå ränder",
-        meta: "Visar grå ränder för särskild markering",
-        swatchClass: "legend-swatch--grey-stripes",
+        label: "Delvis otillg.",
+        meta: "Ingen kurs i slotten: läraren är upptagen vissa dagar (röda ränder utan fyllning)",
+        swatchClass: "legend-swatch--no-course-partial",
+      },
+      {
+        label: "Otillg. (slot)",
+        meta: "Ingen kurs i slotten: läraren är upptagen alla dagar",
+        swatchClass: "legend-swatch--unavailable",
       },
     ];
 

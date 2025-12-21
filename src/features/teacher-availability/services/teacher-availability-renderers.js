@@ -248,13 +248,27 @@ export function renderDayCell(component, teacher, dateStr, courseId = null) {
   ) {
     const getCode = (id) => store.getCourse(id)?.code || String(id);
     const normalizeDate = (v) => (v || "").split("T")[0];
+    const assignedCourseIds = Array.isArray(overviewPresentation?.assignedCourseIds)
+      ? overviewPresentation.assignedCourseIds
+      : [];
     if (filteredCourseIds.length > 1) {
       filteredCourseIds.forEach((id) => {
         const isExam =
           normalizeDate(
             store.getExamDayForCourseInSlot(component._detailSlotId, id)
           ) === normalizeDate(dateStr);
-        segments.push({ text: getCode(id), badgeText: isExam ? "Exam" : "" });
+        const isAssignedToThis = assignedCourseIds.includes(id);
+        const isOccupiedByOther = !isAssignedToThis && assignedCourseIds.length > 0;
+        const assignmentToken = isAssignedToThis
+          ? "segment-assigned"
+          : isOccupiedByOther
+          ? "segment-compatible-occupied"
+          : "segment-compatible-free";
+        segments.push({
+          text: getCode(id),
+          badgeText: isExam ? "Exam" : "",
+          classNameSuffix: assignmentToken,
+        });
       });
     } else if (filteredCourseIds.length === 1) {
       const id = filteredCourseIds[0];
@@ -380,9 +394,14 @@ export function renderTeacherCell(component, teacher, slotDate) {
           .map((id) => {
             const text = store.getCourse(id)?.code || String(id);
             if (!text) return null;
-            const assignmentToken = assignedCourseIds.includes(id)
+            const isAssignedToThis = assignedCourseIds.includes(id);
+            const isOccupiedByOther =
+              !isAssignedToThis && assignedCourseIds.length > 0;
+            const assignmentToken = isAssignedToThis
               ? "segment-assigned"
-              : "segment-compatible";
+              : isOccupiedByOther
+              ? "segment-compatible-occupied"
+              : "segment-compatible-free";
             return {
               text,
               badgeText: "",

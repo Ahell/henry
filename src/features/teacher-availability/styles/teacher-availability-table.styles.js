@@ -179,7 +179,7 @@ export const teacherAvailabilityTableStyles = css`
 
   .teacher-cell.has-segments.assigned-course,
   .teacher-cell.has-segments.has-course,
-  .teacher-cell.has-segments.unavailable {
+  .teacher-cell[data-is-detail="false"].has-segments.unavailable {
     background: transparent !important;
     box-shadow: none;
     border-color: transparent;
@@ -218,7 +218,7 @@ export const teacherAvailabilityTableStyles = css`
   /* No-course partial unavailability in slot view (some days unavailable): stripe only, no solid fill */
   .teacher-cell.partial-unavailable {
     background: transparent;
-    border-color: rgba(15, 23, 42, 0.18);
+    border-color: rgba(239, 68, 68, 0.22);
   }
 
   .teacher-cell.partial-unavailable::after {
@@ -229,8 +229,8 @@ export const teacherAvailabilityTableStyles = css`
     pointer-events: none;
     background: repeating-linear-gradient(
       135deg,
-      rgba(15, 23, 42, 0.16) 0px,
-      rgba(15, 23, 42, 0.16) 8px,
+      rgba(239, 68, 68, 0.22) 0px,
+      rgba(239, 68, 68, 0.22) 8px,
       transparent 8px,
       transparent 16px
     );
@@ -291,13 +291,23 @@ export const teacherAvailabilityTableStyles = css`
     border-color: transparent;
   }
 
-  .teacher-cell .course-segment.segment-compatible {
+  .teacher-cell .course-segment.segment-compatible-free {
     background: linear-gradient(
       135deg,
       var(--color-info),
       var(--color-info-hover)
     );
     color: white;
+    border-color: transparent;
+  }
+
+  .teacher-cell .course-segment.segment-compatible-occupied {
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-info), #64748b 48%),
+      color-mix(in srgb, var(--color-info-hover), #64748b 48%)
+    );
+    color: rgba(255, 255, 255, 0.92);
     border-color: transparent;
   }
 
@@ -359,7 +369,8 @@ export const teacherAvailabilityTableStyles = css`
     z-index: 1;
   }
 
-  /* Partial availability stripes (slot view) */
+  /* === Availability overlays (slot view) === */
+  /* Info (unavailability exists, but outside this course's active days): blue stripes */
   .teacher-cell.partial-availability::after {
     content: "";
     position: absolute;
@@ -368,10 +379,10 @@ export const teacherAvailabilityTableStyles = css`
     pointer-events: none;
     background: repeating-linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.32) 0px,
-      rgba(255, 255, 255, 0.32) 8px,
-      rgba(255, 255, 255, 0) 8px,
-      rgba(255, 255, 255, 0) 16px
+      rgba(59, 130, 246, 0.28) 0px,
+      rgba(59, 130, 246, 0.28) 8px,
+      rgba(59, 130, 246, 0) 8px,
+      rgba(59, 130, 246, 0) 16px
     );
     opacity: 0.9;
   }
@@ -384,22 +395,15 @@ export const teacherAvailabilityTableStyles = css`
     pointer-events: none;
     background: repeating-linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.32) 0px,
-      rgba(255, 255, 255, 0.32) 8px,
-      rgba(255, 255, 255, 0) 8px,
-      rgba(255, 255, 255, 0) 16px
+      rgba(59, 130, 246, 0.28) 0px,
+      rgba(59, 130, 246, 0.28) 8px,
+      rgba(59, 130, 246, 0) 8px,
+      rgba(59, 130, 246, 0) 16px
     );
     opacity: 0.9;
   }
 
-  /* Partial conflict (overlaps active course days): red base + stripes */
-  .teacher-cell.partial-conflict {
-    background: var(--color-danger) !important;
-    color: white;
-    border-color: transparent;
-    box-shadow: var(--shadow-danger);
-  }
-
+  /* Partial conflict (some active days unavailable): light red stripes */
   .teacher-cell.partial-conflict::after {
     content: "";
     position: absolute;
@@ -408,29 +412,20 @@ export const teacherAvailabilityTableStyles = css`
     pointer-events: none;
     background: repeating-linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.22) 0px,
-      rgba(255, 255, 255, 0.22) 8px,
-      rgba(255, 255, 255, 0) 8px,
-      rgba(255, 255, 255, 0) 16px
+      rgba(239, 68, 68, 0.28) 0px,
+      rgba(239, 68, 68, 0.28) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
     );
     opacity: 0.95;
   }
 
-  .teacher-cell .course-segment.partial-conflict {
-    background: var(--color-danger);
-    color: white;
-  }
-
-  /* Assigned + Krock (delvis): green base + light red stripes */
-  .teacher-cell .course-segment.segment-assigned.partial-conflict {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
-  }
-
-  .teacher-cell .course-segment.segment-assigned.partial-conflict::after {
+  .teacher-cell .course-segment.partial-conflict::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
     background: repeating-linear-gradient(
       135deg,
       rgba(239, 68, 68, 0.28) 0px,
@@ -445,28 +440,8 @@ export const teacherAvailabilityTableStyles = css`
     color: white;
   }
 
-  .teacher-cell.course-unavailable {
-    background: var(--color-danger) !important;
-    color: white;
-    border-color: transparent;
-    box-shadow: var(--shadow-danger);
-  }
-
-  .teacher-cell .course-segment.course-unavailable {
-    background: var(--color-danger);
-    color: white;
-  }
-
-  /* Assigned + Otillgänglig (hela kursen): green base + strong red stripes */
-  .teacher-cell .course-segment.segment-assigned.course-unavailable {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
-  }
-
-  .teacher-cell .course-segment.segment-assigned.course-unavailable::after {
+  /* Full conflict (all active days unavailable): strong red stripes */
+  .teacher-cell.course-unavailable::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -482,7 +457,28 @@ export const teacherAvailabilityTableStyles = css`
     opacity: 0.95;
   }
 
-  /* Assigned + Info (utanför kursdagar): green base + light blue stripes */
+  .teacher-cell .course-segment.course-unavailable::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.82) 0px,
+      rgba(239, 68, 68, 0.82) 8px,
+      rgba(239, 68, 68, 0) 8px,
+      rgba(239, 68, 68, 0) 16px
+    );
+    opacity: 0.95;
+  }
+
+  /* Keep text readable in "course-unavailable" segments */
+  .teacher-cell .course-segment.course-unavailable .course-segment-text {
+    color: white;
+  }
+
+  /* Assigned + Info (utanför kursdagar): ensure blue stripes still visible */
   .teacher-cell .course-segment.segment-assigned.partial-availability::after {
     background: repeating-linear-gradient(
       135deg,
@@ -492,89 +488,6 @@ export const teacherAvailabilityTableStyles = css`
       rgba(59, 130, 246, 0) 16px
     );
     opacity: 0.9;
-  }
-
-  .teacher-cell .course-segment.course-unavailable .course-segment-text {
-    color: white;
-  }
-
-  /* === Assigned course + availability warnings ===
-     Keep "assigned" (green) base and overlay colored stripes instead of
-     switching to a full red background. */
-
-  /* 1) Tilldelad + Otillgänglig (hela kursen): green + strong red stripes */
-  .teacher-cell.assigned-course.course-unavailable {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    ) !important;
-    box-shadow: var(--shadow-success);
-  }
-
-  .teacher-cell.assigned-course.course-unavailable::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.82) 0px,
-      rgba(239, 68, 68, 0.82) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
-  }
-
-  /* 2) Tilldelad + Krock (delvis): green + light red stripes */
-  .teacher-cell.assigned-course.partial-conflict {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    ) !important;
-    box-shadow: var(--shadow-success);
-  }
-
-  .teacher-cell.assigned-course.partial-conflict::after {
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.28) 0px,
-      rgba(239, 68, 68, 0.28) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
-  }
-
-  /* 3) Tilldelad + Info (utanför kursdagar): green + light blue stripes */
-  .teacher-cell.assigned-course.partial-availability::after {
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(59, 130, 246, 0.28) 0px,
-      rgba(59, 130, 246, 0.28) 8px,
-      rgba(59, 130, 246, 0) 8px,
-      rgba(59, 130, 246, 0) 16px
-    );
-    opacity: 0.9;
-  }
-
-  .teacher-cell .course-segment.partial-conflict::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.22) 0px,
-      rgba(255, 255, 255, 0.22) 8px,
-      rgba(255, 255, 255, 0) 8px,
-      rgba(255, 255, 255, 0) 16px
-    );
-    opacity: 0.95;
   }
 
   /* Default teaching day - purple/lila, active */
