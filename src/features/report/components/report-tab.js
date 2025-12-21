@@ -124,7 +124,7 @@ export class ReportTab extends LitElement {
       return String(t?.name || "");
     };
 
-    const finalizeTeacherFields = (teacherIds, courseExaminatorTeacherId) => {
+    const finalizeTeacherFields = (teacherIds, courseExaminatorTeacherId, courseKursansvarigId) => {
       const sorted = (teacherIds || [])
         .map((id) => String(id))
         .filter(Boolean)
@@ -136,17 +136,34 @@ export class ReportTab extends LitElement {
         });
 
       const firstTeacherId = sorted[0] || "";
-      const lastTeacherId = sorted.length ? sorted[sorted.length - 1] : "";
+
+      // Use actual database values
       const examinatorTeacherId = courseExaminatorTeacherId
         ? String(courseExaminatorTeacherId)
         : firstTeacherId;
+
+      const kursansvarigTeacherId = courseKursansvarigId
+        ? String(courseKursansvarigId)
+        : "";
+
+      // Calculate assistants: all teachers except examinator and kursansvarig
+      const assistantIds = sorted.filter(
+        id => id !== examinatorTeacherId && id !== kursansvarigTeacherId
+      );
+
+      const assistantNames = assistantIds
+        .map(id => teachersById.get(id)?.name)
+        .filter(Boolean)
+        .join(", ");
+
       return {
         teacherIds: sorted,
         examinator: teachersById.get(examinatorTeacherId)?.name || "",
-        kursansvarig: teachersById.get(lastTeacherId)?.name || "",
+        kursansvarig: teachersById.get(kursansvarigTeacherId)?.name || "",
+        kursassistenter: assistantNames,
         avd:
           teachersById.get(examinatorTeacherId)?.home_department ||
-          teachersById.get(lastTeacherId)?.home_department ||
+          teachersById.get(kursansvarigTeacherId)?.home_department ||
           teachersById.get(firstTeacherId)?.home_department ||
           "",
       };
@@ -164,6 +181,9 @@ export class ReportTab extends LitElement {
       const key = `${String(run.course_id)}|${coveredSlotIds.join(",")}`;
 
       const courseExaminatorTeacherId = store.getCourseExaminatorTeacherId(
+        run.course_id
+      );
+      const courseKursansvarigId = store.coursesManager.getKursansvarigForCourse(
         run.course_id
       );
       const teacherIds = uniqueStrings([
@@ -185,6 +205,7 @@ export class ReportTab extends LitElement {
           runId: run.run_id ?? "",
           courseId: run.course_id,
           courseExaminatorTeacherId: courseExaminatorTeacherId ?? null,
+          courseKursansvarigId: courseKursansvarigId ?? null,
           teacherIds,
           cohorts,
           plannedStudents,
@@ -205,13 +226,17 @@ export class ReportTab extends LitElement {
       if (existing.courseExaminatorTeacherId == null && courseExaminatorTeacherId != null) {
         existing.courseExaminatorTeacherId = courseExaminatorTeacherId;
       }
+      if (existing.courseKursansvarigId == null && courseKursansvarigId != null) {
+        existing.courseKursansvarigId = courseKursansvarigId;
+      }
     }
 
     return Array.from(groups.values())
       .map((row) => {
         const teacherFields = finalizeTeacherFields(
           row.teacherIds,
-          row.courseExaminatorTeacherId
+          row.courseExaminatorTeacherId,
+          row.courseKursansvarigId
         );
         return { ...row, ...teacherFields };
       })
@@ -322,6 +347,7 @@ export class ReportTab extends LitElement {
       { key: "courseName", label: "Kurs", width: "260px" },
       { key: "examinator", label: "Examinator", width: "180px" },
       { key: "kursansvarig", label: "Kursansvarig", width: "180px" },
+      { key: "kursassistenter", label: "Kursassistenter", width: "200px" },
       { key: "start", label: "Kursstart", width: "110px" },
       { key: "end", label: "Kursslut", width: "110px" },
       {

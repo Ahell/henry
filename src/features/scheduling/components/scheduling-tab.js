@@ -1736,13 +1736,18 @@ export class SchedulingTab extends LitElement {
                             style="position: relative;"
                             ?disabled=${!this.isEditing}
                             aria-pressed=${isAssigned ? "true" : "false"}
-                            @click=${() =>
+                            @click=${(e) => {
+                              // Don't toggle assignment if clicking the radio button
+                              if (e.target.classList.contains('kursansvarig-radio')) {
+                                return;
+                              }
                               this._toggleTeacherAssignment({
                                 runs: item.runs,
                                 teacherId: teacher.teacher_id,
                                 checked: !isAssigned,
                                 slotDate,
-                              })}
+                              });
+                            }}
                           >
                             <span class="summary-toggle-text"
                               >${teacher.name}</span

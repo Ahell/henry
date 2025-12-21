@@ -886,6 +886,11 @@ export const schedulingTabStyles = css`
     outline-offset: 2px;
   }
 
+  .gantt-table tfoot .summary-course .kursansvarig-radio:checked {
+    background-color: var(--color-primary, #3b82f6);
+    border-color: var(--color-primary, #3b82f6);
+  }
+
   /* Optional: Add subtle indicator to pill when teacher is kursansvarig */
   .gantt-table tfoot .summary-course .summary-teacher-pill.is-kursansvarig {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
