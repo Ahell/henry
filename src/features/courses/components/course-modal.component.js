@@ -14,6 +14,7 @@ export class CourseModal extends LitElement {
     formValid: { type: Boolean },
     selectedPrerequisiteIds: { type: Array, attribute: false },
     selectedCompatibleTeacherIds: { type: Array, attribute: false },
+    selectedExaminatorTeacherId: { type: String, attribute: false },
   };
 
   constructor() {
@@ -23,6 +24,7 @@ export class CourseModal extends LitElement {
     this.formValid = false;
     this.selectedPrerequisiteIds = [];
     this.selectedCompatibleTeacherIds = [];
+    this.selectedExaminatorTeacherId = "";
   }
 
   willUpdate(changedProperties) {
@@ -40,6 +42,11 @@ export class CourseModal extends LitElement {
       this.selectedCompatibleTeacherIds = (store.getTeachers() || [])
         .filter((t) => t.compatible_courses?.includes(course.course_id))
         .map((t) => String(t.teacher_id));
+      this.selectedExaminatorTeacherId = String(
+        store.getCourseExaminatorTeacherId(course.course_id) ??
+          course.examinator_teacher_id ??
+          ""
+      );
     }
   }
 
@@ -74,6 +81,15 @@ export class CourseModal extends LitElement {
 
     if (targetId === "edit-compatible-teachers") {
       this.selectedCompatibleTeacherIds = values.map(String);
+      // Clear examinator if not in compatible teachers
+      if (!this.selectedCompatibleTeacherIds.includes(this.selectedExaminatorTeacherId)) {
+        this.selectedExaminatorTeacherId = "";
+      }
+      return;
+    }
+
+    if (targetId === "edit-examinator") {
+      this.selectedExaminatorTeacherId = values[0] || "";
     }
   }
 
@@ -136,18 +152,6 @@ export class CourseModal extends LitElement {
             ></henry-input>
 
             <henry-select
-              id="edit-examinator"
-              label="Examinator"
-              size="1"
-              placeholder="Ingen vald"
-              .value="${String(examinatorTeacherId ?? "")}"
-              .options=${store.getTeachers().map((t) => ({
-                value: t.teacher_id.toString(),
-                label: t.name,
-              }))}
-            ></henry-select>
-
-            <henry-select
               id="edit-prerequisites"
               label="Spärrkurser"
               multiple
@@ -189,6 +193,25 @@ export class CourseModal extends LitElement {
                 ),
               }))}
             ></henry-select>
+
+            <henry-select
+              id="edit-examinator"
+              label="Examinator"
+              size="1"
+              placeholder="Ingen vald"
+              .value="${this.selectedExaminatorTeacherId}"
+              .options=${store
+                .getTeachers()
+                .filter((t) =>
+                  this.selectedCompatibleTeacherIds.includes(
+                    t.teacher_id.toString()
+                  )
+                )
+                .map((t) => ({
+                  value: t.teacher_id.toString(),
+                  label: t.name,
+                }))}
+            ></henry-select>
           </div>
         </form>
 
@@ -229,10 +252,6 @@ export class CourseModal extends LitElement {
     const formData = FormService.extractFormData(root, {
       code: "edit-code",
       name: "edit-name",
-      examinatorTeacherId: {
-        id: "edit-examinator",
-        transform: (value) => (value ? Number(value) : null),
-      },
       credits: { id: "edit-credits", transform: (value) => Number(value) },
       prerequisites: { id: "edit-prerequisites", type: "select-multiple" },
       selectedTeacherIds: {
@@ -240,6 +259,10 @@ export class CourseModal extends LitElement {
         type: "select-multiple",
       },
     });
+
+    formData.examinatorTeacherId = this.selectedExaminatorTeacherId
+      ? Number(this.selectedExaminatorTeacherId)
+      : null;
 
     this.dispatchEvent(
       new CustomEvent("modal-save", {
