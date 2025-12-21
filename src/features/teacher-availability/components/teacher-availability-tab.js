@@ -155,13 +155,11 @@ export class TeacherAvailabilityTab extends LitElement {
         <div class="layout-stack">
           <div class="legend-row">
             <div class="legend-left">
-              ${this._isDetailView ? this._renderDetailControls() : null}
               ${this._renderLegend(this._isDetailView)}
             </div>
-            <div class="legend-right">
-              <span class="legend-chip">${this.teachers.length} lärare</span>
-              <span class="legend-chip">${daysLabel}</span>
-            </div>
+            ${this._isDetailView
+              ? html`<div class="legend-right">${this._renderDetailControls()}</div>`
+              : null}
           </div>
 
           <teacher-availability-table
@@ -302,14 +300,24 @@ export class TeacherAvailabilityTab extends LitElement {
           swatchClass: "legend-swatch--assigned",
         },
         {
-          label: "Kompatibel",
-          meta: "Läraren är kompatibel med kursen",
+          label: "Kompatibel (ledig)",
+          meta: "Kompatibel och inte upptagen av annan kurs i slotten",
           swatchClass: "legend-swatch--compatible",
         },
         {
+          label: "Kompatibel (upptagen)",
+          meta: "Kompatibel men upptagen av annan kurs i slotten",
+          swatchClass: "legend-swatch--compatible-occupied",
+        },
+        {
           label: "Otillgänglig",
-          meta: "Läraren är markerad som upptagen",
+          meta: "Upptagen denna dag",
           swatchClass: "legend-swatch--unavailable",
+        },
+        {
+          label: "Otillg. kursdag",
+          meta: "Kurs visas men läraren är upptagen (röda ränder på kursbubblan)",
+          swatchClass: "legend-swatch--course-unavailable",
         },
       ];
 

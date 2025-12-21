@@ -193,6 +193,8 @@ export const teacherAvailabilityTabStyles = css`
     gap: var(--space-3);
     flex-wrap: wrap;
     align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .legend-right {
@@ -200,5 +202,7 @@ export const teacherAvailabilityTabStyles = css`
     gap: var(--space-2);
     flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
+    flex: 0 0 auto;
   }
 `;
