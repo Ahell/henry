@@ -518,7 +518,7 @@ export class SchedulingTab extends LitElement {
             t.compatible_courses.includes(run.course_id)
         );
         if (compatibleTeachers.length === 0) {
-          violated = true;
+          violation = { slotDate: dates[0], courseId: run.course_id };
           break;
         }
 
