@@ -13,6 +13,54 @@ export class TeachingDaysManager {
     this.courseSlotDays = [];
   }
 
+  _runCoversSlotId(run, slotId) {
+    if (!run || slotId == null) return false;
+    if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+      return run.slot_ids.some((id) => String(id) === String(slotId));
+    }
+    return String(run.slot_id) === String(slotId);
+  }
+
+  _getCourseSlotsCoveringSlot(slotId) {
+    const courseSlots = Array.isArray(this.courseRunsManager.courseSlots)
+      ? this.courseRunsManager.courseSlots
+      : [];
+
+    const byId = new Map();
+
+    // Direct (slot_id matches) course slots
+    courseSlots
+      .filter((cs) => String(cs.slot_id) === String(slotId))
+      .forEach((cs) => {
+        const key = String(cs.course_slot_id ?? cs.cohort_slot_course_id ?? "");
+        if (!key) return;
+        byId.set(key, cs);
+      });
+
+    // Also include course runs that span across slots (15hp etc),
+    // by mapping run_id -> course_slot_id.
+    const runs = Array.isArray(this.courseRunsManager.courseRuns)
+      ? this.courseRunsManager.courseRuns
+      : [];
+    runs
+      .filter((run) => this._runCoversSlotId(run, slotId))
+      .forEach((run) => {
+        const runId = run?.run_id;
+        if (runId == null) return;
+        const cs = courseSlots.find(
+          (row) =>
+            String(row.course_slot_id ?? row.cohort_slot_course_id) ===
+            String(runId)
+        );
+        if (!cs) return;
+        const key = String(cs.course_slot_id ?? cs.cohort_slot_course_id ?? "");
+        if (!key) return;
+        byId.set(key, cs);
+      });
+
+    return Array.from(byId.values());
+  }
+
   /**
    * Load teaching days data from backend
    * @param {Array} teachingDays - Legacy teaching days records
@@ -181,9 +229,7 @@ export class TeachingDaysManager {
       };
     }
 
-    const courseSlotsInSlot = (this.courseRunsManager.courseSlots || []).filter(
-      (cs) => String(cs.slot_id) === String(slotId)
-    );
+    const courseSlotsInSlot = this._getCourseSlotsCoveringSlot(slotId);
     const matches = [];
     courseSlotsInSlot.forEach((cs) => {
       const hit = (this.courseSlotDays || []).find(
@@ -254,10 +300,27 @@ export class TeachingDaysManager {
    * @returns {Object|undefined} Course slot object or undefined
    */
   getCourseSlot(courseId, slotId) {
-    return (this.courseRunsManager.courseSlots || []).find(
+    const direct = (this.courseRunsManager.courseSlots || []).find(
       (cs) =>
         String(cs.course_id) === String(courseId) &&
         String(cs.slot_id) === String(slotId)
+    );
+    if (direct) return direct;
+
+    // Fallback for course runs spanning multiple slots (15hp etc):
+    // find the run covering this slot and use its run_id as course_slot_id.
+    const runs = Array.isArray(this.courseRunsManager.courseRuns)
+      ? this.courseRunsManager.courseRuns
+      : [];
+    const run = runs.find(
+      (r) =>
+        String(r.course_id) === String(courseId) && this._runCoversSlotId(r, slotId)
+    );
+    if (!run || run.run_id == null) return undefined;
+    return (this.courseRunsManager.courseSlots || []).find(
+      (cs) =>
+        String(cs.course_slot_id ?? cs.cohort_slot_course_id) ===
+        String(run.run_id)
     );
   }
 

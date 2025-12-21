@@ -4,6 +4,7 @@ import "../../../components/ui/index.js";
 import "../../teacher-availability/index.js";
 import "../../scheduling/index.js";
 import "../../business-logic/index.js";
+import "../../report/index.js";
 import "../../courses/components/courses-tab.js";
 import "../../teachers/components/teachers-tab.js";
 import "../../cohorts/components/cohorts-tab.js";
@@ -55,6 +56,11 @@ export class AdminPanel extends LitElement {
         key: "businessLogic",
         label: "Affärslogik",
         component: html`<business-logic-tab></business-logic-tab>`,
+      },
+      {
+        key: "report",
+        label: "Rapport",
+        component: html`<report-tab></report-tab>`,
       },
     ];
     store.subscribe(() => this.requestUpdate());
