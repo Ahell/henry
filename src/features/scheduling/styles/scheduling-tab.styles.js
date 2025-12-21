@@ -90,9 +90,10 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-scroll-wrapper {
-    overflow-x: auto;
-    overflow-y: visible;
-    max-height: none;
+    /* Allow both horizontal and vertical scrolling inside the gantt area */
+    overflow: auto;
+    /* Keep headers visible while rows scroll underneath */
+    max-height: min(70dvh, 720px);
     background: var(--color-background);
     border: 1px solid var(--color-border);
     border-radius: 0;
@@ -101,6 +102,7 @@ export const schedulingTabStyles = css`
     z-index: 0;
     isolation: isolate;
     margin-top: var(--space-4);
+    overscroll-behavior: contain;
   }
 
   .gantt-scroll-wrapper:focus {
