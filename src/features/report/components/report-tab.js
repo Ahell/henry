@@ -275,7 +275,7 @@ export class ReportTab extends LitElement {
           <henry-select
             id="reportYear"
             label="År"
-            size="6"
+            size="1"
             placeholder=""
             ?hidePlaceholder=${true}
             .options=${this._yearOptions()}
@@ -287,7 +287,7 @@ export class ReportTab extends LitElement {
           <henry-select
             id="reportTerm"
             label="Termin"
-            size="3"
+            size="1"
             placeholder=""
             ?hidePlaceholder=${true}
             .options=${this._termOptions()}
@@ -299,7 +299,7 @@ export class ReportTab extends LitElement {
           <henry-select
             id="reportDept"
             label="Avdelning"
-            size="6"
+            size="1"
             placeholder=""
             ?hidePlaceholder=${true}
             .options=${this._departmentOptions()}
@@ -311,7 +311,7 @@ export class ReportTab extends LitElement {
           <henry-select
             id="reportTeacher"
             label="Lärare"
-            size="8"
+            size="1"
             placeholder=""
             ?hidePlaceholder=${true}
             .options=${this._teacherOptions()}
@@ -322,6 +322,7 @@ export class ReportTab extends LitElement {
 
           <henry-input
             id="reportQuery"
+            class="search"
             label="Sök"
             placeholder="Sök på kod, kurs, lärare..."
             @input-change=${(e) => {
