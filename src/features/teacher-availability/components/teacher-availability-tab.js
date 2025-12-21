@@ -47,7 +47,9 @@ export class TeacherAvailabilityTab extends LitElement {
   }
 
   _scrollToToday() {
-    const tableEl = this.shadowRoot?.querySelector("teacher-availability-table");
+    const tableEl = this.shadowRoot?.querySelector(
+      "teacher-availability-table"
+    );
     const tableRoot = tableEl?.shadowRoot;
     const container = tableRoot?.querySelector(".table-container");
     if (!container) return;
@@ -158,7 +160,9 @@ export class TeacherAvailabilityTab extends LitElement {
               ${this._renderLegend(this._isDetailView)}
             </div>
             ${this._isDetailView
-              ? html`<div class="legend-right">${this._renderDetailControls()}</div>`
+              ? html`<div class="legend-right">
+                  ${this._renderDetailControls()}
+                </div>`
               : null}
           </div>
 
@@ -178,7 +182,10 @@ export class TeacherAvailabilityTab extends LitElement {
   _getDetailCourses() {
     if (!this._isDetailView || this._detailSlotId == null) return [];
 
-    const runs = getRunsCoveringSlotId(store.getCourseRuns(), this._detailSlotId);
+    const runs = getRunsCoveringSlotId(
+      store.getCourseRuns(),
+      this._detailSlotId
+    );
     const byCourseId = new Map();
     runs.forEach((run) => {
       const courseId = run?.course_id;
@@ -201,14 +208,17 @@ export class TeacherAvailabilityTab extends LitElement {
     const courses = this._getDetailCourses();
     const showCourseSelect = courses.length > 1;
     const showApplyToAll =
-      courses.length > 1 && (this._detailCourseFilter == null);
+      courses.length > 1 && this._detailCourseFilter == null;
 
     if (!showCourseSelect && !showApplyToAll) return null;
 
     return html`
       ${showCourseSelect
         ? html`
-            <label class="legend-chip select-chip" title="Filtrera kurs i detaljvy">
+            <label
+              class="legend-chip select-chip"
+              title="Filtrera kurs i detaljvy"
+            >
               <span class="select-label">Kurser</span>
               <select
                 @change=${this._handleDetailCourseFilterChange}
@@ -225,7 +235,6 @@ export class TeacherAvailabilityTab extends LitElement {
             </label>
           `
         : null}
-
       ${showApplyToAll
         ? html`
             <henry-switch
@@ -240,7 +249,9 @@ export class TeacherAvailabilityTab extends LitElement {
   }
 
   _syncDetailControlsToTable() {
-    const table = this.renderRoot?.querySelector?.("teacher-availability-table");
+    const table = this.renderRoot?.querySelector?.(
+      "teacher-availability-table"
+    );
     if (!table) return;
     if (table.setDetailCourseFilter) {
       table.setDetailCourseFilter(this._detailCourseFilter ?? "all");
@@ -263,7 +274,9 @@ export class TeacherAvailabilityTab extends LitElement {
   }
 
   _exitDetailView() {
-    const table = this.renderRoot?.querySelector?.("teacher-availability-table");
+    const table = this.renderRoot?.querySelector?.(
+      "teacher-availability-table"
+    );
     if (table?.exitDetailView) {
       table.exitDetailView();
       return;

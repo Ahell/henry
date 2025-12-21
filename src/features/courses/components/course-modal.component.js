@@ -1,4 +1,5 @@
 import { LitElement, html } from "lit";
+import { keyed } from "lit/directives/keyed.js";
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
 import { CourseFormService } from "../services/course-form.service.js";
@@ -47,6 +48,18 @@ export class CourseModal extends LitElement {
           course.examinator_teacher_id ??
           ""
       );
+
+      if (
+        this.selectedExaminatorTeacherId &&
+        !this.selectedCompatibleTeacherIds.includes(
+          this.selectedExaminatorTeacherId
+        )
+      ) {
+        this.selectedCompatibleTeacherIds = [
+          ...this.selectedCompatibleTeacherIds,
+          this.selectedExaminatorTeacherId,
+        ];
+      }
     }
   }
 
@@ -72,24 +85,34 @@ export class CourseModal extends LitElement {
   _handleSelectChange(e) {
     const targetId = e?.target?.id;
     const values = Array.isArray(e?.detail?.values) ? e.detail.values : null;
-    if (!targetId || !values) return;
+    if (!targetId) return;
 
     if (targetId === "edit-prerequisites") {
+      if (!values) return;
       this.selectedPrerequisiteIds = values.map(String);
       return;
     }
 
     if (targetId === "edit-compatible-teachers") {
+      if (!values) return;
       this.selectedCompatibleTeacherIds = values.map(String);
       // Clear examinator if not in compatible teachers
-      if (!this.selectedCompatibleTeacherIds.includes(this.selectedExaminatorTeacherId)) {
+      if (
+        !this.selectedCompatibleTeacherIds.includes(
+          this.selectedExaminatorTeacherId
+        )
+      ) {
         this.selectedExaminatorTeacherId = "";
       }
       return;
     }
 
     if (targetId === "edit-examinator") {
-      this.selectedExaminatorTeacherId = values[0] || "";
+      if (values) {
+        this.selectedExaminatorTeacherId = values[0] || "";
+        return;
+      }
+      this.selectedExaminatorTeacherId = String(e?.detail?.value ?? "");
     }
   }
 
@@ -194,24 +217,27 @@ export class CourseModal extends LitElement {
               }))}
             ></henry-select>
 
-            <henry-select
-              id="edit-examinator"
-              label="Examinator"
-              size="1"
-              placeholder="Ingen vald"
-              .value="${this.selectedExaminatorTeacherId}"
-              .options=${store
-                .getTeachers()
-                .filter((t) =>
-                  this.selectedCompatibleTeacherIds.includes(
-                    t.teacher_id.toString()
+            ${keyed(
+              this.selectedCompatibleTeacherIds.join(","),
+              html`<henry-select
+                id="edit-examinator"
+                label="Examinator"
+                size="1"
+                placeholder="Ingen vald"
+                .value="${this.selectedExaminatorTeacherId}"
+                .options=${store
+                  .getTeachers()
+                  .filter((t) =>
+                    this.selectedCompatibleTeacherIds.includes(
+                      t.teacher_id.toString()
+                    )
                   )
-                )
-                .map((t) => ({
-                  value: t.teacher_id.toString(),
-                  label: t.name,
-                }))}
-            ></henry-select>
+                  .map((t) => ({
+                    value: t.teacher_id.toString(),
+                    label: t.name,
+                  }))}
+              ></henry-select>`
+            )}
           </div>
         </form>
 
@@ -219,7 +245,11 @@ export class CourseModal extends LitElement {
           <henry-button variant="secondary" @click="${this._handleClose}">
             Avbryt
           </henry-button>
-          <henry-button variant="success" @click="${this._handleSave}" ?disabled="${!this.formValid}">
+          <henry-button
+            variant="success"
+            @click="${this._handleSave}"
+            ?disabled="${!this.formValid}"
+          >
             💾 Spara
           </henry-button>
         </div>

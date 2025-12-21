@@ -43,7 +43,7 @@ npm run dev           # Startar allt med live reload
 - **Frontend**: `console.log()` syns i browser DevTools
 - **Backend**: `console.log()` syns i terminalen
 - **API-anrop**: Använd Network-fliken i DevTools
-- **Databas**: Öppna `server/henry.db` med SQLite-verktyg
+- **Databas**: Öppna `henry.db` (i repo-roten) med SQLite-verktyg
 
 ## 📁 Filstruktur och ansvar
 
@@ -117,7 +117,7 @@ export function validateCapacity(planned_students) {
 
 ### Lägga till ny kolumn i databas
 
-1. Ta bort databasen: `rm server/henry.db`
+1. Ta bort databasen: `rm henry.db`
 2. Uppdatera schema i `server/server.js`
 3. Starta om: `npm run dev`
 
@@ -144,7 +144,7 @@ export function validateCapacity(planned_students) {
 ### Data sparas inte
 
 - Kolla att `store.saveData()` anropas efter ändringar
-- Verifiera att `henry.db` finns i `server/`
+- Verifiera att `henry.db` finns i repo-roten
 - Kolla backend-logs för fel
 
 ### Saker fungerar inte efter pull

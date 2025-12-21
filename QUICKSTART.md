@@ -64,7 +64,7 @@ npm install         # Installera igen
 
 ```bash
 # Ta bort databasen och börja om
-rm server/henry.db
+rm henry.db
 npm run dev
 ```
 

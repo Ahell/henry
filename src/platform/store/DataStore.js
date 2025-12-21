@@ -217,7 +217,10 @@ export class DataStore {
   }
 
   endAutoSaveSuspension() {
-    this._autoSaveSuspendedCount = Math.max(0, this._autoSaveSuspendedCount - 1);
+    this._autoSaveSuspendedCount = Math.max(
+      0,
+      this._autoSaveSuspendedCount - 1
+    );
   }
 
   get isAutoSaveSuspended() {
@@ -325,11 +328,17 @@ export class DataStore {
 
   // Course ↔ teacher compatibility helpers
   addCourseToTeachers(courseId, selectedTeacherIds) {
-    return this.teachersManager.addCourseToTeachers(courseId, selectedTeacherIds);
+    return this.teachersManager.addCourseToTeachers(
+      courseId,
+      selectedTeacherIds
+    );
   }
 
   syncCourseToTeachers(courseId, selectedTeacherIds) {
-    return this.teachersManager.syncCourseToTeachers(courseId, selectedTeacherIds);
+    return this.teachersManager.syncCourseToTeachers(
+      courseId,
+      selectedTeacherIds
+    );
   }
 
   // Courses - delegate to CoursesManager

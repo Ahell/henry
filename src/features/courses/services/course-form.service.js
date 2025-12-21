@@ -47,6 +47,16 @@ export class CourseFormService {
     }
   }
 
+  static assertExaminatorIsCompatible(examinatorTeacherId, selectedTeacherIds) {
+    if (examinatorTeacherId == null || examinatorTeacherId === "") return;
+    const selected = new Set(
+      (Array.isArray(selectedTeacherIds) ? selectedTeacherIds : []).map(String)
+    );
+    if (!selected.has(String(examinatorTeacherId))) {
+      throw new Error("Examinator måste vara en av de kompatibla lärarna.");
+    }
+  }
+
   /**
    * Create a new course with optimistic updates
    * @param {Object} courseData - Course data
@@ -60,6 +70,7 @@ export class CourseFormService {
     if (!nextCode) throw new Error("Kurskod måste anges.");
     if (!nextName) throw new Error("Kursnamn måste anges.");
     this.assertCourseUnique({ code: nextCode, name: nextName });
+    this.assertExaminatorIsCompatible(examinatorTeacherId, selectedTeacherIds);
 
     const result = BaseFormService.create("add-course", courseData, {
       add: (data) => store.addCourse(data),
@@ -96,6 +107,7 @@ export class CourseFormService {
     if (!nextCode) throw new Error("Kurskod måste anges.");
     if (!nextName) throw new Error("Kursnamn måste anges.");
     this.assertCourseUnique({ code: nextCode, name: nextName }, courseId);
+    this.assertExaminatorIsCompatible(examinatorTeacherId, selectedTeacherIds);
 
     const previousCourse = {
       ...existing,

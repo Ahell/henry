@@ -6,6 +6,8 @@ server/node_modules/
 dist/
 
 # Database
+henry.db
+henry.db-journal
 server/*.db
 server/*.db-journal
 server/db/*.db
