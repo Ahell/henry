@@ -122,6 +122,9 @@ export class DataStore {
 
       // Sync course_examinators junction table from course.examinator_teacher_id
       this.coursesManager.syncCourseExaminatorsFromCourses();
+
+      // Sync course_kursansvarig junction table from course.kursansvarig_teacher_id
+      this.coursesManager.syncCourseKursansvarigFromCourses();
     });
   }
 

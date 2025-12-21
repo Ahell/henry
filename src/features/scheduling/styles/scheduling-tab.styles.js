@@ -823,10 +823,9 @@ export const schedulingTabStyles = css`
     align-items: center;
     gap: 0;
     width: 100%;
-    padding: 4px 6px;
+    padding: 4px 24px 4px 6px;
     border-radius: var(--radius-base);
     position: relative;
-    overflow: hidden;
     isolation: isolate;
     cursor: pointer;
     font-weight: var(--font-weight-semibold);
@@ -869,8 +868,8 @@ export const schedulingTabStyles = css`
     position: absolute;
     top: 4px;
     right: 4px;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
     z-index: 2;
     margin: 0;
@@ -884,11 +883,6 @@ export const schedulingTabStyles = css`
   .gantt-table tfoot .summary-course .kursansvarig-radio:focus {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
-  }
-
-  .gantt-table tfoot .summary-course .kursansvarig-radio:checked {
-    background-color: var(--color-primary, #3b82f6);
-    border-color: var(--color-primary, #3b82f6);
   }
 
   /* Optional: Add subtle indicator to pill when teacher is kursansvarig */
