@@ -235,15 +235,6 @@ export class GanttCourseBlock extends LitElement {
 
   _getCourseColor(course) {
     if (!course) return "#666";
-
-    const prereqCount = this._getAllPrerequisites(course.course_id).length;
-    if (prereqCount > 0) {
-      if (prereqCount === 1) return "#2d1b4e";
-      if (prereqCount === 2) return "#4a2c7a";
-      if (prereqCount === 3) return "#6f42c1";
-      return "#9c88ff";
-    }
-
     return this._getNormalCourseColor(course);
   }
 
