@@ -168,6 +168,16 @@ export class CoursesTab extends LitElement {
                   ]}
                 ></henry-radio-group>
                 <henry-select
+                  id="courseExaminator"
+                  label="Examinator"
+                  size="1"
+                  placeholder="Ingen vald"
+                  .options=${store.getTeachers().map((teacher) => ({
+                    value: teacher.teacher_id.toString(),
+                    label: teacher.name,
+                  }))}
+                ></henry-select>
+                <henry-select
                   id="prerequisites"
                   label="Spärrkurser (kurser som måste läsas före)"
                   multiple
@@ -242,6 +252,7 @@ export class CoursesTab extends LitElement {
             credits: formData.credits,
             prerequisites: formData.prerequisites,
           },
+          formData.examinatorTeacherId,
           formData.selectedTeacherIds
         );
         await store.saveData({ mutationId });
@@ -257,6 +268,7 @@ export class CoursesTab extends LitElement {
     return [
       { key: "code", label: "Kod", width: "100px" },
       { key: "name", label: "Namn", width: "200px" },
+      { key: "examinator", label: "Examinator", width: "180px" },
       { key: "prerequisites", label: "Spärrkurser", width: "150px" },
       {
         key: "compatible_teachers",
@@ -275,6 +287,15 @@ export class CoursesTab extends LitElement {
 
       case "name":
         return html`${course.name}`;
+
+      case "examinator": {
+        const tid = store.getCourseExaminatorTeacherId(course.course_id);
+        if (tid == null) {
+          return html`<span class="no-prerequisites">-</span>`;
+        }
+        const teacher = store.getTeacher(tid);
+        return html`${teacher?.name || "-"}`;
+      }
 
       case "prerequisites":
         return this.renderPrerequisitesList(course);

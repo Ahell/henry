@@ -10,6 +10,10 @@ export async function createCourseFromForm(root) {
       id: "courseCredits",
       transform: (value) => Number(value),
     },
+    examinatorTeacherId: {
+      id: "courseExaminator",
+      transform: (value) => (value ? Number(value) : null),
+    },
     prerequisites: { id: "prerequisites", type: "select-multiple" },
     selectedTeacherIds: { id: "courseTeachers", type: "select-multiple" },
   });
@@ -25,6 +29,7 @@ export async function createCourseFromForm(root) {
       credits: formData.credits,
       prerequisites: formData.prerequisites,
     },
+    formData.examinatorTeacherId,
     formData.selectedTeacherIds
   );
 
@@ -36,6 +41,7 @@ export function resetCourseForm(root) {
   FormService.clearCustomForm(root, [
     "prerequisites",
     "courseTeachers",
+    "courseExaminator",
     "courseCode",
     "courseName",
     "courseCredits",

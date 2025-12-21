@@ -115,6 +115,13 @@ export function ensureSchema(db) {
       PRIMARY KEY (teacher_id, course_id)
     );
 
+    -- One examinator per course (teacher can be examinator for many courses)
+    CREATE TABLE IF NOT EXISTS course_examinators (
+      course_id INTEGER NOT NULL PRIMARY KEY,
+      teacher_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS app_settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,

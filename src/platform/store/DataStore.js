@@ -106,6 +106,9 @@ export class DataStore {
       this.availabilityManager.teacherAvailability = (
         this.availabilityManager.teacherAvailability || []
       ).filter((a) => String(a.teacher_id) !== String(teacherId));
+
+      // Remove any examinator mappings for this teacher
+      this.coursesManager.handleTeacherDeleted(teacherId);
     });
 
     // Automatic synchronization handlers
@@ -116,6 +119,9 @@ export class DataStore {
 
       // Sync course_prerequisites junction table from course.prerequisites
       this.coursesManager.syncCoursePrerequisitesFromCourses();
+
+      // Sync course_examinators junction table from course.examinator_teacher_id
+      this.coursesManager.syncCourseExaminatorsFromCourses();
     });
   }
 
@@ -345,6 +351,25 @@ export class DataStore {
 
   deleteCourse(courseId) {
     return this.coursesManager.deleteCourse(courseId);
+  }
+
+  getCourseExaminatorTeacherId(courseId) {
+    return this.coursesManager.getCourseExaminatorTeacherId(courseId);
+  }
+
+  setCourseExaminator(courseId, teacherId) {
+    return this.coursesManager.setCourseExaminator(courseId, teacherId);
+  }
+
+  clearCourseExaminator(courseId) {
+    return this.coursesManager.clearCourseExaminator(courseId);
+  }
+
+  getExaminatorCoursesForTeacher(teacherId) {
+    const tid = String(teacherId);
+    return (this.coursesManager.getCourses() || []).filter(
+      (c) => String(c?.examinator_teacher_id) === tid
+    );
   }
 
   getAllPrerequisites(courseId, visited) {

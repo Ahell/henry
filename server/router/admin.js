@@ -50,6 +50,7 @@ const clearAllTables = () => {
     db.prepare("DELETE FROM cohort_slot_courses").run();
     db.prepare("DELETE FROM teacher_course_competency").run();
     db.prepare("DELETE FROM teacher_courses_staff").run();
+    db.prepare("DELETE FROM course_examinators").run();
     db.prepare("DELETE FROM course_prerequisites").run();
     db.prepare("DELETE FROM slots").run();
     db.prepare("DELETE FROM cohorts").run();

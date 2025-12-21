@@ -7,6 +7,8 @@ export const getCohorts = () => all("SELECT * FROM cohorts");
 export const getTeachers = () => all("SELECT * FROM teachers");
 export const getTeacherCourses = () =>
   all("SELECT teacher_id, course_id FROM teacher_course_competency");
+export const getCourseExaminators = () =>
+  all("SELECT course_id, teacher_id FROM course_examinators");
 export const getSlots = () => all("SELECT * FROM slots");
 export const getCohortSlotCourses = () => all("SELECT * FROM cohort_slot_courses");
 export const getCourseRunSlots = () => all("SELECT * FROM course_run_slots");

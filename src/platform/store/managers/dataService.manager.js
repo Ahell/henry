@@ -15,7 +15,12 @@ export class DataServiceManager {
   hydrate(data) {
     // Load data from backend
     this.store.businessLogicManager.load(data.businessLogic);
-    this.store.coursesManager.load(data.courses, data.coursePrerequisites);
+    this.store.coursesManager.load(
+      data.courses,
+      data.coursePrerequisites,
+      null,
+      data.courseExaminators || []
+    );
     this.store.teachersManager.load(data.teachers, data.teacherCourses);
     this.store.examDatesManager.load(data.examDates || []);
     this.store.courseRunsManager.load(
@@ -32,6 +37,7 @@ export class DataServiceManager {
     );
     this.store.teachersManager.ensureTeacherCoursesFromCompatible();
     this.store.coursesManager.ensurePrerequisitesFromNormalized();
+    this.store.coursesManager.ensureExaminatorsFromNormalized();
     this.store.teachersManager.ensureTeacherCompatibleFromCourses();
 
     // Derive normalized structures if missing
@@ -140,6 +146,7 @@ export class DataServiceManager {
   async saveData() {
     this.store.teachersManager.syncTeacherCoursesFromTeachers();
     this.store.coursesManager.syncCoursePrerequisitesFromCourses();
+    this.store.coursesManager.syncCourseExaminatorsFromCourses();
     return this.dataService.saveData(this.getDataSnapshot());
   }
 
@@ -152,6 +159,7 @@ export class DataServiceManager {
       teachers: this.store.teachersManager.getTeachers(),
       teacherCourses: this.store.teachersManager.teacherCourses,
       coursePrerequisites: this.store.coursesManager.coursePrerequisites,
+      courseExaminators: this.store.coursesManager.courseExaminators,
       slots: this.store.slotsManager.getSlots(),
       courseRuns,
       teacherAvailability: this.store.teacherAvailability,
@@ -186,7 +194,9 @@ export class DataServiceManager {
     if (data.courses) {
       this.store.coursesManager.load(
         data.courses || [],
-        data.coursePrerequisites || []
+        data.coursePrerequisites || [],
+        null,
+        data.courseExaminators || []
       );
     }
     if (data.cohorts) {
@@ -210,7 +220,9 @@ export class DataServiceManager {
     if (data.coursePrerequisites) {
       this.store.coursesManager.load(
         this.store.coursesManager.getCourses(),
-        data.coursePrerequisites
+        data.coursePrerequisites,
+        null,
+        data.courseExaminators || this.store.coursesManager.courseExaminators
       );
     }
     if (data.teachingDays) {

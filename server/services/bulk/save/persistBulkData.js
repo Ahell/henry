@@ -6,6 +6,7 @@ import { insertCoursePrerequisites } from "./db/insertCoursePrerequisites.js";
 import { insertCohorts } from "./db/insertCohorts.js";
 import { insertTeachers } from "./db/insertTeachers.js";
 import { insertTeacherCourses } from "./db/insertTeacherCourses.js";
+import { insertCourseExaminators } from "./db/insertCourseExaminators.js";
 import { insertSlots } from "./db/insertSlots.js";
 import { insertSlotDays } from "./db/insertSlotDays.js";
 import { insertTeacherAvailability } from "./db/insertTeacherAvailability.js";
@@ -41,6 +42,7 @@ export async function persistBulkData(payload = {}) {
     insertCohorts(normalized.dedupedCohorts);
     insertTeachers(normalized.dedupedTeachers);
     insertTeacherCourses(normalized.teacherCoursesToInsert);
+    insertCourseExaminators(normalized.courseExaminatorsToInsert);
     insertSlots(normalized.dedupedSlots);
     insertSlotDays(payload.slotDays || [], normalized.remappers.remapSlotId);
     insertTeacherAvailability(

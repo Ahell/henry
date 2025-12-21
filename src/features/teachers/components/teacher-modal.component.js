@@ -13,6 +13,7 @@ export class TeacherModal extends LitElement {
     open: { type: Boolean },
     formValid: { type: Boolean },
     selectedCompatibleCourseIds: { type: Array, attribute: false },
+    selectedExaminatorCourseIds: { type: Array, attribute: false },
   };
 
   constructor() {
@@ -21,6 +22,7 @@ export class TeacherModal extends LitElement {
     this.open = false;
     this.formValid = false;
     this.selectedCompatibleCourseIds = [];
+    this.selectedExaminatorCourseIds = [];
   }
 
   willUpdate(changedProperties) {
@@ -34,6 +36,8 @@ export class TeacherModal extends LitElement {
       this.selectedCompatibleCourseIds = Array.isArray(teacher.compatible_courses)
         ? teacher.compatible_courses.map(String)
         : [];
+      this.selectedExaminatorCourseIds = (store.getExaminatorCoursesForTeacher(this.teacherId) || [])
+        .map((c) => String(c.course_id));
     }
   }
 
@@ -59,8 +63,14 @@ export class TeacherModal extends LitElement {
   _handleSelectChange(e) {
     const targetId = e?.target?.id;
     const values = Array.isArray(e?.detail?.values) ? e.detail.values : null;
-    if (targetId !== "edit-courses" || !values) return;
-    this.selectedCompatibleCourseIds = values.map(String);
+    if (!targetId || !values) return;
+    if (targetId === "edit-courses") {
+      this.selectedCompatibleCourseIds = values.map(String);
+      return;
+    }
+    if (targetId === "edit-examinator-courses") {
+      this.selectedExaminatorCourseIds = values.map(String);
+    }
   }
 
   _updateFormValidity() {
@@ -137,6 +147,20 @@ export class TeacherModal extends LitElement {
                 ),
               }))}
             ></henry-select>
+
+            <henry-select
+              id="edit-examinator-courses"
+              label="Examinator för kurser"
+              multiple
+              size="8"
+              .options=${store.getCourses().map((c) => ({
+                value: c.course_id.toString(),
+                label: `${c.code} - ${c.name}`,
+                selected: this.selectedExaminatorCourseIds.includes(
+                  c.course_id.toString()
+                ),
+              }))}
+            ></henry-select>
           </div>
         </form>
 
@@ -185,6 +209,10 @@ export class TeacherModal extends LitElement {
       name: "edit-name",
       home_department: { id: "edit-department", type: "radio" },
       compatible_courses: { id: "edit-courses", type: "select-multiple" },
+      examinator_courses: {
+        id: "edit-examinator-courses",
+        type: "select-multiple",
+      },
     });
 
     this.dispatchEvent(

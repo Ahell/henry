@@ -124,7 +124,7 @@ export class ReportTab extends LitElement {
       return String(t?.name || "");
     };
 
-    const finalizeTeacherFields = (teacherIds) => {
+    const finalizeTeacherFields = (teacherIds, courseExaminatorTeacherId) => {
       const sorted = (teacherIds || [])
         .map((id) => String(id))
         .filter(Boolean)
@@ -137,11 +137,15 @@ export class ReportTab extends LitElement {
 
       const firstTeacherId = sorted[0] || "";
       const lastTeacherId = sorted.length ? sorted[sorted.length - 1] : "";
+      const examinatorTeacherId = courseExaminatorTeacherId
+        ? String(courseExaminatorTeacherId)
+        : firstTeacherId;
       return {
         teacherIds: sorted,
-        examinator: teachersById.get(firstTeacherId)?.name || "",
+        examinator: teachersById.get(examinatorTeacherId)?.name || "",
         kursansvarig: teachersById.get(lastTeacherId)?.name || "",
         avd:
+          teachersById.get(examinatorTeacherId)?.home_department ||
           teachersById.get(lastTeacherId)?.home_department ||
           teachersById.get(firstTeacherId)?.home_department ||
           "",
@@ -159,7 +163,13 @@ export class ReportTab extends LitElement {
       const coveredSlotIds = getCoveredSlotIds(run).sort();
       const key = `${String(run.course_id)}|${coveredSlotIds.join(",")}`;
 
-      const teacherIds = uniqueStrings(normalizeTeacherIds(run));
+      const courseExaminatorTeacherId = store.getCourseExaminatorTeacherId(
+        run.course_id
+      );
+      const teacherIds = uniqueStrings([
+        ...normalizeTeacherIds(run),
+        courseExaminatorTeacherId != null ? courseExaminatorTeacherId : null,
+      ]);
       const cohorts = uniqueStrings(Array.isArray(run?.cohorts) ? run.cohorts : []);
       const plannedStudents = Number.isFinite(Number(run?.planned_students))
         ? Number(run.planned_students)
@@ -174,6 +184,7 @@ export class ReportTab extends LitElement {
         groups.set(key, {
           runId: run.run_id ?? "",
           courseId: run.course_id,
+          courseExaminatorTeacherId: courseExaminatorTeacherId ?? null,
           teacherIds,
           cohorts,
           plannedStudents,
@@ -191,11 +202,17 @@ export class ReportTab extends LitElement {
       existing.cohorts = uniqueStrings([...existing.cohorts, ...cohorts]);
       existing.plannedStudents =
         Number(existing.plannedStudents || 0) + Number(plannedStudents || 0);
+      if (existing.courseExaminatorTeacherId == null && courseExaminatorTeacherId != null) {
+        existing.courseExaminatorTeacherId = courseExaminatorTeacherId;
+      }
     }
 
     return Array.from(groups.values())
       .map((row) => {
-        const teacherFields = finalizeTeacherFields(row.teacherIds);
+        const teacherFields = finalizeTeacherFields(
+          row.teacherIds,
+          row.courseExaminatorTeacherId
+        );
         return { ...row, ...teacherFields };
       })
       .sort((a, b) => {

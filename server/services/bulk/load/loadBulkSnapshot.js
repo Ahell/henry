@@ -8,6 +8,7 @@ import {
   getAppSetting,
   getSlotDays,
   getSlots,
+  getCourseExaminators,
   getTeacherCourses,
   getTeacherDayUnavailability,
   getTeachers,
@@ -49,6 +50,7 @@ function loadBaseEntities() {
     cohorts: getCohorts(),
     teachers: getTeachers(),
     teacherCourses: getTeacherCourses(),
+    courseExaminators: getCourseExaminators(),
     slots: getSlots(),
   };
 }
@@ -114,6 +116,7 @@ function buildSnapshot(data) {
     cohorts: data.cohorts,
     teachers: data.teachers,
     teacherCourses: data.teacherCourses,
+    courseExaminators: data.courseExaminators,
     slots: data.slots,
     courseRuns: data.courseRuns,
     teacherAvailability: data.teacherAvailability,

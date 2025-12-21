@@ -11,9 +11,7 @@ function computeSlotEndDate(startDate, lengthDays = SLOT_LENGTH_DAYS) {
     throw new Error(`seedData: ogiltigt start_date "${startDate}"`);
   }
   const [, year, month, day] = match;
-  const date = new Date(
-    Date.UTC(Number(year), Number(month) - 1, Number(day))
-  );
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
   date.setUTCDate(date.getUTCDate() + Math.max(0, Number(lengthDays) - 1));
   return date.toISOString().slice(0, 10);
 }
@@ -91,6 +89,7 @@ const seedDataRaw = {
       code: "AI191U",
       name: "Bostadsrätt för fastighetsmäklare",
       credits: 7.5,
+      prerequisite_codes: ["AI180U"], // Requires JÖK
     },
     {
       code: "AI181U",
@@ -106,6 +105,7 @@ const seedDataRaw = {
       code: "AI186U",
       name: "Beskattningsrätt för fastighetsmäklare",
       credits: 7.5,
+      prerequisite_codes: ["AI180U"], // Requires JÖK
     },
     {
       code: "AI182U",
@@ -117,6 +117,7 @@ const seedDataRaw = {
       code: "AI189U",
       name: "Fastighetsförmedling - kvalificerad fastighetsmäklarjuridik",
       credits: 7.5,
+      prerequisite_codes: ["AI180U"], // Requires JÖK
     },
     {
       code: "AI187U",
@@ -176,7 +177,11 @@ const seedDataRaw = {
       home_department: "AIE",
       compatible_courses: [3, 5, 7],
     },
-    { name: "Tim", home_department: "AIJ", compatible_courses: [3, 5, 7, 8, 12] },
+    {
+      name: "Tim",
+      home_department: "AIJ",
+      compatible_courses: [3, 5, 7, 8, 12],
+    },
     {
       name: "Rickard Engström",
       home_department: "AIE",
@@ -203,6 +208,10 @@ const seedDataRaw = {
       compatible_courses: [1, 9],
     },
   ],
+
+  // One examinator per course (teacher_id is 1-based index into teachers array)
+  // Deterministic: pick the first compatible teacher for each course_id.
+  courseExaminators: [],
 
   // Time slots - seed only the dates (each slot is 28 days)
   slots: SLOT_START_DATES.map((start_date) => ({
@@ -317,12 +326,18 @@ function normalizeSeedData(raw) {
   const courses = normalizeCourses(raw.courses || []);
   const coursePrerequisites = buildCoursePrerequisites(courses);
   const courseRuns = normalizeCourseRuns(raw.courseRuns || []);
+  const courseExaminators = normalizeCourseExaminators({
+    courses,
+    teachersRaw: raw.teachers || [],
+    courseExaminatorsRaw: raw.courseExaminators,
+  });
 
   return {
     ...raw,
     courses,
     coursePrerequisites,
     courseRuns,
+    courseExaminators,
   };
 }
 
@@ -380,4 +395,38 @@ function normalizeCourseRuns(courseRunsRaw) {
       cohorts: Array.isArray(r.cohorts) ? r.cohorts : [],
     }))
     .filter((r) => r.cohorts.some((id) => id != null));
+}
+
+function normalizeCourseExaminators({
+  courses = [],
+  teachersRaw = [],
+  courseExaminatorsRaw,
+} = {}) {
+  if (Array.isArray(courseExaminatorsRaw) && courseExaminatorsRaw.length > 0) {
+    return courseExaminatorsRaw
+      .map((row) => ({
+        course_id: row?.course_id,
+        teacher_id: row?.teacher_id,
+      }))
+      .filter((row) => row.course_id != null && row.teacher_id != null);
+  }
+
+  const rows = [];
+  const byCourseId = new Map();
+
+  (teachersRaw || []).forEach((t, idx) => {
+    const teacherId = idx + 1;
+    (t?.compatible_courses || []).forEach((courseId) => {
+      const key = String(courseId);
+      if (!byCourseId.has(key)) byCourseId.set(key, teacherId);
+    });
+  });
+
+  (courses || []).forEach((c) => {
+    const teacherId = byCourseId.get(String(c.course_id));
+    if (teacherId == null) return;
+    rows.push({ course_id: c.course_id, teacher_id: teacherId });
+  });
+
+  return rows;
 }

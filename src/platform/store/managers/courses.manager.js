@@ -7,6 +7,7 @@ export class CoursesManager {
     this.events = events;
     this.courses = [];
     this.coursePrerequisites = [];
+    this.courseExaminators = [];
   }
 
   /**
@@ -15,9 +16,12 @@ export class CoursesManager {
    * @param {Array} coursePrerequisites - Course prerequisite junction table
    * @param {Array} normalizedCourses - Pre-normalized courses with prerequisites embedded
    */
-  load(courses, coursePrerequisites, normalizedCourses) {
+  load(courses, coursePrerequisites, normalizedCourses, courseExaminators) {
     this.courses = normalizedCourses || courses || [];
     this.coursePrerequisites = coursePrerequisites || [];
+    this.courseExaminators = Array.isArray(courseExaminators)
+      ? courseExaminators
+      : [];
   }
 
   /**
@@ -127,6 +131,10 @@ export class CoursesManager {
           String(pr.course_id) !== String(courseId) &&
           String(pr.prerequisite_course_id) !== String(courseId)
       );
+      // Also remove examinator mapping for this course
+      this.courseExaminators = (this.courseExaminators || []).filter(
+        (ce) => String(ce.course_id) !== String(courseId)
+      );
       this.events.notify("course-deleted", courseId);
       this.events.notify();
       return true;
@@ -151,6 +159,97 @@ export class CoursesManager {
         c.prerequisites = byCourse.get(c.course_id);
       }
     });
+  }
+
+  /**
+   * Hydrate course.examinator_teacher_id from courseExaminators junction table
+   */
+  ensureExaminatorsFromNormalized() {
+    if (!Array.isArray(this.courses)) return;
+    const byCourse = new Map();
+    (this.courseExaminators || []).forEach((row) => {
+      if (row?.course_id == null) return;
+      byCourse.set(String(row.course_id), row.teacher_id);
+    });
+    this.courses.forEach((c) => {
+      const tid = byCourse.get(String(c.course_id));
+      c.examinator_teacher_id = tid != null ? tid : null;
+    });
+  }
+
+  /**
+   * Synchronize courseExaminators junction table from course.examinator_teacher_id
+   */
+  syncCourseExaminatorsFromCourses() {
+    if (!Array.isArray(this.courses)) return;
+    const next = [];
+    const seen = new Set();
+    this.courses.forEach((c) => {
+      const tid = c?.examinator_teacher_id;
+      if (tid == null || tid === "") return;
+      const key = String(c.course_id);
+      if (seen.has(key)) return;
+      next.push({ course_id: c.course_id, teacher_id: tid });
+      seen.add(key);
+    });
+    this.courseExaminators = next;
+  }
+
+  getCourseExaminatorTeacherId(courseId) {
+    const course = this.getCourse(courseId);
+    if (course && course.examinator_teacher_id != null) {
+      return course.examinator_teacher_id;
+    }
+    const row = (this.courseExaminators || []).find(
+      (ce) => String(ce.course_id) === String(courseId)
+    );
+    return row?.teacher_id ?? null;
+  }
+
+  setCourseExaminator(courseId, teacherId) {
+    const course = this.getCourse(courseId);
+    if (!course) return null;
+
+    const normalizedTeacherId =
+      teacherId == null || teacherId === "" ? null : Number(teacherId);
+    course.examinator_teacher_id = normalizedTeacherId;
+
+    this.courseExaminators = (this.courseExaminators || []).filter(
+      (ce) => String(ce.course_id) !== String(courseId)
+    );
+    if (normalizedTeacherId != null && Number.isFinite(normalizedTeacherId)) {
+      this.courseExaminators.push({
+        course_id: course.course_id,
+        teacher_id: normalizedTeacherId,
+      });
+    }
+
+    this.events.notify();
+    return normalizedTeacherId;
+  }
+
+  clearCourseExaminator(courseId) {
+    return this.setCourseExaminator(courseId, null);
+  }
+
+  handleTeacherDeleted(teacherId) {
+    // Clear examinator assignments for deleted teacher
+    const tid = String(teacherId);
+    let changed = false;
+    (this.courses || []).forEach((c) => {
+      if (String(c?.examinator_teacher_id) === tid) {
+        c.examinator_teacher_id = null;
+        changed = true;
+      }
+    });
+    const next = (this.courseExaminators || []).filter(
+      (ce) => String(ce.teacher_id) !== tid
+    );
+    if (next.length !== (this.courseExaminators || []).length) {
+      this.courseExaminators = next;
+      changed = true;
+    }
+    if (changed) this.events.notify();
   }
 
   /**

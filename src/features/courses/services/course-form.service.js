@@ -50,10 +50,11 @@ export class CourseFormService {
   /**
    * Create a new course with optimistic updates
    * @param {Object} courseData - Course data
+   * @param {number|null} examinatorTeacherId - Teacher ID for examinator
    * @param {Array} selectedTeacherIds - Teacher IDs
    * @returns {Object} Created course
    */
-  static createCourse(courseData, selectedTeacherIds) {
+  static createCourse(courseData, examinatorTeacherId, selectedTeacherIds) {
     const nextCode = String(courseData?.code ?? "").trim();
     const nextName = String(courseData?.name ?? "").trim();
     if (!nextCode) throw new Error("Kurskod måste anges.");
@@ -66,6 +67,11 @@ export class CourseFormService {
       getIdField: "course_id",
     });
 
+    if (examinatorTeacherId != null && examinatorTeacherId !== "") {
+      store.setCourseExaminator(result.entity.course_id, examinatorTeacherId);
+    } else {
+      store.clearCourseExaminator(result.entity.course_id);
+    }
     store.addCourseToTeachers(result.entity.course_id, selectedTeacherIds);
 
     return { course: result.entity, mutationId: result.mutationId };
@@ -75,10 +81,11 @@ export class CourseFormService {
    * Update an existing course
    * @param {number} courseId - Course ID
    * @param {Object} courseData - Updated course data
+   * @param {number|null} examinatorTeacherId - Teacher ID for examinator
    * @param {Array} selectedTeacherIds - Teacher IDs
    * @returns {Object} Updated course and mutation ID
    */
-  static updateCourse(courseId, courseData, selectedTeacherIds) {
+  static updateCourse(courseId, courseData, examinatorTeacherId, selectedTeacherIds) {
     const existing = store.getCourse(courseId);
     if (!existing) {
       throw new Error(`Course ${courseId} not found`);
@@ -102,6 +109,11 @@ export class CourseFormService {
         ? [...t.compatible_courses]
         : [],
     }));
+    const previousCourseExaminators = Array.isArray(
+      store.coursesManager.courseExaminators
+    )
+      ? store.coursesManager.courseExaminators.map((x) => ({ ...x }))
+      : [];
 
     const mutationId = store.applyOptimistic({
       label: "update-course",
@@ -113,10 +125,17 @@ export class CourseFormService {
           });
         });
         store.teachersManager.syncTeacherCoursesFromTeachers();
+        store.coursesManager.courseExaminators = previousCourseExaminators;
+        store.coursesManager.ensureExaminatorsFromNormalized();
       },
     });
 
     store.updateCourse(courseId, courseData);
+    if (examinatorTeacherId != null && examinatorTeacherId !== "") {
+      store.setCourseExaminator(courseId, examinatorTeacherId);
+    } else {
+      store.clearCourseExaminator(courseId);
+    }
     store.syncCourseToTeachers(courseId, selectedTeacherIds);
 
     return { course: store.getCourse(courseId), mutationId };

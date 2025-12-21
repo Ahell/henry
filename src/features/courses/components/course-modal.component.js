@@ -99,6 +99,10 @@ export class CourseModal extends LitElement {
     const course = store.getCourse(this.courseId);
     if (!course) return html``;
     const normalizedCredits = Number(course.credits) === 15 ? 15 : 7.5;
+    const examinatorTeacherId =
+      store.getCourseExaminatorTeacherId(course.course_id) ??
+      course.examinator_teacher_id ??
+      "";
 
     return html`
       <henry-modal open title="Redigera Kurs" @close="${this._handleClose}">
@@ -130,6 +134,18 @@ export class CourseModal extends LitElement {
               .value="${course.name}"
               required
             ></henry-input>
+
+            <henry-select
+              id="edit-examinator"
+              label="Examinator"
+              size="1"
+              placeholder="Ingen vald"
+              .value="${String(examinatorTeacherId ?? "")}"
+              .options=${store.getTeachers().map((t) => ({
+                value: t.teacher_id.toString(),
+                label: t.name,
+              }))}
+            ></henry-select>
 
             <henry-select
               id="edit-prerequisites"
@@ -213,6 +229,10 @@ export class CourseModal extends LitElement {
     const formData = FormService.extractFormData(root, {
       code: "edit-code",
       name: "edit-name",
+      examinatorTeacherId: {
+        id: "edit-examinator",
+        transform: (value) => (value ? Number(value) : null),
+      },
       credits: { id: "edit-credits", transform: (value) => Number(value) },
       prerequisites: { id: "edit-prerequisites", type: "select-multiple" },
       selectedTeacherIds: {

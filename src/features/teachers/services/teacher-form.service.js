@@ -54,9 +54,10 @@ export class TeacherFormService {
    * Update an existing teacher
    * @param {number} teacherId - Teacher ID
    * @param {Object} teacherData - Updated teacher data
+   * @param {Array|null} examinatorCourseIds - Course IDs the teacher should be examinator for
    * @returns {Object} Updated teacher and mutation ID
    */
-  static updateTeacher(teacherId, teacherData) {
+  static updateTeacher(teacherId, teacherData, examinatorCourseIds = null) {
     const existing = store.getTeacher(teacherId);
     if (!existing) {
       throw new Error(`Teacher ${teacherId} not found`);
@@ -66,12 +67,52 @@ export class TeacherFormService {
     if (!nextName) throw new Error("Lärarens namn måste anges.");
     this.assertTeacherNameUnique(nextName, teacherId);
 
-    const result = BaseFormService.update("update-teacher", teacherId, teacherData, {
-      get: (id) => store.getTeacher(id),
-      update: (id, data) => store.updateTeacher(id, data),
+    const previousTeacher = {
+      ...existing,
+      ...(existing.compatible_courses && {
+        compatible_courses: [...existing.compatible_courses],
+      }),
+    };
+    const previousCourseExaminators = Array.isArray(
+      store.coursesManager.courseExaminators
+    )
+      ? store.coursesManager.courseExaminators.map((x) => ({ ...x }))
+      : [];
+
+    const mutationId = store.applyOptimistic({
+      label: "update-teacher",
+      rollback: () => {
+        store.updateTeacher(teacherId, previousTeacher);
+        store.coursesManager.courseExaminators = previousCourseExaminators;
+        store.coursesManager.ensureExaminatorsFromNormalized();
+      },
     });
 
-    return { teacher: result.entity, mutationId: result.mutationId };
+    store.updateTeacher(teacherId, teacherData);
+
+    if (Array.isArray(examinatorCourseIds)) {
+      const nextIds = new Set(examinatorCourseIds.map(String));
+      const current = new Set(
+        (store.getExaminatorCoursesForTeacher(teacherId) || []).map((c) =>
+          String(c.course_id)
+        )
+      );
+
+      // Assign selected courses to this teacher
+      nextIds.forEach((courseId) => {
+        if (!courseId) return;
+        store.setCourseExaminator(courseId, teacherId);
+      });
+
+      // Unassign courses that were previously assigned to this teacher
+      current.forEach((courseId) => {
+        if (!nextIds.has(courseId)) {
+          store.clearCourseExaminator(courseId);
+        }
+      });
+    }
+
+    return { teacher: store.getTeacher(teacherId), mutationId };
   }
 
   /**

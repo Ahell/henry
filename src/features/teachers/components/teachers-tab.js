@@ -186,9 +186,11 @@ export class TeachersTab extends LitElement {
     if (!store.editMode) return;
     const { teacherId, formData } = e.detail;
     try {
+      const { examinator_courses, ...teacherUpdates } = formData || {};
       const { mutationId } = TeacherFormService.updateTeacher(
         teacherId,
-        formData
+        teacherUpdates,
+        examinator_courses
       );
       await store.saveData({ mutationId });
       this.editingTeacherId = null;
@@ -203,6 +205,7 @@ export class TeachersTab extends LitElement {
       { key: "name", label: "Namn", width: "200px" },
       { key: "department", label: "Avdelning", width: "120px" },
       { key: "compatible_courses", label: "Kompatibla kurser", width: "300px" },
+      { key: "examinator_courses", label: "Examinator", width: "240px" },
       { key: "actions", label: "Åtgärder", width: "180px" },
     ];
   }
@@ -232,6 +235,21 @@ export class TeachersTab extends LitElement {
           .filter(Boolean)
           .join(", ");
         return html`${courseNames}`;
+
+      case "examinator_courses": {
+        const examCourses = store.getExaminatorCoursesForTeacher(
+          teacher.teacher_id
+        );
+        if (!examCourses || examCourses.length === 0) {
+          return html`<span style="color: var(--color-text-disabled);"
+            >-</span
+          >`;
+        }
+        return html`${examCourses
+          .map((c) => c?.code)
+          .filter(Boolean)
+          .join(", ")}`;
+      }
 
       case "actions":
         return html`
