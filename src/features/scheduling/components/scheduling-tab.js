@@ -273,6 +273,8 @@ export class SchedulingTab extends LitElement {
       this._buildCohortWarningMarkersByCohortId(allWarnings);
     const slotCapacityWarningsBySlotDate =
       this._buildSlotCapacityWarningPillsBySlotDate(capacityWarnings);
+    const slotTeacherSelectionWarningsBySlotDate =
+      this._buildSlotTeacherSelectionWarningPillsBySlotDate();
 
     return html`
       <henry-panel>
@@ -310,7 +312,8 @@ export class SchedulingTab extends LitElement {
                     html`<th class="slot-col-header">
                       ${this._renderSlotAvailabilityHeader(
                         dateStr,
-                        slotCapacityWarningsBySlotDate
+                        slotCapacityWarningsBySlotDate,
+                        slotTeacherSelectionWarningsBySlotDate
                       )}
                     </th>`
                 )}
@@ -814,6 +817,74 @@ export class SchedulingTab extends LitElement {
     return out;
   }
 
+  _buildSlotTeacherSelectionWarningPillsBySlotDate() {
+    const out = new Map(); // slotDate -> pills[]
+    const slots = store.getSlots() || [];
+    const courseById = new Map(
+      (store.getCourses() || []).map((c) => [String(c.course_id), c])
+    );
+
+    for (const slot of slots) {
+      if (!slot?.slot_id || !slot?.start_date) continue;
+
+      const runsInSlot = (store.getCourseRuns() || [])
+        .filter((run) => this._runCoversSlotId(run, slot.slot_id))
+        // Ignore orphan runs with no cohort (they shouldn't count as "scheduled" in the grid)
+        .filter(
+          (run) =>
+            Array.isArray(run.cohorts) && run.cohorts.some((id) => id != null)
+        );
+
+      if (!runsInSlot.length) continue;
+
+      const missingCourseCodes = [];
+      const courseIdsInSlot = Array.from(
+        new Set(runsInSlot.map((r) => r?.course_id).filter((id) => id != null))
+      ).map((id) => String(id));
+
+      for (const courseIdStr of courseIdsInSlot) {
+        const assignedTeachers = new Set();
+        runsInSlot
+          .filter((r) => String(r?.course_id) === courseIdStr)
+          .forEach((r) => {
+            if (Array.isArray(r?.teachers)) {
+              r.teachers.forEach((tid) => {
+                if (tid != null) assignedTeachers.add(String(tid));
+              });
+            }
+          });
+
+        if (assignedTeachers.size > 0) continue;
+
+        const courseId = Number(courseIdStr);
+        const available = this._computeTeacherOverlayChips(
+          courseId,
+          slot.start_date
+        );
+        if (!Array.isArray(available) || available.length === 0) continue;
+
+        const course = courseById.get(courseIdStr) || store.getCourse(courseId) || {};
+        missingCourseCodes.push(String(course?.code || `Kurs ${courseId}`));
+      }
+
+      if (!missingCourseCodes.length) continue;
+
+      missingCourseCodes.sort((a, b) => String(a).localeCompare(String(b)));
+      const label = this._truncatePillLabel("Ingen ansvarig");
+      const title = ["Ingen ansvarig", ...missingCourseCodes].join("\n");
+
+      out.set(String(slot.start_date), [
+        {
+          kind: "soft",
+          label,
+          title,
+        },
+      ]);
+    }
+
+    return out;
+  }
+
   _formatCohortWarningMarkerTitle(entry) {
     const ruleId = String(entry?.ruleId || "");
     const label = String(entry?.label || "").trim() || ruleId;
@@ -934,10 +1005,17 @@ export class SchedulingTab extends LitElement {
     `;
   }
 
-  _renderSlotAvailabilityHeader(slotDate, slotCapacityWarningsBySlotDate) {
+  _renderSlotAvailabilityHeader(
+    slotDate,
+    slotCapacityWarningsBySlotDate,
+    slotTeacherSelectionWarningsBySlotDate
+  ) {
     const chips = this._teacherOverlayChipsBySlotDate?.get(slotDate) || [];
-    const warningPills =
-      slotCapacityWarningsBySlotDate?.get?.(String(slotDate)) || [];
+    const warningPills = [
+      ...(slotCapacityWarningsBySlotDate?.get?.(String(slotDate)) || []),
+      ...(slotTeacherSelectionWarningsBySlotDate?.get?.(String(slotDate)) ||
+        []),
+    ];
 
     const shouldShowChips =
       !!this._dragCourseId && !!this._shouldShowTeacherAvailabilityOverlay;
