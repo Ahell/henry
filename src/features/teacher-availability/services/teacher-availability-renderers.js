@@ -55,6 +55,7 @@ export function renderDetailView(component) {
     <detail-view-header
       slotTitle="${formatSlotDate(component._detailSlotDate)}"
       .daysLength=${days.length}
+      .teachersCount=${Array.isArray(component.teachers) ? component.teachers.length : 0}
       .courseFilter=${component._detailCourseFilter}
       .applyToAllCourses=${component._applyToAllCourses}
       .courses=${slotRuns}

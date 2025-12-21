@@ -133,9 +133,12 @@ export class TeacherAvailabilityTab extends LitElement {
             <div class="header-buttons">
               <henry-button
                 variant="primary"
-                @click=${this._isDetailView ? this._exitDetailView : () => this._scrollToToday()}
-                >${this._isDetailView ? 'Avsluta detaljläge' : 'Idag'}</henry-button
+                @click=${this._isDetailView
+                  ? () => this._exitDetailView()
+                  : () => this._scrollToToday()}
               >
+                ${this._isDetailView ? "Avsluta detaljläge" : "Idag"}
+              </henry-button>
             </div>
           </div>
         </div>
@@ -145,10 +148,14 @@ export class TeacherAvailabilityTab extends LitElement {
             <div class="legend-left">
               ${this._renderLegend(this._isDetailView)}
             </div>
-            <div class="legend-right">
-              <span class="legend-chip">${this.teachers.length} lärare</span>
-              <span class="legend-chip">${daysLabel}</span>
-            </div>
+            ${this._isDetailView
+              ? null
+              : html`
+                  <div class="legend-right">
+                    <span class="legend-chip">${this.teachers.length} lärare</span>
+                    <span class="legend-chip">${daysLabel}</span>
+                  </div>
+                `}
           </div>
 
           <teacher-availability-table
@@ -166,7 +173,17 @@ export class TeacherAvailabilityTab extends LitElement {
   }
 
   _exitDetailView() {
-    this.dispatchEvent(new CustomEvent('detail-view-changed', { detail: { active: false }, bubbles: true, composed: true }));
+    const table = this.renderRoot?.querySelector?.("teacher-availability-table");
+    if (table?.exitDetailView) {
+      table.exitDetailView();
+      return;
+    }
+
+    // Fallback: just update local state if the table isn't available yet.
+    this._isDetailView = false;
+    this._detailSlotId = null;
+    this._detailSlotDate = null;
+    this.requestUpdate();
   }
 
   _getDaysLabel() {

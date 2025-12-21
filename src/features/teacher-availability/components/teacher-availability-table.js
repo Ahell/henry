@@ -6,6 +6,7 @@ import {
   renderDetailView,
   renderOverviewView,
 } from "../services/teacher-availability-renderers.js";
+import { exitDetailView } from "../services/teacher-availability-view-state.js";
 import {
   handleCellMouseDown,
   handleCellMouseEnter,
@@ -114,6 +115,10 @@ export class TeacherAvailabilityTable extends LitElement {
       this._paintMode = null;
       this._isMouseDown = false;
     }
+  }
+
+  exitDetailView() {
+    exitDetailView(this);
   }
 
   _handleCellMouseDown(e) {

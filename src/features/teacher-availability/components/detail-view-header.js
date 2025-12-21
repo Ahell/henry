@@ -7,6 +7,7 @@ export class DetailViewHeader extends LitElement {
   static properties = {
     slotTitle: { type: String },
     daysLength: { type: Number },
+    teachersCount: { type: Number },
     courses: { type: Array },
     courseFilter: { type: Number },
     applyToAllCourses: { type: Boolean },
@@ -19,6 +20,7 @@ export class DetailViewHeader extends LitElement {
     super();
     this.slotTitle = "";
     this.daysLength = 0;
+    this.teachersCount = 0;
     this.courses = [];
     this.courseFilter = null;
     this.applyToAllCourses = true;
@@ -64,17 +66,11 @@ export class DetailViewHeader extends LitElement {
             : ""}
         </div>
         <div class="detail-view-actions">
-          <span class="pill">12 lärare</span>
-          <span class="pill">28 dagar</span>
+          <span class="pill">${Number(this.teachersCount) || 0} lärare</span>
+          <span class="pill">${Number(this.daysLength) || 0} dagar</span>
         </div>
       </div>
     `;
-  }
-
-  _exitDetailView() {
-    this.dispatchEvent(
-      new CustomEvent("exit-detail", { bubbles: true, composed: true })
-    );
   }
 
   _onCourseChange(e) {
