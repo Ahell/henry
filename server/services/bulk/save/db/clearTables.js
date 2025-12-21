@@ -8,6 +8,7 @@ export function clearBulkTables() {
     "teacher_course_competency",
     "teacher_courses_staff",
     "course_examinators",
+    "course_kursansvarig",
     "slots",
     "teacher_slot_unavailability",
     "teacher_day_unavailability",

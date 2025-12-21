@@ -19,7 +19,8 @@ export class DataServiceManager {
       data.courses,
       data.coursePrerequisites,
       null,
-      data.courseExaminators || []
+      data.courseExaminators || [],
+      data.courseKursansvarig || []
     );
     this.store.teachersManager.load(data.teachers, data.teacherCourses);
     this.store.examDatesManager.load(data.examDates || []);
@@ -38,6 +39,7 @@ export class DataServiceManager {
     this.store.teachersManager.ensureTeacherCoursesFromCompatible();
     this.store.coursesManager.ensurePrerequisitesFromNormalized();
     this.store.coursesManager.ensureExaminatorsFromNormalized();
+    this.store.coursesManager.ensureKursansvarigFromNormalized();
     this.store.teachersManager.ensureTeacherCompatibleFromCourses();
 
     // Derive normalized structures if missing

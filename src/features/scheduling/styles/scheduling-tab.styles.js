@@ -864,6 +864,33 @@ export const schedulingTabStyles = css`
     cursor: not-allowed;
   }
 
+  /* Kursansvarig radio button styling */
+  .gantt-table tfoot .summary-course .kursansvarig-radio {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    z-index: 2;
+    margin: 0;
+    accent-color: var(--color-primary, #3b82f6);
+  }
+
+  .gantt-table tfoot .summary-course .kursansvarig-radio:hover {
+    transform: scale(1.1);
+  }
+
+  .gantt-table tfoot .summary-course .kursansvarig-radio:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Optional: Add subtle indicator to pill when teacher is kursansvarig */
+  .gantt-table tfoot .summary-course .summary-teacher-pill.is-kursansvarig {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  }
+
   /* Summary teacher status styling (mirrors teacher-availability patterns) */
   .gantt-table
     tfoot

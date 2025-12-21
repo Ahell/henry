@@ -1705,6 +1705,10 @@ export class SchedulingTab extends LitElement {
                           slotDate,
                           courseId: course.course_id,
                         });
+                      const isKursansvarig =
+                        store.coursesManager.getKursansvarigForCourse(
+                          course.course_id
+                        ) === teacher.teacher_id;
                       const baseClass = isAssigned
                         ? "assigned-course"
                         : "has-course";
@@ -1715,14 +1719,21 @@ export class SchedulingTab extends LitElement {
                       ]
                         .filter(Boolean)
                         .join(" ");
+                      const pillClassName = [
+                        "summary-teacher-pill",
+                        isKursansvarig ? "is-kursansvarig" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
                       return html`
                         <div
                           class="${rowClassName}"
                           title=${availability.titleText}
                         >
                           <button
-                            class="summary-teacher-pill"
+                            class="${pillClassName}"
                             type="button"
+                            style="position: relative;"
                             ?disabled=${!this.isEditing}
                             aria-pressed=${isAssigned ? "true" : "false"}
                             @click=${() =>
@@ -1736,6 +1747,35 @@ export class SchedulingTab extends LitElement {
                             <span class="summary-toggle-text"
                               >${teacher.name}</span
                             >
+                            ${isAssigned
+                              ? html`
+                                  <input
+                                    type="radio"
+                                    class="kursansvarig-radio"
+                                    name="kursansvarig-${course.course_id}"
+                                    value="${teacher.teacher_id}"
+                                    ?checked=${isKursansvarig}
+                                    ?disabled=${!this.isEditing}
+                                    aria-label="Välj ${teacher.name} som kursansvarig för ${course.code}"
+                                    title="${isKursansvarig
+                                      ? "Kursansvarig"
+                                      : "Välj som kursansvarig"}"
+                                    @click=${(e) =>
+                                      this._handleKursansvarigChange(
+                                        e,
+                                        course.course_id,
+                                        teacher.teacher_id
+                                      )}
+                                    @change=${(e) => e.stopPropagation()}
+                                    @keydown=${(e) =>
+                                      this._handleKursansvarigKeydown(
+                                        e,
+                                        course.course_id,
+                                        teacher.teacher_id
+                                      )}
+                                  />
+                                `
+                              : ""}
                           </button>
                         </div>
                       `;
@@ -1942,6 +1982,40 @@ export class SchedulingTab extends LitElement {
       this.requestUpdate();
     } catch (error) {
       console.error("Kunde inte uppdatera lärarplacering:", error);
+    }
+  }
+
+  async _handleKursansvarigChange(event, courseId, teacherId) {
+    event.stopPropagation();
+    event.preventDefault();
+
+    if (!this.isEditing) return;
+
+    const previousKursansvarig =
+      store.coursesManager.getKursansvarigForCourse(courseId);
+
+    const mutationId = store.applyOptimistic({
+      label: "set-kursansvarig",
+      rollback: () => {
+        store.coursesManager.setKursansvarig(courseId, previousKursansvarig);
+      },
+    });
+
+    try {
+      store.coursesManager.setKursansvarig(courseId, teacherId);
+      this.requestUpdate();
+      await store.saveData({ mutationId });
+    } catch (error) {
+      await store.rollback(mutationId);
+      console.error("Kunde inte sätta kursansvarig:", error);
+    }
+  }
+
+  _handleKursansvarigKeydown(event, courseId, teacherId) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.stopPropagation();
+      this._handleKursansvarigChange(event, courseId, teacherId);
     }
   }
 

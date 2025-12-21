@@ -8,6 +8,7 @@ export class CoursesManager {
     this.courses = [];
     this.coursePrerequisites = [];
     this.courseExaminators = [];
+    this.courseKursansvarig = [];
   }
 
   /**
@@ -15,12 +16,17 @@ export class CoursesManager {
    * @param {Array} courses - Course entities
    * @param {Array} coursePrerequisites - Course prerequisite junction table
    * @param {Array} normalizedCourses - Pre-normalized courses with prerequisites embedded
+   * @param {Array} courseExaminators - Course examinators junction table
+   * @param {Array} courseKursansvarig - Course kursansvarig junction table
    */
-  load(courses, coursePrerequisites, normalizedCourses, courseExaminators) {
+  load(courses, coursePrerequisites, normalizedCourses, courseExaminators, courseKursansvarig) {
     this.courses = normalizedCourses || courses || [];
     this.coursePrerequisites = coursePrerequisites || [];
     this.courseExaminators = Array.isArray(courseExaminators)
       ? courseExaminators
+      : [];
+    this.courseKursansvarig = Array.isArray(courseKursansvarig)
+      ? courseKursansvarig
       : [];
   }
 
@@ -135,6 +141,10 @@ export class CoursesManager {
       this.courseExaminators = (this.courseExaminators || []).filter(
         (ce) => String(ce.course_id) !== String(courseId)
       );
+      // Also remove kursansvarig mapping for this course
+      this.courseKursansvarig = (this.courseKursansvarig || []).filter(
+        (ck) => String(ck.course_id) !== String(courseId)
+      );
       this.events.notify("course-deleted", courseId);
       this.events.notify();
       return true;
@@ -232,6 +242,91 @@ export class CoursesManager {
     return this.setCourseExaminator(courseId, null);
   }
 
+  /**
+   * Hydrate course.kursansvarig_teacher_id from courseKursansvarig junction table
+   */
+  ensureKursansvarigFromNormalized() {
+    if (!Array.isArray(this.courses)) return;
+    const byCourse = new Map();
+    (this.courseKursansvarig || []).forEach((row) => {
+      if (row?.course_id == null) return;
+      byCourse.set(String(row.course_id), row.teacher_id);
+    });
+    this.courses.forEach((c) => {
+      const tid = byCourse.get(String(c.course_id));
+      c.kursansvarig_teacher_id = tid != null ? tid : null;
+    });
+  }
+
+  /**
+   * Synchronize courseKursansvarig junction table from course.kursansvarig_teacher_id
+   */
+  syncCourseKursansvarigFromCourses() {
+    if (!Array.isArray(this.courses)) return;
+    const next = [];
+    const seen = new Set();
+    this.courses.forEach((c) => {
+      const tid = c?.kursansvarig_teacher_id;
+      if (tid == null || tid === "") return;
+      const key = String(c.course_id);
+      if (seen.has(key)) return;
+      next.push({ course_id: c.course_id, teacher_id: tid });
+      seen.add(key);
+    });
+    this.courseKursansvarig = next;
+  }
+
+  getKursansvarigForCourse(courseId) {
+    const course = this.getCourse(courseId);
+    if (course && course.kursansvarig_teacher_id != null) {
+      return course.kursansvarig_teacher_id;
+    }
+    const row = (this.courseKursansvarig || []).find(
+      (ck) => String(ck.course_id) === String(courseId)
+    );
+    return row?.teacher_id ?? null;
+  }
+
+  setKursansvarig(courseId, teacherId) {
+    const course = this.getCourse(courseId);
+    if (!course) return null;
+
+    const normalizedTeacherId =
+      teacherId == null || teacherId === "" ? null : Number(teacherId);
+
+    // Validation: teacher must be assigned to at least one run (if not null)
+    if (normalizedTeacherId != null) {
+      const runs = this.events.store?.courseRunsManager?.getCourseRuns?.() || [];
+      const hasAssignment = runs.some(
+        (r) => r.course_id === courseId && r.teachers?.includes(normalizedTeacherId)
+      );
+      if (!hasAssignment) {
+        console.warn('Teacher must be assigned to course before becoming kursansvarig');
+        return null;
+      }
+    }
+
+    course.kursansvarig_teacher_id = normalizedTeacherId;
+
+    // Update courseKursansvarig array
+    this.courseKursansvarig = (this.courseKursansvarig || []).filter(
+      (ck) => String(ck.course_id) !== String(courseId)
+    );
+    if (normalizedTeacherId != null && Number.isFinite(normalizedTeacherId)) {
+      this.courseKursansvarig.push({
+        course_id: course.course_id,
+        teacher_id: normalizedTeacherId,
+      });
+    }
+
+    this.events.notify();
+    return normalizedTeacherId;
+  }
+
+  clearKursansvarig(courseId) {
+    return this.setKursansvarig(courseId, null);
+  }
+
   handleTeacherDeleted(teacherId) {
     // Clear examinator assignments for deleted teacher
     const tid = String(teacherId);
@@ -241,12 +336,24 @@ export class CoursesManager {
         c.examinator_teacher_id = null;
         changed = true;
       }
+      // Clear kursansvarig assignments for deleted teacher
+      if (String(c?.kursansvarig_teacher_id) === tid) {
+        c.kursansvarig_teacher_id = null;
+        changed = true;
+      }
     });
     const next = (this.courseExaminators || []).filter(
       (ce) => String(ce.teacher_id) !== tid
     );
     if (next.length !== (this.courseExaminators || []).length) {
       this.courseExaminators = next;
+      changed = true;
+    }
+    const nextKursansvarig = (this.courseKursansvarig || []).filter(
+      (ck) => String(ck.teacher_id) !== tid
+    );
+    if (nextKursansvarig.length !== (this.courseKursansvarig || []).length) {
+      this.courseKursansvarig = nextKursansvarig;
       changed = true;
     }
     if (changed) this.events.notify();

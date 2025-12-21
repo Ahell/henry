@@ -122,6 +122,18 @@ export function ensureSchema(db) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- One kursansvarig (course responsible) per course
+    CREATE TABLE IF NOT EXISTS course_kursansvarig (
+      course_id INTEGER NOT NULL PRIMARY KEY,
+      teacher_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (course_id) REFERENCES courses(course_id) ON DELETE CASCADE,
+      FOREIGN KEY (teacher_id) REFERENCES teachers(teacher_id) ON DELETE SET NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_course_kursansvarig_teacher
+    ON course_kursansvarig(teacher_id);
+
     CREATE TABLE IF NOT EXISTS app_settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,

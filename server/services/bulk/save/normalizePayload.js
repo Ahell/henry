@@ -4,6 +4,7 @@ import { normalizeTeachers } from "./normalizeTeachers.js";
 import { normalizeCohorts } from "./normalizeCohorts.js";
 import { buildTeacherCoursesToInsert } from "./teacherCourses.js";
 import { buildCourseExaminatorsToInsert } from "./courseExaminators.js";
+import { buildCourseKursansvarigToInsert } from "./courseKursansvarig.js";
 import { normalizeCourseSlotsInput } from "./courseSlots.js";
 import { buildCourseRunSlotsRows } from "./courseRunSlots.js";
 import { buildTeacherAvailabilityOps } from "./teacherAvailabilityOps.js";
@@ -43,6 +44,13 @@ export function normalizeBulkPayload(payload = {}) {
     remapTeacherId,
   });
 
+  const courseKursansvarigToInsert = buildCourseKursansvarigToInsert({
+    courseKursansvarigPayload: payload.courseKursansvarig,
+    coursesPayload: payload.courses,
+    remapCourseId,
+    remapTeacherId,
+  });
+
   const courseRunSlotsRows = buildCourseRunSlotsRows({
     dedupedCourseSlots,
     orderedSlotsForSpan,
@@ -63,6 +71,7 @@ export function normalizeBulkPayload(payload = {}) {
     dedupedCourseSlots,
     teacherCoursesToInsert,
     courseExaminatorsToInsert,
+    courseKursansvarigToInsert,
     courseRunSlotsRows,
     teacherAvailabilityOps,
     remappers,
