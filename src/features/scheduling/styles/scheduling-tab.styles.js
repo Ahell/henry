@@ -164,15 +164,20 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table thead tr.date-row th {
-    top: var(--gantt-availability-row-height);
+    /* Offset by availability header height + its top+bottom borders to avoid jitter */
+    top: calc(var(--gantt-availability-row-height) + 2px);
     height: var(--gantt-date-row-height);
     z-index: 11;
     vertical-align: middle;
     text-align: center;
+    padding: 0;
   }
 
   .gantt-table thead tr.date-row th .slot-date {
-    display: block;
+    display: flex;
+    height: var(--gantt-date-row-height);
+    align-items: center;
+    justify-content: center;
   }
 
   .gantt-table thead th:not(.cohort-header) {
