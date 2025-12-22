@@ -6,8 +6,12 @@ const DEFAULT_SLOT_LENGTH_DAYS = 28;
 const router = express.Router();
 
 router.get("/", (req, res) => {
-  const slots = db.prepare("SELECT * FROM slots").all();
-  res.json(slots);
+  try {
+    const slots = db.prepare("SELECT * FROM slots").all();
+    res.json(slots);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 router.post("/", (req, res) => {
