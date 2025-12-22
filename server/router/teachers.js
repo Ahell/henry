@@ -12,6 +12,20 @@ router.get("/", (req, res) => {
   }
 });
 
+router.get("/:id", (req, res) => {
+  try {
+    const teacher = db
+      .prepare("SELECT * FROM teachers WHERE teacher_id = ?")
+      .get(req.params.id);
+    if (!teacher) {
+      return res.status(404).json({ error: "Teacher not found" });
+    }
+    res.json(teacher);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/", (req, res) => {
   try {
     const teacher = req.body;
