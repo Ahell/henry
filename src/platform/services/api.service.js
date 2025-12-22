@@ -5,7 +5,7 @@ export class ApiService {
   }
 
   async loadData() {
-    return this._getJson("/api/bulk-load", "Backend load failed");
+    return this._getJson("/api/bulk/load", "Backend load failed");
   }
 
   async loadTestData() {
@@ -17,7 +17,7 @@ export class ApiService {
   }
 
   async saveData(data) {
-    return this._postJson("/api/bulk-save", data, "Backend save failed");
+    return this._postJson("/api/bulk/save", data, "Backend save failed");
   }
 
   async resetAllData() {

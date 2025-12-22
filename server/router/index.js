@@ -10,13 +10,13 @@ import teachersRouter from "./teachers.js";
 
 const router = express.Router();
 
-router.use("/courses", coursesRouter);
-router.use("/cohorts", cohortsRouter);
-router.use("/teachers", teachersRouter);
-router.use("/slots", slotsRouter);
-router.use("/course-runs", courseRunsRouter);
-router.use("/teacher-availability", availabilityRouter);
-router.use(bulkRouter);
 router.use("/admin", adminRouter);
+router.use("/bulk", bulkRouter);
+router.use("/cohorts", cohortsRouter);
+router.use("/course-runs", courseRunsRouter);
+router.use("/courses", coursesRouter);
+router.use("/slots", slotsRouter);
+router.use("/teacher-availability", availabilityRouter);
+router.use("/teachers", teachersRouter);
 
 export default router;

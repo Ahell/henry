@@ -27,7 +27,8 @@ const getResetBusinessLogic = () => {
     version: Number(base?.version) || 1,
     scheduling: {
       params: {
-        maxStudentsHard: Number(base?.scheduling?.params?.maxStudentsHard) || 130,
+        maxStudentsHard:
+          Number(base?.scheduling?.params?.maxStudentsHard) || 130,
         maxStudentsPreferred:
           Number(base?.scheduling?.params?.maxStudentsPreferred) || 100,
       },
@@ -87,7 +88,7 @@ router.post("/reset-all", (req, res) => {
 router.post("/load-test-data", async (req, res) => {
   try {
     const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const response = await fetch(`${baseUrl}/api/bulk-save`, {
+    const response = await fetch(`${baseUrl}/api/bulk/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(seedData),

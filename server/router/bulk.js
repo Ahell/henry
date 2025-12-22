@@ -4,7 +4,7 @@ import { persistBulkData } from "../services/bulkSaveService.js";
 
 const router = express.Router();
 
-router.get("/bulk-load", (req, res) => {
+router.get("/load", (req, res) => {
   try {
     res.json(loadBulkSnapshot());
   } catch (error) {
@@ -13,7 +13,7 @@ router.get("/bulk-load", (req, res) => {
   }
 });
 
-router.post("/bulk-save", async (req, res) => {
+router.post("/save", async (req, res) => {
   try {
     await persistBulkData(req.body);
     res.json({ success: true });
