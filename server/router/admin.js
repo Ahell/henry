@@ -39,25 +39,23 @@ const getResetBusinessLogic = () => {
 
 const clearAllTables = () => {
   db.transaction(() => {
-    // Delete all data in correct order to handle foreign key constraints
-    db.prepare("DELETE FROM course_run_days").run();
-    db.prepare("DELETE FROM course_run_teachers").run();
-    db.prepare("DELETE FROM course_run_cohorts").run();
-    db.prepare("DELETE FROM course_run_slots").run();
-    db.prepare("DELETE FROM teacher_day_unavailability").run();
-    db.prepare("DELETE FROM teacher_slot_unavailability").run();
-    db.prepare("DELETE FROM course_slot_days").run();
-    db.prepare("DELETE FROM slot_days").run();
-    db.prepare("DELETE FROM cohort_slot_courses").run();
-    db.prepare("DELETE FROM teacher_course_competency").run();
-    db.prepare("DELETE FROM teacher_courses_staff").run();
-    db.prepare("DELETE FROM course_examinators").run();
-    db.prepare("DELETE FROM course_prerequisites").run();
-    db.prepare("DELETE FROM slots").run();
-    db.prepare("DELETE FROM cohorts").run();
-    db.prepare("DELETE FROM teachers").run();
-    db.prepare("DELETE FROM courses").run();
-    db.prepare("DELETE FROM app_settings").run();
+    // Disable foreign key constraints to allow deletion in any order
+    db.pragma("foreign_keys = OFF");
+
+    // Get all table names from the database
+    const tables = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+      )
+      .all();
+
+    // Delete from all tables
+    for (const table of tables) {
+      db.prepare(`DELETE FROM ${table.name}`).run();
+    }
+
+    // Re-enable foreign key constraints
+    db.pragma("foreign_keys = ON");
   })();
 };
 
