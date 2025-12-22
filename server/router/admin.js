@@ -1,15 +1,16 @@
 import express from "express";
 import { db } from "../db/index.js";
 import { seedData } from "../data/seedData.js";
+import { seedBusinessLogic } from "../data/seedBusinessLogic.js";
 
 const router = express.Router();
 
 const getResetBusinessLogic = () => {
-  const base = seedData?.businessLogic;
+  const base = seedBusinessLogic;
   const rulesRaw = base?.scheduling?.rules;
   const rules = Array.isArray(rulesRaw) ? rulesRaw : [];
 
-  const normalizedRules = rules
+  const resetRules = rules
     .map((r) => ({
       ...r,
       enabled: false,
@@ -32,7 +33,7 @@ const getResetBusinessLogic = () => {
         maxStudentsPreferred:
           Number(base?.scheduling?.params?.maxStudentsPreferred) || 100,
       },
-      rules: normalizedRules,
+      rules: resetRules,
     },
   };
 };
