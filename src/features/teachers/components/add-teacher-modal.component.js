@@ -160,10 +160,7 @@ export class AddTeacherModal extends LitElement {
           </div>
         </form>
         <div slot="footer">
-          <henry-button
-            variant="secondary"
-            @click="${this._handleClose}"
-          >
+          <henry-button variant="secondary" @click="${this._handleClose}">
             Avbryt
           </henry-button>
           <henry-button
