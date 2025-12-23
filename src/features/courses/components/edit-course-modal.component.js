@@ -300,7 +300,7 @@ export class CourseModal extends LitElement {
 
     this.dispatchEvent(
       new CustomEvent("modal-save", {
-        detail: { action: 'update', courseId: this.courseId, formData },
+        detail: { action: "update", courseId: this.courseId, formData },
         bubbles: true,
         composed: true,
       })

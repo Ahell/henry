@@ -43,14 +43,14 @@ export class CoursesTab extends LitElement {
   async _handleModalSave(e) {
     const { action, entity, courseId, formData } = e.detail;
 
-    if (action === 'add') {
+    if (action === "add") {
       // Course already created in modal, just close and show success
       this.addModalOpen = false;
       showSuccessMessage(this, "Kurs tillagd!");
       return;
     }
 
-    if (action === 'update') {
+    if (action === "update") {
       try {
         const { mutationId } = CourseFormService.updateCourse(
           courseId,

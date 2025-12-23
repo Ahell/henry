@@ -88,7 +88,7 @@ export class AddCourseModal extends LitElement {
       this._resetForm();
       this.dispatchEvent(
         new CustomEvent("modal-save", {
-          detail: { action: 'add', entity: newCourse },
+          detail: { action: "add", entity: newCourse },
           bubbles: true,
           composed: true,
         })
