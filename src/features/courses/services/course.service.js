@@ -8,11 +8,16 @@ import { FormService } from "../../../platform/services/form.service.js";
  */
 export class CourseService {
   static normalizeCourseCode(code) {
-    return String(code ?? "").trim().toUpperCase();
+    return String(code ?? "")
+      .trim()
+      .toUpperCase();
   }
 
   static normalizeCourseName(name) {
-    return String(name ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+    return String(name ?? "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
   }
 
   static isCourseCodeUnique(code, excludeCourseId = null) {
@@ -20,7 +25,10 @@ export class CourseService {
     if (!normalized) return true;
 
     return !(store.getCourses() || []).some((c) => {
-      if (excludeCourseId != null && String(c.course_id) === String(excludeCourseId)) {
+      if (
+        excludeCourseId != null &&
+        String(c.course_id) === String(excludeCourseId)
+      ) {
         return false;
       }
       return this.normalizeCourseCode(c.code) === normalized;
@@ -32,7 +40,10 @@ export class CourseService {
     if (!normalized) return true;
 
     return !(store.getCourses() || []).some((c) => {
-      if (excludeCourseId != null && String(c.course_id) === String(excludeCourseId)) {
+      if (
+        excludeCourseId != null &&
+        String(c.course_id) === String(excludeCourseId)
+      ) {
         return false;
       }
       return this.normalizeCourseName(c.name) === normalized;
@@ -97,7 +108,12 @@ export class CourseService {
    * @param {Array} selectedTeacherIds - Teacher IDs
    * @returns {Object} Updated course and mutation ID
    */
-  static updateCourse(courseId, courseData, examinatorTeacherId, selectedTeacherIds) {
+  static updateCourse(
+    courseId,
+    courseData,
+    examinatorTeacherId,
+    selectedTeacherIds
+  ) {
     const existing = store.getCourse(courseId);
     if (!existing) {
       throw new Error(`Course ${courseId} not found`);
@@ -215,5 +231,61 @@ export class CourseService {
     if (!removed) return false;
     await store.saveData({ mutationId });
     return true;
+  }
+
+  /**
+   * Save a new course (complete orchestration: business logic + persistence)
+   * @param {Object} formData - Form data for new course
+   * @returns {Object} Created course
+   */
+  static async saveNewCourse(formData) {
+    if (!Number.isFinite(formData.credits) || formData.credits <= 0) {
+      throw new Error("Fyll i giltiga högskolepoäng för kursen.");
+    }
+
+    const { course: newCourse, mutationId } = this.createCourse(
+      {
+        code: formData.code,
+        name: formData.name,
+        credits: formData.credits,
+        prerequisites: formData.prerequisites,
+      },
+      formData.examinatorTeacherId,
+      formData.selectedTeacherIds
+    );
+
+    await store.saveData({ mutationId });
+    return newCourse;
+  }
+
+  /**
+   * Save an updated course (complete orchestration: business logic + persistence)
+   * @param {number} courseId - Course ID to update
+   * @param {Object} formData - Updated form data
+   * @returns {Object} Updated course
+   */
+  static async saveUpdatedCourse(courseId, formData) {
+    const { course: updatedCourse, mutationId } = this.updateCourse(
+      courseId,
+      {
+        code: formData.code,
+        name: formData.name,
+        credits: formData.credits,
+        prerequisites: formData.prerequisites,
+      },
+      formData.examinatorTeacherId,
+      formData.selectedTeacherIds
+    );
+
+    await store.saveData({ mutationId });
+    return updatedCourse;
+  }
+
+  /**
+   * Get all courses
+   * @returns {Array} Array of course objects
+   */
+  static getCourses() {
+    return store.getCourses();
   }
 }

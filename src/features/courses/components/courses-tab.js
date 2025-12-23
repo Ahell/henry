@@ -38,45 +38,22 @@ export class CoursesTab extends LitElement {
   }
 
   async _handleModalSave(e) {
-    const { action, entity, courseId, formData } = e.detail;
+    const { action, courseId, formData } = e.detail;
 
-    if (action === "add") {
-      try {
-        const { course: newCourse, mutationId } =
-          CourseFormService.createCourse(
-            formData,
-            formData.examinatorTeacherId,
-            formData.selectedTeacherIds
-          );
-        await store.saveData({ mutationId });
+    try {
+      if (action === "add") {
+        await CourseService.saveNewCourse(formData);
         this.modalOpen = false;
         showSuccessMessage(this, "Kurs tillagd!");
-      } catch (err) {
-        showErrorMessage(this, `Kunde inte lägga till kurs: ${err.message}`);
-      }
-      return;
-    }
-
-    if (action === "update") {
-      try {
-        const { mutationId } = CourseService.updateCourse(
-          courseId,
-          {
-            code: formData.code,
-            name: formData.name,
-            credits: formData.credits,
-            prerequisites: formData.prerequisites,
-          },
-          formData.examinatorTeacherId,
-          formData.selectedTeacherIds
-        );
-        await store.saveData({ mutationId });
+      } else if (action === "update") {
+        await CourseService.saveUpdatedCourse(courseId, formData);
         this.modalOpen = false;
         this.editingCourseId = null;
         showSuccessMessage(this, "Kurs uppdaterad!");
-      } catch (err) {
-        showErrorMessage(this, `Kunde inte uppdatera kurs: ${err.message}`);
       }
+    } catch (err) {
+      const actionText = action === "add" ? "lägga till" : "uppdatera";
+      showErrorMessage(this, `Kunde inte ${actionText} kurs: ${err.message}`);
     }
   }
 
@@ -94,13 +71,12 @@ export class CoursesTab extends LitElement {
         </div>
         <henry-table
           .columns="${CourseTableService.getColumns()}"
-          .data="${store.getCourses()}"
+          .data="${CourseService.getCourses()}"
           .renderCell="${(row, col) =>
-            CourseTableService.renderCell(
-              row,
-              col,
-              (courseId) => (this.editingCourseId = courseId)
-            )}"
+            CourseTableService.renderCell(row, col, (courseId) => {
+              this.editingCourseId = courseId;
+              this.modalOpen = true;
+            })}"
         ></henry-table>
       </henry-panel>
       <course-modal
@@ -112,7 +88,7 @@ export class CoursesTab extends LitElement {
       <course-modal
         mode="edit"
         .courseId="${this.editingCourseId}"
-        .open="${!!this.editingCourseId}"
+        .open="${this.modalOpen}"
         @modal-save="${this._handleModalSave}"
         @modal-close="${this._closeModal}"
       ></course-modal>
