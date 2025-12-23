@@ -95,7 +95,9 @@ export class EditCohortModal extends LitElement {
           @radio-change="${this._handleInputChange}"
           @textarea-change="${this._handleInputChange}"
         >
-          <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+          <div
+            style="display: flex; flex-direction: column; gap: var(--space-4);"
+          >
             <henry-input
               id="edit-date"
               label="Startdatum"
@@ -119,7 +121,11 @@ export class EditCohortModal extends LitElement {
           <henry-button variant="secondary" @click="${this._handleCancel}">
             Avbryt
           </henry-button>
-          <henry-button variant="success" @click="${this._handleSave}" ?disabled="${!this.formValid}">
+          <henry-button
+            variant="success"
+            @click="${this._handleSave}"
+            ?disabled="${!this.formValid}"
+          >
             Spara
           </henry-button>
         </div>

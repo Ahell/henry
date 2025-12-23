@@ -36,25 +36,39 @@ export class CoursesTab extends LitElement {
     this.addModalOpen = false;
   }
 
+  _handleCancelEdit() {
+    this.editingCourseId = null;
+  }
+
   async _handleModalSave(e) {
-    const { courseId, formData } = e.detail;
-    try {
-      const { mutationId } = CourseFormService.updateCourse(
-        courseId,
-        {
-          code: formData.code,
-          name: formData.name,
-          credits: formData.credits,
-          prerequisites: formData.prerequisites,
-        },
-        formData.examinatorTeacherId,
-        formData.selectedTeacherIds
-      );
-      await store.saveData({ mutationId });
-      this.editingCourseId = null;
-      showSuccessMessage(this, "Kurs uppdaterad!");
-    } catch (err) {
-      showErrorMessage(this, `Kunde inte uppdatera kurs: ${err.message}`);
+    const { action, entity, courseId, formData } = e.detail;
+
+    if (action === 'add') {
+      // Course already created in modal, just close and show success
+      this.addModalOpen = false;
+      showSuccessMessage(this, "Kurs tillagd!");
+      return;
+    }
+
+    if (action === 'update') {
+      try {
+        const { mutationId } = CourseFormService.updateCourse(
+          courseId,
+          {
+            code: formData.code,
+            name: formData.name,
+            credits: formData.credits,
+            prerequisites: formData.prerequisites,
+          },
+          formData.examinatorTeacherId,
+          formData.selectedTeacherIds
+        );
+        await store.saveData({ mutationId });
+        this.editingCourseId = null;
+        showSuccessMessage(this, "Kurs uppdaterad!");
+      } catch (err) {
+        showErrorMessage(this, `Kunde inte uppdatera kurs: ${err.message}`);
+      }
     }
   }
 
@@ -83,13 +97,14 @@ export class CoursesTab extends LitElement {
       </henry-panel>
       <add-course-modal
         .open="${this.addModalOpen}"
-        @course-added="${this._closeAddModal}"
+        @modal-save="${this._handleModalSave}"
         @modal-close="${this._closeAddModal}"
       ></add-course-modal>
       <edit-course-modal
         .courseId="${this.editingCourseId}"
         .open="${!!this.editingCourseId}"
         @modal-save="${this._handleModalSave}"
+        @modal-close="${this._handleCancelEdit}"
       ></edit-course-modal>
     `;
   }

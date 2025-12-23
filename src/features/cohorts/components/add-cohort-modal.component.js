@@ -72,11 +72,7 @@ export class AddCohortModal extends LitElement {
   render() {
     if (!this.open) return html``;
     return html`
-      <henry-modal
-        open
-        title="Lägg till Kull"
-        @close="${this._handleClose}"
-      >
+      <henry-modal open title="Lägg till Kull" @close="${this._handleClose}">
         <form
           @submit="${this._handleSubmit}"
           @input="${this._updateFormValidity}"
@@ -102,10 +98,7 @@ export class AddCohortModal extends LitElement {
           </div>
         </form>
         <div slot="footer">
-          <henry-button
-            variant="secondary"
-            @click="${this._handleClose}"
-          >
+          <henry-button variant="secondary" @click="${this._handleClose}">
             Avbryt
           </henry-button>
           <henry-button

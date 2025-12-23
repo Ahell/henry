@@ -87,10 +87,12 @@ export class AddCourseModal extends LitElement {
       const newCourse = await createCourseFromForm(this.renderRoot);
       this._resetForm();
       this.dispatchEvent(
-        new CustomEvent("course-added", { detail: newCourse })
+        new CustomEvent("modal-save", {
+          detail: { action: 'add', entity: newCourse },
+          bubbles: true,
+          composed: true,
+        })
       );
-      showSuccessMessage(this, "Kurs tillagd!");
-      this.open = false;
     } catch (err) {
       showErrorMessage(this, `Kunde inte lägga till kurs: ${err.message}`);
     }
