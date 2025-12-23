@@ -15,6 +15,7 @@ import {
 } from "../services/cohort-tab.service.js";
 import "./add-cohort-modal.component.js";
 import "./edit-cohort-modal.component.js";
+import { cohortsTabStyles } from "../styles/cohorts-tab.styles.js";
 
 export class CohortsTab extends LitElement {
   static styles = cohortsTabStyles;
