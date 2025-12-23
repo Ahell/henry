@@ -10,8 +10,7 @@ import {
   showSuccessMessage,
   showErrorMessage,
 } from "../../../utils/message-helpers.js";
-import "./add-course-modal.component.js";
-import "./edit-course-modal.component.js";
+import "./course-modal.component.js";
 import { coursesTabStyles } from "../styles/courses-tab.styles.js";
 
 export class CoursesTab extends LitElement {
@@ -104,17 +103,19 @@ export class CoursesTab extends LitElement {
             )}"
         ></henry-table>
       </henry-panel>
-      <add-course-modal
+      <course-modal
+        mode="add"
         .open="${this.modalOpen}"
         @modal-save="${this._handleModalSave}"
         @modal-close="${this._closeModal}"
-      ></add-course-modal>
-      <edit-course-modal
+      ></course-modal>
+      <course-modal
+        mode="edit"
         .courseId="${this.editingCourseId}"
         .open="${!!this.editingCourseId}"
         @modal-save="${this._handleModalSave}"
         @modal-close="${this._closeModal}"
-      ></edit-course-modal>
+      ></course-modal>
     `;
   }
 }

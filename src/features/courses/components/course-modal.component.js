@@ -3,13 +3,15 @@ import { keyed } from "lit/directives/keyed.js";
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
 import { CourseFormService } from "../services/course-form.service.js";
+import { resetCourseForm } from "../services/course-tab.service.js";
 
 /**
- * Course Edit Modal Component
- * Handles the edit modal UI for courses
+ * Course Modal Component
+ * Unified modal for both adding and editing courses
  */
 export class CourseModal extends LitElement {
   static properties = {
+    mode: { type: String }, // "add" or "edit"
     courseId: { type: Number },
     open: { type: Boolean },
     formValid: { type: Boolean },
@@ -20,6 +22,7 @@ export class CourseModal extends LitElement {
 
   constructor() {
     super();
+    this.mode = "add"; // default to add mode
     this.courseId = null;
     this.open = false;
     this.formValid = false;
@@ -28,14 +31,33 @@ export class CourseModal extends LitElement {
     this.selectedExaminatorTeacherId = "";
   }
 
+  updated(changedProperties) {
+    if (changedProperties.has("open") && this.open) {
+      if (this.mode === "add") {
+        this._resetForm();
+      } else if (this.mode === "edit" && this.courseId) {
+        this._loadCourseData();
+      }
+    }
+  }
+
   willUpdate(changedProperties) {
     if (
       (changedProperties.has("open") || changedProperties.has("courseId")) &&
       this.open &&
+      this.mode === "edit" &&
       this.courseId
     ) {
       this._loadCourseData();
     }
+  }
+
+  _resetForm() {
+    resetCourseForm(this.renderRoot);
+    this.selectedPrerequisiteIds = [];
+    this.selectedCompatibleTeacherIds = [];
+    this.selectedExaminatorTeacherId = "";
+    this._updateFormValidity();
   }
 
   _loadCourseData() {
@@ -72,16 +94,6 @@ export class CourseModal extends LitElement {
     this._updateFormValidity();
   }
 
-  updated(changedProperties) {
-    if (changedProperties.has("open") || changedProperties.has("courseId")) {
-      if (this.open && this.courseId) {
-        this._updateFormValidity();
-      } else {
-        this.formValid = false;
-      }
-    }
-  }
-
   _handleInputChange() {
     this._updateFormValidity();
   }
@@ -91,13 +103,15 @@ export class CourseModal extends LitElement {
     const values = Array.isArray(e?.detail?.values) ? e.detail.values : null;
     if (!targetId) return;
 
-    if (targetId === "edit-prerequisites") {
+    const prefix = this.mode === "edit" ? "edit-" : "course";
+
+    if (targetId === `${prefix}prerequisites` || targetId === `${prefix}-prerequisites`) {
       if (!values) return;
       this.selectedPrerequisiteIds = values.map(String);
       return;
     }
 
-    if (targetId === "edit-compatible-teachers") {
+    if (targetId === `${prefix}Teachers` || targetId === `${prefix}-compatible-teachers`) {
       if (!values) return;
       this.selectedCompatibleTeacherIds = values.map(String);
       // Clear examinator if not in compatible teachers
@@ -111,7 +125,7 @@ export class CourseModal extends LitElement {
       return;
     }
 
-    if (targetId === "edit-examinator") {
+    if (targetId === `${prefix}Examinator` || targetId === `${prefix}-examinator`) {
       if (values) {
         this.selectedExaminatorTeacherId = values[0] || "";
         return;
@@ -127,28 +141,42 @@ export class CourseModal extends LitElement {
       return;
     }
 
+    const prefix = this.mode === "edit" ? "edit-" : "course";
     const { code, name } = FormService.extractFormData(this.renderRoot, {
-      code: "edit-code",
-      name: "edit-name",
+      code: `${prefix}code`,
+      name: `${prefix}name`,
     });
+
+    const excludeId = this.mode === "edit" ? this.courseId : null;
     this.formValid =
-      CourseFormService.isCourseCodeUnique(code, this.courseId) &&
-      CourseFormService.isCourseNameUnique(name, this.courseId);
+      CourseFormService.isCourseCodeUnique(code, excludeId) &&
+      CourseFormService.isCourseNameUnique(name, excludeId);
+  }
+
+  _getFieldIds() {
+    const prefix = this.mode === "edit" ? "edit-" : "course";
+    return {
+      code: `${prefix}code`,
+      name: `${prefix}name`,
+      credits: { id: `${prefix}credits`, transform: (value) => Number(value) },
+      prerequisites: { id: `${prefix}prerequisites`, type: "select-multiple" },
+      selectedTeacherIds: { id: `${prefix}Teachers`, type: "select-multiple" },
+    };
   }
 
   render() {
-    if (!this.open || !this.courseId) return html``;
+    if (!this.open) return html``;
+    if (this.mode === "edit" && !this.courseId) return html``;
 
-    const course = store.getCourse(this.courseId);
-    if (!course) return html``;
-    const normalizedCredits = Number(course.credits) === 15 ? 15 : 7.5;
-    const examinatorTeacherId =
-      store.getCourseExaminatorTeacherId(course.course_id) ??
-      course.examinator_teacher_id ??
-      "";
+    const course = this.mode === "edit" ? store.getCourse(this.courseId) : null;
+    const title = this.mode === "add" ? "Lägg till Kurs" : "Redigera Kurs";
+    const buttonText = this.mode === "add" ? "Lägg till kurs" : "💾 Spara";
+    const buttonVariant = this.mode === "add" ? "primary" : "success";
+
+    const prefix = this.mode === "edit" ? "edit-" : "course";
 
     return html`
-      <henry-modal open title="Redigera Kurs" @close="${this._handleClose}">
+      <henry-modal open title="${title}" @close="${this._handleClose}">
         <form
           @submit="${this._handleSubmit}"
           @input="${this._handleInputChange}"
@@ -165,27 +193,39 @@ export class CourseModal extends LitElement {
             style="display: flex; flex-direction: column; gap: var(--space-4);"
           >
             <henry-input
-              id="edit-code"
+              id="${prefix}code"
               label="Kurskod"
-              .value="${course.code}"
+              .value="${course?.code || ""}"
               required
             ></henry-input>
 
             <henry-input
-              id="edit-name"
+              id="${prefix}name"
               label="Kursnamn"
-              .value="${course.name}"
+              .value="${course?.name || ""}"
               required
             ></henry-input>
 
+            <henry-radio-group
+              id="${prefix}credits"
+              name="${prefix}credits"
+              label="Högskolepoäng"
+              required
+              .value="${course ? String(Number(course.credits) === 15 ? 15 : 7.5) : ""}"
+              .options=${[
+                { value: "7.5", label: "7,5 hp" },
+                { value: "15", label: "15 hp" },
+              ]}
+            ></henry-radio-group>
+
             <henry-select
-              id="edit-prerequisites"
+              id="${prefix}prerequisites"
               label="Spärrkurser"
               multiple
               size="5"
               .options=${store
                 .getCourses()
-                .filter((c) => c.course_id !== course.course_id)
+                .filter((c) => this.mode === "add" || c.course_id !== course.course_id)
                 .map((c) => ({
                   value: c.course_id.toString(),
                   label: c.code,
@@ -195,20 +235,8 @@ export class CourseModal extends LitElement {
                 }))}
             ></henry-select>
 
-            <henry-radio-group
-              id="edit-credits"
-              name="edit-credits"
-              label="Högskolepoäng"
-              required
-              .value="${String(normalizedCredits)}"
-              .options=${[
-                { value: "7.5", label: "7,5 hp" },
-                { value: "15", label: "15 hp" },
-              ]}
-            ></henry-radio-group>
-
             <henry-select
-              id="edit-compatible-teachers"
+              id="${prefix}Teachers"
               label="Kompatibla lärare"
               multiple
               size="5"
@@ -224,7 +252,7 @@ export class CourseModal extends LitElement {
             ${keyed(
               this.selectedCompatibleTeacherIds.join(","),
               html`<henry-select
-                id="edit-examinator"
+                id="${prefix}Examinator"
                 label="Examinator"
                 size="1"
                 placeholder="Ingen vald"
@@ -250,11 +278,11 @@ export class CourseModal extends LitElement {
             Avbryt
           </henry-button>
           <henry-button
-            variant="success"
-            @click="${this._handleSave}"
+            variant="${buttonVariant}"
+            @click="${this.mode === "add" ? () => this.renderRoot.querySelector("form").requestSubmit() : this._handleSave}"
             ?disabled="${!this.formValid}"
           >
-            💾 Spara
+            ${buttonText}
           </henry-button>
         </div>
       </henry-modal>
@@ -263,12 +291,37 @@ export class CourseModal extends LitElement {
 
   _handleSubmit(e) {
     e.preventDefault();
-    this._handleSave();
+    if (this.mode === "add") {
+      this._handleAdd();
+    } else {
+      this._handleSave();
+    }
   }
 
   _handleClose() {
     this.dispatchEvent(
       new CustomEvent("modal-close", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  _handleAdd() {
+    if (!FormService.isFormValid(this.renderRoot)) {
+      FormService.reportFormValidity(this.renderRoot);
+      return;
+    }
+
+    const formData = FormService.extractFormData(this.renderRoot, this._getFieldIds());
+    formData.examinatorTeacherId = this.selectedExaminatorTeacherId
+      ? Number(this.selectedExaminatorTeacherId)
+      : null;
+
+    this._resetForm();
+    this.dispatchEvent(
+      new CustomEvent("modal-save", {
+        detail: { action: "add", formData },
         bubbles: true,
         composed: true,
       })
@@ -281,19 +334,7 @@ export class CourseModal extends LitElement {
       return;
     }
 
-    const root = this.renderRoot;
-
-    const formData = FormService.extractFormData(root, {
-      code: "edit-code",
-      name: "edit-name",
-      credits: { id: "edit-credits", transform: (value) => Number(value) },
-      prerequisites: { id: "edit-prerequisites", type: "select-multiple" },
-      selectedTeacherIds: {
-        id: "edit-compatible-teachers",
-        type: "select-multiple",
-      },
-    });
-
+    const formData = FormService.extractFormData(this.renderRoot, this._getFieldIds());
     formData.examinatorTeacherId = this.selectedExaminatorTeacherId
       ? Number(this.selectedExaminatorTeacherId)
       : null;
@@ -313,4 +354,4 @@ export class CourseModal extends LitElement {
   }
 }
 
-customElements.define("edit-course-modal", CourseModal);
+customElements.define("course-modal", CourseModal);
