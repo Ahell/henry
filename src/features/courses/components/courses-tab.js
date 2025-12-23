@@ -29,10 +29,6 @@ export class CoursesTab extends LitElement {
     subscribeToStore(this);
   }
 
-  disconnectedCallback() {
-    super.disconnectedCallback();
-  }
-
   _openAddModal() {
     this.addModalOpen = true;
   }

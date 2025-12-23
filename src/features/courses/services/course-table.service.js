@@ -19,6 +19,8 @@ export class CourseTableService {
   }
 
   static renderCell(course, column, onEdit) {
+    if (!course || !column) return html``;
+
     switch (column.key) {
       case "code":
         return html`${course.code}`;

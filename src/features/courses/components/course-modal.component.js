@@ -34,32 +34,36 @@ export class CourseModal extends LitElement {
       this.open &&
       this.courseId
     ) {
-      const course = store.getCourse(this.courseId);
-      if (!course) return;
+      this._loadCourseData();
+    }
+  }
 
-      this.selectedPrerequisiteIds = Array.isArray(course.prerequisites)
-        ? course.prerequisites.map(String)
-        : [];
-      this.selectedCompatibleTeacherIds = (store.getTeachers() || [])
-        .filter((t) => t.compatible_courses?.includes(course.course_id))
-        .map((t) => String(t.teacher_id));
-      this.selectedExaminatorTeacherId = String(
-        store.getCourseExaminatorTeacherId(course.course_id) ??
-          course.examinator_teacher_id ??
-          ""
-      );
+  _loadCourseData() {
+    const course = store.getCourse(this.courseId);
+    if (!course) return;
 
-      if (
-        this.selectedExaminatorTeacherId &&
-        !this.selectedCompatibleTeacherIds.includes(
-          this.selectedExaminatorTeacherId
-        )
-      ) {
-        this.selectedCompatibleTeacherIds = [
-          ...this.selectedCompatibleTeacherIds,
-          this.selectedExaminatorTeacherId,
-        ];
-      }
+    this.selectedPrerequisiteIds = Array.isArray(course.prerequisites)
+      ? course.prerequisites.map(String)
+      : [];
+    this.selectedCompatibleTeacherIds = (store.getTeachers() || [])
+      .filter((t) => t.compatible_courses?.includes(course.course_id))
+      .map((t) => String(t.teacher_id));
+    this.selectedExaminatorTeacherId = String(
+      store.getCourseExaminatorTeacherId(course.course_id) ??
+        course.examinator_teacher_id ??
+        ""
+    );
+
+    if (
+      this.selectedExaminatorTeacherId &&
+      !this.selectedCompatibleTeacherIds.includes(
+        this.selectedExaminatorTeacherId
+      )
+    ) {
+      this.selectedCompatibleTeacherIds = [
+        ...this.selectedCompatibleTeacherIds,
+        this.selectedExaminatorTeacherId,
+      ];
     }
   }
 
