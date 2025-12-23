@@ -32,11 +32,9 @@ export class CoursesTab extends LitElement {
   _openAddModal() {
     this.addModalOpen = true;
   }
-  _closeAddModal() {
-    this.addModalOpen = false;
-  }
 
-  _handleCancelEdit() {
+  _closeModal() {
+    this.addModalOpen = false;
     this.editingCourseId = null;
   }
 
@@ -98,13 +96,13 @@ export class CoursesTab extends LitElement {
       <add-course-modal
         .open="${this.addModalOpen}"
         @modal-save="${this._handleModalSave}"
-        @modal-close="${this._closeAddModal}"
+        @modal-close="${this._closeModal}"
       ></add-course-modal>
       <edit-course-modal
         .courseId="${this.editingCourseId}"
         .open="${!!this.editingCourseId}"
         @modal-save="${this._handleModalSave}"
-        @modal-close="${this._handleCancelEdit}"
+        @modal-close="${this._closeModal}"
       ></edit-course-modal>
     `;
   }
