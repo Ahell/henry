@@ -84,6 +84,7 @@ export class CoursesTab extends LitElement {
       <add-course-modal
         .open="${this.addModalOpen}"
         @course-added="${this._closeAddModal}"
+        @modal-close="${this._closeAddModal}"
       ></add-course-modal>
       <edit-course-modal
         .courseId="${this.editingCourseId}"

@@ -96,13 +96,22 @@ export class AddCourseModal extends LitElement {
     }
   }
 
+  _handleClose() {
+    this.dispatchEvent(
+      new CustomEvent("modal-close", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   render() {
     if (!this.open) return html``;
     return html`
       <henry-modal
         open
         title="Lägg till Kurs"
-        @close="${() => (this.open = false)}"
+        @close="${this._handleClose}"
       >
         <form
           @submit="${this._handleSubmit}"
@@ -173,7 +182,7 @@ export class AddCourseModal extends LitElement {
         <div slot="footer">
           <henry-button
             variant="secondary"
-            @click="${() => (this.open = false)}"
+            @click="${this._handleClose}"
             >Avbryt</henry-button
           >
           <henry-button

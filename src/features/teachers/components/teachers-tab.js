@@ -79,6 +79,7 @@ export class TeachersTab extends LitElement {
       <add-teacher-modal
         .open="${this.addModalOpen}"
         @teacher-added="${this._closeAddModal}"
+        @modal-close="${this._closeAddModal}"
       ></add-teacher-modal>
       <edit-teacher-modal
         .teacherId="${this.editingTeacherId}"
