@@ -11,7 +11,7 @@ import {
   showErrorMessage,
 } from "../../../utils/message-helpers.js";
 import "./add-course-modal.component.js";
-import "./course-modal.component.js";
+import "./edit-course-modal.component.js";
 import { coursesTabStyles } from "../styles/courses-tab.styles.js";
 
 export class CoursesTab extends LitElement {
@@ -85,11 +85,11 @@ export class CoursesTab extends LitElement {
         .open="${this.addModalOpen}"
         @course-added="${this._closeAddModal}"
       ></add-course-modal>
-      <course-modal
+      <edit-course-modal
         .courseId="${this.editingCourseId}"
         .open="${!!this.editingCourseId}"
         @modal-save="${this._handleModalSave}"
-      ></course-modal>
+      ></edit-course-modal>
     `;
   }
 }

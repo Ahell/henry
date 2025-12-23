@@ -11,7 +11,7 @@ import {
   showErrorMessage,
 } from "../../../utils/message-helpers.js";
 import "./add-teacher-modal.component.js";
-import "./teacher-modal.component.js";
+import "./edit-teacher-modal.component.js";
 import { teachersTabStyles } from "../styles/teachers-tab.styles.js";
 
 export class TeachersTab extends LitElement {
@@ -80,11 +80,11 @@ export class TeachersTab extends LitElement {
         .open="${this.addModalOpen}"
         @teacher-added="${this._closeAddModal}"
       ></add-teacher-modal>
-      <teacher-modal
+      <edit-teacher-modal
         .teacherId="${this.editingTeacherId}"
         .open="${!!this.editingTeacherId}"
         @modal-save="${this._handleModalSave}"
-      ></teacher-modal>
+      ></edit-teacher-modal>
     `;
   }
 }
