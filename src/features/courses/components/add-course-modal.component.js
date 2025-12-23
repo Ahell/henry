@@ -7,10 +7,7 @@ import { keyed } from "lit/directives/keyed.js";
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
 import { CourseFormService } from "../services/course-form.service.js";
-import {
-  createCourseFromForm,
-  resetCourseForm,
-} from "../services/course-tab.service.js";
+import { resetCourseForm } from "../services/course-tab.service.js";
 import {
   showSuccessMessage,
   showErrorMessage,
@@ -83,19 +80,27 @@ export class AddCourseModal extends LitElement {
       FormService.reportFormValidity(this.renderRoot);
       return;
     }
-    try {
-      const newCourse = await createCourseFromForm(this.renderRoot);
-      this._resetForm();
-      this.dispatchEvent(
-        new CustomEvent("modal-save", {
-          detail: { action: "add", entity: newCourse },
-          bubbles: true,
-          composed: true,
-        })
-      );
-    } catch (err) {
-      showErrorMessage(this, `Kunde inte lägga till kurs: ${err.message}`);
-    }
+
+    const formData = FormService.extractFormData(this.renderRoot, {
+      code: "courseCode",
+      name: "courseName",
+      credits: { id: "courseCredits", transform: (value) => Number(value) },
+      prerequisites: { id: "coursePrerequisites", type: "select-multiple" },
+      selectedTeacherIds: { id: "courseTeachers", type: "select-multiple" },
+    });
+
+    formData.examinatorTeacherId = this.selectedExaminatorTeacherId
+      ? Number(this.selectedExaminatorTeacherId)
+      : null;
+
+    this._resetForm();
+    this.dispatchEvent(
+      new CustomEvent("modal-save", {
+        detail: { action: "add", formData },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   _handleClose() {

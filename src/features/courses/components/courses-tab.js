@@ -18,23 +18,23 @@ export class CoursesTab extends LitElement {
   static styles = coursesTabStyles;
   static properties = {
     editingCourseId: { type: Number },
-    addModalOpen: { type: Boolean },
+    modalOpen: { type: Boolean },
   };
 
   constructor() {
     super();
     this.editingCourseId = null;
-    this.addModalOpen = false;
+    this.modalOpen = false;
     initializeEditState(this, "editingCourseId");
     subscribeToStore(this);
   }
 
-  _openAddModal() {
-    this.addModalOpen = true;
+  _openModal() {
+    this.modalOpen = true;
   }
 
   _closeModal() {
-    this.addModalOpen = false;
+    this.modalOpen = false;
     this.editingCourseId = null;
   }
 
@@ -42,9 +42,18 @@ export class CoursesTab extends LitElement {
     const { action, entity, courseId, formData } = e.detail;
 
     if (action === "add") {
-      // Course already created in modal, just close and show success
-      this.addModalOpen = false;
-      showSuccessMessage(this, "Kurs tillagd!");
+      try {
+        const { course: newCourse, mutationId } = CourseFormService.createCourse(
+          formData,
+          formData.examinatorTeacherId,
+          formData.selectedTeacherIds
+        );
+        await store.saveData({ mutationId });
+        this.modalOpen = false;
+        showSuccessMessage(this, "Kurs tillagd!");
+      } catch (err) {
+        showErrorMessage(this, `Kunde inte lägga till kurs: ${err.message}`);
+      }
       return;
     }
 
@@ -62,6 +71,7 @@ export class CoursesTab extends LitElement {
           formData.selectedTeacherIds
         );
         await store.saveData({ mutationId });
+        this.modalOpen = false;
         this.editingCourseId = null;
         showSuccessMessage(this, "Kurs uppdaterad!");
       } catch (err) {
@@ -78,7 +88,7 @@ export class CoursesTab extends LitElement {
           <henry-button
             variant="primary"
             ?disabled="${!store.editMode}"
-            @click="${this._openAddModal}"
+            @click="${this._openModal}"
             >Lägg till kurs</henry-button
           >
         </div>
@@ -94,7 +104,7 @@ export class CoursesTab extends LitElement {
         ></henry-table>
       </henry-panel>
       <add-course-modal
-        .open="${this.addModalOpen}"
+        .open="${this.modalOpen}"
         @modal-save="${this._handleModalSave}"
         @modal-close="${this._closeModal}"
       ></add-course-modal>
