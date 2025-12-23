@@ -59,7 +59,10 @@ export class CourseModal extends LitElement {
   }
 
   _loadCourseData() {
-    Object.assign(this, CourseFormService.getInitialStateForEdit(this.courseId));
+    Object.assign(
+      this,
+      CourseFormService.getInitialStateForEdit(this.courseId)
+    );
     this._updateFormValidity();
   }
 
@@ -92,7 +95,13 @@ export class CourseModal extends LitElement {
       targetId === `${prefix}-compatible-teachers`
     ) {
       if (!values) return;
-      Object.assign(this, CourseFormService.handleCompatibleTeachersChange(values, this.selectedExaminatorTeacherId));
+      Object.assign(
+        this,
+        CourseFormService.handleCompatibleTeachersChange(
+          values,
+          this.selectedExaminatorTeacherId
+        )
+      );
     }
 
     if (
@@ -100,9 +109,15 @@ export class CourseModal extends LitElement {
       targetId === `${prefix}-examinator`
     ) {
       if (values) {
-        Object.assign(this, CourseFormService.handleExaminatorChange(values[0]));
+        Object.assign(
+          this,
+          CourseFormService.handleExaminatorChange(values[0])
+        );
       } else {
-        Object.assign(this, CourseFormService.handleExaminatorChange(e?.detail?.value));
+        Object.assign(
+          this,
+          CourseFormService.handleExaminatorChange(e?.detail?.value)
+        );
       }
     }
 
@@ -110,10 +125,12 @@ export class CourseModal extends LitElement {
   }
 
   _updateFormValidity() {
-    this.formValid = CourseFormService.isFormValid(this.renderRoot, this.mode, this.courseId);
+    this.formValid = CourseFormService.isFormValid(
+      this.renderRoot,
+      this.mode,
+      this.courseId
+    );
   }
-
-
 
   render() {
     if (!this.open) return html``;
@@ -265,12 +282,17 @@ export class CourseModal extends LitElement {
   }
 
   _handleAdd() {
-    if (!CourseFormService.isFormValid(this.renderRoot, this.mode, this.courseId)) {
+    if (
+      !CourseFormService.isFormValid(this.renderRoot, this.mode, this.courseId)
+    ) {
       FormService.reportFormValidity(this.renderRoot);
       return;
     }
 
-    const formData = CourseFormService.extractFormData(this.renderRoot, this.mode);
+    const formData = CourseFormService.extractFormData(
+      this.renderRoot,
+      this.mode
+    );
     formData.examinatorTeacherId = this.selectedExaminatorTeacherId
       ? Number(this.selectedExaminatorTeacherId)
       : null;
@@ -286,12 +308,17 @@ export class CourseModal extends LitElement {
   }
 
   _handleSave() {
-    if (!CourseFormService.isFormValid(this.renderRoot, this.mode, this.courseId)) {
+    if (
+      !CourseFormService.isFormValid(this.renderRoot, this.mode, this.courseId)
+    ) {
       FormService.reportFormValidity(this.renderRoot);
       return;
     }
 
-    const formData = CourseFormService.extractFormData(this.renderRoot, this.mode);
+    const formData = CourseFormService.extractFormData(
+      this.renderRoot,
+      this.mode
+    );
     formData.examinatorTeacherId = this.selectedExaminatorTeacherId
       ? Number(this.selectedExaminatorTeacherId)
       : null;
