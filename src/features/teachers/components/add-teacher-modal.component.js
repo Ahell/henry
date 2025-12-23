@@ -103,11 +103,7 @@ export class AddTeacherModal extends LitElement {
   render() {
     if (!this.open) return html``;
     return html`
-      <henry-modal
-        open
-        title="Lägg till Lärare"
-        @close="${this._handleClose}"
-      >
+      <henry-modal open title="Lägg till Lärare" @close="${this._handleClose}">
         <form
           @submit="${this._handleSubmit}"
           @select-change="${this._handleSelectChange}"
@@ -167,8 +163,9 @@ export class AddTeacherModal extends LitElement {
           <henry-button
             variant="secondary"
             @click="${this._handleClose}"
-            >Avbryt</henry-button
           >
+            Avbryt
+          </henry-button>
           <henry-button
             variant="primary"
             ?disabled="${!this.formValid}"
