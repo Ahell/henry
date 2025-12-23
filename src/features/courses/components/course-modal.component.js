@@ -104,13 +104,19 @@ export class CourseModal extends LitElement {
 
     const prefix = this.mode === "edit" ? "edit-" : "course";
 
-    if (targetId === `${prefix}prerequisites` || targetId === `${prefix}-prerequisites`) {
+    if (
+      targetId === `${prefix}prerequisites` ||
+      targetId === `${prefix}-prerequisites`
+    ) {
       if (!values) return;
       this.selectedPrerequisiteIds = values.map(String);
       return;
     }
 
-    if (targetId === `${prefix}Teachers` || targetId === `${prefix}-compatible-teachers`) {
+    if (
+      targetId === `${prefix}Teachers` ||
+      targetId === `${prefix}-compatible-teachers`
+    ) {
       if (!values) return;
       this.selectedCompatibleTeacherIds = values.map(String);
       // Clear examinator if not in compatible teachers
@@ -124,7 +130,10 @@ export class CourseModal extends LitElement {
       return;
     }
 
-    if (targetId === `${prefix}Examinator` || targetId === `${prefix}-examinator`) {
+    if (
+      targetId === `${prefix}Examinator` ||
+      targetId === `${prefix}-examinator`
+    ) {
       if (values) {
         this.selectedExaminatorTeacherId = values[0] || "";
         return;
@@ -210,7 +219,9 @@ export class CourseModal extends LitElement {
               name="${prefix}credits"
               label="Högskolepoäng"
               required
-              .value="${course ? String(Number(course.credits) === 15 ? 15 : 7.5) : ""}"
+              .value="${course
+                ? String(Number(course.credits) === 15 ? 15 : 7.5)
+                : ""}"
               .options=${[
                 { value: "7.5", label: "7,5 hp" },
                 { value: "15", label: "15 hp" },
@@ -224,7 +235,9 @@ export class CourseModal extends LitElement {
               size="5"
               .options=${store
                 .getCourses()
-                .filter((c) => this.mode === "add" || c.course_id !== course.course_id)
+                .filter(
+                  (c) => this.mode === "add" || c.course_id !== course.course_id
+                )
                 .map((c) => ({
                   value: c.course_id.toString(),
                   label: c.code,
@@ -278,7 +291,9 @@ export class CourseModal extends LitElement {
           </henry-button>
           <henry-button
             variant="${buttonVariant}"
-            @click="${this.mode === "add" ? () => this.renderRoot.querySelector("form").requestSubmit() : this._handleSave}"
+            @click="${this.mode === "add"
+              ? () => this.renderRoot.querySelector("form").requestSubmit()
+              : this._handleSave}"
             ?disabled="${!this.formValid}"
           >
             ${buttonText}
@@ -312,7 +327,10 @@ export class CourseModal extends LitElement {
       return;
     }
 
-    const formData = FormService.extractFormData(this.renderRoot, this._getFieldIds());
+    const formData = FormService.extractFormData(
+      this.renderRoot,
+      this._getFieldIds()
+    );
     formData.examinatorTeacherId = this.selectedExaminatorTeacherId
       ? Number(this.selectedExaminatorTeacherId)
       : null;
@@ -333,7 +351,10 @@ export class CourseModal extends LitElement {
       return;
     }
 
-    const formData = FormService.extractFormData(this.renderRoot, this._getFieldIds());
+    const formData = FormService.extractFormData(
+      this.renderRoot,
+      this._getFieldIds()
+    );
     formData.examinatorTeacherId = this.selectedExaminatorTeacherId
       ? Number(this.selectedExaminatorTeacherId)
       : null;
