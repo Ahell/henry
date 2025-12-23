@@ -2,6 +2,7 @@ import { LitElement, html } from "lit";
 import { keyed } from "lit/directives/keyed.js";
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
+import { CourseFormService } from "../services/course-form.service.js";
 import { CourseService } from "../services/course.service.js";
 
 /**
@@ -52,40 +53,14 @@ export class CourseModal extends LitElement {
   }
 
   _resetForm() {
-    CourseService.resetCourseForm(this.renderRoot);
-    this.selectedPrerequisiteIds = [];
-    this.selectedCompatibleTeacherIds = [];
-    this.selectedExaminatorTeacherId = "";
+    CourseFormService.resetForm(this.renderRoot);
+    Object.assign(this, CourseFormService.getInitialStateForAdd());
     this._updateFormValidity();
   }
 
   _loadCourseData() {
-    const course = store.getCourse(this.courseId);
-    if (!course) return;
-
-    this.selectedPrerequisiteIds = Array.isArray(course.prerequisites)
-      ? course.prerequisites.map(String)
-      : [];
-    this.selectedCompatibleTeacherIds = (store.getTeachers() || [])
-      .filter((t) => t.compatible_courses?.includes(course.course_id))
-      .map((t) => String(t.teacher_id));
-    this.selectedExaminatorTeacherId = String(
-      store.getCourseExaminatorTeacherId(course.course_id) ??
-        course.examinator_teacher_id ??
-        ""
-    );
-
-    if (
-      this.selectedExaminatorTeacherId &&
-      !this.selectedCompatibleTeacherIds.includes(
-        this.selectedExaminatorTeacherId
-      )
-    ) {
-      this.selectedCompatibleTeacherIds = [
-        ...this.selectedCompatibleTeacherIds,
-        this.selectedExaminatorTeacherId,
-      ];
-    }
+    Object.assign(this, CourseFormService.getInitialStateForEdit(this.courseId));
+    this._updateFormValidity();
   }
 
   firstUpdated(changedProperties) {
@@ -109,8 +84,7 @@ export class CourseModal extends LitElement {
       targetId === `${prefix}-prerequisites`
     ) {
       if (!values) return;
-      this.selectedPrerequisiteIds = values.map(String);
-      return;
+      Object.assign(this, CourseFormService.handlePrerequisiteChange(values));
     }
 
     if (
@@ -118,16 +92,7 @@ export class CourseModal extends LitElement {
       targetId === `${prefix}-compatible-teachers`
     ) {
       if (!values) return;
-      this.selectedCompatibleTeacherIds = values.map(String);
-      // Clear examinator if not in compatible teachers
-      if (
-        !this.selectedCompatibleTeacherIds.includes(
-          this.selectedExaminatorTeacherId
-        )
-      ) {
-        this.selectedExaminatorTeacherId = "";
-      }
-      return;
+      Object.assign(this, CourseFormService.handleCompatibleTeachersChange(values, this.selectedExaminatorTeacherId));
     }
 
     if (
@@ -135,42 +100,20 @@ export class CourseModal extends LitElement {
       targetId === `${prefix}-examinator`
     ) {
       if (values) {
-        this.selectedExaminatorTeacherId = values[0] || "";
-        return;
+        Object.assign(this, CourseFormService.handleExaminatorChange(values[0]));
+      } else {
+        Object.assign(this, CourseFormService.handleExaminatorChange(e?.detail?.value));
       }
-      this.selectedExaminatorTeacherId = String(e?.detail?.value ?? "");
     }
+
+    this._updateFormValidity();
   }
 
   _updateFormValidity() {
-    const baseValid = FormService.isFormValid(this.renderRoot);
-    if (!baseValid) {
-      this.formValid = false;
-      return;
-    }
-
-    const prefix = this.mode === "edit" ? "edit-" : "course";
-    const { code, name } = FormService.extractFormData(this.renderRoot, {
-      code: `${prefix}code`,
-      name: `${prefix}name`,
-    });
-
-    const excludeId = this.mode === "edit" ? this.courseId : null;
-    this.formValid =
-      CourseService.isCourseCodeUnique(code, excludeId) &&
-      CourseService.isCourseNameUnique(name, excludeId);
+    this.formValid = CourseFormService.isFormValid(this.renderRoot, this.mode, this.courseId);
   }
 
-  _getFieldIds() {
-    const prefix = this.mode === "edit" ? "edit-" : "course";
-    return {
-      code: `${prefix}code`,
-      name: `${prefix}name`,
-      credits: { id: `${prefix}credits`, transform: (value) => Number(value) },
-      prerequisites: { id: `${prefix}prerequisites`, type: "select-multiple" },
-      selectedTeacherIds: { id: `${prefix}Teachers`, type: "select-multiple" },
-    };
-  }
+
 
   render() {
     if (!this.open) return html``;
@@ -322,15 +265,12 @@ export class CourseModal extends LitElement {
   }
 
   _handleAdd() {
-    if (!FormService.isFormValid(this.renderRoot)) {
+    if (!CourseFormService.isFormValid(this.renderRoot, this.mode, this.courseId)) {
       FormService.reportFormValidity(this.renderRoot);
       return;
     }
 
-    const formData = FormService.extractFormData(
-      this.renderRoot,
-      this._getFieldIds()
-    );
+    const formData = CourseFormService.extractFormData(this.renderRoot, this.mode);
     formData.examinatorTeacherId = this.selectedExaminatorTeacherId
       ? Number(this.selectedExaminatorTeacherId)
       : null;
@@ -346,15 +286,12 @@ export class CourseModal extends LitElement {
   }
 
   _handleSave() {
-    if (!FormService.isFormValid(this.renderRoot)) {
+    if (!CourseFormService.isFormValid(this.renderRoot, this.mode, this.courseId)) {
       FormService.reportFormValidity(this.renderRoot);
       return;
     }
 
-    const formData = FormService.extractFormData(
-      this.renderRoot,
-      this._getFieldIds()
-    );
+    const formData = CourseFormService.extractFormData(this.renderRoot, this.mode);
     formData.examinatorTeacherId = this.selectedExaminatorTeacherId
       ? Number(this.selectedExaminatorTeacherId)
       : null;
