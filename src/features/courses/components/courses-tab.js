@@ -43,11 +43,12 @@ export class CoursesTab extends LitElement {
 
     if (action === "add") {
       try {
-        const { course: newCourse, mutationId } = CourseFormService.createCourse(
-          formData,
-          formData.examinatorTeacherId,
-          formData.selectedTeacherIds
-        );
+        const { course: newCourse, mutationId } =
+          CourseFormService.createCourse(
+            formData,
+            formData.examinatorTeacherId,
+            formData.selectedTeacherIds
+          );
         await store.saveData({ mutationId });
         this.modalOpen = false;
         showSuccessMessage(this, "Kurs tillagd!");
