@@ -34,11 +34,14 @@ export class TeacherModal extends LitElement {
     ) {
       const teacher = store.getTeacher(this.teacherId);
       if (!teacher) return;
-      this.selectedCompatibleCourseIds = Array.isArray(teacher.compatible_courses)
+      this.selectedCompatibleCourseIds = Array.isArray(
+        teacher.compatible_courses
+      )
         ? teacher.compatible_courses.map(String)
         : [];
-      this.selectedExaminatorCourseIds = (store.getExaminatorCoursesForTeacher(this.teacherId) || [])
-        .map((c) => String(c.course_id));
+      this.selectedExaminatorCourseIds = (
+        store.getExaminatorCoursesForTeacher(this.teacherId) || []
+      ).map((c) => String(c.course_id));
     }
   }
 
@@ -69,9 +72,9 @@ export class TeacherModal extends LitElement {
       const nextCompat = values.map(String);
       this.selectedCompatibleCourseIds = nextCompat;
       // Keep examinator selection consistent with compatibility selection
-      this.selectedExaminatorCourseIds = (this.selectedExaminatorCourseIds || []).filter(
-        (id) => nextCompat.includes(String(id))
-      );
+      this.selectedExaminatorCourseIds = (
+        this.selectedExaminatorCourseIds || []
+      ).filter((id) => nextCompat.includes(String(id)));
       return;
     }
     if (targetId === "edit-examinator-courses") {
@@ -89,7 +92,10 @@ export class TeacherModal extends LitElement {
     const { name } = FormService.extractFormData(this.renderRoot, {
       name: "edit-name",
     });
-    this.formValid = TeacherFormService.isTeacherNameUnique(name, this.teacherId);
+    this.formValid = TeacherFormService.isTeacherNameUnique(
+      name,
+      this.teacherId
+    );
   }
 
   render() {
@@ -117,11 +123,7 @@ export class TeacherModal extends LitElement {
       }));
 
     return html`
-      <henry-modal
-        open
-        title="Redigera Lärare"
-        @close="${this._handleClose}"
-      >
+      <henry-modal open title="Redigera Lärare" @close="${this._handleClose}">
         <form
           @submit="${this._handleSubmit}"
           @input="${this._handleInputChange}"
@@ -184,10 +186,7 @@ export class TeacherModal extends LitElement {
         </form>
 
         <div slot="footer">
-          <henry-button
-            variant="secondary"
-            @click="${this._handleClose}"
-          >
+          <henry-button variant="secondary" @click="${this._handleClose}">
             Avbryt
           </henry-button>
           <henry-button
