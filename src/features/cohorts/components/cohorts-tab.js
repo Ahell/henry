@@ -8,16 +8,13 @@ import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
-import "../../../components/ui/index.js";
-import { cohortsTabStyles } from "../styles/cohorts-tab.styles.js";
+import { CohortTableService } from "../services/cohort-table.service.js";
 import {
-  createCohortFromForm,
   deleteCohortById,
-  resetCohortForm,
   updateCohortFromForm,
 } from "../services/cohort-tab.service.js";
-import { FormService } from "../../../platform/services/form.service.js";
-import "./cohort-modal.component.js";
+import "./add-cohort-modal.component.js";
+import "./edit-cohort-modal.component.js";
 
 export class CohortsTab extends LitElement {
   static styles = cohortsTabStyles;
@@ -25,51 +22,27 @@ export class CohortsTab extends LitElement {
   static properties = {
     editingCohortId: { type: Number },
     addModalOpen: { type: Boolean },
-    message: { type: String },
-    messageType: { type: String },
-    formValid: { type: Boolean },
   };
 
   constructor() {
     super();
-    this.formValid = false;
+    this.editingCohortId = null;
     this.addModalOpen = false;
     initializeEditState(this, "editingCohortId");
     subscribeToStore(this);
   }
 
-  firstUpdated(changedProperties) {
-    super.firstUpdated(changedProperties);
-    this._updateFormValidity();
-  }
-
-  _handleInputChange() {
-    this._updateFormValidity();
-  }
-
-  async _openAddModal() {
+  _openAddModal() {
     this.addModalOpen = true;
-    await this.updateComplete;
-    resetCohortForm(this.shadowRoot);
-    this._updateFormValidity();
   }
 
   _closeAddModal() {
     this.addModalOpen = false;
-    this.formValid = false;
-  }
-
-  _updateFormValidity() {
-    this.formValid = FormService.isFormValid(this.shadowRoot);
   }
 
   render() {
     const canEdit = !!store.editMode;
     return html`
-      ${this.message
-        ? html`<div class="${this.messageType}">${this.message}</div>`
-        : ""}
-
       <henry-panel>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga kullar</henry-text>
@@ -84,152 +57,34 @@ export class CohortsTab extends LitElement {
         <henry-table
           striped
           hoverable
-          .columns="${this._getCohortTableColumns()}"
+          .columns="${CohortTableService.getColumns()}"
           .data="${store
             .getCohorts()
             .slice()
             .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))}"
-          .renderCell="${(row, col) => this._renderCohortTableCell(row, col)}"
+          .renderCell="${(row, col) =>
+            CohortTableService.renderCell(
+              row,
+              col,
+              (cohortId) => this.handleEditCohort(cohortId),
+              (cohortId) => this.handleDeleteCohort(cohortId)
+            )}"
         ></henry-table>
       </henry-panel>
 
-      ${this.addModalOpen
-        ? html`
-            <henry-modal
-              open
-              title="Lägg till Kull"
-              @close="${this._closeAddModal}"
-            >
-              <form
-                id="add-cohort-form"
-                @submit="${this.handleAddCohort}"
-                @input="${this._handleInputChange}"
-                @change="${this._handleInputChange}"
-                @input-change="${this._handleInputChange}"
-                @select-change="${this._handleInputChange}"
-                @radio-change="${this._handleInputChange}"
-                @textarea-change="${this._handleInputChange}"
-              >
-                <henry-input
-                  id="cohortStartDate"
-                  type="date"
-                  label="Startdatum"
-                  required
-                ></henry-input>
-                <henry-input
-                  id="cohortSize"
-                  type="number"
-                  label="Planerat antal studenter"
-                  min="1"
-                  placeholder="30"
-                  required
-                ></henry-input>
-              </form>
+      <add-cohort-modal
+        .open="${this.addModalOpen}"
+        @cohort-added="${this._closeAddModal}"
+        @modal-close="${this._closeAddModal}"
+      ></add-cohort-modal>
 
-              <div slot="footer">
-                <henry-button
-                  variant="secondary"
-                  @click="${this._closeAddModal}"
-                >
-                  Avbryt
-                </henry-button>
-                <henry-button
-                  variant="primary"
-                  ?disabled="${!this.formValid || !canEdit}"
-                  @click="${() => {
-                    const form =
-                      this.renderRoot?.querySelector("#add-cohort-form");
-                    if (form?.requestSubmit) form.requestSubmit();
-                    else
-                      form?.dispatchEvent(
-                        new Event("submit", {
-                          bubbles: true,
-                          cancelable: true,
-                        })
-                      );
-                  }}"
-                >
-                  Lägg till kull
-                </henry-button>
-              </div>
-            </henry-modal>
-          `
-        : ""}
-
-      <cohort-modal
+      <edit-cohort-modal
         .cohortId="${this.editingCohortId}"
         .open="${!!this.editingCohortId}"
         @modal-close="${this.handleCancelEdit}"
         @modal-save="${this._handleModalSave}"
-      ></cohort-modal>
+      ></edit-cohort-modal>
     `;
-  }
-
-  _getCohortTableColumns() {
-    return [
-      { key: "name", label: "Namn", width: "200px" },
-      { key: "start_date", label: "Startdatum", width: "150px" },
-      { key: "planned_size", label: "Antal Studenter", width: "150px" },
-      { key: "actions", label: "Åtgärder", width: "180px" },
-    ];
-  }
-
-  _renderCohortTableCell(cohort, column) {
-    switch (column.key) {
-      case "name":
-        return html`${cohort.name}`;
-
-      case "start_date":
-        return html`${cohort.start_date}`;
-
-      case "planned_size":
-        return html`${cohort.planned_size}`;
-
-      case "actions":
-        return html`
-          <div style="display: flex; gap: var(--space-2);">
-            <henry-button
-              variant="secondary"
-              size="small"
-              ?disabled=${!store.editMode}
-              @click="${() => this.handleEditCohort(cohort.cohort_id)}"
-            >
-              Redigera
-            </henry-button>
-            <henry-button
-              variant="danger"
-              size="small"
-              ?disabled=${!store.editMode}
-              @click="${() => this.handleDeleteCohort(cohort.cohort_id)}"
-            >
-              Ta bort
-            </henry-button>
-          </div>
-        `;
-
-      default:
-        return html`${cohort[column.key] ?? ""}`;
-    }
-  }
-
-  async handleAddCohort(e) {
-    e.preventDefault();
-    if (!store.editMode) return;
-    const root = this.shadowRoot;
-    try {
-      if (!FormService.isFormValid(root)) {
-        FormService.reportFormValidity(root);
-        return;
-      }
-
-      await createCohortFromForm(root);
-      resetCohortForm(root);
-      this._updateFormValidity();
-      this._closeAddModal();
-      showSuccessMessage(this, "Kull tillagd!");
-    } catch (error) {
-      showErrorMessage(this, `Fel: ${error.message}`);
-    }
   }
 
   handleEditCohort(cohortId) {
