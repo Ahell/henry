@@ -2,8 +2,7 @@ import { LitElement, html } from "lit";
 import { keyed } from "lit/directives/keyed.js";
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
-import { CourseFormService } from "../services/course-form.service.js";
-import { resetCourseForm } from "../services/course-tab.service.js";
+import { CourseService } from "../services/course.service.js";
 
 /**
  * Course Modal Component
@@ -53,7 +52,7 @@ export class CourseModal extends LitElement {
   }
 
   _resetForm() {
-    resetCourseForm(this.renderRoot);
+    CourseService.resetCourseForm(this.renderRoot);
     this.selectedPrerequisiteIds = [];
     this.selectedCompatibleTeacherIds = [];
     this.selectedExaminatorTeacherId = "";
@@ -149,8 +148,8 @@ export class CourseModal extends LitElement {
 
     const excludeId = this.mode === "edit" ? this.courseId : null;
     this.formValid =
-      CourseFormService.isCourseCodeUnique(code, excludeId) &&
-      CourseFormService.isCourseNameUnique(name, excludeId);
+      CourseService.isCourseCodeUnique(code, excludeId) &&
+      CourseService.isCourseNameUnique(name, excludeId);
   }
 
   _getFieldIds() {

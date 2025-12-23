@@ -1,11 +1,12 @@
 import { store } from "../../../platform/store/DataStore.js";
 import { BaseFormService } from "../../../platform/services/base-form.service.js";
+import { FormService } from "../../../platform/services/form.service.js";
 
 /**
- * Course Form Service
- * Handles course creation and update logic
+ * Course Service
+ * Complete course business logic and form processing
  */
-export class CourseFormService {
+export class CourseService {
   static normalizeCourseCode(code) {
     return String(code ?? "").trim().toUpperCase();
   }
@@ -162,5 +163,57 @@ export class CourseFormService {
     return BaseFormService.delete("delete-course", courseId, {
       delete: (id) => store.deleteCourse(id),
     });
+  }
+
+  /**
+   * Create course from form data (extracts and validates form, then creates course)
+   * @param {Object} formData - Raw form data
+   * @returns {Object} Created course
+   */
+  static async createCourseFromFormData(formData) {
+    if (!Number.isFinite(formData.credits) || formData.credits <= 0) {
+      throw new Error("Fyll i giltiga högskolepoäng för kursen.");
+    }
+
+    const { course: newCourse, mutationId } = this.createCourse(
+      {
+        code: formData.code,
+        name: formData.name,
+        credits: formData.credits,
+        prerequisites: formData.prerequisites,
+      },
+      formData.examinatorTeacherId,
+      formData.selectedTeacherIds
+    );
+
+    await store.saveData({ mutationId });
+    return newCourse;
+  }
+
+  /**
+   * Reset course form fields
+   * @param {Element} root - Form root element
+   */
+  static resetCourseForm(root) {
+    FormService.clearCustomForm(root, [
+      "prerequisites",
+      "courseTeachers",
+      "courseExaminator",
+      "courseCode",
+      "courseName",
+      "courseCredits",
+    ]);
+  }
+
+  /**
+   * Delete course by ID
+   * @param {number} courseId - Course ID to delete
+   * @returns {boolean} Success status
+   */
+  static async deleteCourseById(courseId) {
+    const { removed, mutationId } = this.deleteCourse(courseId);
+    if (!removed) return false;
+    await store.saveData({ mutationId });
+    return true;
   }
 }

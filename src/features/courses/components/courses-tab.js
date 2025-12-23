@@ -5,7 +5,7 @@ import {
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
 import { CourseTableService } from "../services/course-table.service.js";
-import { CourseFormService } from "../services/course-form.service.js";
+import { CourseService } from "../services/course.service.js";
 import {
   showSuccessMessage,
   showErrorMessage,
@@ -59,7 +59,7 @@ export class CoursesTab extends LitElement {
 
     if (action === "update") {
       try {
-        const { mutationId } = CourseFormService.updateCourse(
+        const { mutationId } = CourseService.updateCourse(
           courseId,
           {
             code: formData.code,
