@@ -1,92 +1,122 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import {
+  showSuccessMessage,
+  showErrorMessage,
+} from "../../../utils/message-helpers.js";
+import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
 import { TeacherTableService } from "../services/teacher-table.service.js";
-import { TeacherFormService } from "../services/teacher-form.service.js";
-import {
-  showSuccessMessage,
-  showErrorMessage,
-} from "../../../utils/message-helpers.js";
-import "./add-teacher-modal.component.js";
-import "./edit-teacher-modal.component.js";
+import { TeacherService } from "../services/teacher.service.js";
+import "./teacher-modal.component.js";
 import { teachersTabStyles } from "../styles/teachers-tab.styles.js";
 
 export class TeachersTab extends LitElement {
   static styles = teachersTabStyles;
+
   static properties = {
     editingTeacherId: { type: Number },
-    addModalOpen: { type: Boolean },
+    modalOpen: { type: Boolean },
+    modalMode: { type: String }, // 'add' or 'edit'
   };
 
   constructor() {
     super();
     this.editingTeacherId = null;
-    this.addModalOpen = false;
+    this.modalOpen = false;
+    this.modalMode = "add";
     initializeEditState(this, "editingTeacherId");
     subscribeToStore(this);
   }
 
   _openAddModal() {
-    this.addModalOpen = true;
-  }
-  _closeAddModal() {
-    this.addModalOpen = false;
+    this.modalMode = "add";
+    this.editingTeacherId = null;
+    this.modalOpen = true;
   }
 
-  async _handleModalSave(e) {
-    const { teacherId, formData } = e.detail;
-    try {
-      const { examinator_courses, ...teacherUpdates } = formData || {};
-      const { mutationId } = TeacherFormService.updateTeacher(
-        teacherId,
-        teacherUpdates,
-        examinator_courses
-      );
-      await store.saveData({ mutationId });
-      this.editingTeacherId = null;
-      showSuccessMessage(this, "Lärare uppdaterad!");
-    } catch (err) {
-      showErrorMessage(this, `Kunde inte uppdatera lärare: ${err.message}`);
-    }
+  handleEditTeacher(teacherId) {
+    if (!store.editMode) return;
+    this.modalMode = "edit";
+    this.editingTeacherId = teacherId;
+    this.modalOpen = true;
+  }
+
+  _closeModal() {
+    this.modalOpen = false;
+    this.editingTeacherId = null;
   }
 
   render() {
+    const canEdit = !!store.editMode;
     return html`
       <henry-panel>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga lärare</henry-text>
           <henry-button
             variant="primary"
-            ?disabled="${!store.editMode}"
+            ?disabled=${!canEdit}
             @click="${this._openAddModal}"
-            >Lägg till lärare</henry-button
           >
+            Lägg till lärare
+          </henry-button>
         </div>
         <henry-table
+          striped
+          hoverable
           .columns="${TeacherTableService.getColumns()}"
           .data="${store.getTeachers()}"
           .renderCell="${(row, col) =>
             TeacherTableService.renderCell(
               row,
               col,
-              (teacherId) => (this.editingTeacherId = teacherId)
+              (teacherId) => this.handleEditTeacher(teacherId),
+              (teacherId) => this.handleDeleteTeacher(teacherId)
             )}"
         ></henry-table>
       </henry-panel>
-      <add-teacher-modal
-        .open="${this.addModalOpen}"
-        @teacher-added="${this._closeAddModal}"
-        @modal-close="${this._closeAddModal}"
-      ></add-teacher-modal>
-      <edit-teacher-modal
+
+      <teacher-modal
+        .open="${this.modalOpen}"
+        .mode="${this.modalMode}"
         .teacherId="${this.editingTeacherId}"
-        .open="${!!this.editingTeacherId}"
-        @modal-save="${this._handleModalSave}"
-      ></edit-teacher-modal>
+        @teacher-saved="${this._closeModal}"
+        @modal-close="${this._closeModal}"
+      ></teacher-modal>
     `;
+  }
+
+  async handleDeleteTeacher(teacherId) {
+    if (!store.editMode) return;
+    const teacher = store.getTeacher(teacherId);
+    if (!teacher) return;
+
+    if (
+      !confirm(
+        `Är du säker på att du vill ta bort läraren "${teacher.name}"?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const removed = await TeacherService.deleteTeacherById(teacherId);
+      if (removed) {
+        showSuccessMessage(this, `Lärare "${teacher.name}" borttagen!`);
+      }
+    } catch (error) {
+      showErrorMessage(this, `Fel: ${error.message}`);
+    }
+  }
+
+  updated() {
+    if (store.editMode) return;
+    if (this.modalOpen) {
+      this.modalOpen = false;
+      this.editingTeacherId = null;
+    }
   }
 }
 

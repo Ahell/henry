@@ -26,8 +26,7 @@ export class TeacherTableService {
         return html`${compatibleCourses || "-"}`;
       case "examinator_courses":
         const examinatorCourses = store
-          .getCourses()
-          .filter((c) => teacher.examinator_courses?.includes(c.course_id))
+          .getExaminatorCoursesForTeacher(teacher.teacher_id)
           .map((c) => c.code)
           .join(", ");
         return html`${examinatorCourses || "-"}`;

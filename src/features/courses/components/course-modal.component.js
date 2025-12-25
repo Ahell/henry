@@ -239,6 +239,9 @@ export class CourseModal extends LitElement {
                   .map((t) => ({
                     value: t.teacher_id.toString(),
                     label: t.name,
+                    selected:
+                      t.teacher_id.toString() ===
+                      this.selectedExaminatorTeacherId,
                   }))}
               ></henry-select>`
             )}

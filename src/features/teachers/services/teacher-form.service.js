@@ -1,163 +1,150 @@
 import { store } from "../../../platform/store/DataStore.js";
-import { BaseFormService } from "../../../platform/services/base-form.service.js";
+import { FormService } from "../../../platform/services/form.service.js";
+import { TeacherService } from "./teacher.service.js";
 
 /**
  * Teacher Form Service
- * Handles teacher creation and update logic
+ * Handles form-specific operations for teacher forms
  */
 export class TeacherFormService {
-  static normalizeTeacherName(name) {
-    return String(name ?? "")
-      .trim()
-      .replace(/\s+/g, " ")
-      .toLowerCase();
-  }
-
-  static isTeacherNameUnique(name, excludeTeacherId = null) {
-    const normalized = this.normalizeTeacherName(name);
-    if (!normalized) return true;
-
-    return !(store.getTeachers() || []).some((t) => {
-      if (excludeTeacherId != null && String(t.teacher_id) === String(excludeTeacherId)) {
-        return false;
-      }
-      return this.normalizeTeacherName(t.name) === normalized;
-    });
-  }
-
-  static assertTeacherNameUnique(name, excludeTeacherId = null) {
-    if (!this.isTeacherNameUnique(name, excludeTeacherId)) {
-      throw new Error("En lärare med samma namn finns redan.");
-    }
+  /**
+   * Resets the teacher form
+   * @param {HTMLElement} root - The root element of the form
+   */
+  static resetForm(root) {
+    // Note: Actual reset is handled by clearing custom inputs, but we might want
+    // to add a dedicated reset helper here if needed later.
   }
 
   /**
-   * Create a new teacher with optimistic updates
-   * @param {Object} teacherData - Teacher data
-   * @param {Array|null} examinatorCourseIds - Course IDs the teacher should be examinator for
-   * @returns {Object} Created teacher and mutation ID
+   * Gets the initial state for adding a new teacher
+   * @returns {Object} Initial form state
    */
-  static createTeacher(teacherData, examinatorCourseIds = null) {
-    const nextName = String(teacherData?.name ?? "").trim();
-    if (!nextName) throw new Error("Lärarens namn måste anges.");
-    this.assertTeacherNameUnique(nextName);
-
-    const previousCourseExaminators = Array.isArray(
-      store.coursesManager.courseExaminators
-    )
-      ? store.coursesManager.courseExaminators.map((x) => ({ ...x }))
-      : [];
-
-    let newTeacher = null;
-    const mutationId = store.applyOptimistic({
-      label: "add-teacher",
-      rollback: () => {
-        if (newTeacher?.teacher_id != null) {
-          store.deleteTeacher(newTeacher.teacher_id);
-        }
-        store.coursesManager.courseExaminators = previousCourseExaminators;
-        store.coursesManager.ensureExaminatorsFromNormalized();
-      },
-    });
-
-    newTeacher = store.addTeacher(teacherData);
-
-    if (Array.isArray(examinatorCourseIds)) {
-      const nextIds = Array.from(new Set(examinatorCourseIds.map(String))).filter(
-        Boolean
-      );
-      nextIds.forEach((courseId) => {
-        const numericCourseId = Number(courseId);
-        if (!Number.isFinite(numericCourseId)) return;
-        const current = store.getCourseExaminatorTeacherId(courseId);
-        // Don't steal examinator roles from other teachers for "add teacher"
-        if (current != null && String(current) !== String(newTeacher.teacher_id)) {
-          return;
-        }
-        store.setCourseExaminator(numericCourseId, newTeacher.teacher_id);
-      });
-    }
-
-    return { teacher: newTeacher, mutationId };
-  }
-
-  /**
-   * Update an existing teacher
-   * @param {number} teacherId - Teacher ID
-   * @param {Object} teacherData - Updated teacher data
-   * @param {Array|null} examinatorCourseIds - Course IDs the teacher should be examinator for
-   * @returns {Object} Updated teacher and mutation ID
-   */
-  static updateTeacher(teacherId, teacherData, examinatorCourseIds = null) {
-    const existing = store.getTeacher(teacherId);
-    if (!existing) {
-      throw new Error(`Teacher ${teacherId} not found`);
-    }
-
-    const nextName = String(teacherData?.name ?? existing?.name ?? "").trim();
-    if (!nextName) throw new Error("Lärarens namn måste anges.");
-    this.assertTeacherNameUnique(nextName, teacherId);
-
-    const previousTeacher = {
-      ...existing,
-      ...(existing.compatible_courses && {
-        compatible_courses: [...existing.compatible_courses],
-      }),
+  static getInitialStateForAdd() {
+    return {
+      selectedCompatibleCourseIds: [],
+      selectedExaminatorCourseIds: [],
+      formValid: false,
     };
-    const previousCourseExaminators = Array.isArray(
-      store.coursesManager.courseExaminators
-    )
-      ? store.coursesManager.courseExaminators.map((x) => ({ ...x }))
-      : [];
-
-    const mutationId = store.applyOptimistic({
-      label: "update-teacher",
-      rollback: () => {
-        store.updateTeacher(teacherId, previousTeacher);
-        store.coursesManager.courseExaminators = previousCourseExaminators;
-        store.coursesManager.ensureExaminatorsFromNormalized();
-      },
-    });
-
-    store.updateTeacher(teacherId, teacherData);
-
-    if (Array.isArray(examinatorCourseIds)) {
-      const nextIds = new Set(examinatorCourseIds.map(String));
-      const current = new Set(
-        (store.getExaminatorCoursesForTeacher(teacherId) || []).map((c) =>
-          String(c.course_id)
-        )
-      );
-
-      // Assign selected courses to this teacher
-      nextIds.forEach((courseId) => {
-        if (!courseId) return;
-        const numericCourseId = Number(courseId);
-        if (!Number.isFinite(numericCourseId)) return;
-        store.setCourseExaminator(numericCourseId, teacherId);
-      });
-
-      // Unassign courses that were previously assigned to this teacher
-      current.forEach((courseId) => {
-        if (!nextIds.has(courseId)) {
-          const numericCourseId = Number(courseId);
-          if (!Number.isFinite(numericCourseId)) return;
-          store.clearCourseExaminator(numericCourseId);
-        }
-      });
-    }
-
-    return { teacher: store.getTeacher(teacherId), mutationId };
   }
 
   /**
-   * Delete a teacher
-   * @param {number} teacherId - Teacher ID
-   * @returns {Object} Mutation info
+   * Gets the initial state for editing an existing teacher
+   * @param {number} teacherId - The ID of the teacher to edit
+   * @returns {Object} Initial form state for editing
    */
-  static deleteTeacher(teacherId) {
-    return BaseFormService.delete("delete-teacher", teacherId, {
-      delete: (id) => store.deleteTeacher(id),
+  static getInitialStateForEdit(teacherId) {
+    const teacher = store.getTeacher(teacherId);
+    if (!teacher) return this.getInitialStateForAdd();
+
+    const selectedCompatibleCourseIds = Array.isArray(teacher.compatible_courses)
+      ? teacher.compatible_courses.map(String)
+      : [];
+
+    const selectedExaminatorCourseIds = (
+      store.getExaminatorCoursesForTeacher(teacherId) || []
+    ).map((c) => String(c.course_id));
+
+    return {
+      selectedCompatibleCourseIds,
+      selectedExaminatorCourseIds,
+      formValid: false, // Will be re-evaluated
+    };
+  }
+
+  /**
+   * Validates the form data
+   * @param {HTMLElement} root - The root element of the form
+   * @param {string} mode - 'add' or 'edit'
+   * @param {number} teacherId - Teacher ID for edit mode
+   * @returns {boolean} Whether the form is valid
+   */
+  static isFormValid(root, mode, teacherId) {
+    const baseValid = FormService.isFormValid(root);
+    if (!baseValid) return false;
+
+    const { name } = this._extractBasicFormData(root, mode);
+    const excludeId = mode === "edit" ? teacherId : null;
+
+    return TeacherService.isTeacherNameUnique(name, excludeId);
+  }
+
+  /**
+   * Extracts form data from the form
+   * @param {HTMLElement} root - The root element of the form
+   * @param {string} mode - 'add' or 'edit'
+   * @returns {Object} Extracted form data
+   */
+  static extractFormData(root, mode) {
+    const prefix = this._getFieldPrefix(mode);
+    const fieldIds = {
+      name: `${prefix}Name`,
+      home_department: { id: `${prefix}Department`, type: "radio" },
+      compatible_courses: { id: `${prefix}Courses`, type: "select-multiple" },
+      examinator_courses: {
+        id: `${prefix}ExaminatorCourses`,
+        type: "select-multiple",
+      },
+    };
+    return FormService.extractFormData(root, fieldIds);
+  }
+
+  /**
+   * Populates the form with teacher data
+   * @param {HTMLElement} root - The root element
+   * @param {Object} teacher - The teacher data
+   * @param {string} mode - 'add' or 'edit'
+   */
+  static populateForm(root, teacher, mode) {
+    const prefix = this._getFieldPrefix(mode);
+    
+    if (mode === 'add') {
+      FormService.setCustomInput(root, `${prefix}Name`, '');
+      // Clear radio/selects manually or rely on component state reset
+    } else if (teacher) {
+      FormService.setCustomInput(root, `${prefix}Name`, teacher.name);
+      
+      const radioGroup = root.querySelector(`#${prefix}Department`);
+      if (radioGroup) {
+        radioGroup.value = teacher.home_department;
+      }
+
+      const coursesSelect = root.querySelector(`#${prefix}Courses`);
+      if (coursesSelect) {
+        coursesSelect.value = (teacher.compatible_courses || []).map(String);
+      }
+      
+      const examinatorSelect = root.querySelector(`#${prefix}ExaminatorCourses`);
+      if (examinatorSelect) {
+        const examinatorCourses = store.getExaminatorCoursesForTeacher(teacher.teacher_id) || [];
+        examinatorSelect.value = examinatorCourses.map(c => String(c.course_id));
+      }
+    }
+  }
+
+  // Private helper methods
+
+  /**
+   * Gets the field prefix based on mode
+   * @param {string} mode - 'add' or 'edit'
+   * @returns {string} Field prefix
+   * @private
+   */
+  static _getFieldPrefix(mode) {
+    return mode === "edit" ? "editTeacher" : "teacher";
+  }
+
+  /**
+   * Extracts basic form data (name)
+   * @param {HTMLElement} root - The root element of the form
+   * @param {string} mode - 'add' or 'edit'
+   * @returns {Object} Basic form data
+   * @private
+   */
+  static _extractBasicFormData(root, mode) {
+    const prefix = this._getFieldPrefix(mode);
+    return FormService.extractFormData(root, {
+      name: `${prefix}Name`,
     });
   }
 }
