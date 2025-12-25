@@ -9,12 +9,8 @@ import {
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
 import { CohortTableService } from "../services/cohort-table.service.js";
-import {
-  deleteCohortById,
-  updateCohortFromForm,
-} from "../services/cohort-tab.service.js";
-import "./add-cohort-modal.component.js";
-import "./edit-cohort-modal.component.js";
+import { CohortService } from "../services/cohort.service.js";
+import "./cohort-modal.component.js";
 import { cohortsTabStyles } from "../styles/cohorts-tab.styles.js";
 
 export class CohortsTab extends LitElement {
@@ -22,23 +18,35 @@ export class CohortsTab extends LitElement {
 
   static properties = {
     editingCohortId: { type: Number },
-    addModalOpen: { type: Boolean },
+    modalOpen: { type: Boolean },
+    modalMode: { type: String }, // 'add' or 'edit'
   };
 
   constructor() {
     super();
     this.editingCohortId = null;
-    this.addModalOpen = false;
+    this.modalOpen = false;
+    this.modalMode = "add";
     initializeEditState(this, "editingCohortId");
     subscribeToStore(this);
   }
 
   _openAddModal() {
-    this.addModalOpen = true;
+    this.modalMode = "add";
+    this.editingCohortId = null;
+    this.modalOpen = true;
   }
 
-  _closeAddModal() {
-    this.addModalOpen = false;
+  handleEditCohort(cohortId) {
+    if (!store.editMode) return;
+    this.modalMode = "edit";
+    this.editingCohortId = cohortId;
+    this.modalOpen = true;
+  }
+
+  _closeModal() {
+    this.modalOpen = false;
+    this.editingCohortId = null;
   }
 
   render() {
@@ -73,40 +81,14 @@ export class CohortsTab extends LitElement {
         ></henry-table>
       </henry-panel>
 
-      <add-cohort-modal
-        .open="${this.addModalOpen}"
-        @cohort-added="${this._closeAddModal}"
-        @modal-close="${this._closeAddModal}"
-      ></add-cohort-modal>
-
-      <edit-cohort-modal
+      <cohort-modal
+        .open="${this.modalOpen}"
+        .mode="${this.modalMode}"
         .cohortId="${this.editingCohortId}"
-        .open="${!!this.editingCohortId}"
-        @modal-close="${this.handleCancelEdit}"
-        @modal-save="${this._handleModalSave}"
-      ></edit-cohort-modal>
+        @cohort-saved="${this._closeModal}"
+        @modal-close="${this._closeModal}"
+      ></cohort-modal>
     `;
-  }
-
-  handleEditCohort(cohortId) {
-    if (!store.editMode) return;
-    this.editingCohortId = cohortId;
-  }
-
-  handleCancelEdit() {
-    this.editingCohortId = null;
-  }
-
-  async _handleModalSave(e) {
-    if (!store.editMode) return;
-    const { cohortId } = e.detail;
-    try {
-      await updateCohortFromForm(e.currentTarget, cohortId);
-      this.editingCohortId = null;
-      showSuccessMessage(this, "Kull uppdaterad!");
-    } catch (error) {
-      showErrorMessage(this, `Fel: ${error.message}`);
-    }
   }
 
   async handleDeleteCohort(cohortId) {
@@ -114,20 +96,20 @@ export class CohortsTab extends LitElement {
     const cohort = store.getCohort(cohortId);
     if (!cohort) return;
 
-    const cohortName = cohort.name;
+    const cohortName = cohort.name; // Note: Cohorts usually just have start_date, check if 'name' property exists or construct it
 
     if (
       !confirm(
-        `Är du säker på att du vill ta bort kullen "${cohortName}"?\n\nDetta kommer också ta bort alla schemalagda kurstillfällen för denna kull.`
+        `Är du säker på att du vill ta bort kullen "${cohort.start_date}"?\n\nDetta kommer också ta bort alla schemalagda kurstillfällen för denna kull.`
       )
     ) {
       return;
     }
 
     try {
-      const removed = await deleteCohortById(cohortId);
+      const removed = await CohortService.deleteCohortById(cohortId);
       if (removed) {
-        showSuccessMessage(this, `Kull "${cohortName}" borttagen!`);
+        showSuccessMessage(this, `Kull borttagen!`);
       }
     } catch (error) {
       showErrorMessage(this, `Fel: ${error.message}`);
@@ -136,8 +118,11 @@ export class CohortsTab extends LitElement {
 
   updated() {
     if (store.editMode) return;
-    if (this.addModalOpen) this.addModalOpen = false;
-    if (this.editingCohortId != null) this.editingCohortId = null;
+    // If edit mode is turned off externally, close modal if open
+    if (this.modalOpen) {
+        this.modalOpen = false;
+        this.editingCohortId = null;
+    }
   }
 }
 
