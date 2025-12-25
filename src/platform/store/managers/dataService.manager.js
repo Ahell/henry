@@ -149,6 +149,7 @@ export class DataServiceManager {
     this.store.teachersManager.syncTeacherCoursesFromTeachers();
     this.store.coursesManager.syncCoursePrerequisitesFromCourses();
     this.store.coursesManager.syncCourseExaminatorsFromCourses();
+    this.store.coursesManager.syncCourseKursansvarigFromCourses();
     return this.dataService.saveData(this.getDataSnapshot());
   }
 
@@ -162,6 +163,7 @@ export class DataServiceManager {
       teacherCourses: this.store.teachersManager.teacherCourses,
       coursePrerequisites: this.store.coursesManager.coursePrerequisites,
       courseExaminators: this.store.coursesManager.courseExaminators,
+      courseKursansvarig: this.store.coursesManager.courseKursansvarig,
       slots: this.store.slotsManager.getSlots(),
       courseRuns,
       teacherAvailability: this.store.teacherAvailability,

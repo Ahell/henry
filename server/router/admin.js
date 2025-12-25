@@ -39,10 +39,10 @@ const getResetBusinessLogic = () => {
 };
 
 const clearAllTables = () => {
-  db.transaction(() => {
-    // Disable foreign key constraints to allow deletion in any order
-    db.pragma("foreign_keys = OFF");
+  // Disable foreign key constraints outside the transaction so it's applied.
+  db.pragma("foreign_keys = OFF");
 
+  db.transaction(() => {
     // Get all table names from the database
     const tables = db
       .prepare(
@@ -52,12 +52,12 @@ const clearAllTables = () => {
 
     // Delete from all tables
     for (const table of tables) {
-      db.prepare(`DELETE FROM ${table.name}`).run();
+      db.prepare(`DELETE FROM "${table.name}"`).run();
     }
-
-    // Re-enable foreign key constraints
-    db.pragma("foreign_keys = ON");
   })();
+
+  // Re-enable foreign key constraints
+  db.pragma("foreign_keys = ON");
 };
 
 router.post("/reset-all", (req, res) => {

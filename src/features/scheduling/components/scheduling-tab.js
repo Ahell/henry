@@ -1773,17 +1773,17 @@ export class SchedulingTab extends LitElement {
                             currentKursansvarigId === teacher.teacher_id;
                           return html`
                             <label class="summary-kursansvarig-row">
-                              <input
-                                type="radio"
-                                class="kursansvarig-radio"
-                                name="kursansvarig-${course.course_id}"
-                                value="${teacher.teacher_id}"
-                                ?checked=${isKursansvarig}
-                                ?disabled=${!this.isEditing}
-                                aria-label="Välj ${teacher.name} som kursansvarig för ${course.code}"
-                                title="${isKursansvarig
-                                  ? "Kursansvarig"
-                                  : "Välj som kursansvarig"}"
+                                <input
+                                  type="radio"
+                                  class="kursansvarig-radio"
+                                  name="kursansvarig-${course.course_id}-${slot.slot_id}"
+                                  value="${teacher.teacher_id}"
+                                  .checked=${isKursansvarig}
+                                  ?disabled=${!this.isEditing}
+                                  aria-label="Välj ${teacher.name} som kursansvarig för ${course.code}"
+                                  title="${isKursansvarig
+                                    ? "Kursansvarig"
+                                    : "Välj som kursansvarig"}"
                                 @change=${(e) =>
                                   this._handleKursansvarigChange(
                                     e,

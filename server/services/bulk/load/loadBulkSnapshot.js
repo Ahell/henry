@@ -8,6 +8,7 @@ import {
   getSlotDays,
   getSlots,
   getCourseExaminators,
+  getCourseKursansvarig,
   getTeacherCourses,
   getTeacherDayUnavailability,
   getTeachers,
@@ -53,6 +54,7 @@ function loadBaseEntities() {
     teachers: getTeachers(),
     teacherCourses: getTeacherCourses(),
     courseExaminators: getCourseExaminators(),
+    courseKursansvarig: getCourseKursansvarig(),
     slots: getSlots(),
   };
 }
@@ -123,6 +125,7 @@ function buildSnapshot(data) {
     teachers: data.teachers,
     teacherCourses: data.teacherCourses,
     courseExaminators: data.courseExaminators,
+    courseKursansvarig: data.courseKursansvarig,
     slots: data.slots,
     courseRuns: data.courseRuns,
     teacherAvailability: data.teacherAvailability,
