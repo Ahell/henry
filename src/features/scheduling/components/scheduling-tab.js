@@ -1681,10 +1681,6 @@ export class SchedulingTab extends LitElement {
           );
           const currentKursansvarigId =
             store.coursesManager.getKursansvarigForCourse(course.course_id);
-          const assignedTeachers = assignedTeacherIds
-            .map((teacherId) => store.getTeacher(teacherId))
-            .filter(Boolean)
-            .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
           return html`
             <div class="summary-course" style="background-color: ${bgColor};">
@@ -1697,114 +1693,99 @@ export class SchedulingTab extends LitElement {
                 >
               </div>
 
-              <div class="summary-course-body">
-                <div class="summary-column">
-                  <div class="summary-column-title">Tilldelad</div>
-                  <div class="summary-teacher-list">
-                    ${compatibleTeachers.length === 0
-                      ? null
-                      : compatibleTeachers.map((teacher) => {
-                          const isAssigned = assignedTeacherIds.includes(
-                            teacher.teacher_id
-                          );
-                          const availability =
-                            this._teacherAvailabilityForCourseInSlot({
-                              teacherId: teacher.teacher_id,
-                              slot,
-                              slotDate,
-                              courseId: course.course_id,
-                            });
-                          const isKursansvarig =
-                            currentKursansvarigId === teacher.teacher_id;
-                          const baseClass = isAssigned
-                            ? "assigned-course"
-                            : "has-course";
-                          const rowClassName = [
-                            "summary-teacher-row",
-                            baseClass,
-                            availability.classNameSuffix,
-                          ]
-                            .filter(Boolean)
-                            .join(" ");
-                          const pillClassName = [
-                            "summary-teacher-pill",
-                            isKursansvarig ? "is-kursansvarig" : "",
-                          ]
-                            .filter(Boolean)
-                            .join(" ");
-                          return html`
-                            <div
-                              class="${rowClassName}"
-                              title=${availability.titleText}
+              <div class="summary-teacher-header">
+                <span class="summary-column-title">Tilldelad</span>
+                <span class="summary-column-title">Kursansvar</span>
+              </div>
+              <div class="summary-teacher-list">
+                ${compatibleTeachers.length === 0
+                  ? null
+                  : compatibleTeachers.map((teacher) => {
+                      const isAssigned = assignedTeacherIds.includes(
+                        teacher.teacher_id
+                      );
+                      const availability =
+                        this._teacherAvailabilityForCourseInSlot({
+                          teacherId: teacher.teacher_id,
+                          slot,
+                          slotDate,
+                          courseId: course.course_id,
+                        });
+                      const isKursansvarig =
+                        currentKursansvarigId === teacher.teacher_id;
+                      const baseClass = isAssigned
+                        ? "assigned-course"
+                        : "has-course";
+                      const rowClassName = [
+                        "summary-teacher-row",
+                        baseClass,
+                        availability.classNameSuffix,
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+                      const pillClassName = [
+                        "summary-teacher-pill",
+                        isKursansvarig ? "is-kursansvarig" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+                      return html`
+                        <div
+                          class="${rowClassName}"
+                          title=${availability.titleText}
+                        >
+                          <button
+                            class="${pillClassName}"
+                            type="button"
+                            style="position: relative;"
+                            ?disabled=${!this.isEditing}
+                            aria-pressed=${isAssigned ? "true" : "false"}
+                            @click=${() => {
+                              this._toggleTeacherAssignment({
+                                runs: item.runs,
+                                teacherId: teacher.teacher_id,
+                                checked: !isAssigned,
+                                slotDate,
+                              });
+                            }}
+                          >
+                            <span class="summary-toggle-text"
+                              >${teacher.name}</span
                             >
-                              <button
-                                class="${pillClassName}"
-                                type="button"
-                                style="position: relative;"
-                                ?disabled=${!this.isEditing}
-                                aria-pressed=${isAssigned ? "true" : "false"}
-                                @click=${() => {
-                                  this._toggleTeacherAssignment({
-                                    runs: item.runs,
-                                    teacherId: teacher.teacher_id,
-                                    checked: !isAssigned,
-                                    slotDate,
-                                  });
-                                }}
-                              >
-                                <span class="summary-toggle-text"
-                                  >${teacher.name}</span
-                                >
-                              </button>
-                            </div>
-                          `;
-                        })}
-                  </div>
-                </div>
-                <div class="summary-column">
-                  <div class="summary-column-title">Kursansvarig</div>
-                  <div class="summary-kursansvarig-list">
-                    ${assignedTeachers.length === 0
-                      ? html`<div class="summary-empty">
-                          Tilldela lärare först
-                        </div>`
-                      : assignedTeachers.map((teacher) => {
-                          const isKursansvarig =
-                            currentKursansvarigId === teacher.teacher_id;
-                          return html`
-                            <label class="summary-kursansvarig-row">
-                                <input
-                                  type="radio"
-                                  class="kursansvarig-radio"
-                                  name="kursansvarig-${course.course_id}-${slot.slot_id}"
-                                  value="${teacher.teacher_id}"
-                                  .checked=${isKursansvarig}
-                                  ?disabled=${!this.isEditing}
-                                  aria-label="Välj ${teacher.name} som kursansvarig för ${course.code}"
-                                  title="${isKursansvarig
-                                    ? "Kursansvarig"
-                                    : "Välj som kursansvarig"}"
-                                @change=${(e) =>
-                                  this._handleKursansvarigChange(
-                                    e,
-                                    course.course_id,
-                                    teacher.teacher_id
-                                  )}
-                                @keydown=${(e) =>
-                                  this._handleKursansvarigKeydown(
-                                    e,
-                                    course.course_id,
-                                    teacher.teacher_id
-                                  )}
-                              />
-                              <span class="summary-kursansvarig-name"
-                                >${teacher.name}</span
-                              >
-                            </label>
-                          `;
-                        })}
-                  </div>
-                </div>
+                          </button>
+                          <div class="summary-kursansvarig-cell">
+                            ${isAssigned
+                              ? html`
+                                  <input
+                                    type="radio"
+                                    class="kursansvarig-radio"
+                                    name="kursansvarig-${course.course_id}-${slot.slot_id}"
+                                    value="${teacher.teacher_id}"
+                                    .checked=${isKursansvarig}
+                                    ?disabled=${!this.isEditing}
+                                    aria-label="Välj ${teacher.name} som kursansvarig för ${course.code}"
+                                    title="${isKursansvarig
+                                      ? "Kursansvarig"
+                                      : "Välj som kursansvarig"}"
+                                    @change=${(e) =>
+                                      this._handleKursansvarigChange(
+                                        e,
+                                        course.course_id,
+                                        teacher.teacher_id
+                                      )}
+                                    @keydown=${(e) =>
+                                      this._handleKursansvarigKeydown(
+                                        e,
+                                        course.course_id,
+                                        teacher.teacher_id
+                                      )}
+                                  />
+                                `
+                              : null}
+                          </div>
+                        </div>
+                      `;
+                    })}
               </div>
             </div>
           `;

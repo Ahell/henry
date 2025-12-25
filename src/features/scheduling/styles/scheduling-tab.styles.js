@@ -7,7 +7,7 @@ export const schedulingTabStyles = css`
     display: block;
     --gantt-depot-width: 240px;
     --gantt-cohort-width: 96px;
-    --gantt-slot-width: 170px;
+    --gantt-slot-width: 180px;
     --gantt-row-height: 160px;
     --gantt-availability-row-height: 78px;
     --gantt-date-row-height: 32px;
@@ -782,24 +782,18 @@ export const schedulingTabStyles = css`
     border-radius: 2px;
   }
 
-  .gantt-table tfoot .summary-course .summary-course-body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.65fr);
-    gap: var(--space-2);
-  }
-
-  .gantt-table tfoot .summary-course .summary-column {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-  }
-
   .gantt-table tfoot .summary-course .summary-column-title {
     font-size: 0.55rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: rgba(255, 255, 255, 0.85);
+  }
+
+  .gantt-table tfoot .summary-course .summary-teacher-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
   }
 
   .gantt-table tfoot .summary-course .summary-teacher-list {
@@ -812,48 +806,6 @@ export const schedulingTabStyles = css`
     box-shadow: inset 0 0 0 1px rgba(31, 39, 51, 0.08);
     max-height: 180px;
     overflow: auto;
-  }
-
-  .gantt-table tfoot .summary-course .summary-kursansvarig-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: var(--radius-base);
-    padding: 2px;
-    box-shadow: inset 0 0 0 1px rgba(31, 39, 51, 0.08);
-    max-height: 180px;
-    overflow: auto;
-  }
-
-  .gantt-table tfoot .summary-course .summary-kursansvarig-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 2px 4px;
-    border-radius: var(--radius-base);
-    color: #fff;
-    font-size: 0.6rem;
-    cursor: pointer;
-  }
-
-  .gantt-table tfoot .summary-course .summary-kursansvarig-row:hover {
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  .gantt-table tfoot .summary-course .summary-kursansvarig-name {
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .gantt-table tfoot .summary-course .summary-empty {
-    font-size: 0.55rem;
-    color: rgba(255, 255, 255, 0.85);
-    padding: 4px;
-    text-align: center;
   }
 
   .gantt-table tfoot .summary-course .summary-teacher-row {
@@ -869,6 +821,14 @@ export const schedulingTabStyles = css`
     transition: background var(--transition-fast);
     position: relative;
     overflow: hidden;
+  }
+
+  .gantt-table tfoot .summary-course .summary-kursansvarig-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    padding-right: 2px;
   }
 
   .gantt-table
@@ -891,7 +851,7 @@ export const schedulingTabStyles = css`
     isolation: isolate;
     cursor: pointer;
     font-weight: var(--font-weight-semibold);
-    border: 0;
+    border: 1px solid rgba(255, 255, 255, 0.35);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -932,16 +892,21 @@ export const schedulingTabStyles = css`
     cursor: pointer;
     margin: 0;
     flex-shrink: 0;
-    accent-color: var(--color-primary, #3b82f6);
+    accent-color: var(--color-success, #22c55e);
   }
 
   .gantt-table tfoot .summary-course .kursansvarig-radio:hover {
     transform: scale(1.1);
   }
 
-  .gantt-table tfoot .summary-course .kursansvarig-radio:focus {
+  .gantt-table tfoot .summary-course .kursansvarig-radio:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+
+  .gantt-table tfoot .summary-course .kursansvarig-radio:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 
   /* Optional: Add subtle indicator to pill when teacher is kursansvarig */
