@@ -111,7 +111,16 @@ export class HenrySelect extends LitElement {
     this.options = [];
   }
 
-	  render() {
+	  updated(changedProperties) {
+    if (changedProperties.has("value") && !this.multiple) {
+      const selectElement = this.renderRoot.querySelector("select");
+      if (selectElement && selectElement.value !== this.value) {
+        selectElement.value = this.value;
+      }
+    }
+  }
+
+  render() {
 	    const listbox = !this.multiple && Number(this.size) > 1;
 	    const listboxStyle = listbox
 	      ? `--henry-select-visible-options: ${Number(this.size)};`

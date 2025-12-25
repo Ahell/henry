@@ -18,6 +18,13 @@ export function migrateNormalizeTeachers(db) {
     return;
   }
 
+  const tableInfo = db.prepare("PRAGMA table_info(joint_course_runs)").all();
+  const hasTeachersColumn = tableInfo.some((c) => c.name === "teachers");
+  if (!hasTeachersColumn) {
+    console.log("Column 'teachers' missing from joint_course_runs, skipping migration.");
+    return;
+  }
+
   const runs = db.prepare("SELECT id, teachers FROM joint_course_runs").all();
   if (runs.length === 0) {
     return;

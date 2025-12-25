@@ -782,6 +782,26 @@ export const schedulingTabStyles = css`
     border-radius: 2px;
   }
 
+  .gantt-table tfoot .summary-course .summary-course-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.65fr);
+    gap: var(--space-2);
+  }
+
+  .gantt-table tfoot .summary-course .summary-column {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .gantt-table tfoot .summary-course .summary-column-title {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
   .gantt-table tfoot .summary-course .summary-teacher-list {
     display: flex;
     flex-direction: column;
@@ -792,6 +812,48 @@ export const schedulingTabStyles = css`
     box-shadow: inset 0 0 0 1px rgba(31, 39, 51, 0.08);
     max-height: 180px;
     overflow: auto;
+  }
+
+  .gantt-table tfoot .summary-course .summary-kursansvarig-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-base);
+    padding: 2px;
+    box-shadow: inset 0 0 0 1px rgba(31, 39, 51, 0.08);
+    max-height: 180px;
+    overflow: auto;
+  }
+
+  .gantt-table tfoot .summary-course .summary-kursansvarig-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 4px;
+    border-radius: var(--radius-base);
+    color: #fff;
+    font-size: 0.6rem;
+    cursor: pointer;
+  }
+
+  .gantt-table tfoot .summary-course .summary-kursansvarig-row:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .gantt-table tfoot .summary-course .summary-kursansvarig-name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gantt-table tfoot .summary-course .summary-empty {
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.85);
+    padding: 4px;
+    text-align: center;
   }
 
   .gantt-table tfoot .summary-course .summary-teacher-row {
@@ -865,14 +927,11 @@ export const schedulingTabStyles = css`
 
   /* Kursansvarig radio button styling */
   .gantt-table tfoot .summary-course .kursansvarig-radio {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     cursor: pointer;
-    z-index: 2;
     margin: 0;
+    flex-shrink: 0;
     accent-color: var(--color-primary, #3b82f6);
   }
 

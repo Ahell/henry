@@ -297,8 +297,13 @@ export class CoursesManager {
     // Validation: teacher must be assigned to at least one run (if not null)
     if (normalizedTeacherId != null) {
       const runs = this.events.store?.courseRunsManager?.getCourseRuns?.() || [];
+      const courseIdKey = String(courseId);
+      const teacherIdKey = String(normalizedTeacherId);
       const hasAssignment = runs.some(
-        (r) => r.course_id === courseId && r.teachers?.includes(normalizedTeacherId)
+        (r) =>
+          String(r.course_id) === courseIdKey &&
+          Array.isArray(r.teachers) &&
+          r.teachers.some((tid) => String(tid) === teacherIdKey)
       );
       if (!hasAssignment) {
         console.warn('Teacher must be assigned to course before becoming kursansvarig');

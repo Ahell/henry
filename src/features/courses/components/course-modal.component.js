@@ -118,6 +118,7 @@ export class CourseModal extends LitElement {
           this,
           CourseFormService.handleExaminatorChange(e?.detail?.value)
         );
+
       }
     }
 
