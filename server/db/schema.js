@@ -85,30 +85,6 @@ export function ensureSchema(db) {
       UNIQUE(teacher_id, slot_day_id)
     );
 
-    CREATE TABLE IF NOT EXISTS course_run_cohorts (
-      run_cohort_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      run_id INTEGER NOT NULL,
-      cohort_id INTEGER,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(run_id, cohort_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS course_run_teachers (
-      run_id INTEGER NOT NULL,
-      teacher_id INTEGER NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (run_id, teacher_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS course_run_days (
-      course_run_day_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      run_id INTEGER NOT NULL,
-      slot_day_id INTEGER NOT NULL,
-      is_default INTEGER DEFAULT 0,
-      active INTEGER DEFAULT 1,
-      UNIQUE(run_id, slot_day_id)
-    );
-
     CREATE TABLE IF NOT EXISTS teacher_course_competency (
       teacher_id INTEGER NOT NULL,
       course_id INTEGER NOT NULL,

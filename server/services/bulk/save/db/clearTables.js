@@ -6,7 +6,6 @@ export function clearBulkTables() {
     "cohorts",
     "teachers",
     "teacher_course_competency",
-    "teacher_courses_staff",
     "course_examinators",
     "course_kursansvarig",
     "slots",
