@@ -1,34 +1,50 @@
-import { store } from "../../../platform/store/DataStore.js";
-import { BaseFormService } from "../../../platform/services/base-form.service.js";
+import { FormService } from "../../../platform/services/form.service.js";
+import { SlotService } from "./slot.service.js";
 
 /**
  * Slots Form Service
- * Handles slot creation and delete logic with optimistic updates
+ * Handles form-specific operations for slot forms
  */
 export class SlotsFormService {
   /**
-   * Create a new slot
-   * @param {Object} slotData - Slot data
-   * @returns {Object} Created slot and mutation ID
+   * Resets the slot form
+   * @param {HTMLElement} root - The root element of the form
    */
-  static createSlot(slotData) {
-    const result = BaseFormService.create("add-slot", slotData, {
-      add: (data) => store.addSlot(data),
-      delete: (id) => store.deleteSlot(id),
-      getIdField: "slot_id",
-    });
-
-    return { slot: result.entity, mutationId: result.mutationId };
+  static resetForm(root) {
+    FormService.clearCustomForm(root, ["insertAfter", "slotStart"]);
   }
 
   /**
-   * Delete a slot
-   * @param {number} slotId - Slot ID
-   * @returns {Object} Mutation info
+   * Validates the form data
+   * @param {HTMLElement} root - The root element of the form
+   * @returns {boolean} Whether the form is valid
    */
-  static deleteSlot(slotId) {
-    return BaseFormService.delete("delete-slot", slotId, {
-      delete: (id) => store.deleteSlot(id),
-    });
+  static isFormValid(root) {
+    return FormService.isFormValid(root);
+  }
+
+  /**
+   * Extracts form data from the form
+   * @param {HTMLElement} root - The root element of the form
+   * @returns {Object} Extracted form data
+   */
+  static extractFormData(root) {
+    const startSelect = root.querySelector("#slotStart");
+    const start_date = startSelect ? startSelect.getSelect().value : null;
+    
+    return {
+      start_date
+    };
+  }
+
+  /**
+   * Get initial state for Add modal
+   */
+  static getInitialStateForAdd() {
+    return {
+      selectedInsertAfter: null,
+      startOptions: [],
+      formValid: false,
+    };
   }
 }

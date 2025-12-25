@@ -1,8 +1,5 @@
 import { store } from "../../../platform/store/DataStore.js";
-import {
-  hasBusySlotEntry,
-  convertSlotEntryToDayEntriesAndRemove,
-} from "./helpers.js";
+import { TeacherAvailabilityService } from "./teacher-availability.service.js";
 
 const schedulePaintUpdate = (component) => {
   if (component._paintUpdateScheduled) return;
@@ -112,14 +109,14 @@ export function handleCellMouseDown(component, e) {
   } = getCellEventData(e);
 
   if (isDetailView) {
-    const hasSlotEntry = hasBusySlotEntry(
+    const hasSlotEntry = TeacherAvailabilityService.hasBusySlotEntry(
       teacherId,
       component._detailSlotId,
       component._detailSlotDate
     );
 
     if (hasSlotEntry) {
-      const removed = convertSlotEntryToDayEntriesAndRemove(
+      const removed = TeacherAvailabilityService.convertSlotEntryToDayEntriesAndRemove(
         component._detailSlotId,
         teacherId,
         date
@@ -197,7 +194,7 @@ export function handleCellMouseEnter(component, e) {
       component._detailSlotId
     ) {
       if (
-        hasBusySlotEntry(
+        TeacherAvailabilityService.hasBusySlotEntry(
           teacherId,
           component._detailSlotId,
           component._detailSlotDate
@@ -217,7 +214,7 @@ export function handleCellMouseEnter(component, e) {
       const isDayLevel = store.isTeacherUnavailableOnDay(teacherId, date);
 
       if (!isDayLevel && component._detailSlotDate && component._detailSlotId) {
-        convertSlotEntryToDayEntriesAndRemove(
+        TeacherAvailabilityService.convertSlotEntryToDayEntriesAndRemove(
           component._detailSlotId,
           teacherId,
           date

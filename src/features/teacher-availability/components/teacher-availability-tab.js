@@ -3,7 +3,7 @@ import {
   store,
   DEFAULT_SLOT_LENGTH_DAYS,
 } from "../../../platform/store/DataStore.js";
-import { getRunsCoveringSlotId } from "../services/run-coverage.js";
+import { TeacherAvailabilityService } from "../services/teacher-availability.service.js";
 import "../../../components/ui/index.js";
 import "./teacher-availability-table.js";
 import { teacherAvailabilityTabStyles } from "../styles/teacher-availability-tab.styles.js";
@@ -182,7 +182,7 @@ export class TeacherAvailabilityTab extends LitElement {
   _getDetailCourses() {
     if (!this._isDetailView || this._detailSlotId == null) return [];
 
-    const runs = getRunsCoveringSlotId(
+    const runs = TeacherAvailabilityService.getRunsCoveringSlotId(
       store.getCourseRuns(),
       this._detailSlotId
     );
