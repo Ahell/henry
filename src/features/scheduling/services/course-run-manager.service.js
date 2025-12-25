@@ -507,10 +507,7 @@ export class CourseRunManager {
           store.coursesManager.getKursansvarigForCourse(courseId);
 
         if (checked) {
-          // Auto-select as kursansvarig if none exists
-          if (!currentKursansvarig) {
-            store.coursesManager.setKursansvarig(courseId, teacherId);
-          }
+          // Do not auto-assign kursansvarig on teacher assignment.
         } else {
           // Clear kursansvarig if this teacher was responsible
           if (currentKursansvarig === teacherId) {
