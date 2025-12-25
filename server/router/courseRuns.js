@@ -11,10 +11,24 @@ import { deserializeArrayFields } from "../utils/index.js";
 const router = express.Router();
 
 router.get("/", (req, res) => {
-  const courseSlots = db
-    .prepare("SELECT * FROM cohort_slot_courses")
+  const jointRuns = db
+    .prepare("SELECT * FROM joint_course_runs")
     .all()
-    .map((cs) => deserializeArrayFields(cs, ["teachers"]));
+    .map(run => run);
+
+  const links = db.prepare("SELECT joint_run_id, cohort_id FROM cohort_slot_courses").all();
+  const cohortsByRun = new Map();
+  links.forEach(l => {
+      if (!cohortsByRun.has(l.joint_run_id)) cohortsByRun.set(l.joint_run_id, []);
+      if (l.cohort_id) cohortsByRun.get(l.joint_run_id).push(l.cohort_id);
+  });
+
+  const teacherLinks = db.prepare("SELECT joint_run_id, teacher_id FROM joint_course_run_teachers").all();
+  const teachersByRun = new Map();
+  teacherLinks.forEach(l => {
+      if (!teachersByRun.has(l.joint_run_id)) teachersByRun.set(l.joint_run_id, []);
+      teachersByRun.get(l.joint_run_id).push(l.teacher_id);
+  });
 
   const runSlotRows = db
     .prepare("SELECT run_id, slot_id, sequence FROM course_run_slots")
@@ -27,29 +41,30 @@ router.get("/", (req, res) => {
   });
   const sortedSlots = getSortedSlots();
 
-  const runs = courseSlots.map((cs) => {
-    const rawSlots = slotsByRun.get(cs.cohort_slot_course_id) || [];
+  const runs = jointRuns.map((jr) => {
+    const rawSlots = slotsByRun.get(jr.id) || [];
     const slotIds =
       rawSlots.length > 0
         ? rawSlots
             .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
             .map((r) => r.slot_id)
         : getConsecutiveSlotIds(
-            cs.slot_id,
-            Number(cs.slot_span) >= 2
-              ? Number(cs.slot_span)
-              : computeCourseSlotSpan(cs.course_id),
+            jr.slot_id,
+            Number(jr.slot_span) >= 2
+              ? Number(jr.slot_span)
+              : computeCourseSlotSpan(jr.course_id),
             sortedSlots
           );
 
     return {
-      run_id: cs.cohort_slot_course_id,
-      course_id: cs.course_id,
-      slot_id: slotIds[0] ?? cs.slot_id,
+      run_id: jr.id,
+      course_id: jr.course_id,
+      slot_id: slotIds[0] ?? jr.slot_id,
       slot_ids: slotIds,
-      slot_span: slotIds.length || Number(cs.slot_span) || 1,
-      cohorts: cs.cohort_id != null ? [cs.cohort_id] : [],
-      teachers: cs.teachers || [],
+      slot_span: slotIds.length || Number(jr.slot_span) || 1,
+      cohorts: cohortsByRun.get(jr.id) || [],
+      teachers: teachersByRun.get(jr.id) || [],
+      kursansvarig_id: jr.kursansvarig_id || null,
     };
   });
   res.json(runs);
@@ -57,85 +72,129 @@ router.get("/", (req, res) => {
 
 router.post("/", (req, res) => {
   const payload = req.body;
-  const cohorts =
-    Array.isArray(payload.cohorts) && payload.cohorts.length > 0
-      ? payload.cohorts
-      : [null];
+  const cohorts = Array.isArray(payload.cohorts) ? payload.cohorts : [];
   const teachers = Array.isArray(payload.teachers) ? payload.teachers : [];
   const slotSpan = computeCourseSlotSpan(payload.course_id);
-  const insert = db.prepare(
-    "INSERT INTO cohort_slot_courses (course_id, slot_id, cohort_id, teachers, slot_span) VALUES (?, ?, ?, ?, ?)"
+  const kursansvarig_id = payload.kursansvarig_id || null;
+
+  const insertJoint = db.prepare(
+      "INSERT INTO joint_course_runs (course_id, slot_id, slot_span, kursansvarig_id) VALUES (?, ?, ?, ?)"
   );
-  const created = [];
+  
+    const insertTeacherLink = db.prepare(
+        "INSERT OR IGNORE INTO joint_course_run_teachers (joint_run_id, teacher_id) VALUES (?, ?)"
+    );
+  let newRunId;
+  
   db.transaction(() => {
-    cohorts.forEach((cohortId) => {
-      const result = insert.run(
+    const result = insertJoint.run(
         payload.course_id,
         payload.slot_id,
-        cohortId,
-        JSON.stringify(teachers),
-        slotSpan
-      );
-      const slotIds = upsertRunSlots(
-        Number(result.lastInsertRowid),
-        payload.slot_id,
-        slotSpan
-      );
-      created.push({
-        run_id: result.lastInsertRowid,
-        course_id: payload.course_id,
-        slot_id: payload.slot_id,
-        slot_ids: slotIds,
-        slot_span: slotSpan,
-        cohorts: cohortId != null ? [cohortId] : [],
-        teachers,
-      });
-    });
-  })();
-  res.json(created.length === 1 ? created[0] : created);
-});
+        slotSpan,
+        kursansvarig_id
+    );
+    newRunId = result.lastInsertRowid;
 
-router.put("/:id", (req, res) => {
-  const payload = req.body;
-  const teachers = Array.isArray(payload.teachers) ? payload.teachers : [];
-  const slotSpan = computeCourseSlotSpan(payload.course_id);
-  const stmt = db.prepare(
-    "UPDATE cohort_slot_courses SET course_id = ?, slot_id = ?, cohort_id = ?, teachers = ?, slot_span = ? WHERE cohort_slot_course_id = ?"
-  );
-  stmt.run(
-    payload.course_id,
-    payload.slot_id,
-    Array.isArray(payload.cohorts) && payload.cohorts.length > 0
-      ? payload.cohorts[0]
-      : null,
-    JSON.stringify(teachers),
-    slotSpan,
-    req.params.id
-  );
-  const slotIds = upsertRunSlots(
-    Number(req.params.id),
-    payload.slot_id,
-    slotSpan
-  );
+    cohorts.forEach(cohortId => {
+        if (cohortId) {
+            insertChild.run(newRunId, payload.course_id, payload.slot_id, cohortId);
+        }
+    });
+
+    teachers.forEach(tid => {
+        if (tid) insertTeacherLink.run(newRunId, tid);
+    });
+    
+    upsertRunSlots(Number(newRunId), payload.slot_id, slotSpan);
+  })();
+
+  const slotIds = getConsecutiveSlotIds(payload.slot_id, slotSpan, getSortedSlots());
+
   res.json({
-    run_id: Number(req.params.id),
+    run_id: newRunId,
     course_id: payload.course_id,
     slot_id: payload.slot_id,
     slot_ids: slotIds,
     slot_span: slotSpan,
-    cohorts:
-      Array.isArray(payload.cohorts) && payload.cohorts.length > 0
-        ? payload.cohorts
-        : [],
+    cohorts: cohorts,
     teachers,
+    kursansvarig_id,
+  });
+});
+
+router.put("/:id", (req, res) => {
+  const runId = Number(req.params.id);
+  const payload = req.body;
+  const teachers = Array.isArray(payload.teachers) ? payload.teachers : [];
+  const cohorts = Array.isArray(payload.cohorts) ? payload.cohorts : [];
+  const slotSpan = computeCourseSlotSpan(payload.course_id);
+  const kursansvarig_id = payload.kursansvarig_id || null;
+
+  const updateJoint = db.prepare(
+    "UPDATE joint_course_runs SET course_id = ?, slot_id = ?, slot_span = ?, kursansvarig_id = ? WHERE id = ?"
+  );
+  
+  const deleteChildren = db.prepare("DELETE FROM cohort_slot_courses WHERE joint_run_id = ?");
+  const insertChild = db.prepare(
+      "INSERT INTO cohort_slot_courses (joint_run_id, course_id, slot_id, cohort_id) VALUES (?, ?, ?, ?)"
+  );
+
+  const deleteTeacherLinks = db.prepare("DELETE FROM joint_course_run_teachers WHERE joint_run_id = ?");
+  const insertTeacherLink = db.prepare(
+      "INSERT OR IGNORE INTO joint_course_run_teachers (joint_run_id, teacher_id) VALUES (?, ?)"
+  );
+
+  db.transaction(() => {
+      updateJoint.run(
+          payload.course_id,
+          payload.slot_id,
+          slotSpan,
+          kursansvarig_id,
+          runId
+      );
+      
+      deleteChildren.run(runId);
+      cohorts.forEach(cohortId => {
+          if (cohortId) {
+              insertChild.run(runId, payload.course_id, payload.slot_id, cohortId);
+          }
+      });
+
+      deleteTeacherLinks.run(runId);
+      teachers.forEach(tid => {
+          if (tid) insertTeacherLink.run(runId, tid);
+      });
+      
+      upsertRunSlots(runId, payload.slot_id, slotSpan);
+  })();
+
+  const customSlots = db.prepare("SELECT slot_id FROM course_run_slots WHERE run_id = ? ORDER BY sequence").all(runId);
+  const slotIds = customSlots.length > 0 
+      ? customSlots.map(s => s.slot_id)
+      : getConsecutiveSlotIds(payload.slot_id, slotSpan, getSortedSlots());
+
+  res.json({
+    run_id: runId,
+    course_id: payload.course_id,
+    slot_id: payload.slot_id,
+    slot_ids: slotIds,
+    slot_span: slotSpan,
+    cohorts: cohorts,
+    teachers,
+    kursansvarig_id,
   });
 });
 
 router.delete("/:id", (req, res) => {
-  db.prepare("DELETE FROM course_run_slots WHERE run_id = ?").run(req.params.id);
-  db.prepare(
-    "DELETE FROM cohort_slot_courses WHERE cohort_slot_course_id = ?"
-  ).run(req.params.id);
+  const runId = req.params.id;
+  
+  db.transaction(() => {
+      db.prepare("DELETE FROM course_run_slots WHERE run_id = ?").run(runId);
+      db.prepare("DELETE FROM cohort_slot_courses WHERE joint_run_id = ?").run(runId);
+      db.prepare("DELETE FROM joint_course_run_teachers WHERE joint_run_id = ?").run(runId);
+      db.prepare("DELETE FROM joint_course_runs WHERE id = ?").run(runId);
+  })();
+  
   res.json({ success: true });
 });
 

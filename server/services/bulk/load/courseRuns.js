@@ -15,42 +15,64 @@ export function buildSlotsByRun(courseRunSlots = []) {
   return slotsByRun;
 }
 
-export function buildCourseSlots(cohortSlotCoursesRaw = []) {
-  return cohortSlotCoursesRaw.map((cs) => {
-    const parsed = deserializeArrayFields(cs, ["teachers"]);
+function mapTeachersByRun(jointTeachers = []) {
+  const map = new Map();
+  jointTeachers.forEach(t => {
+      if (!map.has(t.joint_run_id)) map.set(t.joint_run_id, []);
+      map.get(t.joint_run_id).push(t.teacher_id);
+  });
+  return map;
+}
+
+export function buildCourseSlots(jointRuns = [], jointTeachers = []) {
+  const teachersByRun = mapTeachersByRun(jointTeachers);
+  
+  return jointRuns.map((jr) => {
     return {
-      ...cs,
-      teachers: parsed.teachers || [],
-      course_slot_id: cs.cohort_slot_course_id,
+      course_slot_id: jr.id,
+      course_id: jr.course_id,
+      slot_id: jr.slot_id,
+      teachers: teachersByRun.get(jr.id) || [],
+      slot_span: jr.slot_span,
+      created_at: jr.created_at
     };
   });
 }
 
-export function buildCourseRuns(courseSlots = [], slotsByRun) {
+export function buildCourseRuns(jointRuns = [], jointTeachers = [], cohortLinks = [], slotsByRun) {
   const sortedSlots = getSortedSlots();
+  const teachersByRun = mapTeachersByRun(jointTeachers);
+  
+  const cohortsByRun = new Map();
+  cohortLinks.forEach(l => {
+      if (!cohortsByRun.has(l.joint_run_id)) cohortsByRun.set(l.joint_run_id, []);
+      if (l.cohort_id) cohortsByRun.get(l.joint_run_id).push(l.cohort_id);
+  });
 
-  return courseSlots.map((cs) => {
-    const rawSlots = slotsByRun.get(cs.cohort_slot_course_id) || [];
-    const span = Number(cs.slot_span);
+  return jointRuns.map((jr) => {
+    const rawSlots = slotsByRun.get(jr.id) || [];
+    const span = Number(jr.slot_span);
+    
     const slotIds =
       rawSlots.length > 0
         ? rawSlots
             .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
             .map((r) => r.slot_id)
         : getConsecutiveSlotIds(
-            cs.slot_id,
-            span >= 2 ? span : computeCourseSlotSpan(cs.course_id),
+            jr.slot_id,
+            span >= 2 ? span : computeCourseSlotSpan(jr.course_id),
             sortedSlots
           );
 
     return {
-      run_id: cs.cohort_slot_course_id,
-      course_id: cs.course_id,
-      slot_id: slotIds[0] ?? cs.slot_id,
+      run_id: jr.id,
+      course_id: jr.course_id,
+      slot_id: slotIds[0] ?? jr.slot_id,
       slot_ids: slotIds,
-      slot_span: slotIds.length || Number(cs.slot_span) || 1,
-      cohorts: cs.cohort_id != null ? [cs.cohort_id] : [],
-      teachers: cs.teachers || [],
+      slot_span: slotIds.length || span || 1,
+      cohorts: cohortsByRun.get(jr.id) || [],
+      teachers: teachersByRun.get(jr.id) || [],
+      kursansvarig_id: jr.kursansvarig_id || null,
     };
   });
 }

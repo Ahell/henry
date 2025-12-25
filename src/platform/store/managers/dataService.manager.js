@@ -315,8 +315,8 @@ function buildCohortSlotCoursesFromRuns(courseRuns = []) {
       Array.isArray(run.cohorts) && run.cohorts.length > 0 ? run.cohorts : [null];
 
     return cohorts.map((cohortId) => ({
-      cohort_slot_course_id: run.run_id ?? null,
-      course_slot_id: run.run_id ?? null,
+      cohort_slot_course_id: null, // Always null for auto-increment
+      joint_run_id: run.run_id ?? null, // Link to the joint run
       course_id: run.course_id,
       slot_id: run.slot_id,
       cohort_id: cohortId,

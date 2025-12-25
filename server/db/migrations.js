@@ -3,6 +3,10 @@ import { ensureColumn } from "./migrations/schema.js";
 import { migrateDeduplicateAll } from "./migrations/deduplication.js";
 import { migrateRemoveAllOrphanedRecords } from "./migrations/orphaned_cleanup.js";
 import { migrateBackfillSlotSpan } from "./migrations/data.js";
+import { migrateJointCourseRuns } from "./migrations/joint_runs.js";
+import { migrateAddKursansvarig } from "./migrations/add_kursansvarig.js";
+import { migrateNormalizeTeachers } from "./migrations/normalize_teachers.js";
+import { migrateCleanupTeachersColumn } from "./migrations/cleanup_teachers_column.js";
 
 // Main runner: Executes all migrations in order
 export function runAllMigrations(db, helpers, DEFAULT_SLOT_LENGTH_DAYS) {
@@ -16,6 +20,10 @@ export function runAllMigrations(db, helpers, DEFAULT_SLOT_LENGTH_DAYS) {
   // ensureColumn(db, "cohort_slot_courses", "slot_span", "INTEGER DEFAULT 1");
 
   // migrateBackfillSlotSpan(db, helpers);
+  migrateJointCourseRuns(db);
+  migrateNormalizeTeachers(db);
+  migrateAddKursansvarig(db);
+  migrateCleanupTeachersColumn(db);
   migrateRemoveAllOrphanedRecords(db);
   // migrateDeduplicateAll(db, helpers);
 }

@@ -1,5 +1,4 @@
 import {
-  getCohortSlotCourses,
   getCohorts,
   getCoursePrerequisites,
   getCourseRunSlots,
@@ -13,6 +12,9 @@ import {
   getTeacherDayUnavailability,
   getTeachers,
   getTeacherSlotUnavailability,
+  getJointCourseRuns,
+  getJointCourseRunTeachers,
+  getCohortSlotLinks
 } from "./dbQueries.js";
 import { buildCourseRuns, buildCourseSlots, buildSlotsByRun } from "./courseRuns.js";
 import { mapTeacherAvailability } from "./teacherAvailability.js";
@@ -56,11 +58,15 @@ function loadBaseEntities() {
 }
 
 function loadCourseRunsData() {
-  const cohortSlotCoursesRaw = getCohortSlotCourses();
+  const jointRuns = getJointCourseRuns();
+  const jointTeachers = getJointCourseRunTeachers();
+  const cohortLinks = getCohortSlotLinks();
   const courseRunSlots = getCourseRunSlots();
+  
   const slotsByRun = buildSlotsByRun(courseRunSlots);
-  const courseSlots = buildCourseSlots(cohortSlotCoursesRaw);
-  const courseRuns = buildCourseRuns(courseSlots, slotsByRun);
+  const courseSlots = buildCourseSlots(jointRuns, jointTeachers);
+  const courseRuns = buildCourseRuns(jointRuns, jointTeachers, cohortLinks, slotsByRun);
+  
   return { courseSlots, courseRuns, courseRunSlots };
 }
 
@@ -121,7 +127,7 @@ function buildSnapshot(data) {
     courseRuns: data.courseRuns,
     teacherAvailability: data.teacherAvailability,
     courseSlots: data.courseSlots,
-    cohortSlotCourses: data.courseSlots,
+    cohortSlotCourses: data.courseSlots, // Map to same to maintain compatibility if needed
     courseRunSlots: data.courseRunSlots,
     slotDays: data.slotDays,
     teacherDayUnavailability: data.teacherDayUnavailability,
