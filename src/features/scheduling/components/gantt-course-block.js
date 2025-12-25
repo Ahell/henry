@@ -195,29 +195,6 @@ export class GanttCourseBlock extends LitElement {
     return course?.prerequisites && course.prerequisites.length > 0;
   }
 
-  _getAllPrerequisites(courseId) {
-    const course = store.getCourse(courseId);
-    if (!course || !course.prerequisites || course.prerequisites.length === 0) {
-      return [];
-    }
-
-    const allPrereqs = new Set();
-    const stack = [...course.prerequisites];
-
-    while (stack.length > 0) {
-      const prereqId = stack.pop();
-      if (allPrereqs.has(prereqId)) continue;
-
-      allPrereqs.add(prereqId);
-      const prereqCourse = store.getCourse(prereqId);
-      if (prereqCourse?.prerequisites) {
-        prereqCourse.prerequisites.forEach((p) => stack.push(p));
-      }
-    }
-
-    return Array.from(allPrereqs);
-  }
-
   _getPrerequisiteNames(courseId) {
     const course = store.getCourse(courseId);
     if (!course?.prerequisites || course.prerequisites.length === 0) {

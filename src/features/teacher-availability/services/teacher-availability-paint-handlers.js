@@ -267,27 +267,3 @@ export async function handlePaintEnd(component) {
   }
   await persistAvailabilityMutation(component);
 }
-
-export function handlePaintChangeRequest(component, e) {
-  const payload = e?.detail || {};
-  const wasPainting = !!component.isPainting;
-  if (payload.isPainting !== undefined) {
-    component.isPainting = payload.isPainting;
-  }
-  if ("paintMode" in payload) {
-    component._paintMode = payload.paintMode;
-  }
-
-  if (!component.isPainting) {
-    component._isMouseDown = false;
-    component._paintMode = null;
-  }
-
-  component.requestUpdate();
-  dispatchPaintState(component);
-
-  // If painting got turned off while we have a pending optimistic mutation, persist it.
-  if (wasPainting && !component.isPainting && component._availabilityMutationId) {
-    persistAvailabilityMutation(component);
-  }
-}

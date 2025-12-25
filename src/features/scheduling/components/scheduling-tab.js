@@ -633,14 +633,6 @@ export class SchedulingTab extends LitElement {
     return warnings;
   }
 
-  _handleEditClick(e) {
-    const next =
-      typeof e?.detail?.checked === "boolean"
-        ? !!e.detail.checked
-        : !this.isEditing;
-    this.setEditMode(next);
-  }
-
   setEditMode(enabled) {
     const next = !!enabled;
     if (this.isEditing === next) return;
@@ -988,21 +980,6 @@ export class SchedulingTab extends LitElement {
     }
 
     return lines.join("\n");
-  }
-
-  _renderLegend() {
-    return html`
-      <div class="legend">
-        <div class="legend-item">
-          <div class="legend-box normal-course"></div>
-          <span>Kurs</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-box teacher-shortage"></div>
-          <span>Inga kompatibla/tillgängliga lärare</span>
-        </div>
-      </div>
-    `;
   }
 
   _renderSlotAvailabilityHeader(

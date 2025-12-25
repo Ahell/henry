@@ -1,8 +1,5 @@
 import { LitElement, html } from "lit";
-import {
-  store,
-  DEFAULT_SLOT_LENGTH_DAYS,
-} from "../../../platform/store/DataStore.js";
+import { store } from "../../../platform/store/DataStore.js";
 import { TeacherAvailabilityService } from "../services/teacher-availability.service.js";
 import "../../../components/ui/index.js";
 import "./teacher-availability-table.js";
@@ -125,9 +122,6 @@ export class TeacherAvailabilityTab extends LitElement {
         <p>Inga tidsluckor tillgängliga.</p>
       </henry-panel>`;
     }
-
-    const daysLabel = this._getDaysLabel();
-    const paintStatus = "";
 
     return html`
       <henry-panel>
@@ -291,19 +285,6 @@ export class TeacherAvailabilityTab extends LitElement {
     this.requestUpdate();
   }
 
-  _getDaysLabel() {
-    const slotId =
-      this._isDetailView && this._detailSlotId != null
-        ? this._detailSlotId
-        : this.slots?.[0]?.slot_id;
-    const days = slotId != null ? store.getSlotDays(slotId) : [];
-    const count =
-      Array.isArray(days) && days.length
-        ? days.length
-        : DEFAULT_SLOT_LENGTH_DAYS;
-    return `${count} dagar`;
-  }
-
   _renderLegend(isDetailView) {
     if (isDetailView) {
       const items = [
@@ -401,19 +382,6 @@ export class TeacherAvailabilityTab extends LitElement {
         </span>
       `
     );
-  }
-
-  _handleEditAvailabilityToggle(e) {
-    const next =
-      typeof e?.detail?.checked === "boolean"
-        ? !!e.detail.checked
-        : !this.isPainting;
-    this.setEditMode(next);
-  }
-
-  setEditMode(enabled) {
-    this.isPainting = !!enabled;
-    if (!enabled) this.paintMode = null;
   }
 
   _handlePaintSessionEnded() {

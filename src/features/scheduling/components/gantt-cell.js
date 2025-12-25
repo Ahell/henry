@@ -1,5 +1,4 @@
 import { LitElement, html } from "lit";
-import { store } from "../../../platform/store/DataStore.js";
 import "./gantt-course-block.js";
 import { ganttCellStyles } from "../styles/gantt-cell.styles.js";
 

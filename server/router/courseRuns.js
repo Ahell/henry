@@ -6,8 +6,6 @@ import {
   getSortedSlots,
   upsertRunSlots,
 } from "../db/index.js";
-import { deserializeArrayFields } from "../utils/index.js";
-
 const router = express.Router();
 
 router.get("/", (req, res) => {

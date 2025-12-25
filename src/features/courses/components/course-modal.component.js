@@ -3,7 +3,6 @@ import { keyed } from "lit/directives/keyed.js";
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
 import { CourseFormService } from "../services/course-form.service.js";
-import { CourseService } from "../services/course.service.js";
 
 /**
  * Course Modal Component

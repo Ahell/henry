@@ -11,7 +11,6 @@ import {
   handleCellMouseDown,
   handleCellMouseEnter,
   handlePaintEnd,
-  handlePaintChangeRequest,
 } from "../services/teacher-availability-paint-handlers.js";
 
 /**
@@ -348,7 +347,6 @@ export class TeacherAvailabilityTable extends LitElement {
   _handleCellMouseDown(e) { handleCellMouseDown(this, e); }
   _handleCellMouseEnter(e) { handleCellMouseEnter(this, e); }
   async _handlePaintEnd() { await handlePaintEnd(this); }
-  _handlePaintChangeRequest(e) { handlePaintChangeRequest(this, e); }
 }
 
 customElements.define("teacher-availability-table", TeacherAvailabilityTable);

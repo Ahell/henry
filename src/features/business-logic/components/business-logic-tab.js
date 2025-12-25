@@ -129,14 +129,6 @@ export class BusinessLogicTab extends LitElement {
     `;
   }
 
-  _handleEditClick(e) {
-    const next =
-      typeof e?.detail?.checked === "boolean"
-        ? !!e.detail.checked
-        : !this.isEditing;
-    this.setEditMode(next);
-  }
-
   setEditMode(enabled) {
     const next = !!enabled;
     if (this.isEditing === next) return;

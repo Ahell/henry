@@ -3,7 +3,6 @@ import {
   getConsecutiveSlotIds,
   getSortedSlots,
 } from "../../../db/index.js";
-import { deserializeArrayFields } from "../../../utils/index.js";
 
 export function buildSlotsByRun(courseRunSlots = []) {
   const slotsByRun = new Map();

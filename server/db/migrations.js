@@ -1,8 +1,4 @@
-import { normalizeCourseCode, normalizeCredits } from "../utils/index.js";
-import { ensureColumn } from "./migrations/schema.js";
-import { migrateDeduplicateAll } from "./migrations/deduplication.js";
 import { migrateRemoveAllOrphanedRecords } from "./migrations/orphaned_cleanup.js";
-import { migrateBackfillSlotSpan } from "./migrations/data.js";
 import { migrateJointCourseRuns } from "./migrations/joint_runs.js";
 import { migrateAddKursansvarig } from "./migrations/add_kursansvarig.js";
 import { migrateNormalizeTeachers } from "./migrations/normalize_teachers.js";

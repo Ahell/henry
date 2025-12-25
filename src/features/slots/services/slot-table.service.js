@@ -1,5 +1,4 @@
 import { html } from "lit";
-import { store } from "../../../platform/store/DataStore.js";
 
 export class SlotTableService {
   static getColumns() {

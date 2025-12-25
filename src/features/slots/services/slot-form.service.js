@@ -1,6 +1,5 @@
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
-import { SlotService } from "./slot.service.js";
 
 /**
  * Slot Form Service
