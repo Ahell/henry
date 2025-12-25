@@ -514,29 +514,8 @@ export class CourseRunManager {
         } else {
           // Clear kursansvarig if this teacher was responsible
           if (currentKursansvarig === teacherId) {
-            // Check if there are other assigned teachers for this course
-            const allRunsForCourse = store
-              .getCourseRuns()
-              .filter((r) => r.course_id === courseId);
-            const remainingTeachers = allRunsForCourse.some(
-              (r) => r.teachers && r.teachers.length > 0
-            );
-
-            if (remainingTeachers) {
-              // Auto-select first remaining teacher
-              const firstRemainingRun = allRunsForCourse.find(
-                (r) => r.teachers && r.teachers.length > 0
-              );
-              if (firstRemainingRun && firstRemainingRun.teachers.length > 0) {
-                store.coursesManager.setKursansvarig(
-                  courseId,
-                  firstRemainingRun.teachers[0]
-                );
-              }
-            } else {
-              // No teachers left, clear kursansvarig
-              store.coursesManager.clearKursansvarig(courseId);
-            }
+            // Do not auto-assign another teacher; leave kursansvarig empty.
+            store.coursesManager.clearKursansvarig(courseId);
           }
         }
       }
