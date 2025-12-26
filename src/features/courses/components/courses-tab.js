@@ -11,6 +11,7 @@ import {
   showErrorMessage,
 } from "../../../utils/message-helpers.js";
 import "./course-modal.component.js";
+import "./course-info-modal.component.js";
 import { coursesTabStyles } from "../styles/courses-tab.styles.js";
 
 export class CoursesTab extends LitElement {
@@ -18,23 +19,41 @@ export class CoursesTab extends LitElement {
   static properties = {
     editingCourseId: { type: Number },
     modalOpen: { type: Boolean },
+    infoCourseId: { type: Number },
+    infoModalOpen: { type: Boolean },
   };
 
   constructor() {
     super();
     this.editingCourseId = null;
     this.modalOpen = false;
+    this.infoCourseId = null;
+    this.infoModalOpen = false;
     initializeEditState(this, "editingCourseId");
     subscribeToStore(this);
   }
 
   _openModal() {
+    this.infoModalOpen = false;
+    this.infoCourseId = null;
     this.modalOpen = true;
   }
 
   _closeModal() {
     this.modalOpen = false;
     this.editingCourseId = null;
+  }
+
+  _openInfoModal(courseId) {
+    this.editingCourseId = null;
+    this.modalOpen = false;
+    this.infoCourseId = courseId;
+    this.infoModalOpen = true;
+  }
+
+  _closeInfoModal() {
+    this.infoModalOpen = false;
+    this.infoCourseId = null;
   }
 
   async _handleModalSave(e) {
@@ -73,10 +92,17 @@ export class CoursesTab extends LitElement {
           .columns="${CourseTableService.getColumns()}"
           .data="${CourseService.getCourses()}"
           .renderCell="${(row, col) =>
-            CourseTableService.renderCell(row, col, (courseId) => {
-              this.editingCourseId = courseId;
-              this.modalOpen = true;
-            })}"
+            CourseTableService.renderCell(
+              row,
+              col,
+              (courseId) => {
+                this.infoModalOpen = false;
+                this.infoCourseId = null;
+                this.editingCourseId = courseId;
+                this.modalOpen = true;
+              },
+              (courseId) => this._openInfoModal(courseId)
+            )}"
         ></henry-table>
       </henry-panel>
       <course-modal
@@ -92,6 +118,11 @@ export class CoursesTab extends LitElement {
         @modal-save="${this._handleModalSave}"
         @modal-close="${this._closeModal}"
       ></course-modal>
+      <course-info-modal
+        .courseId="${this.infoCourseId}"
+        .open="${this.infoModalOpen}"
+        @modal-close="${this._closeInfoModal}"
+      ></course-info-modal>
     `;
   }
 }

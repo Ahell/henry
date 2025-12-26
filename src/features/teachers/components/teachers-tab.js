@@ -11,6 +11,7 @@ import {
 import { TeacherTableService } from "../services/teacher-table.service.js";
 import { TeacherService } from "../services/teacher.service.js";
 import "./teacher-modal.component.js";
+import "./teacher-info-modal.component.js";
 import { teachersTabStyles } from "../styles/teachers-tab.styles.js";
 
 export class TeachersTab extends LitElement {
@@ -20,6 +21,8 @@ export class TeachersTab extends LitElement {
     editingTeacherId: { type: Number },
     modalOpen: { type: Boolean },
     modalMode: { type: String }, // 'add' or 'edit'
+    infoTeacherId: { type: Number },
+    infoModalOpen: { type: Boolean },
   };
 
   constructor() {
@@ -27,6 +30,8 @@ export class TeachersTab extends LitElement {
     this.editingTeacherId = null;
     this.modalOpen = false;
     this.modalMode = "add";
+    this.infoTeacherId = null;
+    this.infoModalOpen = false;
     initializeEditState(this, "editingTeacherId");
     subscribeToStore(this);
   }
@@ -34,6 +39,8 @@ export class TeachersTab extends LitElement {
   _openAddModal() {
     this.modalMode = "add";
     this.editingTeacherId = null;
+    this.infoModalOpen = false;
+    this.infoTeacherId = null;
     this.modalOpen = true;
   }
 
@@ -41,12 +48,26 @@ export class TeachersTab extends LitElement {
     if (!store.editMode) return;
     this.modalMode = "edit";
     this.editingTeacherId = teacherId;
+    this.infoModalOpen = false;
+    this.infoTeacherId = null;
     this.modalOpen = true;
   }
 
   _closeModal() {
     this.modalOpen = false;
     this.editingTeacherId = null;
+  }
+
+  _openInfoModal(teacherId) {
+    this.modalOpen = false;
+    this.editingTeacherId = null;
+    this.infoTeacherId = teacherId;
+    this.infoModalOpen = true;
+  }
+
+  _closeInfoModal() {
+    this.infoModalOpen = false;
+    this.infoTeacherId = null;
   }
 
   render() {
@@ -73,7 +94,8 @@ export class TeachersTab extends LitElement {
               row,
               col,
               (teacherId) => this.handleEditTeacher(teacherId),
-              (teacherId) => this.handleDeleteTeacher(teacherId)
+              (teacherId) => this.handleDeleteTeacher(teacherId),
+              (teacherId) => this._openInfoModal(teacherId)
             )}"
         ></henry-table>
       </henry-panel>
@@ -85,6 +107,11 @@ export class TeachersTab extends LitElement {
         @teacher-saved="${this._closeModal}"
         @modal-close="${this._closeModal}"
       ></teacher-modal>
+      <teacher-info-modal
+        .open="${this.infoModalOpen}"
+        .teacherId="${this.infoTeacherId}"
+        @modal-close="${this._closeInfoModal}"
+      ></teacher-info-modal>
     `;
   }
 

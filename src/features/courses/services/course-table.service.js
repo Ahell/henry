@@ -18,12 +18,20 @@ export class CourseTableService {
     ];
   }
 
-  static renderCell(course, column, onEdit) {
+  static renderCell(course, column, onEdit, onInfo) {
     if (!course || !column) return html``;
 
     switch (column.key) {
       case "code":
-        return html`${course.code}`;
+        return html`
+          <button
+            class="course-code-button"
+            type="button"
+            @click="${() => onInfo?.(course.course_id)}"
+          >
+            ${course.code}
+          </button>
+        `;
       case "name":
         return html`${course.name}`;
       case "credits":

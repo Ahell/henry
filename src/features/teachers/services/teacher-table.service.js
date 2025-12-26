@@ -11,12 +11,20 @@ export class TeacherTableService {
     ];
   }
 
-  static renderCell(teacher, column, onEdit) {
+  static renderCell(teacher, column, onEdit, onDelete, onInfo) {
     if (!teacher || !column) return html``;
 
     switch (column.key) {
       case "name":
-        return html`${teacher.name}`;
+        return html`
+          <button
+            class="teacher-name-button"
+            type="button"
+            @click="${() => onInfo?.(teacher.teacher_id)}"
+          >
+            ${teacher.name}
+          </button>
+        `;
       case "compatible_courses":
         const compatibleCourses = store
           .getCourses()
