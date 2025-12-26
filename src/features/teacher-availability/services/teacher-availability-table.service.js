@@ -171,7 +171,7 @@ export class TeacherAvailabilityTableService {
         content = activeCodes.join(", ");
       }
 
-      if (activeIds.length > 1) {
+      if (activeIds.length > 0) {
         const assignedRuns = runsInSlot.filter(
           (r) => r.teachers && r.teachers.includes(teacher.teacher_id)
         );
