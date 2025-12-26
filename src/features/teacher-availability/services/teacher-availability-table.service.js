@@ -159,6 +159,22 @@ export class TeacherAvailabilityTableService {
       slot.slot_id
     );
 
+    const normalizeDate = (value) => (value || "").split("T")[0];
+    const slotDays = (store.getSlotDays(slot.slot_id) || [])
+      .map(normalizeDate)
+      .filter(Boolean);
+    const hasSlotBusyEntry = (store.teacherAvailability || []).some(
+      (a) =>
+        String(a.teacher_id) === String(teacher.teacher_id) &&
+        String(a.slot_id) === String(slot.slot_id) &&
+        a.type === "busy"
+    );
+    const isUnavailableOnDay = (day) =>
+      hasSlotBusyEntry || store.isTeacherUnavailableOnDay(teacher.teacher_id, day);
+    const unavailableDaysInSlot = hasSlotBusyEntry
+      ? slotDays
+      : slotDays.filter((d) => store.isTeacherUnavailableOnDay(teacher.teacher_id, d));
+
     let className = "";
     let content = "";
     let title = "";
@@ -233,6 +249,51 @@ export class TeacherAvailabilityTableService {
       } else if (unavailablePercentage > 0) {
         className = this._appendClass(className, "partial-unavailable");
         title = "Delvis upptagen (utvalda dagar)";
+      }
+    } else if (unavailableDaysInSlot.length > 0) {
+      const availabilityTitles = {
+        "course-unavailable": "Otillgänglig för kursens kursdagar",
+        "partial-conflict": "Delvis otillgänglig för kursens kursdagar",
+        "partial-availability":
+          "Otillgänglig i perioden (men inte på kursens kursdagar)",
+      };
+      const severity = {
+        "course-unavailable": 3,
+        "partial-conflict": 2,
+        "partial-availability": 1,
+      };
+      let availabilityClass = "";
+      let availabilityScore = 0;
+
+      for (const courseId of courseIdsInCell) {
+        const activeDays = (store.getActiveCourseDaysInSlot(slot.slot_id, courseId) || [])
+          .map(normalizeDate)
+          .filter(Boolean)
+          .filter((d) => slotDays.includes(d));
+        if (activeDays.length === 0) continue;
+        const unavailableActiveDays = activeDays.filter((d) => isUnavailableOnDay(d));
+        let courseAvailability = "";
+        if (unavailableActiveDays.length === 0) {
+          courseAvailability = "partial-availability";
+        } else if (unavailableActiveDays.length === activeDays.length) {
+          courseAvailability = "course-unavailable";
+        } else {
+          courseAvailability = "partial-conflict";
+        }
+
+        const score = severity[courseAvailability] || 0;
+        if (score > availabilityScore) {
+          availabilityScore = score;
+          availabilityClass = courseAvailability;
+        }
+      }
+
+      if (availabilityClass) {
+        className = this._appendClass(className, availabilityClass);
+        const availabilityTitle = availabilityTitles[availabilityClass];
+        if (availabilityTitle) {
+          title = title ? `${title}\n${availabilityTitle}` : availabilityTitle;
+        }
       }
     }
 

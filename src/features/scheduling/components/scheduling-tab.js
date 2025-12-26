@@ -669,14 +669,12 @@ export class SchedulingTab extends LitElement {
       if (slotOnlyRuleIds.has(String(ruleId))) return;
 
       const rule = ruleById.get(String(ruleId));
-      if (!rule || rule.enabled === false) return;
-
       const kind =
-        String(rule.kind || "soft").toLowerCase() === "hard" ? "hard" : "soft";
+        String(rule?.kind || "soft").toLowerCase() === "hard" ? "hard" : "soft";
       const label = this._truncatePillLabel(
         conciseLabelByRuleId[String(ruleId)] ||
-          rule.label ||
-          rule.id ||
+          rule?.label ||
+          rule?.id ||
           String(ruleId)
       );
 
@@ -830,6 +828,7 @@ export class SchedulingTab extends LitElement {
       if (!runsInSlot.length) continue;
 
       const missingCourseCodes = [];
+      const missingKursansvarCodes = [];
       const courseIdsInSlot = Array.from(
         new Set(runsInSlot.map((r) => r?.course_id).filter((id) => id != null))
       ).map((id) => String(id));
@@ -846,32 +845,48 @@ export class SchedulingTab extends LitElement {
             }
           });
 
-        if (assignedTeachers.size > 0) continue;
-
         const courseId = Number(courseIdStr);
-        const available = this._computeTeacherOverlayChips(
-          courseId,
-          slot.start_date
-        );
-        if (!Array.isArray(available) || available.length === 0) continue;
+        if (assignedTeachers.size === 0) {
+          const available = this._computeTeacherOverlayChips(
+            courseId,
+            slot.start_date
+          );
+          if (Array.isArray(available) && available.length > 0) {
+            const course =
+              courseById.get(courseIdStr) || store.getCourse(courseId) || {};
+            missingCourseCodes.push(String(course?.code || `Kurs ${courseId}`));
+          }
+        }
 
-        const course = courseById.get(courseIdStr) || store.getCourse(courseId) || {};
-        missingCourseCodes.push(String(course?.code || `Kurs ${courseId}`));
+        const kursansvarigId =
+          store.coursesManager.getKursansvarigForCourse(courseId);
+        if (kursansvarigId == null && assignedTeachers.size > 0) {
+          const course =
+            courseById.get(courseIdStr) || store.getCourse(courseId) || {};
+          missingKursansvarCodes.push(
+            String(course?.code || `Kurs ${courseId}`)
+          );
+        }
       }
 
-      if (!missingCourseCodes.length) continue;
+      if (!missingCourseCodes.length && !missingKursansvarCodes.length) continue;
 
-      missingCourseCodes.sort((a, b) => String(a).localeCompare(String(b)));
-      const label = this._truncatePillLabel("Ingen ansvarig");
-      const title = ["Ingen ansvarig", ...missingCourseCodes].join("\n");
+      const pills = [];
+      if (missingCourseCodes.length) {
+        missingCourseCodes.sort((a, b) => String(a).localeCompare(String(b)));
+        const label = this._truncatePillLabel("Lärarval");
+        const title = ["Lärarval", ...missingCourseCodes].join("\n");
+        pills.push({ kind: "soft", label, title });
+      }
 
-      out.set(String(slot.start_date), [
-        {
-          kind: "soft",
-          label,
-          title,
-        },
-      ]);
+      if (missingKursansvarCodes.length) {
+        missingKursansvarCodes.sort((a, b) => String(a).localeCompare(String(b)));
+        const label = this._truncatePillLabel("Kursansvar");
+        const title = ["Kursansvar", ...missingKursansvarCodes].join("\n");
+        pills.push({ kind: "soft", label, title });
+      }
+
+      out.set(String(slot.start_date), pills);
     }
 
     return out;
