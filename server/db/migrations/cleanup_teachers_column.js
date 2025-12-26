@@ -4,7 +4,7 @@ export function migrateCleanupTeachersColumn(db) {
   const hasTeachers = tableInfo.some((c) => c.name === "teachers");
 
   if (!hasTeachers) {
-    console.log("Column 'teachers' already removed from joint_course_runs.");
+    // console.log("Column 'teachers' already removed from joint_course_runs.");
     return;
   }
 

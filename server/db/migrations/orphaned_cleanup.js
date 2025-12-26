@@ -15,7 +15,7 @@ export function migrateRemoveOrphanedRecords(db, tableName, foreignKeyChecks) {
 
   if (result.changes > 0) {
     console.log(
-      `Removed ${result.changes} orphaned rows from ${tableName} (potential bug: records not cleaned up on deletion)`
+      `Cleaning up ${result.changes} orphaned rows from ${tableName}`
     );
   }
 }

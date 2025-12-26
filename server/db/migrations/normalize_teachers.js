@@ -14,14 +14,14 @@ export function migrateNormalizeTeachers(db) {
   // We can check if the new table is empty but the old table has data
   const hasNewData = db.prepare("SELECT count(*) as count FROM joint_course_run_teachers").get().count > 0;
   if (hasNewData) {
-    console.log("joint_course_run_teachers already populated, skipping migration.");
+    // console.log("joint_course_run_teachers already populated, skipping migration.");
     return;
   }
 
   const tableInfo = db.prepare("PRAGMA table_info(joint_course_runs)").all();
   const hasTeachersColumn = tableInfo.some((c) => c.name === "teachers");
   if (!hasTeachersColumn) {
-    console.log("Column 'teachers' missing from joint_course_runs, skipping migration.");
+    // console.log("Column 'teachers' missing from joint_course_runs, skipping migration.");
     return;
   }
 
