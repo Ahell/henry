@@ -477,6 +477,7 @@ export class CourseRunManager {
         if (!previousState.has(run.run_id)) {
           previousState.set(run.run_id, {
             teachers: run.teachers ? [...run.teachers] : [],
+            kursansvarig_id: run.kursansvarig_id ?? null,
           });
         }
       });
@@ -486,6 +487,7 @@ export class CourseRunManager {
       if (!previousState.has(run.run_id)) {
         previousState.set(run.run_id, {
           teachers: run.teachers ? [...run.teachers] : [],
+          kursansvarig_id: run.kursansvarig_id ?? null,
         });
       }
     });
@@ -497,6 +499,7 @@ export class CourseRunManager {
           const run = CourseRunManager._runById(runId);
           if (run) {
             run.teachers = [...state.teachers];
+            run.kursansvarig_id = state.kursansvarig_id ?? null;
           }
         });
       },
@@ -516,6 +519,9 @@ export class CourseRunManager {
           for (const otherRun of allRunsCoveringSlot) {
             if (otherRun.course_id !== targetCourseId && otherRun.teachers) {
               otherRun.teachers = otherRun.teachers.filter((id) => id !== teacherId);
+              if (String(otherRun.kursansvarig_id) === String(teacherId)) {
+                otherRun.kursansvarig_id = null;
+              }
             }
           }
         }
@@ -533,6 +539,9 @@ export class CourseRunManager {
           }
         } else {
           run.teachers = run.teachers.filter((id) => id !== teacherId);
+          if (String(run.kursansvarig_id) === String(teacherId)) {
+            run.kursansvarig_id = null;
+          }
         }
       }
 
