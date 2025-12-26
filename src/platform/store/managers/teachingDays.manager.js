@@ -38,19 +38,17 @@ export class TeachingDaysManager {
       });
 
     // Also include course runs that span across slots (15hp etc),
-    // by mapping run_id -> course_slot_id.
+    // by mapping to the course_slot_id of the run's start slot.
     const runs = Array.isArray(this.courseRunsManager.courseRuns)
       ? this.courseRunsManager.courseRuns
       : [];
     runs
       .filter((run) => this._runCoversSlotId(run, slotId))
       .forEach((run) => {
-        const runId = run?.run_id;
-        if (runId == null) return;
         const cs = courseSlots.find(
           (row) =>
-            String(row.course_slot_id ?? row.cohort_slot_course_id) ===
-            String(runId)
+            String(row.course_id) === String(run.course_id) &&
+            String(row.slot_id) === String(run.slot_id)
         );
         if (!cs) return;
         const key = String(cs.course_slot_id ?? cs.cohort_slot_course_id ?? "");
@@ -113,17 +111,19 @@ export class TeachingDaysManager {
       ) + 1;
 
     for (const cs of this.courseRunsManager.courseSlots || []) {
+      const courseSlotId = cs.course_slot_id ?? cs.cohort_slot_course_id;
+      if (courseSlotId == null) continue;
       const defaults = this.slotsManager.getDefaultTeachingDaysPattern(cs.slot_id);
       defaults.forEach((d) => {
         const exists = this.courseSlotDays.some(
           (csd) =>
-            String(csd.course_slot_id) === String(cs.course_slot_id) &&
+            String(csd.course_slot_id) === String(courseSlotId) &&
             normalizeDate(csd.date) === normalizeDate(d)
         );
         if (!exists) {
           this.courseSlotDays.push({
             course_slot_day_id: nextId++,
-            course_slot_id: cs.course_slot_id,
+            course_slot_id: courseSlotId,
             date: normalizeDate(d),
             is_default: 1,
             active: true,
@@ -174,9 +174,7 @@ export class TeachingDaysManager {
       return;
     }
 
-    const courseSlotsInSlot = (this.courseRunsManager.courseSlots || []).filter(
-      (cs) => String(cs.slot_id) === String(slotId)
-    );
+    const courseSlotsInSlot = this._getCourseSlotsCoveringSlot(slotId);
     courseSlotsInSlot.forEach((cs) => {
       this.toggleCourseSlotDay(slotId, cs.course_id, date, {
         skipSave: true,
@@ -200,9 +198,12 @@ export class TeachingDaysManager {
     if (courseId != null) {
       const courseSlot = this.getCourseSlot(courseId, slotId);
       if (courseSlot) {
+        const courseSlotId =
+          courseSlot.course_slot_id ?? courseSlot.cohort_slot_course_id;
+        if (courseSlotId == null) return null;
         const csd = (this.courseSlotDays || []).find(
           (csd) =>
-            String(csd.course_slot_id) === String(courseSlot.course_slot_id) &&
+            String(csd.course_slot_id) === String(courseSlotId) &&
             normalizeDate(csd.date) === normalizeDate(date)
         );
         if (csd) {
@@ -232,9 +233,11 @@ export class TeachingDaysManager {
     const courseSlotsInSlot = this._getCourseSlotsCoveringSlot(slotId);
     const matches = [];
     courseSlotsInSlot.forEach((cs) => {
+      const courseSlotId = cs.course_slot_id ?? cs.cohort_slot_course_id;
+      if (courseSlotId == null) return;
       const hit = (this.courseSlotDays || []).find(
         (csd) =>
-          String(csd.course_slot_id) === String(cs.course_slot_id) &&
+          String(csd.course_slot_id) === String(courseSlotId) &&
           normalizeDate(csd.date) === normalizeDate(date)
       );
       if (hit) matches.push(hit);
@@ -308,7 +311,7 @@ export class TeachingDaysManager {
     if (direct) return direct;
 
     // Fallback for course runs spanning multiple slots (15hp etc):
-    // find the run covering this slot and use its run_id as course_slot_id.
+    // find the run covering this slot and reuse the course_slot_id from its start slot.
     const runs = Array.isArray(this.courseRunsManager.courseRuns)
       ? this.courseRunsManager.courseRuns
       : [];
@@ -319,8 +322,8 @@ export class TeachingDaysManager {
     if (!run || run.run_id == null) return undefined;
     return (this.courseRunsManager.courseSlots || []).find(
       (cs) =>
-        String(cs.course_slot_id ?? cs.cohort_slot_course_id) ===
-        String(run.run_id)
+        String(cs.course_id) === String(run.course_id) &&
+        String(cs.slot_id) === String(run.slot_id)
     );
   }
 
@@ -353,7 +356,15 @@ export class TeachingDaysManager {
         .filter(Boolean)
         .sort();
     }
-    return this.getCourseSlotDays(courseSlot.course_slot_id);
+    const courseSlotId =
+      courseSlot.course_slot_id ?? courseSlot.cohort_slot_course_id;
+    if (courseSlotId == null) {
+      return (this.slotsManager.getDefaultTeachingDaysPattern(slotId) || [])
+        .map((d) => (d || "").split("T")[0])
+        .filter(Boolean)
+        .sort();
+    }
+    return this.getCourseSlotDays(courseSlotId);
   }
 
   /**
@@ -405,9 +416,13 @@ export class TeachingDaysManager {
     const defaultDates = this.slotsManager.getDefaultTeachingDaysPattern(slotId);
     const isDefault = defaultDates.includes(normalizedDate);
 
+    const courseSlotId =
+      courseSlot.course_slot_id ?? courseSlot.cohort_slot_course_id;
+    if (courseSlotId == null) return;
+
     const existingIdx = this.courseSlotDays.findIndex(
       (csd) =>
-        String(csd.course_slot_id) === String(courseSlot.course_slot_id) &&
+        String(csd.course_slot_id) === String(courseSlotId) &&
         normalizeDate(csd.date) === normalizedDate
     );
 
@@ -426,7 +441,7 @@ export class TeachingDaysManager {
         ) + 1;
       this.courseSlotDays.push({
         course_slot_day_id: nextId,
-        course_slot_id: courseSlot.course_slot_id,
+        course_slot_id: courseSlotId,
         date: normalizedDate,
         is_default: isDefault ? 1 : 0,
         active: isDefault ? false : true,

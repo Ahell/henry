@@ -27,7 +27,7 @@ export function insertJointCourseRuns(courseSlots = []) {
   }
 
   const insertJoint = db.prepare(
-    "INSERT INTO joint_course_runs (course_id, slot_id, slot_span, kursansvarig_id, created_at) VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO joint_course_runs (id, course_id, slot_id, slot_span, kursansvarig_id, created_at) VALUES (?, ?, ?, ?, ?, ?)"
   );
   
   const insertChild = db.prepare(
@@ -40,7 +40,11 @@ export function insertJointCourseRuns(courseSlots = []) {
 
   for (const group of groups.values()) {
     // 1. Insert Parent Joint Run
+    // Find an existing joint_run_id from children to preserve identity
+    const jointRunIdCandidate = group.children.find(c => c.joint_run_id != null)?.joint_run_id;
+
     const info = insertJoint.run(
+      jointRunIdCandidate || null,
       group.course_id,
       group.slot_id,
       group.slot_span,

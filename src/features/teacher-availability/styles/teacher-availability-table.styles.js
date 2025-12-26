@@ -758,6 +758,13 @@ export const teacherAvailabilityTableStyles = css`
     box-shadow: none;
   }
 
+  /* Detail view should show active course days in blue */
+  .teacher-cell[data-is-detail="true"].teaching-day-alt:not(.unavailable) {
+    background-color: var(--teaching-day-alt-bg);
+    color: var(--teaching-day-alt-text);
+    border-color: transparent;
+  }
+
   .teacher-cell.locked {
     cursor: not-allowed;
     opacity: 0.7;
