@@ -134,20 +134,23 @@ export class TeacherAvailabilityTableService {
       title = `Upptagen ${dateStr}`;
     }
 
-    // Calculate content (compatible active course codes)
+    // Calculate content (compatible active course codes) & segments
     let content = "";
+    let segments = [];
     const teacher = store.getTeacher(teacherId);
+
     if (teacher) {
       const runsInSlot = TeacherAvailabilityService.getRunsCoveringSlotId(
         store.getCourseRuns(),
         slotId
       );
+      
       const slotCourseIds = new Set(
-        runsInSlot.map((r) => r.course_id).filter((id) => id != null)
+        runsInSlot.map((r) => String(r.course_id)).filter((id) => id != null)
       );
 
       const compatibleIds = (teacher.compatible_courses || []).filter((cid) =>
-        slotCourseIds.has(cid)
+        slotCourseIds.has(String(cid))
       );
 
       const targetIds =
@@ -155,20 +158,50 @@ export class TeacherAvailabilityTableService {
           ? compatibleIds.filter((cid) => Number(cid) === Number(courseId))
           : compatibleIds;
 
-      const activeCodes = targetIds
-        .filter((cid) => {
+      const activeIds = targetIds.filter((cid) => {
           const days = store.getActiveCourseDaysInSlot(slotId, cid);
           return days && days.includes(dateStr);
-        })
+        });
+
+      const activeCodes = activeIds
         .map((cid) => store.getCourse(cid)?.code)
         .filter(Boolean);
       
       if (activeCodes.length > 0) {
         content = activeCodes.join(", ");
       }
+
+      if (activeIds.length > 1) {
+        const assignedRuns = runsInSlot.filter(
+          (r) => r.teachers && r.teachers.includes(teacher.teacher_id)
+        );
+        const assignedCourseIds = new Set(
+          assignedRuns.map((r) => String(r.course_id)).filter(Boolean)
+        );
+        const isOccupied = assignedCourseIds.size > 0;
+
+        segments = activeIds.map((cid) => {
+          const code = store.getCourse(cid)?.code || `Kurs ${cid}`;
+          const isAssigned = assignedCourseIds.has(String(cid));
+          
+          let baseClass = "segment-compatible-free";
+          if (isAssigned) {
+            baseClass = "segment-assigned";
+          } else if (isOccupied) {
+            baseClass = "segment-compatible-occupied";
+          }
+
+          const availabilityClass = isUnavailable ? "course-unavailable" : "";
+          const classNameSuffix = [baseClass, availabilityClass]
+            .filter(Boolean)
+            .join(" ");
+
+          return { text: code, classNameSuffix };
+        });
+      }
     }
 
-    return { className, title, content };
+    return { className, title, content, segments };
   }
 
   /**

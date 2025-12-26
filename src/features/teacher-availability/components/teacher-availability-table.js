@@ -217,7 +217,8 @@ export class TeacherAvailabilityTable extends LitElement {
           .isDetail=${true}
           .classNameSuffix=${presentation.className}
           .titleText=${presentation.title}
-          .content=${presentation.content || ""} 
+          .content=${presentation.content || ""}
+          .segments=${presentation.segments || []} 
         ></teacher-cell>
       </td>`;
   }
