@@ -564,6 +564,74 @@ export class CourseRunManager {
   }
 
   /**
+   * Set kursansvarig for course runs (jointly)
+   * @param {Array} runs - Course runs to update
+   * @param {number|null} teacherId - Teacher ID (or null to clear)
+   */
+  static async setCourseRunKursansvarig(runs, teacherId) {
+    // Capture state for rollback
+    const previousState = new Map();
+    const runIds = new Set();
+    const slotIds = new Set();
+    
+    // Normalize run list to cover all joint runs for the same (course, slot) tuple
+    (runs || []).forEach(r => {
+        if (!r) return;
+        runIds.add(r.run_id);
+        if (Array.isArray(r.slot_ids) && r.slot_ids.length > 0) {
+            r.slot_ids.forEach(sid => slotIds.add(sid));
+        } else if (r.slot_id != null) {
+            slotIds.add(r.slot_id);
+        }
+    });
+
+    // Find all runs that are part of the same joint occurrence
+    const targetCourseId = runs[0]?.course_id;
+    if (targetCourseId == null) return;
+
+    const allAffectedRuns = store.getCourseRuns().filter(r => {
+        if (Number(r.course_id) !== Number(targetCourseId)) return false;
+        // Check overlap
+        if (runIds.has(r.run_id)) return true;
+        
+        let covers = false;
+        if (Array.isArray(r.slot_ids) && r.slot_ids.length > 0) {
+            covers = r.slot_ids.some(sid => slotIds.has(sid));
+        } else if (r.slot_id != null) {
+            covers = slotIds.has(r.slot_id);
+        }
+        return covers;
+    });
+
+    allAffectedRuns.forEach(r => {
+        previousState.set(r.run_id, r.kursansvarig_id);
+    });
+
+    const mutationId = store.applyOptimistic({
+      label: "set-course-run-kursansvarig",
+      rollback: () => {
+        previousState.forEach((val, rId) => {
+            const r = CourseRunManager._runById(rId);
+            if (r) r.kursansvarig_id = val;
+        });
+      },
+    });
+
+    try {
+        allAffectedRuns.forEach(r => {
+            r.kursansvarig_id = teacherId;
+        });
+
+        store.notify();
+        await store.saveData({ mutationId });
+        return { mutationId };
+    } catch (error) {
+        await store.rollback(mutationId);
+        throw error;
+    }
+  }
+
+  /**
    * Remove course run from depot (return to depot)
    * @param {number} runId - Run ID
    * @param {number} targetCohortId - Cohort ID to remove from

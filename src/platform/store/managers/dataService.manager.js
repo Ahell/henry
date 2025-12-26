@@ -399,6 +399,7 @@ function buildCohortSlotCoursesAndDays(
         cohort_id: cohortId,
         teachers: Array.isArray(run.teachers) ? [...new Set(run.teachers)] : [],
         slot_span: Number(run.slot_span) >= 1 ? Number(run.slot_span) : 1,
+        kursansvarig_id: run.kursansvarig_id ?? null,
         created_at: run.created_at || new Date().toISOString(),
       });
     });

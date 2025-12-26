@@ -33,6 +33,7 @@ function resolveCourseSlotsInput(payload, spanForCourse) {
       cohort_id: cohortId,
       teachers: Array.isArray(r.teachers) ? r.teachers : [],
       slot_span: runSpan,
+      kursansvarig_id: r.kursansvarig_id,
     }));
   });
 }

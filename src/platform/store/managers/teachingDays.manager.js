@@ -92,11 +92,42 @@ export class TeachingDaysManager {
       if (value === 1 || value === true || value === "1") return 1;
       return 0;
     };
-    this.courseSlotDays = (courseSlotDays || []).map((csd) => ({
-      ...csd,
-      active: toBool(csd.active),
-      is_default: toInt01(csd?.is_default),
-    }));
+    const normalizeDate = (value) => (value || "").split("T")[0];
+    const deduped = new Map();
+    const passthrough = [];
+
+    (courseSlotDays || []).forEach((csd) => {
+      const normalized = {
+        ...csd,
+        date: normalizeDate(csd?.date),
+        active: toBool(csd?.active),
+        is_default: toInt01(csd?.is_default),
+      };
+      const courseSlotId = normalized.course_slot_id;
+      if (courseSlotId == null || !normalized.date) {
+        passthrough.push(normalized);
+        return;
+      }
+
+      const key = `${courseSlotId}-${normalized.date}`;
+      const existing = deduped.get(key);
+      if (!existing) {
+        deduped.set(key, normalized);
+        return;
+      }
+
+      existing.active = existing.active && normalized.active;
+      existing.is_default = Math.min(existing.is_default, normalized.is_default);
+      if (
+        existing.course_slot_day_id == null ||
+        (normalized.course_slot_day_id != null &&
+          normalized.course_slot_day_id < existing.course_slot_day_id)
+      ) {
+        existing.course_slot_day_id = normalized.course_slot_day_id;
+      }
+    });
+
+    this.courseSlotDays = [...deduped.values(), ...passthrough];
   }
 
   _ensureCourseSlotDayDefaults() {

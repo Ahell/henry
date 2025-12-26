@@ -24,6 +24,7 @@ export class CourseRunsManager {
       cohorts: run.cohorts || [],
       planned_students: run.planned_students || 0,
       status: run.status || "planerad",
+      kursansvarig_id: run.kursansvarig_id || null,
       created_at: run.created_at || new Date().toISOString(),
     };
     this.courseRuns.push(newRun);

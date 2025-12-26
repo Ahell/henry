@@ -1671,8 +1671,7 @@ export class SchedulingTab extends LitElement {
           const compatibleTeachers = getCompatibleTeachersForCourse(
             course.course_id
           );
-          const currentKursansvarigId =
-            store.coursesManager.getKursansvarigForCourse(course.course_id);
+          const currentKursansvarigId = item.runs.length > 0 ? item.runs[0].kursansvarig_id : null;
 
           return html`
             <div class="summary-course" style="background-color: ${bgColor};">
@@ -1704,7 +1703,7 @@ export class SchedulingTab extends LitElement {
                           courseId: course.course_id,
                         });
                       const isKursansvarig =
-                        currentKursansvarigId === teacher.teacher_id;
+                        Number(currentKursansvarigId) === teacher.teacher_id;
                       const baseClass = isAssigned
                         ? "assigned-course"
                         : "has-course";
@@ -1763,13 +1762,13 @@ export class SchedulingTab extends LitElement {
                                     @change=${(e) =>
                                       this._handleKursansvarigChange(
                                         e,
-                                        course.course_id,
+                                        item.runs,
                                         teacher.teacher_id
                                       )}
                                     @keydown=${(e) =>
                                       this._handleKursansvarigKeydown(
                                         e,
-                                        course.course_id,
+                                        item.runs,
                                         teacher.teacher_id
                                       )}
                                   />
@@ -1984,7 +1983,7 @@ export class SchedulingTab extends LitElement {
     }
   }
 
-  async _handleKursansvarigChange(event, courseId, teacherId) {
+  async _handleKursansvarigChange(event, runs, teacherId) {
     event?.stopPropagation?.();
 
     if (!this.isEditing) return;
@@ -1992,31 +1991,19 @@ export class SchedulingTab extends LitElement {
     const isChecked = event.target.checked;
     const targetId = isChecked ? teacherId : null;
 
-    const previousKursansvarig =
-      store.coursesManager.getKursansvarigForCourse(courseId);
-
-    const mutationId = store.applyOptimistic({
-      label: "set-kursansvarig",
-      rollback: () => {
-        store.coursesManager.setKursansvarig(courseId, previousKursansvarig);
-      },
-    });
-
     try {
-      store.coursesManager.setKursansvarig(courseId, targetId);
+      await CourseRunManager.setCourseRunKursansvarig(runs, targetId);
       this.requestUpdate();
-      await store.saveData({ mutationId });
     } catch (error) {
-      await store.rollback(mutationId);
       console.error("Kunde inte sätta kursansvarig:", error);
     }
   }
 
-  _handleKursansvarigKeydown(event, courseId, teacherId) {
+  _handleKursansvarigKeydown(event, runs, teacherId) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       event.stopPropagation();
-      this._handleKursansvarigChange(event, courseId, teacherId);
+      this._handleKursansvarigChange(event, runs, teacherId);
     }
   }
 

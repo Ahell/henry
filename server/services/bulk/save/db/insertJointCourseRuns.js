@@ -42,15 +42,16 @@ export function insertJointCourseRuns(courseSlots = []) {
     // 1. Insert Parent Joint Run
     // Find an existing joint_run_id from children to preserve identity
     const jointRunIdCandidate = group.children.find(c => c.joint_run_id != null)?.joint_run_id;
+    
+    // Find kursansvarig from any child that has it
+    const kursansvarigId = group.children.find(c => c.kursansvarig_id != null)?.kursansvarig_id || null;
 
     const info = insertJoint.run(
       jointRunIdCandidate || null,
       group.course_id,
       group.slot_id,
       group.slot_span,
-      // Temporarily use null for kursansvarig_id in bulk save
-      // as it's not present in normalized.dedupedCourseSlots from frontend
-      null, 
+      kursansvarigId, 
       group.created_at
     );
     const jointRunId = info.lastInsertRowid;

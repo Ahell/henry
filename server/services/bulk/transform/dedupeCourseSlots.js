@@ -41,6 +41,10 @@ function upsertCourseSlot(keepByKey, idMapping, normalized) {
   keepByKey.set(key, keep);
   mergeIdMapping(idMapping, drop?.cohort_slot_course_id, keep?.cohort_slot_course_id);
   keep.teachers = mergeUnique(keep.teachers, drop.teachers);
+  // Preserve kursansvarig_id if it exists in one of the slots being merged.
+  if (keep.kursansvarig_id == null && drop.kursansvarig_id != null) {
+    keep.kursansvarig_id = drop.kursansvarig_id;
+  }
 }
 
 function courseSlotKey(cs) {
