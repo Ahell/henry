@@ -183,6 +183,8 @@ export class TeacherAvailabilityTableService {
         segments = activeIds.map((cid) => {
           const code = store.getCourse(cid)?.code || `Kurs ${cid}`;
           const isAssigned = assignedCourseIds.has(String(cid));
+          const examDate = store.getExamDayForCourseInSlot(slotId, cid);
+          const isExam = examDate === dateStr;
           
           let baseClass = "segment-compatible-free";
           if (isAssigned) {
@@ -196,7 +198,11 @@ export class TeacherAvailabilityTableService {
             .filter(Boolean)
             .join(" ");
 
-          return { text: code, classNameSuffix };
+          return { 
+            text: code, 
+            classNameSuffix,
+            badgeText: isExam ? "Tenta" : null
+          };
         });
       }
     }
