@@ -155,7 +155,13 @@ export class DataServiceManager {
 
   getDataSnapshot() {
     const courseRuns = this.store.courseRunsManager.courseRuns;
-    const cohortSlotCourses = buildCohortSlotCoursesFromRuns(courseRuns);
+    const courseSlots = this.store.courseRunsManager.courseSlots;
+    const { cohortSlotCourses, courseSlotDays: expandedCourseSlotDays } =
+      buildCohortSlotCoursesAndDays(
+        courseRuns,
+        courseSlots,
+        this.store.courseSlotDays
+      );
     return {
       courses: this.store.coursesManager.getCourses(),
       cohorts: this.store.cohortsManager.getCohorts(),
@@ -170,13 +176,10 @@ export class DataServiceManager {
       teachingDays: this.store.teachingDays,
       examDates: this.store.examDatesManager.examDates,
       // Persist scheduling via the backend's canonical "cohort_slot_courses" shape.
-      // The in-memory `courseRunsManager.courseSlots` is a UI/helper structure and
-      // may be missing `cohort_id` for newly created runs, which would cause
-      // dropped courses to disappear on reload.
       cohortSlotCourses,
       courseSlots: cohortSlotCourses,
       slotDays: this.store.slotDays,
-      courseSlotDays: this.store.courseSlotDays,
+      courseSlotDays: expandedCourseSlotDays,
       businessLogic: this.store.businessLogicManager.getBusinessLogic(),
     };
   }
@@ -307,24 +310,78 @@ export class DataServiceManager {
   // Public utility methods (delegate to services)
 }
 
-function buildCohortSlotCoursesFromRuns(courseRuns = []) {
-  if (!Array.isArray(courseRuns)) return [];
+function buildCohortSlotCoursesAndDays(
+  courseRuns = [],
+  courseSlots = [],
+  courseSlotDays = []
+) {
+  if (!Array.isArray(courseRuns))
+    return { cohortSlotCourses: [], courseSlotDays: [] };
 
-  return courseRuns.flatMap((run) => {
-    if (!run) return [];
-
-    const cohorts =
-      Array.isArray(run.cohorts) && run.cohorts.length > 0 ? run.cohorts : [null];
-
-    return cohorts.map((cohortId) => ({
-      cohort_slot_course_id: null, // Always null for auto-increment
-      joint_run_id: run.run_id ?? null, // Link to the joint run
-      course_id: run.course_id,
-      slot_id: run.slot_id,
-      cohort_id: cohortId,
-      teachers: Array.isArray(run.teachers) ? run.teachers : [],
-      slot_span: Number(run.slot_span) >= 2 ? Number(run.slot_span) : 1,
-      created_at: run.created_at || new Date().toISOString(),
-    }));
+  const slotMap = new Map();
+  (courseSlots || []).forEach((cs) => {
+    const key = `${cs.course_id}-${cs.slot_id}`;
+    const id = cs.course_slot_id ?? cs.cohort_slot_course_id;
+    if (id != null) {
+      slotMap.set(key, id);
+    }
   });
+
+  const cohortSlotCourses = [];
+  const baseIdToUniqueIds = new Map();
+
+  courseRuns.forEach((run) => {
+    if (!run) return;
+
+    const baseId = slotMap.get(`${run.course_id}-${run.slot_id}`);
+    
+    // Ensure unique cohorts to prevent duplicate synthetic IDs
+    const uniqueCohorts = Array.isArray(run.cohorts) && run.cohorts.length > 0
+      ? [...new Set(run.cohorts)]
+      : [null];
+
+    uniqueCohorts.forEach((cohortId, idx) => {
+      const syntheticId =
+        baseId != null
+          ? baseId * 10000 + (cohortId != null ? Number(cohortId) + 1 : idx)
+          : null;
+
+      if (baseId != null && syntheticId != null) {
+        if (!baseIdToUniqueIds.has(baseId)) {
+          baseIdToUniqueIds.set(baseId, []);
+        }
+        baseIdToUniqueIds.get(baseId).push(syntheticId);
+      }
+
+      cohortSlotCourses.push({
+        cohort_slot_course_id: syntheticId,
+        joint_run_id: run.run_id ?? null,
+        course_id: run.course_id,
+        slot_id: run.slot_id,
+        cohort_id: cohortId,
+        teachers: Array.isArray(run.teachers) ? [...new Set(run.teachers)] : [],
+        slot_span: Number(run.slot_span) >= 1 ? Number(run.slot_span) : 1,
+        created_at: run.created_at || new Date().toISOString(),
+      });
+    });
+  });
+
+  const expandedCourseSlotDays = [];
+  (courseSlotDays || []).forEach((csd) => {
+    const baseId = csd.course_slot_id;
+    const uniqueIds = baseIdToUniqueIds.get(baseId);
+
+    if (uniqueIds && uniqueIds.length > 0) {
+      uniqueIds.forEach((uid) => {
+        expandedCourseSlotDays.push({
+          ...csd,
+          cohort_slot_course_id: null, // Force use of new uid
+          course_slot_id: uid,
+          course_slot_day_id: null, // Let DB auto-increment
+        });
+      });
+    }
+  });
+
+  return { cohortSlotCourses, courseSlotDays: expandedCourseSlotDays };
 }

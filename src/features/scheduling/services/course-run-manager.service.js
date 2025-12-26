@@ -293,15 +293,22 @@ export class CourseRunManager {
     const spanForCourse = Number(course?.credits) === 15 ? 2 : 1;
 
     const previousSlotId = run.slot_id;
+    const previousSlotIds = run.slot_ids; // Capture previous slot_ids
+    const previousCourseSlotDays = (store.courseSlotDays || []).map((csd) => ({
+      ...csd,
+    }));
     let createdSlot = null;
 
     const mutationId = store.applyOptimistic({
       label: "move-course-run",
       rollback: () => {
         run.slot_id = previousSlotId;
+        run.slot_ids = previousSlotIds; // Restore previous slot_ids
         if (createdSlot) {
           store.deleteSlot(createdSlot.slot_id);
         }
+        store.courseSlotDays = previousCourseSlotDays;
+        store.notify();
       },
     });
 
@@ -390,8 +397,37 @@ export class CourseRunManager {
         createdSlot = targetSlot;
       }
 
+      // Reset course days logic
+      const clearDaysFor = (cId, sId) => {
+        const cs = (store.courseRunsManager.courseSlots || []).find(
+          (x) =>
+            String(x.course_id) === String(cId) &&
+            String(x.slot_id) === String(sId)
+        );
+        if (cs) {
+          const id = cs.course_slot_id ?? cs.cohort_slot_course_id;
+          if (id != null) {
+            store.courseSlotDays = (store.courseSlotDays || []).filter(
+              (d) => String(d.course_slot_id) !== String(id)
+            );
+          }
+        }
+      };
+
+      // Clear source days (cleanup)
+      clearDaysFor(run.course_id, previousSlotId);
+
+      // Clear target days (force reset to defaults)
+      clearDaysFor(run.course_id, targetSlot.slot_id);
+
       // Update run's slot
       run.slot_id = targetSlot.slot_id;
+      // Clear explicit slot_ids to ensure days are generated for the new slot(s)
+      run.slot_ids = null;
+
+      // Regenerate structures and defaults
+      store.courseRunsManager.ensureCourseSlotsFromRuns();
+      store.teachingDaysManager._ensureCourseSlotDayDefaults();
 
       store.notify();
       await store.saveData({ mutationId });
