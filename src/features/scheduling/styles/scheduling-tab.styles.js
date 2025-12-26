@@ -9,7 +9,7 @@ export const schedulingTabStyles = css`
     --gantt-cohort-width: 96px;
     --gantt-slot-width: 180px;
     --gantt-row-height: 160px;
-    --gantt-availability-row-height: 78px;
+    --gantt-availability-row-height: 98px;
     --gantt-date-row-height: 32px;
     --availability-chip-gap: 4px;
   }
@@ -246,7 +246,10 @@ export const schedulingTabStyles = css`
   .slot-warning-pills {
     width: 100%;
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
+    align-content: center;
+    gap: 4px;
     margin-top: auto;
     min-height: 18px;
   }
@@ -255,6 +258,7 @@ export const schedulingTabStyles = css`
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex: 0 0 auto;
     padding: 2px 6px;
     border-radius: var(--radius-full);
     font-size: 0.62rem;
