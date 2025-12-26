@@ -1749,15 +1749,16 @@ export class SchedulingTab extends LitElement {
                             ${isAssigned
                               ? html`
                                   <input
-                                    type="radio"
-                                    class="kursansvarig-radio"
+                                    type="checkbox"
+                                    class="kursansvarig-checkbox"
                                     name="kursansvarig-${course.course_id}-${slot.slot_id}"
-                                    value="${teacher.teacher_id}"
                                     .checked=${isKursansvarig}
                                     ?disabled=${!this.isEditing}
-                                    aria-label="Välj ${teacher.name} som kursansvarig för ${course.code}"
+                                    aria-label="${isKursansvarig
+                                      ? `Ta bort ${teacher.name} som kursansvarig`
+                                      : `Välj ${teacher.name} som kursansvarig`}"
                                     title="${isKursansvarig
-                                      ? "Kursansvarig"
+                                      ? "Kursansvarig (klicka för att ta bort)"
                                       : "Välj som kursansvarig"}"
                                     @change=${(e) =>
                                       this._handleKursansvarigChange(
@@ -1988,6 +1989,9 @@ export class SchedulingTab extends LitElement {
 
     if (!this.isEditing) return;
 
+    const isChecked = event.target.checked;
+    const targetId = isChecked ? teacherId : null;
+
     const previousKursansvarig =
       store.coursesManager.getKursansvarigForCourse(courseId);
 
@@ -1999,7 +2003,7 @@ export class SchedulingTab extends LitElement {
     });
 
     try {
-      store.coursesManager.setKursansvarig(courseId, teacherId);
+      store.coursesManager.setKursansvarig(courseId, targetId);
       this.requestUpdate();
       await store.saveData({ mutationId });
     } catch (error) {

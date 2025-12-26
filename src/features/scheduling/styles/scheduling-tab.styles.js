@@ -885,26 +885,27 @@ export const schedulingTabStyles = css`
     cursor: not-allowed;
   }
 
-  /* Kursansvarig radio button styling */
-  .gantt-table tfoot .summary-course .kursansvarig-radio {
+  /* Kursansvarig checkbox styling - black & white */
+  .gantt-table tfoot .summary-course .kursansvarig-checkbox {
     width: 14px;
     height: 14px;
     cursor: pointer;
     margin: 0;
     flex-shrink: 0;
-    accent-color: var(--color-success, #22c55e);
+    accent-color: #000000;
+    border: 1px solid #000000;
   }
 
-  .gantt-table tfoot .summary-course .kursansvarig-radio:hover {
+  .gantt-table tfoot .summary-course .kursansvarig-checkbox:hover {
     transform: scale(1.1);
   }
 
-  .gantt-table tfoot .summary-course .kursansvarig-radio:focus-visible {
+  .gantt-table tfoot .summary-course .kursansvarig-checkbox:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
 
-  .gantt-table tfoot .summary-course .kursansvarig-radio:disabled {
+  .gantt-table tfoot .summary-course .kursansvarig-checkbox:disabled {
     opacity: 0.55;
     cursor: not-allowed;
   }
