@@ -69,11 +69,11 @@ export const teacherAvailabilityTabStyles = css`
     display: inline-flex;
     gap: var(--space-2);
     align-items: center;
-    padding: var(--space-2) var(--space-3);
+    padding: 4px 8px;
     border-radius: var(--radius-full);
     background: var(--color-gray-50);
     border: 1px solid var(--color-border);
-    font-size: var(--font-size-sm);
+    font-size: 0.7rem;
     color: var(--color-text-primary);
   }
 
@@ -163,6 +163,36 @@ export const teacherAvailabilityTabStyles = css`
         rgba(239, 68, 68, 0) 16px
       ),
       linear-gradient(135deg, var(--color-info), var(--color-info-hover));
+  }
+
+  .legend-swatch--assigned-course-unavailable {
+    background: repeating-linear-gradient(
+        135deg,
+        rgba(239, 68, 68, 0.82) 0px,
+        rgba(239, 68, 68, 0.82) 8px,
+        rgba(239, 68, 68, 0) 8px,
+        rgba(239, 68, 68, 0) 16px
+      ),
+      linear-gradient(
+        135deg,
+        var(--color-success),
+        var(--color-success-hover)
+      );
+  }
+
+  .legend-swatch--assigned-partial-conflict {
+    background: repeating-linear-gradient(
+        135deg,
+        rgba(239, 68, 68, 0.28) 0px,
+        rgba(239, 68, 68, 0.28) 8px,
+        rgba(239, 68, 68, 0) 8px,
+        rgba(239, 68, 68, 0) 16px
+      ),
+      linear-gradient(
+        135deg,
+        var(--color-success),
+        var(--color-success-hover)
+      );
   }
 
   .legend-swatch--partial-availability {
