@@ -24,17 +24,54 @@ export class DataServiceManager {
     );
     this.store.teachersManager.load(data.teachers, data.teacherCourses);
     this.store.examDatesManager.load(data.examDates || []);
+
+    // FIX: Do not load courseSlots directly from backend to avoid "synthetic ID explosion".
+    // Instead, regenerate normalized base IDs locally and remap the incoming data.
     this.store.courseRunsManager.load(
       data.courseRuns || [],
-      data.courseSlots || []
+      [] // Ignore backend courseSlots (which are actually expanded cohortSlotCourses)
     );
+    this.store.courseRunsManager.ensureCourseSlotsFromRuns();
+
+    // Create mapping from Backend ID (expanded) -> Local Base ID (normalized)
+    const expandedIdToBaseId = new Map();
+    const baseSlots = this.store.courseRunsManager.courseSlots;
+    
+    // Index base slots by key
+    const keyToBaseId = new Map();
+    baseSlots.forEach((cs) => {
+      keyToBaseId.set(`${cs.course_id}-${cs.slot_id}`, cs.course_slot_id);
+    });
+
+    // Use the raw cohortSlotCourses table if available (new backend), otherwise fallback to courseSlots (legacy)
+    // The cohortSlotCourses table contains the mapping from synthetic ID (cohort_slot_course_id) 
+    // to course_id/slot_id, which allows us to find the base ID.
+    const backendMappingSource = data.cohortSlotCourses || data.courseSlots || [];
+
+    backendMappingSource.forEach((es) => {
+      const baseId = keyToBaseId.get(`${es.course_id}-${es.slot_id}`);
+      // Handle both ID field names depending on backend payload shape
+      const expandedId = es.cohort_slot_course_id ?? es.course_slot_id;
+
+      if (baseId != null && expandedId != null) {
+        expandedIdToBaseId.set(String(expandedId), baseId);
+      }
+    });
+
+    // Remap courseSlotDays to use local base IDs
+    const remappedCourseSlotDays = (data.courseSlotDays || []).map((csd) => {
+      const expandedId = csd.course_slot_id;
+      const baseId = expandedIdToBaseId.get(String(expandedId));
+      return baseId ? { ...csd, course_slot_id: baseId } : csd;
+    });
+
     this.store.cohortsManager.load(data.cohorts || []);
     this.store.slotsManager.load(data.slots || []);
     this.store.availabilityManager.load(data.teacherAvailability || []);
     this.store.teachingDaysManager.loadTeachingDays(data.teachingDays || []);
     this.store.teachingDaysManager.loadSlotDays(data.slotDays || []);
     this.store.teachingDaysManager.loadCourseSlotDays(
-      data.courseSlotDays || []
+      remappedCourseSlotDays || []
     );
     this.store.teachersManager.ensureTeacherCoursesFromCompatible();
     this.store.coursesManager.ensurePrerequisitesFromNormalized();
@@ -43,7 +80,7 @@ export class DataServiceManager {
     this.store.teachersManager.ensureTeacherCompatibleFromCourses();
 
     // Derive normalized structures if missing
-    this.store.courseRunsManager.ensureCourseSlotsFromRuns();
+    this.store.courseRunsManager.ensureCourseSlotsFromRuns(); // Redundant but safe
     this._syncStoreCollections();
     this.store.teachingDaysManager._ensureCourseSlotDayDefaults();
     this.store.validator.assertAllSlotsNonOverlapping();
@@ -347,10 +384,11 @@ function buildCohortSlotCoursesAndDays(
           : null;
 
       if (baseId != null && syntheticId != null) {
-        if (!baseIdToUniqueIds.has(baseId)) {
-          baseIdToUniqueIds.set(baseId, []);
+        const baseIdKey = String(baseId);
+        if (!baseIdToUniqueIds.has(baseIdKey)) {
+          baseIdToUniqueIds.set(baseIdKey, []);
         }
-        baseIdToUniqueIds.get(baseId).push(syntheticId);
+        baseIdToUniqueIds.get(baseIdKey).push(syntheticId);
       }
 
       cohortSlotCourses.push({
@@ -369,7 +407,7 @@ function buildCohortSlotCoursesAndDays(
   const expandedCourseSlotDays = [];
   (courseSlotDays || []).forEach((csd) => {
     const baseId = csd.course_slot_id;
-    const uniqueIds = baseIdToUniqueIds.get(baseId);
+    const uniqueIds = baseIdToUniqueIds.get(String(baseId));
 
     if (uniqueIds && uniqueIds.length > 0) {
       uniqueIds.forEach((uid) => {

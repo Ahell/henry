@@ -15,7 +15,8 @@ import {
   getTeacherSlotUnavailability,
   getJointCourseRuns,
   getJointCourseRunTeachers,
-  getCohortSlotLinks
+  getCohortSlotLinks,
+  getCohortSlotCourses
 } from "./dbQueries.js";
 import { buildCourseRuns, buildCourseSlots, buildSlotsByRun } from "./courseRuns.js";
 import { mapTeacherAvailability } from "./teacherAvailability.js";
@@ -64,12 +65,13 @@ function loadCourseRunsData() {
   const jointTeachers = getJointCourseRunTeachers();
   const cohortLinks = getCohortSlotLinks();
   const courseRunSlots = getCourseRunSlots();
+  const cohortSlotCourses = getCohortSlotCourses();
   
   const slotsByRun = buildSlotsByRun(courseRunSlots);
   const courseSlots = buildCourseSlots(jointRuns, jointTeachers);
   const courseRuns = buildCourseRuns(jointRuns, jointTeachers, cohortLinks, slotsByRun);
   
-  return { courseSlots, courseRuns, courseRunSlots };
+  return { courseSlots, courseRuns, courseRunSlots, cohortSlotCourses };
 }
 
 function loadAvailabilityData({ slots = [], slotDays = [], teacherDayUnavailability = [] } = {}) {
@@ -130,7 +132,7 @@ function buildSnapshot(data) {
     courseRuns: data.courseRuns,
     teacherAvailability: data.teacherAvailability,
     courseSlots: data.courseSlots,
-    cohortSlotCourses: data.courseSlots, // Map to same to maintain compatibility if needed
+    cohortSlotCourses: data.cohortSlotCourses,
     courseRunSlots: data.courseRunSlots,
     slotDays: data.slotDays,
     teacherDayUnavailability: data.teacherDayUnavailability,
