@@ -11,6 +11,7 @@ import {
 import { SlotTableService } from "../services/slot-table.service.js";
 import { SlotService } from "../services/slot.service.js";
 import "./slot-modal.component.js";
+import "./slot-info-modal.component.js";
 import "../../../components/ui/index.js";
 import { slotsTabStyles } from "../styles/slots-tab.styles.js";
 
@@ -21,21 +22,38 @@ export class SlotsTab extends LitElement {
     addModalOpen: { type: Boolean },
     message: { type: String },
     messageType: { type: String },
+    infoSlotId: { type: Number },
+    infoModalOpen: { type: Boolean },
   };
 
   constructor() {
     super();
     initializeEditState(this, "editingSlotId");
     this.addModalOpen = false;
+    this.infoSlotId = null;
+    this.infoModalOpen = false;
     subscribeToStore(this);
   }
 
   _openAddModal() {
+    this.infoModalOpen = false;
+    this.infoSlotId = null;
     this.addModalOpen = true;
   }
 
   _closeAddModal() {
     this.addModalOpen = false;
+  }
+
+  _openInfoModal(slotId) {
+    this.addModalOpen = false;
+    this.infoSlotId = slotId;
+    this.infoModalOpen = true;
+  }
+
+  _closeInfoModal() {
+    this.infoModalOpen = false;
+    this.infoSlotId = null;
   }
 
   render() {
@@ -71,12 +89,17 @@ export class SlotsTab extends LitElement {
         ></henry-table>
       </henry-panel>
 
-      <slot-modal
-        .open="${this.addModalOpen}"
-        mode="add"
-        @slot-saved="${this._closeAddModal}"
-        @modal-close="${this._closeAddModal}"
-      ></slot-modal>
+        <slot-modal
+          .open="${this.addModalOpen}"
+          mode="add"
+          @slot-saved="${this._closeAddModal}"
+          @modal-close="${this._closeAddModal}"
+        ></slot-modal>
+        <slot-info-modal
+          .open="${this.infoModalOpen}"
+          .slotId="${this.infoSlotId}"
+          @modal-close="${this._closeInfoModal}"
+        ></slot-info-modal>
     `;
   }
 
@@ -104,7 +127,15 @@ export class SlotsTab extends LitElement {
         return html`${idx + 1}`;
 
       case "start_date":
-        return html`${slot.start_date}`;
+        return html`
+          <button
+            class="slot-period-button"
+            type="button"
+            @click="${() => this._openInfoModal(slot.slot_id)}"
+          >
+            ${slot.start_date}
+          </button>
+        `;
 
       case "actions":
         return html`
@@ -151,6 +182,10 @@ export class SlotsTab extends LitElement {
   updated() {
     if (store.editMode) return;
     if (this.addModalOpen) this.addModalOpen = false;
+    if (this.infoModalOpen) {
+      this.infoModalOpen = false;
+      this.infoSlotId = null;
+    }
   }
 }
 

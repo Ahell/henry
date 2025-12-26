@@ -11,12 +11,20 @@ export class CohortTableService {
     ];
   }
 
-  static renderCell(cohort, column, onEdit, onDelete) {
+  static renderCell(cohort, column, onEdit, onDelete, onInfo) {
     if (!cohort || !column) return html``;
 
     switch (column.key) {
       case "name":
-        return html`${cohort.name}`;
+        return html`
+          <button
+            class="cohort-name-button"
+            type="button"
+            @click="${() => onInfo?.(cohort.cohort_id)}"
+          >
+            ${cohort.name}
+          </button>
+        `;
       case "start_date":
         return html`${cohort.start_date}`;
       case "planned_size":

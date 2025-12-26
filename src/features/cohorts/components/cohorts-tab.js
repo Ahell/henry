@@ -11,6 +11,7 @@ import {
 import { CohortTableService } from "../services/cohort-table.service.js";
 import { CohortService } from "../services/cohort.service.js";
 import "./cohort-modal.component.js";
+import "./cohort-info-modal.component.js";
 import { cohortsTabStyles } from "../styles/cohorts-tab.styles.js";
 
 export class CohortsTab extends LitElement {
@@ -20,6 +21,8 @@ export class CohortsTab extends LitElement {
     editingCohortId: { type: Number },
     modalOpen: { type: Boolean },
     modalMode: { type: String }, // 'add' or 'edit'
+    infoCohortId: { type: Number },
+    infoModalOpen: { type: Boolean },
   };
 
   constructor() {
@@ -27,6 +30,8 @@ export class CohortsTab extends LitElement {
     this.editingCohortId = null;
     this.modalOpen = false;
     this.modalMode = "add";
+    this.infoCohortId = null;
+    this.infoModalOpen = false;
     initializeEditState(this, "editingCohortId");
     subscribeToStore(this);
   }
@@ -34,6 +39,8 @@ export class CohortsTab extends LitElement {
   _openAddModal() {
     this.modalMode = "add";
     this.editingCohortId = null;
+    this.infoModalOpen = false;
+    this.infoCohortId = null;
     this.modalOpen = true;
   }
 
@@ -41,12 +48,26 @@ export class CohortsTab extends LitElement {
     if (!store.editMode) return;
     this.modalMode = "edit";
     this.editingCohortId = cohortId;
+    this.infoModalOpen = false;
+    this.infoCohortId = null;
     this.modalOpen = true;
   }
 
   _closeModal() {
     this.modalOpen = false;
     this.editingCohortId = null;
+  }
+
+  _openInfoModal(cohortId) {
+    this.modalOpen = false;
+    this.editingCohortId = null;
+    this.infoCohortId = cohortId;
+    this.infoModalOpen = true;
+  }
+
+  _closeInfoModal() {
+    this.infoModalOpen = false;
+    this.infoCohortId = null;
   }
 
   render() {
@@ -76,7 +97,8 @@ export class CohortsTab extends LitElement {
               row,
               col,
               (cohortId) => this.handleEditCohort(cohortId),
-              (cohortId) => this.handleDeleteCohort(cohortId)
+              (cohortId) => this.handleDeleteCohort(cohortId),
+              (cohortId) => this._openInfoModal(cohortId)
             )}"
         ></henry-table>
       </henry-panel>
@@ -88,6 +110,11 @@ export class CohortsTab extends LitElement {
         @cohort-saved="${this._closeModal}"
         @modal-close="${this._closeModal}"
       ></cohort-modal>
+      <cohort-info-modal
+        .open="${this.infoModalOpen}"
+        .cohortId="${this.infoCohortId}"
+        @modal-close="${this._closeInfoModal}"
+      ></cohort-info-modal>
     `;
   }
 
