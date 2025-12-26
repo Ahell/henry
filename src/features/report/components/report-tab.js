@@ -106,6 +106,18 @@ export class ReportTab extends LitElement {
       };
     };
 
+    const getExamDate = (run) => {
+      const covered = getCoveredSlotIds(run);
+      let latest = "";
+      for (const slotId of covered) {
+        const day = store.getExamDayForCourseInSlot(slotId, run.course_id);
+        if (day && day > latest) {
+          latest = day;
+        }
+      }
+      return latest;
+    };
+
     const termForDate = (dateStr) => {
       const d = new Date(dateStr);
       if (Number.isNaN(d.getTime())) return "";
@@ -196,6 +208,7 @@ export class ReportTab extends LitElement {
         : 0;
 
       const { start, end } = getStartEnd(run);
+      const examDate = getExamDate(run);
       const term = start ? termForDate(start) : "";
       const year = start ? yearForDate(start) : "";
 
@@ -213,6 +226,7 @@ export class ReportTab extends LitElement {
           courseName: course.name || "",
           start,
           end,
+          examDate,
           term,
           year,
         });
@@ -228,6 +242,9 @@ export class ReportTab extends LitElement {
       }
       if (existing.courseKursansvarigId == null && courseKursansvarigId != null) {
         existing.courseKursansvarigId = courseKursansvarigId;
+      }
+      if (examDate > (existing.examDate || "")) {
+        existing.examDate = examDate;
       }
     }
 
@@ -283,7 +300,7 @@ export class ReportTab extends LitElement {
         return false;
       }
       if (!q) return true;
-      const hay = `${r.avd} ${r.code} ${r.courseName} ${r.examinator} ${r.kursansvarig} ${r.start} ${r.end} ${r.term} ${r.year}`.toLowerCase();
+      const hay = `${r.avd} ${r.code} ${r.courseName} ${r.examinator} ${r.kursansvarig} ${r.start} ${r.end} ${r.term} ${r.year} ${r.examDate || ""}`.toLowerCase();
       return hay.includes(q);
     });
   }
@@ -350,6 +367,7 @@ export class ReportTab extends LitElement {
       { key: "kursassistenter", label: "Kursassistenter", width: "200px" },
       { key: "start", label: "Kursstart", width: "110px" },
       { key: "end", label: "Kursslut", width: "110px" },
+      { key: "examDate", label: "Tentamensdatum", width: "130px" },
       {
         key: "term",
         label: "Termin",
