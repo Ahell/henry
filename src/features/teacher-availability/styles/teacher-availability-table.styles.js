@@ -228,7 +228,7 @@ export const teacherAvailabilityTableStyles = css`
     border-radius: inherit;
     pointer-events: none;
     background: repeating-linear-gradient(
-      135deg,
+      45deg,
       rgba(239, 68, 68, 0.22) 0px,
       rgba(239, 68, 68, 0.22) 8px,
       transparent 8px,

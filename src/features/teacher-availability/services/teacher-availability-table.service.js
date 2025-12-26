@@ -181,6 +181,7 @@ export class TeacherAvailabilityTableService {
     let isLocked = false;
     let courseIds = [];
     let assignedCourseIds = [];
+    let segments = [];
 
     const uniqueCourseIdsInRuns = (runs) => {
       const seen = new Set();
@@ -242,6 +243,19 @@ export class TeacherAvailabilityTableService {
       slot.slot_id
     );
 
+    const availabilityTitles = {
+      "course-unavailable": "Otillgänglig för kursens kursdagar",
+      "partial-conflict": "Delvis otillgänglig för kursens kursdagar",
+      "partial-availability":
+        "Otillgänglig i perioden (men inte på kursens kursdagar)",
+    };
+    const severity = {
+      "course-unavailable": 3,
+      "partial-conflict": 2,
+      "partial-availability": 1,
+    };
+    const availabilityByCourseId = new Map();
+
     if (!hasAnyCourseInCell) {
       if (isUnavailable) {
         className = this._appendClass(className, "unavailable");
@@ -251,17 +265,6 @@ export class TeacherAvailabilityTableService {
         title = "Delvis upptagen (utvalda dagar)";
       }
     } else if (unavailableDaysInSlot.length > 0) {
-      const availabilityTitles = {
-        "course-unavailable": "Otillgänglig för kursens kursdagar",
-        "partial-conflict": "Delvis otillgänglig för kursens kursdagar",
-        "partial-availability":
-          "Otillgänglig i perioden (men inte på kursens kursdagar)",
-      };
-      const severity = {
-        "course-unavailable": 3,
-        "partial-conflict": 2,
-        "partial-availability": 1,
-      };
       let availabilityClass = "";
       let availabilityScore = 0;
 
@@ -281,6 +284,7 @@ export class TeacherAvailabilityTableService {
           courseAvailability = "partial-conflict";
         }
 
+        availabilityByCourseId.set(courseId, courseAvailability);
         const score = severity[courseAvailability] || 0;
         if (score > availabilityScore) {
           availabilityScore = score;
@@ -289,7 +293,9 @@ export class TeacherAvailabilityTableService {
       }
 
       if (availabilityClass) {
-        className = this._appendClass(className, availabilityClass);
+        if (courseIdsInCell.length <= 1) {
+          className = this._appendClass(className, availabilityClass);
+        }
         const availabilityTitle = availabilityTitles[availabilityClass];
         if (availabilityTitle) {
           title = title ? `${title}\n${availabilityTitle}` : availabilityTitle;
@@ -297,9 +303,37 @@ export class TeacherAvailabilityTableService {
       }
     }
 
+    if (courseIdsInCell.length > 1) {
+      segments = courseIdsInCell.map((courseId) => {
+        const course = store.getCourse(courseId);
+        const code = course?.code || `Kurs ${courseId}`;
+        const isAssignedCourse = assignedCourseIds.some(
+          (id) => String(id) === String(courseId)
+        );
+        const baseClass = isAssignedCourse
+          ? "segment-assigned"
+          : isAssigned
+          ? "segment-compatible-occupied"
+          : "segment-compatible-free";
+        const availabilityClass = availabilityByCourseId.get(courseId) || "";
+        const classNameSuffix = [baseClass, availabilityClass]
+          .filter(Boolean)
+          .join(" ");
+        return { text: code, classNameSuffix };
+      });
+    }
+
     className = className.trim();
 
-    return { className, title, content, isLocked, courseIds, assignedCourseIds };
+    return {
+      className,
+      title,
+      content,
+      isLocked,
+      courseIds,
+      assignedCourseIds,
+      segments,
+    };
   }
 
   static _appendClass(current, next) {

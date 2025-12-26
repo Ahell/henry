@@ -246,6 +246,7 @@ export class TeacherAvailabilityTable extends LitElement {
           .classNameSuffix=${presentation.className}
           .titleText=${presentation.title}
           .content=${presentation.content}
+          .segments=${presentation.segments || []}
           .isLocked=${presentation.isLocked}
         ></teacher-cell>
       </td>
