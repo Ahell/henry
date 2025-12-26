@@ -106,30 +106,68 @@ export class TeachingDaysManager {
     const normalizeDate = (v) => (v || "").split("T")[0];
     let nextId =
       this.courseSlotDays.reduce(
-        (max, csd) => Math.max(max, csd.course_slot_day_id || 0),
+        (max, csd) => Math.max(max, csd.course_slot_id || 0),
         0
       ) + 1;
+
+    const allSlots = (this.slotsManager.getSlots() || []).sort(
+      (a, b) => new Date(a.start_date) - new Date(b.start_date)
+    );
 
     for (const cs of this.courseRunsManager.courseSlots || []) {
       const courseSlotId = cs.course_slot_id ?? cs.cohort_slot_course_id;
       if (courseSlotId == null) continue;
-      const defaults = this.slotsManager.getDefaultTeachingDaysPattern(cs.slot_id);
-      defaults.forEach((d) => {
-        const exists = this.courseSlotDays.some(
-          (csd) =>
-            String(csd.course_slot_id) === String(courseSlotId) &&
-            normalizeDate(csd.date) === normalizeDate(d)
+
+      // Find corresponding run to get span/slot_ids
+      const run = (this.courseRunsManager.courseRuns || []).find(
+        (r) =>
+          String(r.course_id) === String(cs.course_id) &&
+          String(r.slot_id) === String(cs.slot_id)
+      );
+
+      let targetSlotIds = [];
+      if (run && Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+        targetSlotIds = run.slot_ids;
+      } else {
+        const span = Math.max(
+          1,
+          Number(run?.slot_span || cs.slot_span || 1)
         );
-        if (!exists) {
-          this.courseSlotDays.push({
-            course_slot_day_id: nextId++,
-            course_slot_id: courseSlotId,
-            date: normalizeDate(d),
-            is_default: 1,
-            active: true,
-          });
+        if (span > 1) {
+          const startIdx = allSlots.findIndex(
+            (s) => String(s.slot_id) === String(cs.slot_id)
+          );
+          if (startIdx !== -1) {
+            targetSlotIds = allSlots
+              .slice(startIdx, startIdx + span)
+              .map((s) => s.slot_id);
+          } else {
+            targetSlotIds = [cs.slot_id];
+          }
+        } else {
+          targetSlotIds = [cs.slot_id];
         }
-      });
+      }
+
+      for (const slotId of targetSlotIds) {
+        const defaults = this.slotsManager.getDefaultTeachingDaysPattern(slotId);
+        defaults.forEach((d) => {
+          const exists = this.courseSlotDays.some(
+            (csd) =>
+              String(csd.course_slot_id) === String(courseSlotId) &&
+              normalizeDate(csd.date) === normalizeDate(d)
+          );
+          if (!exists) {
+            this.courseSlotDays.push({
+              course_slot_day_id: nextId++,
+              course_slot_id: courseSlotId,
+              date: normalizeDate(d),
+              is_default: 1,
+              active: true,
+            });
+          }
+        });
+      }
     }
   }
 

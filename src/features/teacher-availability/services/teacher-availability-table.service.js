@@ -134,7 +134,41 @@ export class TeacherAvailabilityTableService {
       title = `Upptagen ${dateStr}`;
     }
 
-    return { className, title };
+    // Calculate content (compatible active course codes)
+    let content = "";
+    const teacher = store.getTeacher(teacherId);
+    if (teacher) {
+      const runsInSlot = TeacherAvailabilityService.getRunsCoveringSlotId(
+        store.getCourseRuns(),
+        slotId
+      );
+      const slotCourseIds = new Set(
+        runsInSlot.map((r) => r.course_id).filter((id) => id != null)
+      );
+
+      const compatibleIds = (teacher.compatible_courses || []).filter((cid) =>
+        slotCourseIds.has(cid)
+      );
+
+      const targetIds =
+        courseId && courseId !== "all"
+          ? compatibleIds.filter((cid) => Number(cid) === Number(courseId))
+          : compatibleIds;
+
+      const activeCodes = targetIds
+        .filter((cid) => {
+          const days = store.getActiveCourseDaysInSlot(slotId, cid);
+          return days && days.includes(dateStr);
+        })
+        .map((cid) => store.getCourse(cid)?.code)
+        .filter(Boolean);
+      
+      if (activeCodes.length > 0) {
+        content = activeCodes.join(", ");
+      }
+    }
+
+    return { className, title, content };
   }
 
   /**
