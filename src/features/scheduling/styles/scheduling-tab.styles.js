@@ -9,7 +9,8 @@ export const schedulingTabStyles = css`
     --gantt-cohort-width: 136px;
     --gantt-slot-width: 180px;
     --gantt-row-height: 160px;
-    --gantt-availability-row-height: 98px;
+    --gantt-availability-row-height: 92px;
+    --gantt-teacher-overlay-height: 72px;
     --gantt-date-row-height: 32px;
     --availability-chip-gap: 4px;
   }
@@ -199,6 +200,83 @@ export const schedulingTabStyles = css`
     font-weight: var(--font-weight-semibold);
   }
 
+  .gantt-layout {
+    position: relative;
+  }
+
+  .slot-teacher-overlay-wrapper {
+    position: absolute;
+    top: 0;
+    transform: translateY(calc(-100% - 6px));
+    left: 0;
+    right: 0;
+    height: auto;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  .slot-teacher-overlay {
+    display: grid;
+    grid-template-columns:
+      var(--gantt-depot-width)
+      var(--gantt-cohort-width)
+      repeat(var(--gantt-slot-count, 0), var(--gantt-slot-width));
+    width: calc(
+      var(--gantt-depot-width) + var(--gantt-cohort-width) +
+        (var(--gantt-slot-width) * var(--gantt-slot-count, 0))
+    );
+    height: auto;
+    min-height: var(--gantt-teacher-overlay-height);
+    align-items: stretch;
+  }
+
+  .slot-teacher-overlay-spacer {
+    background: transparent;
+    visibility: hidden;
+  }
+
+  .slot-teacher-overlay-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 6px;
+    padding: 8px 8px 6px;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    min-height: calc(var(--gantt-teacher-overlay-height) - 12px);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .slot-teacher-overlay-cell.is-hidden {
+    visibility: hidden;
+    height: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .slot-teacher-overlay-label {
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.01em;
+    color: var(--color-text-secondary);
+  }
+
+  .slot-teacher-overlay-names {
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    line-height: 1.2;
+    white-space: normal;
+    word-break: break-word;
+  }
+
   .slot-availability-row {
     width: 100%;
     height: var(--gantt-availability-row-height);
@@ -211,17 +289,44 @@ export const schedulingTabStyles = css`
     justify-content: flex-start;
     padding: 6px;
     gap: 6px;
+    background: transparent;
+  }
+
+  .slot-availability-row[data-has-warnings="false"] {
+    justify-content: center;
+  }
+
+  .slot-header-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+  }
+
+  .slot-header-section[aria-hidden="true"] {
+    display: none;
+  }
+
+  .slot-header-label {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.01em;
+    color: var(--color-text-secondary);
+    text-transform: none;
   }
 
   .slot-availability {
     width: 100%;
     display: flex;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
     height: auto;
     flex-wrap: wrap;
-    align-content: flex-start;
-    gap: var(--availability-chip-gap);
+    align-items: flex-start;
+    gap: 6px;
     padding: 0;
     border-radius: 0;
     background: transparent;
@@ -229,29 +334,53 @@ export const schedulingTabStyles = css`
     box-shadow: none;
     box-sizing: border-box;
     max-width: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden;
     overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge legacy */
   }
 
-  .slot-availability::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-    display: none;
+  .slot-teacher-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 6px;
+    padding: 8px 8px 6px;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    height: calc(var(--gantt-teacher-overlay-height) - 12px);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .slot-teacher-label {
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.01em;
+    color: var(--color-text-secondary);
+  }
+
+  .slot-teacher-names {
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
   }
 
   .slot-warning-pills {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    align-content: center;
-    gap: 4px;
-    margin-top: auto;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 6px;
     min-height: 18px;
+    overflow: hidden;
   }
 
   .slot-warning-pill {
@@ -259,7 +388,7 @@ export const schedulingTabStyles = css`
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    padding: 2px 6px;
+    padding: 2px 7px;
     border-radius: var(--radius-full);
     font-size: 0.62rem;
     font-weight: var(--font-weight-semibold);
@@ -290,20 +419,20 @@ export const schedulingTabStyles = css`
   .availability-chip {
     display: inline-flex;
     align-items: center;
-    /* Aim for 3 chips per row in the slot header overlay */
-    flex: 0 0 calc((100% - (var(--availability-chip-gap) * 2)) / 3);
-    width: calc((100% - (var(--availability-chip-gap) * 2)) / 3);
-    padding: 2px 5px;
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 100%;
+    padding: 2px 7px;
     border-radius: var(--radius-full);
     background: rgba(15, 23, 42, 0.18);
     color: #fff;
-    font-size: 0.56rem;
+    font-size: 0.6rem;
     line-height: 1.05;
     white-space: nowrap;
     overflow-wrap: normal;
     word-break: keep-all;
     overflow: hidden;
-    text-overflow: clip;
+    text-overflow: ellipsis;
     justify-content: flex-start;
     box-sizing: border-box;
     position: relative;
@@ -317,7 +446,7 @@ export const schedulingTabStyles = css`
     overflow-wrap: normal;
     word-break: keep-all;
     overflow: hidden;
-    text-overflow: clip;
+    text-overflow: ellipsis;
     display: block;
     min-width: 0;
   }

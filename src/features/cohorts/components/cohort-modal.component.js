@@ -36,7 +36,7 @@ export class CohortModal extends LitElement {
   async _initializeForm() {
     // Wait for render to ensure elements exist
     await this.updateComplete;
-    
+
     // Reset validity state
     this.formValid = false;
 
@@ -48,28 +48,33 @@ export class CohortModal extends LitElement {
 
     // Populate form
     CohortFormService.populateForm(this.renderRoot, cohort, this.mode);
-    
+
     // Check initial validity
     this._updateFormValidity();
   }
 
   _updateFormValidity() {
     this.formValid = CohortFormService.isFormValid(
-      this.renderRoot, 
-      this.mode, 
+      this.renderRoot,
+      this.mode,
       this.cohortId
     );
   }
 
   async _handleSubmit(e) {
     e.preventDefault();
-    if (!CohortFormService.isFormValid(this.renderRoot, this.mode, this.cohortId)) {
+    if (
+      !CohortFormService.isFormValid(this.renderRoot, this.mode, this.cohortId)
+    ) {
       // Force validation UI feedback if needed
       return;
     }
 
     try {
-      const formData = CohortFormService.extractFormData(this.renderRoot, this.mode);
+      const formData = CohortFormService.extractFormData(
+        this.renderRoot,
+        this.mode
+      );
       let result;
 
       if (this.mode === "add") {
@@ -80,9 +85,7 @@ export class CohortModal extends LitElement {
         showSuccessMessage(this, "Kull uppdaterad!");
       }
 
-      this.dispatchEvent(
-        new CustomEvent("cohort-saved", { detail: result })
-      );
+      this.dispatchEvent(new CustomEvent("cohort-saved", { detail: result }));
       this._handleClose();
     } catch (err) {
       showErrorMessage(this, `Kunde inte spara kull: ${err.message}`);
@@ -103,7 +106,7 @@ export class CohortModal extends LitElement {
     if (!this.open) return html``;
 
     const title = this.mode === "add" ? "Lägg till Kull" : "Redigera Kull";
-    const submitLabel = this.mode === "add" ? "Lägg till kull" : "Spara ändringar";
+    const submitLabel = this.mode === "add" ? "Spara" : "Spara ändringar";
     const prefix = this.mode === "edit" ? "editCohort" : "cohort";
 
     return html`

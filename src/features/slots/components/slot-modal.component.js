@@ -39,11 +39,12 @@ export class SlotModal extends LitElement {
 
   async _initializeForm() {
     await this.updateComplete;
-    
+
     // Reset state
-    const initialState = this.mode === 'add' 
-      ? SlotFormService.getInitialStateForAdd()
-      : SlotFormService.getInitialStateForEdit(this.slotId);
+    const initialState =
+      this.mode === "add"
+        ? SlotFormService.getInitialStateForAdd()
+        : SlotFormService.getInitialStateForEdit(this.slotId);
 
     this.selectedInsertAfter = initialState.selectedInsertAfter;
     this.startOptions = initialState.startOptions;
@@ -51,27 +52,27 @@ export class SlotModal extends LitElement {
 
     // Get data if editing
     let slot = null;
-    if (this.mode === 'edit' && this.slotId) {
+    if (this.mode === "edit" && this.slotId) {
       slot = store.getSlot(this.slotId);
     }
 
     // Populate form
     SlotFormService.populateForm(this.renderRoot, slot, this.mode);
-    
+
     this._updateFormValidity();
   }
 
   _onInsertAfterChange(e) {
     const insertVal = e.detail.value;
     this.selectedInsertAfter = insertVal;
-    
+
     if (insertVal) {
       const dates = SlotService.getAvailableStartDates(insertVal);
-      this.startOptions = dates.map(d => ({ value: d, label: d }));
+      this.startOptions = dates.map((d) => ({ value: d, label: d }));
     } else {
       this.startOptions = [];
     }
-    
+
     this._updateFormValidity();
   }
 
@@ -80,7 +81,11 @@ export class SlotModal extends LitElement {
   }
 
   _updateFormValidity() {
-    this.formValid = SlotFormService.isFormValid(this.renderRoot, this.mode, this.slotId);
+    this.formValid = SlotFormService.isFormValid(
+      this.renderRoot,
+      this.mode,
+      this.slotId
+    );
   }
 
   async _handleSubmit(e) {
@@ -90,7 +95,10 @@ export class SlotModal extends LitElement {
     }
 
     try {
-      const formData = SlotFormService.extractFormData(this.renderRoot, this.mode);
+      const formData = SlotFormService.extractFormData(
+        this.renderRoot,
+        this.mode
+      );
       let result;
 
       if (this.mode === "add") {
@@ -102,9 +110,7 @@ export class SlotModal extends LitElement {
         throw new Error("Edit mode not implemented yet");
       }
 
-      this.dispatchEvent(
-        new CustomEvent("slot-saved", { detail: result })
-      );
+      this.dispatchEvent(new CustomEvent("slot-saved", { detail: result }));
       this._handleClose();
     } catch (err) {
       showErrorMessage(this, `Kunde inte spara kursperiod: ${err.message}`);
@@ -124,61 +130,63 @@ export class SlotModal extends LitElement {
   render() {
     if (!this.open) return html``;
 
-    const title = this.mode === "add" ? "Lägg till kursperiod" : "Redigera kursperiod";
-    const submitLabel = this.mode === "add" ? "Lägg till kursperiod" : "Spara ändringar";
+    const title =
+      this.mode === "add" ? "Lägg till kursperiod" : "Redigera kursperiod";
+    const submitLabel = this.mode === "add" ? "Spara" : "Spara ändringar";
 
     return html`
-      <henry-modal
-        open
-        title="${title}"
-        @close="${this._handleClose}"
-      >
+      <henry-modal open title="${title}" @close="${this._handleClose}">
         <form
           @submit="${this._handleSubmit}"
           @input="${this._handleInputChange}"
           @change="${this._handleInputChange}"
           @select-change="${this._handleInputChange}"
         >
-          <div style="display: flex; flex-direction: column; gap: var(--space-4);">
-            ${this.mode === 'add' ? html`
-              <henry-select
-                id="insertAfter"
-                label="Infoga efter kursperiod"
-                size="6"
-                placeholder=""
-                ?hidePlaceholder=${true}
-                .options=${SlotService.getInsertAfterOptions()}
-                @select-change="${this._onInsertAfterChange}"
-                required
-              ></henry-select>
-              
-              <henry-select
-                id="slotStart"
-                label="Startdatum"
-                size="6"
-                required
-                .options=${this.startOptions}
-                placeholder=""
-                ?hidePlaceholder=${true}
-              ></henry-select>
-            ` : html`
-              <!-- Edit fields would go here -->
-              <p>Redigering av kursperioder är inte implementerat än.</p>
-            `}
+          <div
+            style="display: flex; flex-direction: column; gap: var(--space-4);"
+          >
+            ${this.mode === "add"
+              ? html`
+                  <henry-select
+                    id="insertAfter"
+                    label="Infoga efter kursperiod"
+                    size="6"
+                    placeholder=""
+                    ?hidePlaceholder=${true}
+                    .options=${SlotService.getInsertAfterOptions()}
+                    @select-change="${this._onInsertAfterChange}"
+                    required
+                  ></henry-select>
+
+                  <henry-select
+                    id="slotStart"
+                    label="Startdatum"
+                    size="6"
+                    required
+                    .options=${this.startOptions}
+                    placeholder=""
+                    ?hidePlaceholder=${true}
+                  ></henry-select>
+                `
+              : html`
+                  <!-- Edit fields would go here -->
+                  <p>Redigering av kursperioder är inte implementerat än.</p>
+                `}
           </div>
         </form>
 
         <div slot="footer">
-          <henry-button
-            variant="secondary"
-            @click="${this._handleClose}"
-          >
+          <henry-button variant="secondary" @click="${this._handleClose}">
             Avbryt
           </henry-button>
           <henry-button
             variant="primary"
-            ?disabled=${!this.formValid || (this.mode === 'add' && this.selectedInsertAfter && this.startOptions.length === 0)}
-            @click="${() => this.renderRoot.querySelector("form").requestSubmit()}"
+            ?disabled=${!this.formValid ||
+            (this.mode === "add" &&
+              this.selectedInsertAfter &&
+              this.startOptions.length === 0)}
+            @click="${() =>
+              this.renderRoot.querySelector("form").requestSubmit()}"
           >
             ${submitLabel}
           </henry-button>

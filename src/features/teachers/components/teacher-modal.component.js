@@ -40,7 +40,7 @@ export class TeacherModal extends LitElement {
 
   async _initializeForm() {
     await this.updateComplete;
-    
+
     // Get initial state
     let initialState;
     if (this.mode === "add") {
@@ -54,7 +54,8 @@ export class TeacherModal extends LitElement {
     this.formValid = initialState.formValid;
 
     // Populate form fields
-    const teacher = this.mode === "edit" ? store.getTeacher(this.teacherId) : null;
+    const teacher =
+      this.mode === "edit" ? store.getTeacher(this.teacherId) : null;
     TeacherFormService.populateForm(this.renderRoot, teacher, this.mode);
 
     // Initial validation check
@@ -64,7 +65,7 @@ export class TeacherModal extends LitElement {
   _handleSelectChange(e) {
     const targetId = e?.target?.id;
     const prefix = this.mode === "edit" ? "editTeacher" : "teacher";
-    
+
     if (targetId === `${prefix}Courses`) {
       this.selectedCompatibleCourseIds = (e.detail.values || []).map(String);
       // Remove examinator courses that are not compatible
@@ -80,34 +81,44 @@ export class TeacherModal extends LitElement {
 
   _updateFormValidity() {
     this.formValid = TeacherFormService.isFormValid(
-      this.renderRoot, 
-      this.mode, 
+      this.renderRoot,
+      this.mode,
       this.teacherId
     );
   }
 
   async _handleSubmit(e) {
     e.preventDefault();
-    if (!TeacherFormService.isFormValid(this.renderRoot, this.mode, this.teacherId)) {
+    if (
+      !TeacherFormService.isFormValid(
+        this.renderRoot,
+        this.mode,
+        this.teacherId
+      )
+    ) {
       // Force validation feedback if needed
       return;
     }
 
     try {
-      const formData = TeacherFormService.extractFormData(this.renderRoot, this.mode);
+      const formData = TeacherFormService.extractFormData(
+        this.renderRoot,
+        this.mode
+      );
       let result;
 
       if (this.mode === "add") {
         result = await TeacherService.saveNewTeacher(formData);
         showSuccessMessage(this, "Lärare tillagd!");
       } else {
-        result = await TeacherService.saveUpdatedTeacher(this.teacherId, formData);
+        result = await TeacherService.saveUpdatedTeacher(
+          this.teacherId,
+          formData
+        );
         showSuccessMessage(this, "Lärare uppdaterad!");
       }
 
-      this.dispatchEvent(
-        new CustomEvent("teacher-saved", { detail: result })
-      );
+      this.dispatchEvent(new CustomEvent("teacher-saved", { detail: result }));
       this._handleClose();
     } catch (err) {
       showErrorMessage(this, `Kunde inte spara lärare: ${err.message}`);
@@ -128,7 +139,7 @@ export class TeacherModal extends LitElement {
     if (!this.open) return html``;
 
     const title = this.mode === "add" ? "Lägg till Lärare" : "Redigera Lärare";
-    const submitLabel = this.mode === "add" ? "Lägg till lärare" : "Spara ändringar";
+    const submitLabel = this.mode === "add" ? "Spara" : "Spara ändringar";
     const prefix = this.mode === "edit" ? "editTeacher" : "teacher";
 
     return html`

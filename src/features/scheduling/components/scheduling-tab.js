@@ -31,6 +31,10 @@ export class SchedulingTab extends LitElement {
     this._didAutoScroll = false;
     this._availabilityAutoScrollRAF = null;
     this._availabilityAutoScrollLastTs = 0;
+    this._overlayScrollSource = null;
+    this._visibleOverlayRange = null;
+    this._lastSlotCount = 0;
+    this._handleOverlayScroll = this._handleOverlayScroll.bind(this);
     store.subscribe(() => {
       const next = !!store.editMode;
       if (this.isEditing !== next) {
@@ -69,8 +73,10 @@ export class SchedulingTab extends LitElement {
     // shrinking font-size until each chip fits its own width.
     if (this._dragCourseId && this._shouldShowTeacherAvailabilityOverlay) {
       requestAnimationFrame(() => this._fitAvailabilityHeaderChips());
-      this._ensureAvailabilityHeaderAutoScroll();
     }
+
+    this._bindOverlayScroll();
+    this._handleOverlayScroll();
   }
 
   _ensureAvailabilityHeaderAutoScroll() {
@@ -100,9 +106,9 @@ export class SchedulingTab extends LitElement {
           if (el.getAttribute("aria-hidden") === "true") return;
           if (el.matches(":hover")) return; // allow manual reading/scroll
 
-          const max = Math.max(0, el.scrollHeight - el.clientHeight);
+          const max = Math.max(0, el.scrollWidth - el.clientWidth);
           if (max <= 1) {
-            el.scrollTop = 0;
+            el.scrollLeft = 0;
             el.dataset.autoScrollDir = "1";
             el.dataset.autoScrollPos = "0";
             return;
@@ -118,7 +124,7 @@ export class SchedulingTab extends LitElement {
               : NaN;
           let pos = Number.isFinite(currentPosRaw)
             ? currentPosRaw
-            : el.scrollTop;
+            : el.scrollLeft;
 
           pos += dir * speedPxPerSec * dt;
 
@@ -131,7 +137,7 @@ export class SchedulingTab extends LitElement {
           }
 
           // Use our own accumulator so we don't get "stuck" on sub-pixel steps.
-          el.scrollTop = pos;
+          el.scrollLeft = pos;
           el.dataset.autoScrollDir = String(dir);
           el.dataset.autoScrollPos = String(pos);
         });
@@ -230,6 +236,12 @@ export class SchedulingTab extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    if (this._overlayScrollSource) {
+      this._overlayScrollSource.removeEventListener(
+        "scroll",
+        this._handleOverlayScroll
+      );
+    }
     this.removeEventListener("depot-drag-start", this._handleDepotDragStart);
     this.removeEventListener("depot-drag-end", this._handleDragEnd);
     this.removeEventListener("course-drag-start", this._handleCourseDragStart);
@@ -283,6 +295,9 @@ export class SchedulingTab extends LitElement {
       this._buildSlotTeacherSelectionWarningPillsBySlotDate();
     const slotTeacherCompatibilityWarningsBySlotDate =
       this._buildSlotTeacherCompatibilityWarningPillsBySlotDate();
+    const shouldShowTeacherOverlay =
+      !!this._dragCourseId && !!this._shouldShowTeacherAvailabilityOverlay;
+    this._lastSlotCount = slotDates.length;
 
     return html`
       <henry-panel>
@@ -299,7 +314,12 @@ export class SchedulingTab extends LitElement {
           </div>
         </div>
 
-        <div class="gantt-scroll-wrapper" tabindex="0">
+        <div class="gantt-layout">
+          ${this._renderSlotTeacherOverlay(
+            slotDates,
+            shouldShowTeacherOverlay
+          )}
+          <div class="gantt-scroll-wrapper" tabindex="0">
           <table
             class="gantt-table"
             style="--gantt-slot-count: ${slotDates.length};"
@@ -352,6 +372,7 @@ export class SchedulingTab extends LitElement {
               ${this._renderSummaryRow(slotDates)}
             </tfoot>
           </table>
+        </div>
         </div>
       </henry-panel>
     `;
@@ -1112,7 +1133,6 @@ export class SchedulingTab extends LitElement {
     slotTeacherSelectionWarningsBySlotDate,
     slotTeacherCompatibilityWarningsBySlotDate
   ) {
-    const chips = this._teacherOverlayChipsBySlotDate?.get(slotDate) || [];
     const warningPills = [
       ...(slotCapacityWarningsBySlotDate?.get?.(String(slotDate)) || []),
       ...(slotTeacherCompatibilityWarningsBySlotDate?.get?.(String(slotDate)) ||
@@ -1120,50 +1140,138 @@ export class SchedulingTab extends LitElement {
       ...(slotTeacherSelectionWarningsBySlotDate?.get?.(String(slotDate)) ||
         []),
     ];
+    const sortedWarnings = warningPills.slice().sort((a, b) => {
+      const order = { hard: 0, soft: 1 };
+      return (order[a?.kind] ?? 9) - (order[b?.kind] ?? 9);
+    });
 
-    const shouldShowChips =
-      !!this._dragCourseId && !!this._shouldShowTeacherAvailabilityOverlay;
-
-    const course = store.getCourse(this._dragCourseId);
-    const title = course
-      ? `${course.code}: kompatibla lärare`
-      : "Kompatibla lärare";
+    const hasWarnings = sortedWarnings.length > 0;
 
     return html`
-      <div class="slot-availability-row" title="${title}">
+      <div
+        class="slot-availability-row"
+        data-has-warnings="${hasWarnings ? "true" : "false"}"
+      >
         <div
-          class="slot-availability"
-          aria-hidden="${shouldShowChips ? "false" : "true"}"
+          class="slot-header-section slot-header-section--warnings"
+          aria-hidden="${hasWarnings ? "false" : "true"}"
         >
-          ${shouldShowChips
-            ? chips.map((chip) => {
-                const status = chip?.status || "compatible";
-                const className = `availability-chip availability-chip--${status}`;
-                return html`
-                  <span class="${className}" title="${chip.title}">
-                    <span class="availability-chip-text">${chip.label}</span>
-                  </span>
-                `;
-              })
-            : ""}
-        </div>
-        <div
-          class="slot-warning-pills"
-          aria-hidden="${warningPills.length ? "false" : "true"}"
-        >
-          ${warningPills.map(
-            (pill) => html`
-              <span
-                class="slot-warning-pill slot-warning-pill--${pill.kind}"
-                title="${pill.title}"
-                aria-label="${pill.label}"
-                >${pill.label}</span
-              >
-            `
-          )}
+          <span class="slot-header-label">Varningar</span>
+          <div class="slot-warning-pills">
+            ${sortedWarnings.map(
+              (pill) => html`
+                <span
+                  class="slot-warning-pill slot-warning-pill--${pill.kind}"
+                  title="${pill.title}"
+                  aria-label="${pill.label}"
+                  >${pill.label}</span
+                >
+              `
+            )}
+          </div>
         </div>
       </div>
     `;
+  }
+
+  _renderSlotTeacherOverlay(slotDates, shouldShow) {
+    if (!shouldShow) return "";
+    const range = this._visibleOverlayRange;
+
+    return html`
+      <div class="slot-teacher-overlay-wrapper" aria-hidden="false">
+        <div
+          class="slot-teacher-overlay"
+          style="--gantt-slot-count: ${slotDates.length};"
+        >
+          <div class="slot-teacher-overlay-spacer"></div>
+          <div class="slot-teacher-overlay-spacer"></div>
+          ${slotDates.map((slotDate, idx) => {
+            const chips =
+              this._teacherOverlayChipsBySlotDate?.get(slotDate) || [];
+            const names = chips.map((chip) => chip?.label).filter(Boolean);
+            const namesText = names.length ? names.join(", ") : "Inga";
+            const isVisible = range
+              ? idx >= range.start && idx <= range.end
+              : true;
+            return html`
+              <div
+                class="slot-teacher-overlay-cell ${isVisible
+                  ? ""
+                  : "is-hidden"}"
+                title="${names.join(", ")}"
+              >
+                <span class="slot-teacher-overlay-label"
+                  >Kompatibla lärare</span
+                >
+                <div class="slot-teacher-overlay-names">${namesText}</div>
+              </div>
+            `;
+          })}
+        </div>
+      </div>
+    `;
+  }
+
+  _bindOverlayScroll() {
+    const wrapper = this.shadowRoot?.querySelector(".gantt-scroll-wrapper");
+    if (!wrapper || wrapper === this._overlayScrollSource) return;
+
+    if (this._overlayScrollSource) {
+      this._overlayScrollSource.removeEventListener(
+        "scroll",
+        this._handleOverlayScroll
+      );
+    }
+
+    this._overlayScrollSource = wrapper;
+    wrapper.addEventListener("scroll", this._handleOverlayScroll, {
+      passive: true,
+    });
+  }
+
+  _handleOverlayScroll() {
+    const wrapper = this._overlayScrollSource;
+    const overlay = this.shadowRoot?.querySelector(
+      ".slot-teacher-overlay-wrapper"
+    );
+    if (!wrapper || !overlay) return;
+    overlay.scrollLeft = wrapper.scrollLeft;
+    this._updateOverlayVisibility(wrapper);
+  }
+
+  _updateOverlayVisibility(wrapper) {
+    if (!wrapper || !this._lastSlotCount) return;
+
+    const style = getComputedStyle(this);
+    const slotWidth = parseFloat(
+      style.getPropertyValue("--gantt-slot-width") || "0"
+    );
+    const depotWidth = parseFloat(
+      style.getPropertyValue("--gantt-depot-width") || "0"
+    );
+    const cohortWidth = parseFloat(
+      style.getPropertyValue("--gantt-cohort-width") || "0"
+    );
+    if (!Number.isFinite(slotWidth) || slotWidth <= 0) return;
+
+    const availableWidth = wrapper.clientWidth - depotWidth - cohortWidth;
+    if (availableWidth <= 0) return;
+
+    const left = Math.max(0, wrapper.scrollLeft);
+    const start = Math.max(0, Math.floor(left / slotWidth));
+    const end = Math.min(
+      this._lastSlotCount - 1,
+      Math.floor((left + availableWidth - 1) / slotWidth)
+    );
+
+    const next = { start, end };
+    const current = this._visibleOverlayRange;
+    if (current && current.start === next.start && current.end === next.end) {
+      return;
+    }
+    this._visibleOverlayRange = next;
+    this.requestUpdate();
   }
 
   _renderGanttRow(cohort, slotDates, prerequisiteProblems, cohortMarkersById) {
@@ -2036,11 +2144,15 @@ export class SchedulingTab extends LitElement {
   _handleDepotDragStart(e) {
     if (!this.isEditing) return;
     this._dragDropManager.handleDepotDragStart(e);
+    const wrapper = this.shadowRoot?.querySelector(".gantt-scroll-wrapper");
+    if (wrapper) this._updateOverlayVisibility(wrapper);
   }
 
   _handleCourseDragStart(e) {
     if (!this.isEditing) return;
     this._dragDropManager.handleCourseDragStart(e);
+    const wrapper = this.shadowRoot?.querySelector(".gantt-scroll-wrapper");
+    if (wrapper) this._updateOverlayVisibility(wrapper);
   }
 
   _handleDragEnd() {

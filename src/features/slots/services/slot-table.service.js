@@ -35,7 +35,7 @@ export class SlotTableService {
             size="small"
             @click="${() => onEdit?.(slot.slot_id)}"
           >
-            ✏️ Redigera
+            Redigera
           </henry-button>
           <henry-button
             variant="danger"

@@ -45,7 +45,7 @@ export class TeacherTableService {
             size="small"
             @click="${() => onEdit?.(teacher.teacher_id)}"
           >
-            ✏️ Redigera
+            Redigera
           </henry-button>
         `;
       default:

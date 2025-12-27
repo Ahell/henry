@@ -60,7 +60,7 @@ export class CourseTableService {
             size="small"
             @click="${() => onEdit?.(course.course_id)}"
           >
-            ✏️ Redigera
+            Redigera
           </henry-button>
         `;
       default:

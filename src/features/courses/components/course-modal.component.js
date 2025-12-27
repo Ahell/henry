@@ -117,7 +117,6 @@ export class CourseModal extends LitElement {
           this,
           CourseFormService.handleExaminatorChange(e?.detail?.value)
         );
-
       }
     }
 
@@ -138,8 +137,8 @@ export class CourseModal extends LitElement {
 
     const course = this.mode === "edit" ? store.getCourse(this.courseId) : null;
     const title = this.mode === "add" ? "Lägg till Kurs" : "Redigera Kurs";
-    const buttonText = this.mode === "add" ? "Lägg till kurs" : "💾 Spara";
-    const buttonVariant = this.mode === "add" ? "primary" : "success";
+    const buttonText = this.mode === "add" ? "Spara" : "Spara ändringar";
+    // const buttonVariant = this.mode === "add" ? "primary" : "success";
 
     const prefix = this.mode === "edit" ? "edit-" : "course";
 
@@ -253,7 +252,7 @@ export class CourseModal extends LitElement {
             Avbryt
           </henry-button>
           <henry-button
-            variant="${buttonVariant}"
+            variant="primary"
             @click="${this.mode === "add"
               ? () => this.renderRoot.querySelector("form").requestSubmit()
               : this._handleSave}"
