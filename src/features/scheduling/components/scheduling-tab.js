@@ -264,6 +264,7 @@ export class SchedulingTab extends LitElement {
     const teacherAvailabilityWarnings =
       this._computeMissingAvailableCompatibleTeacherWarnings();
     const emptySlotWarnings = this._computeEmptySlotWarnings();
+    const depotWarnings = this._computeDepotCourseWarnings();
 
     const allWarnings = [
       ...prerequisiteWarnings,
@@ -272,6 +273,7 @@ export class SchedulingTab extends LitElement {
       ...skewedOverlapWarnings,
       ...teacherAvailabilityWarnings,
       ...emptySlotWarnings,
+      ...depotWarnings,
     ];
     const cohortMarkersByCohortId =
       this._buildCohortWarningMarkersByCohortId(allWarnings);
@@ -620,6 +622,42 @@ export class SchedulingTab extends LitElement {
     return warnings;
   }
 
+  _computeDepotCourseWarnings() {
+    const warnings = [];
+    const courses = store.getCourses() || [];
+    if (!courses.length) return warnings;
+
+    const runs = store.getCourseRuns() || [];
+    for (const cohort of store.getCohorts() || []) {
+      if (!cohort || cohort.cohort_id == null) continue;
+
+      const scheduledCourseIds = new Set();
+      runs.forEach((run) => {
+        if (!run || run.course_id == null) return;
+        if (this._runHasCohort(run, cohort.cohort_id)) {
+          scheduledCourseIds.add(String(run.course_id));
+        }
+      });
+
+      const remainingCourses = courses.filter(
+        (c) => !scheduledCourseIds.has(String(c.course_id))
+      );
+      if (!remainingCourses.length) continue;
+
+      remainingCourses.forEach((course) => {
+        warnings.push({
+          ruleId: "depotHasCourses",
+          cohortId: cohort.cohort_id,
+          courseId: course.course_id,
+          courseCode: course.code,
+          courseName: course.name,
+        });
+      });
+    }
+
+    return warnings;
+  }
+
   _computePrerequisiteRuleWarnings(prerequisiteProblems) {
     const rules =
       store.businessLogicManager.getBusinessLogic()?.scheduling?.rules || [];
@@ -669,6 +707,7 @@ export class SchedulingTab extends LitElement {
       requireAvailableCompatibleTeachers: "Ingen lärare",
       avoidEmptySlots: "Tom slot",
       maxOneCoursePerSlot: "Flera kurser",
+      depotHasCourses: "Depå",
     };
 
     const groupedByCohort = new Map(); // cohortId -> Map(ruleId -> entry)
