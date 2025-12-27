@@ -146,7 +146,7 @@ export const schedulingTabStyles = css`
 
   .gantt-table th {
     background: var(--color-gray-100);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
     padding: var(--space-2) var(--space-2);
@@ -164,6 +164,14 @@ export const schedulingTabStyles = css`
     vertical-align: top;
     text-align: left;
     padding: 0;
+  }
+
+  .gantt-table thead th.cohort-header .cohort-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
   }
 
   .gantt-table thead tr.date-row th {
@@ -198,8 +206,9 @@ export const schedulingTabStyles = css`
   .slot-date {
     font-family: var(--font-family-base);
     color: var(--color-text-primary);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
   }
 
   .gantt-layout {
@@ -689,10 +698,11 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table td.cohort-cell .cohort-cell-number {
-    font-size: clamp(0.6rem, 0.85vw, 0.76rem);
-    font-weight: var(--font-weight-semibold);
+    font-size: clamp(0.56rem, 0.75vw, 0.7rem);
+    font-weight: var(--font-weight-medium);
     line-height: 1.1;
     white-space: nowrap;
+    color: var(--color-text-secondary);
     letter-spacing: 0.01em;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { store } from "../../../platform/store/DataStore.js";
+import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
 import { DragDropManager } from "../services/drag-drop-manager.service.js";
 import { CourseRunManager } from "../services/course-run-manager.service.js";
 import "../../../components/ui/index.js";
@@ -334,7 +334,12 @@ export class SchedulingTab extends LitElement {
             <thead>
               <tr class="availability-row">
                 <th class="cohort-header" rowspan="2">Depå</th>
-                <th class="cohort-header" rowspan="2">Kull</th>
+                <th class="cohort-header" rowspan="2">
+                  <div class="cohort-header-row">
+                    <span>Kull</span>
+                    <span>Startdatum</span>
+                  </div>
+                </th>
                 ${slotDates.map(
                   (dateStr) =>
                     html`<th class="slot-col-header">
@@ -349,10 +354,10 @@ export class SchedulingTab extends LitElement {
               </tr>
               <tr class="date-row">
                 ${slotDates.map(
-                  (dateStr) =>
+                  (dateStr, idx) =>
                     html`<th class="slot-col-header">
                       <div class="slot-date">
-                        ${this._formatDateYYMMDD(dateStr)}
+                        ${this._formatSlotHeaderLabel(dateStr, idx + 1)}
                       </div>
                     </th>`
                 )}
@@ -1329,7 +1334,7 @@ export class SchedulingTab extends LitElement {
           <div class="cohort-cell-content">
             <div class="cohort-cell-header">
               <span class="cohort-cell-number">
-                # ${this._getCohortNumber(cohort)}
+                #${this._getCohortNumber(cohort)}
               </span>
               <span class="cohort-cell-date">
                 ${this._formatCohortStartDate(cohort)}
@@ -1509,7 +1514,7 @@ export class SchedulingTab extends LitElement {
   _formatCohortStartDate(cohort) {
     if (!cohort) return "-";
     const startDate = String(cohort.start_date || "").trim();
-    return startDate || "-";
+    return this._formatDateYYMMDD(startDate) || "-";
   }
 
   _parseDragDataFromEvent(e) {
@@ -1849,6 +1854,27 @@ export class SchedulingTab extends LitElement {
     const yy = String(yyyy).slice(-2);
     if (!yy || !mm || !dd) return dateStr;
     return `${yy}${mm}${dd}`;
+  }
+
+  _formatSlotHeaderLabel(dateStr, order) {
+    const startCompact = this._formatDateYYMMDD(dateStr);
+    if (!startCompact) return "";
+    const slot = (store.getSlots() || []).find((s) => s.start_date === dateStr);
+    let endDate = slot?.end_date;
+    if (!endDate) {
+      const start = this._parseDateOnly(dateStr);
+      if (start) {
+        const end = new Date(start);
+        end.setDate(end.getDate() + DEFAULT_SLOT_LENGTH_DAYS);
+        endDate = end.toISOString().split("T")[0];
+      }
+    }
+    const endCompact = endDate ? this._formatDateYYMMDD(endDate) : "";
+    const safeOrder = Number.isFinite(Number(order)) ? Number(order) : null;
+    if (!safeOrder || !endCompact) {
+      return startCompact;
+    }
+    return `#${safeOrder} ${startCompact}-${endCompact}`;
   }
 
   _runHasCohort(run, cohortId) {
