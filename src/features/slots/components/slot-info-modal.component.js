@@ -107,7 +107,7 @@ export class SlotInfoModal extends LitElement {
             <div class="slot-info-value">${participantsText}</div>
           </div>
           <div class="slot-info-row">
-            <div class="slot-info-label">Larare</div>
+            <div class="slot-info-label">Lärare</div>
             <div class="slot-info-value">
               ${buildListText(teacherNames, "Inga")}
             </div>
@@ -136,19 +136,19 @@ export class SlotInfoModal extends LitElement {
             <div class="slot-info-value">${endDate}</div>
           </div>
           <div class="slot-info-row">
-            <div class="slot-info-label">Langd</div>
+            <div class="slot-info-label">Längd</div>
             <div class="slot-info-value">${duration}</div>
           </div>
         </div>
         <div class="slot-info-section">
-          <div class="slot-info-section-title">Schemalaggning</div>
+          <div class="slot-info-section-title">Schemaläggning</div>
           ${scheduleBlocks.length
             ? scheduleBlocks
             : html`<div class="slot-info-empty">Inte schemalagd.</div>`}
         </div>
         <div slot="footer">
           <henry-button variant="secondary" @click="${this._handleClose}">
-            Stang
+            Stäng
           </henry-button>
         </div>
       </henry-modal>

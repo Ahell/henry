@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { store } from "../../../platform/store/DataStore.js";
+import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
 
 /**
  * Cohort Info Modal Component
@@ -31,10 +31,46 @@ export class CohortInfoModal extends LitElement {
     const slotsById = new Map(
       (store.getSlots() || []).map((s) => [String(s.slot_id), s])
     );
+    const slotOrderById = new Map(
+      (store.getSlots() || [])
+        .slice()
+        .sort((a, b) =>
+          String(a?.start_date || "").localeCompare(String(b?.start_date || ""))
+        )
+        .map((slot, idx) => [String(slot.slot_id), idx + 1])
+    );
+    const formatCompactDate = (value) => {
+      if (!value) return "";
+      const [datePart] = String(value).split("T");
+      const parts = datePart.split("-");
+      if (parts.length !== 3) return datePart;
+      const [year, month, day] = parts;
+      if (!year || !month || !day) return datePart;
+      return `${year.slice(-2)}${month}${day}`;
+    };
+    const formatExamDate = (value) => formatCompactDate(value) || "-";
+    const formatSlotRange = (slot) => {
+      const startDate = slot?.start_date;
+      if (!startDate) return null;
+      const start = new Date(startDate);
+      if (Number.isNaN(start.getTime())) return startDate;
+      if (slot?.end_date) {
+        return `${formatCompactDate(startDate)}-${formatCompactDate(
+          slot.end_date
+        )}`;
+      }
+      const end = new Date(start);
+      end.setDate(end.getDate() + DEFAULT_SLOT_LENGTH_DAYS);
+      return `${formatCompactDate(startDate)}-${formatCompactDate(
+        end.toISOString().split("T")[0]
+      )}`;
+    };
     const formatSlotLabel = (slotId) => {
       if (slotId == null) return null;
       const slot = slotsById.get(String(slotId));
-      return slot?.start_date || `Slot ${slotId}`;
+      const order = slotOrderById.get(String(slotId));
+      const prefix = order ? `#${order} ` : "";
+      return `${prefix}${formatSlotRange(slot) || `Slot ${slotId}`}`;
     };
     const buildListText = (values, emptyText = "Inga") =>
       values.length ? values.join(", ") : emptyText;
@@ -81,26 +117,28 @@ export class CohortInfoModal extends LitElement {
           : null;
 
       const examDates = slotIds
-        .map((slotId) =>
-          store.getExamDayForCourseInSlot(slotId, run.course_id)
-        )
+        .map((slotId) => store.getExamDayForCourseInSlot(slotId, run.course_id))
         .filter(Boolean);
       const examDateText = buildListText(
-        Array.from(new Set(examDates)),
+        Array.from(new Set(examDates)).map(formatExamDate),
         "-"
       );
 
       return html`
         <div class="cohort-info-block">
-          <div class="cohort-info-block-title">Tillfalle ${idx + 1}</div>
+          <div class="cohort-info-block-title">Tillfälle ${idx + 1}</div>
           <div class="cohort-info-row">
-            <div class="cohort-info-label">Kurs</div>
+            <div class="cohort-info-label">Kurskod</div>
             <div class="cohort-info-value">
               ${course.code || `Kurs ${run.course_id}`}
             </div>
           </div>
           <div class="cohort-info-row">
-            <div class="cohort-info-label">Slotter</div>
+            <div class="cohort-info-label">Kursnamn</div>
+            <div class="cohort-info-value">${course.name || "-"}</div>
+          </div>
+          <div class="cohort-info-row">
+            <div class="cohort-info-label">Kursperioder</div>
             <div class="cohort-info-value">
               ${buildListText(slotLabels, "-")}
             </div>
@@ -110,7 +148,7 @@ export class CohortInfoModal extends LitElement {
             <div class="cohort-info-value">${participantsText}</div>
           </div>
           <div class="cohort-info-row">
-            <div class="cohort-info-label">Larare</div>
+            <div class="cohort-info-label">Lärare</div>
             <div class="cohort-info-value">
               ${buildListText(teacherNames, "Inga")}
             </div>
@@ -144,14 +182,14 @@ export class CohortInfoModal extends LitElement {
           </div>
         </div>
         <div class="cohort-info-section">
-          <div class="cohort-info-section-title">Schemalaggning</div>
+          <div class="cohort-info-section-title">Schemaläggning</div>
           ${scheduleBlocks.length
             ? scheduleBlocks
             : html`<div class="cohort-info-empty">Inte schemalagd.</div>`}
         </div>
         <div slot="footer">
           <henry-button variant="secondary" @click="${this._handleClose}">
-            Stang
+            Stäng
           </henry-button>
         </div>
       </henry-modal>

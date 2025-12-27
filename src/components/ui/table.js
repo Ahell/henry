@@ -83,6 +83,7 @@ export class HenryTable extends LitElement {
       font-size: 10px;
       line-height: 1;
       opacity: 0.65;
+      margin-right: var(--henry-table-sort-indicator-gap, 0px);
     }
 
     td {
