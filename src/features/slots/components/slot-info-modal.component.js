@@ -23,9 +23,23 @@ export class SlotInfoModal extends LitElement {
     const slot = store.getSlot(this.slotId);
     if (!slot) return html``;
 
-    const title = slot.start_date || `Slot ${slot.slot_id}`;
-    const startDate = slot.start_date || "-";
-    const endDate = slot.end_date || "-";
+    const slotOrder = (store.getSlots() || [])
+      .slice()
+      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
+      .findIndex((s) => s.slot_id === slot.slot_id);
+    const title = slotOrder >= 0 ? `#${slotOrder + 1}` : `Slot ${slot.slot_id}`;
+    const formatCompactDate = (value) => {
+      if (!value) return "";
+      const [datePart] = String(value).split("T");
+      const parts = datePart.split("-");
+      if (parts.length !== 3) return datePart;
+      const [year, month, day] = parts;
+      if (!year || !month || !day) return datePart;
+      return `${year.slice(-2)}${month}${day}`;
+    };
+
+    const startDate = formatCompactDate(slot.start_date) || "-";
+    const endDate = formatCompactDate(slot.end_date) || "-";
     const duration = this._getDurationDays(slot.start_date, slot.end_date);
 
     const runCoversSlotId = (run, slotId) => {
@@ -85,7 +99,7 @@ export class SlotInfoModal extends LitElement {
         slot.slot_id,
         run.course_id
       );
-      const examDateText = examDate || "-";
+      const examDateText = formatCompactDate(examDate) || "-";
 
       return html`
         <div class="slot-info-block">

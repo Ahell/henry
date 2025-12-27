@@ -124,18 +124,18 @@ export class SlotsTab extends LitElement {
           .slice()
           .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
         const idx = sorted.findIndex((s) => s.slot_id === slot.slot_id);
-        return html`${idx + 1}`;
-
-      case "start_date":
         return html`
           <button
             class="slot-period-button"
             type="button"
             @click="${() => this._openInfoModal(slot.slot_id)}"
           >
-            ${slot.start_date}
+            ${idx + 1}
           </button>
         `;
+
+      case "start_date":
+        return html`${slot.start_date}`;
 
       case "actions":
         return html`
