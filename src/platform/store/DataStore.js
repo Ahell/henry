@@ -430,6 +430,10 @@ export class DataStore {
     return this.slotsManager.getSlot(slotId);
   }
 
+  updateSlot(slotId, updates) {
+    return this.slotsManager.updateSlot(slotId, updates);
+  }
+
   deleteSlot(slotId) {
     return this.slotsManager.deleteSlot(slotId);
   }

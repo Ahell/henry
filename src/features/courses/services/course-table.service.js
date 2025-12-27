@@ -14,11 +14,11 @@ export class CourseTableService {
         width: "200px",
       },
       { key: "examinator", label: "Examinator", width: "150px" },
-      { key: "actions", label: "", width: "120px" },
+      { key: "actions", label: "Åtgärder", width: "160px" },
     ];
   }
 
-  static renderCell(course, column, onEdit, onInfo) {
+  static renderCell(course, column, onEdit, onInfo, onDelete) {
     if (!course || !column) return html``;
 
     switch (column.key) {
@@ -55,13 +55,24 @@ export class CourseTableService {
         return html`${teacher?.name || "-"}`;
       case "actions":
         return html`
-          <henry-button
-            variant="secondary"
-            size="small"
-            @click="${() => onEdit?.(course.course_id)}"
-          >
-            Redigera
-          </henry-button>
+          <div style="display: flex; gap: var(--space-2);">
+            <henry-button
+              variant="secondary"
+              size="small"
+              ?disabled=${!store.editMode}
+              @click="${() => onEdit?.(course.course_id)}"
+            >
+              Redigera
+            </henry-button>
+            <henry-button
+              variant="danger"
+              size="small"
+              ?disabled=${!store.editMode}
+              @click="${() => onDelete?.(course.course_id)}"
+            >
+              Ta bort
+            </henry-button>
+          </div>
         `;
       default:
         return html`${course[column.key] ?? ""}`;

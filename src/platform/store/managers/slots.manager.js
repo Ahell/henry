@@ -3,6 +3,7 @@ import { showAlert } from "../../../utils/ui.js";
 import {
   normalizeDateOnly,
   defaultSlotEndDate,
+  DEFAULT_SLOT_LENGTH_DAYS,
   getSlotRange,
 } from "../../../utils/date-utils.js";
 
@@ -106,6 +107,71 @@ export class SlotsManager {
     this.ensureSlotDaysFromSlots();
     this.events.notify();
     return true;
+  }
+
+  updateSlot(slotId, updates) {
+    const slot = this.getSlot(slotId);
+    if (!slot) return null;
+
+    const nextStart = normalizeDateOnly(
+      updates.start_date ?? slot.start_date
+    );
+    if (!nextStart) {
+      throw new Error("Slot behöver giltigt startdatum.");
+    }
+
+    let nextEnd = normalizeDateOnly(updates.end_date);
+    if (!nextEnd) {
+      const currentRange = getSlotRange(slot);
+      const lengthDays = currentRange
+        ? Math.max(
+            1,
+            Math.round(
+              (currentRange.end.getTime() - currentRange.start.getTime()) /
+                (1000 * 60 * 60 * 24)
+            ) + 1
+          )
+        : DEFAULT_SLOT_LENGTH_DAYS;
+      const endDate = new Date(nextStart);
+      endDate.setDate(endDate.getDate() + lengthDays - 1);
+      nextEnd = normalizeDateOnly(endDate);
+    }
+
+    if (!nextEnd) {
+      throw new Error("Slot behöver giltigt slutdatum.");
+    }
+
+    if (new Date(nextEnd) <= new Date(nextStart)) {
+      throw new Error("Slotens slutdatum måste vara efter startdatum.");
+    }
+
+    const overlapping = this.findOverlappingSlot(
+      nextStart,
+      nextEnd,
+      slotId
+    );
+    if (overlapping) {
+      const overlappingRange = getSlotRange(overlapping);
+      const conflictEnd =
+        overlappingRange?.endStr ||
+        overlapping.end_date ||
+        normalizeDateOnly(defaultSlotEndDate(overlapping.start_date));
+      const message = `Slot ${nextStart}–${nextEnd} krockar med befintlig slot ${overlapping.start_date}–${conflictEnd}.`;
+      throw new Error(message);
+    }
+
+    Object.assign(slot, {
+      ...updates,
+      start_date: nextStart,
+      end_date: nextEnd,
+    });
+
+    this.slotDays = this.slotDays.filter(
+      (sd) => String(sd.slot_id) !== String(slotId)
+    );
+    this.ensureSlotDaysFromSlots();
+    this.events.notify();
+    return slot;
   }
 
   findOverlappingSlot(startDateStr, endDateStr, ignoreSlotId = null) {

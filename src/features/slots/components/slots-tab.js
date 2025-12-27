@@ -20,6 +20,8 @@ export class SlotsTab extends LitElement {
 
   static properties = {
     addModalOpen: { type: Boolean },
+    editModalOpen: { type: Boolean },
+    editingSlotId: { type: Number },
     message: { type: String },
     messageType: { type: String },
     infoSlotId: { type: Number },
@@ -30,6 +32,8 @@ export class SlotsTab extends LitElement {
     super();
     initializeEditState(this, "editingSlotId");
     this.addModalOpen = false;
+    this.editModalOpen = false;
+    this.editingSlotId = null;
     this.infoSlotId = null;
     this.infoModalOpen = false;
     subscribeToStore(this);
@@ -38,6 +42,8 @@ export class SlotsTab extends LitElement {
   _openAddModal() {
     this.infoModalOpen = false;
     this.infoSlotId = null;
+    this.editModalOpen = false;
+    this.editingSlotId = null;
     this.addModalOpen = true;
   }
 
@@ -45,8 +51,24 @@ export class SlotsTab extends LitElement {
     this.addModalOpen = false;
   }
 
+  _openEditModal(slotId) {
+    if (!store.editMode) return;
+    this.addModalOpen = false;
+    this.infoModalOpen = false;
+    this.infoSlotId = null;
+    this.editingSlotId = slotId;
+    this.editModalOpen = true;
+  }
+
+  _closeEditModal() {
+    this.editModalOpen = false;
+    this.editingSlotId = null;
+  }
+
   _openInfoModal(slotId) {
     this.addModalOpen = false;
+    this.editModalOpen = false;
+    this.editingSlotId = null;
     this.infoSlotId = slotId;
     this.infoModalOpen = true;
   }
@@ -95,6 +117,13 @@ export class SlotsTab extends LitElement {
           @slot-saved="${this._closeAddModal}"
           @modal-close="${this._closeAddModal}"
         ></slot-modal>
+        <slot-modal
+          .open="${this.editModalOpen}"
+          .slotId="${this.editingSlotId}"
+          mode="edit"
+          @slot-saved="${this._closeEditModal}"
+          @modal-close="${this._closeEditModal}"
+        ></slot-modal>
         <slot-info-modal
           .open="${this.infoModalOpen}"
           .slotId="${this.infoSlotId}"
@@ -141,6 +170,13 @@ export class SlotsTab extends LitElement {
         return html`
           <div style="display:flex;gap:var(--space-2);">
             <henry-button
+              variant="secondary"
+              size="small"
+              ?disabled=${!store.editMode}
+              @click="${() => this._openEditModal(slot.slot_id)}"
+              >Redigera</henry-button
+            >
+            <henry-button
               variant="danger"
               size="small"
               ?disabled=${!store.editMode}
@@ -182,6 +218,10 @@ export class SlotsTab extends LitElement {
   updated() {
     if (store.editMode) return;
     if (this.addModalOpen) this.addModalOpen = false;
+    if (this.editModalOpen) {
+      this.editModalOpen = false;
+      this.editingSlotId = null;
+    }
     if (this.infoModalOpen) {
       this.infoModalOpen = false;
       this.infoSlotId = null;

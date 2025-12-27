@@ -45,6 +45,26 @@ export class SlotService {
   }
 
   /**
+   * Update an existing slot
+   * @param {number} slotId - Slot ID
+   * @param {Object} slotData - Updated slot data
+   * @returns {Object} Updated slot and mutation ID
+   */
+  static updateSlot(slotId, slotData) {
+    const existing = store.getSlot(slotId);
+    if (!existing) {
+      throw new Error(`Slot ${slotId} not found`);
+    }
+
+    const result = BaseFormService.update("update-slot", slotId, slotData, {
+      get: (id) => store.getSlot(id),
+      update: (id, data) => store.updateSlot(id, data),
+    });
+
+    return { slot: result.entity, mutationId: result.mutationId };
+  }
+
+  /**
    * Delete a slot
    * @param {number} slotId - Slot ID
    * @returns {Object} Mutation info
@@ -62,6 +82,21 @@ export class SlotService {
    */
   static async saveNewSlot(formData) {
     const { slot, mutationId } = this.createSlot({
+      start_date: formData.start_date,
+    });
+
+    await store.saveData({ mutationId });
+    return slot;
+  }
+
+  /**
+   * Save an updated slot
+   * @param {number} slotId - Slot ID
+   * @param {Object} formData - Updated form data
+   * @returns {Object} Updated slot
+   */
+  static async saveUpdatedSlot(slotId, formData) {
+    const { slot, mutationId } = this.updateSlot(slotId, {
       start_date: formData.start_date,
     });
 

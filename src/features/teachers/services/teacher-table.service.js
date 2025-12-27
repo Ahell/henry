@@ -7,7 +7,7 @@ export class TeacherTableService {
       { key: "name", label: "Namn", width: "200px" },
       { key: "compatible_courses", label: "Kompatibla kurser", width: "250px" },
       { key: "examinator_courses", label: "Examinator för", width: "250px" },
-      { key: "actions", label: "", width: "120px" },
+      { key: "actions", label: "Åtgärder", width: "160px" },
     ];
   }
 
@@ -40,13 +40,24 @@ export class TeacherTableService {
         return html`${examinatorCourses || "-"}`;
       case "actions":
         return html`
-          <henry-button
-            variant="secondary"
-            size="small"
-            @click="${() => onEdit?.(teacher.teacher_id)}"
-          >
-            Redigera
-          </henry-button>
+          <div style="display: flex; gap: var(--space-2);">
+            <henry-button
+              variant="secondary"
+              size="small"
+              ?disabled=${!store.editMode}
+              @click="${() => onEdit?.(teacher.teacher_id)}"
+            >
+              Redigera
+            </henry-button>
+            <henry-button
+              variant="danger"
+              size="small"
+              ?disabled=${!store.editMode}
+              @click="${() => onDelete?.(teacher.teacher_id)}"
+            >
+              Ta bort
+            </henry-button>
+          </div>
         `;
       default:
         return html`${teacher[column.key] ?? ""}`;

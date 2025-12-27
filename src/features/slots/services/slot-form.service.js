@@ -38,8 +38,8 @@ export class SlotFormService {
 
     return {
       selectedInsertAfter: null, // Edit mode might not use insertAfter logic same way
-      startOptions: [], 
-      formValid: true, // Assuming existing data is valid
+      startOptions: [],
+      formValid: false,
     };
   }
 
@@ -52,7 +52,15 @@ export class SlotFormService {
    */
   static isFormValid(root, mode, slotId) {
     // Basic validation
-    return FormService.isFormValid(root);
+    const baseValid = FormService.isFormValid(root);
+    if (!baseValid) return false;
+
+    if (mode === "edit") {
+      const { start_date } = this.extractFormData(root, mode);
+      if (!start_date) return false;
+    }
+
+    return true;
   }
 
   /**
@@ -62,12 +70,9 @@ export class SlotFormService {
    * @returns {Object} Extracted form data
    */
   static extractFormData(root, mode) {
-    const startSelect = root.querySelector("#slotStart");
-    const start_date = startSelect ? startSelect.getSelect().value : null;
-    
-    return {
-      start_date
-    };
+    return FormService.extractFormData(root, {
+      start_date: "slotStart",
+    });
   }
 
   /**
@@ -77,12 +82,11 @@ export class SlotFormService {
    * @param {string} mode - 'add' or 'edit'
    */
   static populateForm(root, slot, mode) {
-    if (mode === 'add') {
-      FormService.setCustomInput(root, 'slotStart', '');
-      FormService.setCustomInput(root, 'insertAfter', '');
+    if (mode === "add") {
+      FormService.setCustomInput(root, "slotStart", "");
+      FormService.setCustomInput(root, "insertAfter", "");
     } else if (slot) {
-      // In edit mode we might just show the date, but for now we don't have edit fields defined in the modal
-      // This is a placeholder for future edit capability
+      FormService.setCustomInput(root, "slotStart", slot.start_date || "");
     }
   }
 }

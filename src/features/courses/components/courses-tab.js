@@ -76,6 +76,27 @@ export class CoursesTab extends LitElement {
     }
   }
 
+  async _handleDeleteCourse(courseId) {
+    if (!store.editMode) return;
+    const course = store.getCourse(courseId);
+    if (!course) return;
+    if (
+      !confirm(
+        `Är du säker på att du vill ta bort kursen "${course.code || course.name}"?`
+      )
+    ) {
+      return;
+    }
+    try {
+      const removed = await CourseService.deleteCourseById(courseId);
+      if (removed) {
+        showSuccessMessage(this, "Kurs borttagen.");
+      }
+    } catch (err) {
+      showErrorMessage(this, err.message || "Kunde inte ta bort kurs.");
+    }
+  }
+
   render() {
     return html`
       <henry-panel>
@@ -101,7 +122,8 @@ export class CoursesTab extends LitElement {
                 this.editingCourseId = courseId;
                 this.modalOpen = true;
               },
-              (courseId) => this._openInfoModal(courseId)
+              (courseId) => this._openInfoModal(courseId),
+              (courseId) => this._handleDeleteCourse(courseId)
             )}"
         ></henry-table>
       </henry-panel>

@@ -108,9 +108,8 @@ export class SlotModal extends LitElement {
         result = await SlotService.saveNewSlot(formData);
         showSuccessMessage(this, "Kursperiod tillagd!");
       } else {
-        // Edit not yet fully supported by service, but structure is here
-        // result = await SlotService.saveUpdatedSlot(this.slotId, formData);
-        throw new Error("Edit mode not implemented yet");
+        result = await SlotService.saveUpdatedSlot(this.slotId, formData);
+        showSuccessMessage(this, "Kursperiod uppdaterad!");
       }
 
       this.dispatchEvent(new CustomEvent("slot-saved", { detail: result }));
@@ -172,8 +171,12 @@ export class SlotModal extends LitElement {
                   ></henry-select>
                 `
               : html`
-                  <!-- Edit fields would go here -->
-                  <p>Redigering av kursperioder är inte implementerat än.</p>
+                  <henry-input
+                    id="slotStart"
+                    label="Startdatum"
+                    type="date"
+                    required
+                  ></henry-input>
                 `}
           </div>
         </form>
