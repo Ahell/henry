@@ -84,8 +84,7 @@ export class DragDropManager {
     const isDisabled = td.dataset.disabled === "true";
     const isInvalidCohort =
       this.state.draggingFromCohortId &&
-      this.state.draggingFromCohortId !== cohortId &&
-      !this.isSameCourseInSlot(slotDate, this.state.draggingCourseId);
+      this.state.draggingFromCohortId !== cohortId;
 
     if (isInvalidCohort || isDisabled) {
       td.classList.remove("drag-over");
