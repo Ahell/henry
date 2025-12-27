@@ -89,7 +89,7 @@ export class SlotInfoModal extends LitElement {
 
       return html`
         <div class="slot-info-block">
-          <div class="slot-info-block-title">Tillfalle ${idx + 1}</div>
+          <div class="slot-info-block-title">Tillfälle ${idx + 1}</div>
           <div class="slot-info-row">
             <div class="slot-info-label">Kurs</div>
             <div class="slot-info-value">
