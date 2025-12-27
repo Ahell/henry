@@ -66,10 +66,16 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-timeline-table td {
     border: none;
     border-bottom: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
     padding: var(--space-4) var(--space-2);
     text-align: center;
     min-width: 96px;
     background: var(--color-background);
+  }
+
+  .teacher-timeline-table th:last-child,
+  .teacher-timeline-table td:last-child {
+    border-right: none;
   }
 
   .teacher-timeline-table tbody tr:nth-child(even) td {
@@ -109,6 +115,7 @@ export const teacherAvailabilityTableStyles = css`
     left: 0;
     z-index: 3;
     background: var(--color-gray-100);
+    font-size: var(--font-size-xs);
   }
 
   .teacher-timeline-table th.slot-header {
@@ -117,6 +124,8 @@ export const teacherAvailabilityTableStyles = css`
     background: var(--color-gray-100);
     color: var(--color-text-primary);
     border-color: var(--color-border);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
   }
 
   .teacher-timeline-table th.slot-header:hover {
@@ -141,6 +150,7 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-name {
     display: block;
     color: var(--color-text-primary);
+    font-size: var(--font-size-xs);
   }
 
   .teacher-department {

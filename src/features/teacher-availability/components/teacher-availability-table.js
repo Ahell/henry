@@ -279,9 +279,38 @@ export class TeacherAvailabilityTable extends LitElement {
   }
 
   _renderDateHeaderHelper(dateStr, slotId, onEnterDetail) {
-     const d = new Date(dateStr);
-     const compact = `${d.getFullYear().toString().slice(-2)}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-     return html`<th class="slot-header" @click=${() => onEnterDetail(dateStr, slotId)} title="Klicka för att se dag-för-dag-vy">${compact}</th>`;
+     const formatCompactDate = (value) => {
+       if (!value) return "";
+       const [datePart] = String(value).split("T");
+       const parts = datePart.split("-");
+       if (parts.length !== 3) return datePart;
+       const [year, month, day] = parts;
+       if (!year || !month || !day) return datePart;
+       return `${year.slice(-2)}${month}${day}`;
+     };
+     const slotsSorted = (this.slots || [])
+       .slice()
+       .sort((a, b) =>
+         String(a?.start_date || "").localeCompare(String(b?.start_date || ""))
+       );
+     const slot = slotsSorted.find((s) => s.slot_id === slotId);
+     const order = slot
+       ? slotsSorted.findIndex((s) => s.slot_id === slotId) + 1
+       : null;
+     const startDate = formatCompactDate(dateStr);
+     const endDate = slot?.end_date
+       ? formatCompactDate(slot.end_date)
+       : (() => {
+           const start = new Date(dateStr);
+           if (Number.isNaN(start.getTime())) return "";
+           const end = new Date(start);
+           end.setDate(end.getDate() + DEFAULT_SLOT_LENGTH_DAYS);
+           return formatCompactDate(end.toISOString().split("T")[0]);
+         })();
+     const label = order
+       ? `#${order} ${startDate}-${endDate}`
+       : startDate;
+     return html`<th class="slot-header" @click=${() => onEnterDetail(dateStr, slotId)} title="Klicka för att se dag-för-dag-vy">${label}</th>`;
   }
 
   _renderDayHeaderCellHelper({ dateStr, presentation, onClick }) {

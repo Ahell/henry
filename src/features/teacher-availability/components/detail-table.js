@@ -107,8 +107,8 @@ export class DetailTable extends LitElement {
         .teacher-timeline-table thead th {
           background: var(--color-surface-muted, #f5f6fa);
           color: #0f172a;
-          font-size: 12px;
-          font-weight: 700;
+          font-size: var(--font-size-xs);
+          font-weight: var(--font-weight-semibold);
           text-align: center;
           padding: 8px;
           border-bottom: 1px solid #e5e7eb;

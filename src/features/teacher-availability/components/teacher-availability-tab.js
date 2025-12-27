@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { store } from "../../../platform/store/DataStore.js";
+import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
 import { TeacherAvailabilityService } from "../services/teacher-availability.service.js";
 import "../../../components/ui/index.js";
 import "./teacher-availability-table.js";
@@ -113,6 +113,49 @@ export class TeacherAvailabilityTab extends LitElement {
     this.slots = store.getSlots();
   }
 
+  _getDetailTitle() {
+    const formatCompactDate = (value) => {
+      if (!value) return "";
+      const [datePart] = String(value).split("T");
+      const parts = datePart.split("-");
+      if (parts.length !== 3) return datePart;
+      const [year, month, day] = parts;
+      if (!year || !month || !day) return datePart;
+      return `${year.slice(-2)}${month}${day}`;
+    };
+
+    const slotsSorted = (this.slots || [])
+      .slice()
+      .sort((a, b) =>
+        String(a?.start_date || "").localeCompare(String(b?.start_date || ""))
+      );
+    const slot = this._detailSlotId != null
+      ? slotsSorted.find((s) => s.slot_id === this._detailSlotId)
+      : slotsSorted.find((s) => s.start_date === this._detailSlotDate);
+    const order = slot
+      ? slotsSorted.findIndex((s) => s.slot_id === slot.slot_id) + 1
+      : null;
+    const startDate = formatCompactDate(
+      slot?.start_date || this._detailSlotDate
+    );
+    const endDate = slot?.end_date
+      ? formatCompactDate(slot.end_date)
+      : (() => {
+          if (!slot?.start_date && !this._detailSlotDate) return "";
+          const start = new Date(slot?.start_date || this._detailSlotDate);
+          if (Number.isNaN(start.getTime())) return "";
+          const end = new Date(start);
+          end.setDate(end.getDate() + DEFAULT_SLOT_LENGTH_DAYS);
+          return formatCompactDate(end.toISOString().split("T")[0]);
+        })();
+
+    if (!order || !startDate || !endDate) {
+      return "Lärartillgänglighet inom kursperiod";
+    }
+
+    return `Lärartillgänglighet inom kursperiod: #${order} ${startDate}-${endDate}`;
+  }
+
   render() {
     if (this.slots.length === 0) {
       return html`<henry-panel>
@@ -129,7 +172,7 @@ export class TeacherAvailabilityTab extends LitElement {
           <div class="header-text">
             <henry-text variant="heading-3"
               >${this._isDetailView
-                ? "Lärartillgänglighet inom kursperiod"
+                ? this._getDetailTitle()
                 : "Lärartillgänglighet"}</henry-text
             >
           </div>
