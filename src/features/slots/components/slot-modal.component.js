@@ -68,7 +68,10 @@ export class SlotModal extends LitElement {
 
     if (insertVal) {
       const dates = SlotService.getAvailableStartDates(insertVal);
-      this.startOptions = dates.map((d) => ({ value: d, label: d }));
+      this.startOptions = dates.map((d) => ({
+        value: d,
+        label: this._formatDateYYMMDD(d),
+      }));
     } else {
       this.startOptions = [];
     }
@@ -193,6 +196,16 @@ export class SlotModal extends LitElement {
         </div>
       </henry-modal>
     `;
+  }
+
+  _formatDateYYMMDD(value) {
+    if (!value) return "";
+    const [datePart] = String(value).split("T");
+    const parts = datePart.split("-");
+    if (parts.length !== 3) return datePart;
+    const [yyyy, mm, dd] = parts;
+    if (!yyyy || !mm || !dd) return datePart;
+    return `${yyyy.slice(-2)}${mm}${dd}`;
   }
 
   createRenderRoot() {

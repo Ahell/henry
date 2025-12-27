@@ -135,7 +135,7 @@ export class SlotsTab extends LitElement {
         `;
 
       case "start_date":
-        return html`${slot.start_date}`;
+        return html`${this._formatDateYYMMDD(slot.start_date)}`;
 
       case "actions":
         return html`
@@ -186,6 +186,16 @@ export class SlotsTab extends LitElement {
       this.infoModalOpen = false;
       this.infoSlotId = null;
     }
+  }
+
+  _formatDateYYMMDD(value) {
+    if (!value) return "-";
+    const [datePart] = String(value).split("T");
+    const parts = datePart.split("-");
+    if (parts.length !== 3) return datePart;
+    const [yyyy, mm, dd] = parts;
+    if (!yyyy || !mm || !dd) return datePart;
+    return `${yyyy.slice(-2)}${mm}${dd}`;
   }
 }
 

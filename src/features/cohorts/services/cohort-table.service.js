@@ -2,6 +2,16 @@ import { html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 
 export class CohortTableService {
+  static formatDateYYMMDD(value) {
+    if (!value) return "-";
+    const [datePart] = String(value).split("T");
+    const parts = datePart.split("-");
+    if (parts.length !== 3) return datePart;
+    const [yyyy, mm, dd] = parts;
+    if (!yyyy || !mm || !dd) return datePart;
+    return `${yyyy.slice(-2)}${mm}${dd}`;
+  }
+
   static getColumns() {
     return [
       { key: "name", label: "Namn", width: "200px" },
@@ -26,7 +36,7 @@ export class CohortTableService {
           </button>
         `;
       case "start_date":
-        return html`${cohort.start_date}`;
+        return html`${CohortTableService.formatDateYYMMDD(cohort.start_date)}`;
       case "planned_size":
         return html`${cohort.planned_size}`;
       case "actions":

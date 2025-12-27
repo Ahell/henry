@@ -174,7 +174,9 @@ export class CohortInfoModal extends LitElement {
           </div>
           <div class="cohort-info-row">
             <div class="cohort-info-label">Startdatum</div>
-            <div class="cohort-info-value">${cohort.start_date || "-"}</div>
+            <div class="cohort-info-value">
+              ${formatCompactDate(cohort.start_date) || "-"}
+            </div>
           </div>
           <div class="cohort-info-row">
             <div class="cohort-info-label">Deltagare</div>

@@ -22,20 +22,24 @@ export class SlotService {
     const endStr =
       normalizeDateOnly(slotData.end_date) ||
       normalizeDateOnly(defaultSlotEndDate(slotData.start_date));
-    
+
     if (!startStr || !endStr) {
       throw new Error("Slot behöver giltigt start- och slutdatum.");
     }
 
-    const result = BaseFormService.create("add-slot", {
-      ...slotData,
-      start_date: startStr,
-      end_date: endStr,
-    }, {
-      add: (data) => store.addSlot(data),
-      delete: (id) => store.deleteSlot(id),
-      getIdField: "slot_id",
-    });
+    const result = BaseFormService.create(
+      "add-slot",
+      {
+        ...slotData,
+        start_date: startStr,
+        end_date: endStr,
+      },
+      {
+        add: (data) => store.addSlot(data),
+        delete: (id) => store.deleteSlot(id),
+        getIdField: "slot_id",
+      }
+    );
 
     return { slot: result.entity, mutationId: result.mutationId };
   }
@@ -99,10 +103,36 @@ export class SlotService {
     const sorted = this.getSlots()
       .slice()
       .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-    
+
+    const formatCompactDate = (value) => {
+      if (!value) return "";
+      const [datePart] = String(value).split("T");
+      const parts = datePart.split("-");
+      if (parts.length !== 3) return datePart;
+      const [yyyy, mm, dd] = parts;
+      if (!yyyy || !mm || !dd) return datePart;
+      return `${yyyy.slice(-2)}${mm}${dd}`;
+    };
+
+    const formatSlotRange = (slot) => {
+      if (!slot?.start_date) return "";
+      const start = formatCompactDate(slot.start_date);
+      const end = slot.end_date
+        ? formatCompactDate(slot.end_date)
+        : (() => {
+            const startDate = new Date(slot.start_date);
+            if (Number.isNaN(startDate.getTime())) return "";
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS);
+            return formatCompactDate(endDate.toISOString().split("T")[0]);
+          })();
+      if (!start || !end) return "";
+      return `${start}-${end}`;
+    };
+
     return sorted.map((s, i) => ({
       value: String(s.slot_id),
-      label: `Efter kursperiod ${i + 1} — ${s.start_date}`,
+      label: `Efter kursperiod: #${i + 1} ${formatSlotRange(s)}`,
     }));
   }
 
@@ -115,8 +145,10 @@ export class SlotService {
     const slots = this.getSlots()
       .slice()
       .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-    
-    const idx = slots.findIndex((s) => String(s.slot_id) === String(insertAfterId));
+
+    const idx = slots.findIndex(
+      (s) => String(s.slot_id) === String(insertAfterId)
+    );
 
     if (!insertAfterId || idx === -1) {
       return [];
