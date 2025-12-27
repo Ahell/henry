@@ -1,4 +1,6 @@
 import { LitElement, html } from "lit";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   store,
   DEFAULT_SLOT_LENGTH_DAYS,
@@ -567,6 +569,163 @@ export class ReportTab extends LitElement {
     return `${yyyy.slice(-2)}${mm}${dd}`;
   }
 
+  _exportRows(useFiltered) {
+    const rows = useFiltered ? this._filteredRows() : (this._rows || []);
+    const columns = this._getTableColumns();
+    const header = columns.map((col) => this._escapeCsv(col.label || col.key));
+    const lines = [header.join(";")];
+
+    rows.forEach((row) => {
+      const values = columns.map((col) =>
+        this._escapeCsv(this._getExportValue(row, col.key))
+      );
+      lines.push(values.join(";"));
+    });
+
+    const today = new Date();
+    const stamp = `${today.getFullYear()}-${String(
+      today.getMonth() + 1
+    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const fileDate = this._formatDateYYMMDD(stamp);
+    const suffix = useFiltered ? "filtrerad" : "alla";
+    const filename = `rapport-${suffix}-${fileDate || "export"}.csv`;
+
+    const csv = `\ufeff${lines.join("\n")}`;
+    this._downloadFile(csv, filename, "text/csv;charset=utf-8;");
+  }
+
+  _getExportValue(row, key) {
+    if (key === "slotNumbers") {
+      return (row?.slotNumbers || []).join(", ");
+    }
+    if (key === "plannedStudents") {
+      return String(Number(row?.plannedStudents || 0));
+    }
+    if (key === "start" || key === "end" || key === "examDate") {
+      return this._formatDateYYMMDD(row?.[key] ?? "");
+    }
+    const value = row?.[key];
+    return value == null ? "" : String(value);
+  }
+
+  _escapeCsv(value) {
+    const str = String(value ?? "");
+    if (/[\";\n\r]/.test(str)) {
+      return `"${str.replace(/\"/g, "\"\"")}"`;
+    }
+    return str;
+  }
+
+  _downloadFile(contents, filename, mimeType) {
+    const blob = new Blob([contents], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  _exportPdf(useFiltered) {
+    const rows = useFiltered ? this._filteredRows() : (this._rows || []);
+    const columns = this._getTableColumns();
+
+    const today = new Date();
+    const stamp = `${today.getFullYear()}-${String(
+      today.getMonth() + 1
+    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const fileDate = this._formatDateYYMMDD(stamp);
+    const suffix = useFiltered ? "filtrerad" : "alla";
+    const title = `Rapport (${suffix})`;
+    const filename = `rapport-${suffix}-${fileDate || "export"}.pdf`;
+
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "pt",
+      format: "a4",
+    });
+
+    const head = [columns.map((col) => col.label || col.key)];
+    const body = rows.map((row) =>
+      columns.map((col) => this._getPdfValue(row, col.key))
+    );
+
+    autoTable(doc, {
+      head,
+      body,
+      margin: { top: 48, left: 32, right: 32, bottom: 32 },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        textColor: [17, 24, 39],
+      },
+      headStyles: {
+        fillColor: [243, 244, 246],
+        textColor: [17, 24, 39],
+        fontStyle: "bold",
+      },
+      columnStyles: this._getPdfColumnStyles(columns),
+      didDrawPage: (data) => {
+        doc.setFontSize(12);
+        doc.text(title, data.settings.margin.left, 24);
+        doc.setFontSize(9);
+        doc.text(
+          `Export: ${fileDate || stamp}`,
+          data.settings.margin.left,
+          36
+        );
+      },
+    });
+
+    doc.save(filename);
+  }
+
+  _getPdfColumnStyles(columns) {
+    const noWrapKeys = new Set(["courseName"]);
+    const wrapTeacherKeys = new Set([
+      "examinator",
+      "kursansvarig",
+      "kursassistenter",
+    ]);
+    const styles = {};
+    columns.forEach((col, idx) => {
+      const key = String(col.key);
+      if (noWrapKeys.has(key)) {
+        styles[idx] = {
+          overflow: "ellipsize",
+          cellWidth: "auto",
+        };
+      }
+      if (wrapTeacherKeys.has(key)) {
+        styles[idx] = {
+          overflow: "linebreak",
+          cellWidth: "wrap",
+        };
+      }
+    });
+    return styles;
+  }
+
+  _getPdfValue(row, key) {
+    if (key === "examinator" || key === "kursansvarig" || key === "kursassistenter") {
+      return this._formatTeacherListForPdf(row?.[key] ?? "");
+    }
+    return this._getExportValue(row, key);
+  }
+
+  _formatTeacherListForPdf(value) {
+    const list = String(value || "")
+      .split(",")
+      .map((name) => name.trim())
+      .filter(Boolean);
+    if (!list.length) return "";
+    return list.map(this._formatTeacherNameForPdf).join("\n");
+  }
+
+  _formatTeacherNameForPdf(name) {
+    return String(name || "").replace(/ /g, "\u00A0");
+  }
+
   render() {
     const rows = this._filteredRows();
     return html`
@@ -621,6 +780,26 @@ export class ReportTab extends LitElement {
               >
               <henry-button variant="secondary" @click=${this._clearFilters}
                 >Rensa</henry-button
+              >
+              <henry-button
+                variant="secondary"
+                @click=${() => this._exportRows(true)}
+                >Exportera CSV (filtrerad)</henry-button
+              >
+              <henry-button
+                variant="secondary"
+                @click=${() => this._exportRows(false)}
+                >Exportera CSV (alla)</henry-button
+              >
+              <henry-button
+                variant="secondary"
+                @click=${() => this._exportPdf(true)}
+                >Exportera PDF (filtrerad)</henry-button
+              >
+              <henry-button
+                variant="secondary"
+                @click=${() => this._exportPdf(false)}
+                >Exportera PDF (alla)</henry-button
               >
             </div>
           </div>
