@@ -216,7 +216,7 @@ export class ReportTab extends LitElement {
         run.course_id
       );
       const courseKursansvarigId =
-        store.coursesManager.getKursansvarigForCourse(run.course_id);
+        run?.kursansvarig_id ?? store.coursesManager.getKursansvarigForCourse(run.course_id);
       const teacherIds = uniqueStrings([
         ...normalizeTeacherIds(run),
         courseExaminatorTeacherId != null ? courseExaminatorTeacherId : null,
