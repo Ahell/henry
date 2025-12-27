@@ -1570,13 +1570,16 @@ export class SchedulingTab extends LitElement {
       return;
     }
 
-    this._dragDropManager.handleCellDragOver({
+    const isInvalid = this._dragDropManager.handleCellDragOver({
       detail: {
         slotDate: adjustedSlotDate,
         cohortId: Number(td.dataset.cohortId),
         cell: td,
       },
     });
+    if (isInvalid && e?.dataTransfer) {
+      e.dataTransfer.dropEffect = "none";
+    }
   }
 
   _handleSlotCellDragLeave(e) {

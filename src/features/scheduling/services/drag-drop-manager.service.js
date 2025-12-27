@@ -10,6 +10,7 @@ export class DragDropManager {
     this.state = {
       draggingFromDepot: false,
       draggingFromCohortId: null,
+      draggingRunId: null,
       draggingCourseId: null,
       draggingSlotOffset: 0,
       draggedCells: [],
@@ -23,6 +24,7 @@ export class DragDropManager {
     const { courseId, cohortId } = e.detail;
     this.state.draggingFromDepot = true;
     this.state.draggingFromCohortId = cohortId;
+    this.state.draggingRunId = null;
     this.state.draggingCourseId = courseId;
     this.state.draggingSlotOffset = 0;
 
@@ -37,6 +39,7 @@ export class DragDropManager {
     const { courseId, cohortId, slotOffset } = e.detail;
     this.state.draggingFromDepot = false;
     this.state.draggingFromCohortId = cohortId;
+    this.state.draggingRunId = e.detail?.runId ?? null;
     this.state.draggingCourseId = courseId;
     this.state.draggingSlotOffset = Number.isFinite(Number(slotOffset))
       ? Number(slotOffset)
@@ -52,6 +55,7 @@ export class DragDropManager {
   handleDragEnd() {
     this.state.draggingFromDepot = false;
     this.state.draggingFromCohortId = null;
+    this.state.draggingRunId = null;
     this.state.draggingCourseId = null;
     this.state.draggingSlotOffset = 0;
 
@@ -85,8 +89,9 @@ export class DragDropManager {
     const isInvalidCohort =
       this.state.draggingFromCohortId &&
       this.state.draggingFromCohortId !== cohortId;
+    const isSpanOverlapInvalid = this.isSkewedOverlapForDrag(slotDate);
 
-    if (isInvalidCohort || isDisabled) {
+    if (isInvalidCohort || isDisabled || isSpanOverlapInvalid) {
       td.classList.remove("drag-over");
       td.classList.add("drag-over-invalid");
     } else {
@@ -97,6 +102,8 @@ export class DragDropManager {
     if (!this.state.draggedCells.includes(cell)) {
       this.state.draggedCells.push(cell);
     }
+
+    return isInvalidCohort || isDisabled || isSpanOverlapInvalid;
   }
 
   /**
@@ -122,6 +129,10 @@ export class DragDropManager {
       if (nextTd && nextTd.classList.contains("slot-cell")) {
         nextTd.classList.remove("drag-over", "drag-over-invalid");
       }
+    }
+
+    if (this.isSkewedOverlapForDrag(slotDate)) {
+      return null;
     }
 
     // Note: We don't block drops based on teacher availability
@@ -208,5 +219,123 @@ export class DragDropManager {
    */
   isDraggingFromDepot() {
     return this.state.draggingFromDepot;
+  }
+
+  _sortedSlotDates() {
+    return [...new Set((store.getSlots() || []).map((s) => s.start_date))].sort();
+  }
+
+  _slotIdxByDate(slotDates) {
+    return new Map((slotDates || []).map((d, idx) => [String(d), idx]));
+  }
+
+  _getRunStartIdx(run, slotDates, slotIdxByDate) {
+    if (!run) return null;
+    if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+      const idxs = run.slot_ids
+        .map((sid) => store.getSlot(sid)?.start_date)
+        .map((d) => (d ? slotIdxByDate.get(String(d)) : null))
+        .filter((v) => Number.isFinite(v));
+      if (idxs.length > 0) return Math.min(...idxs);
+    }
+
+    const startDate = store.getSlot(run.slot_id)?.start_date;
+    const startIdx = startDate ? slotIdxByDate.get(String(startDate)) : null;
+    if (!Number.isFinite(startIdx)) return null;
+    if (startIdx < 0 || startIdx >= slotDates.length) return null;
+    return startIdx;
+  }
+
+  _getRunSpan(run) {
+    if (!run) return 1;
+    const spanFromRun = Number(run?.slot_span);
+    if (Number.isFinite(spanFromRun) && spanFromRun >= 2) return spanFromRun;
+    const course = store.getCourse(run.course_id);
+    return Number(course?.credits) === 15 ? 2 : 1;
+  }
+
+  _getCandidateSpan(courseId, runId) {
+    const run =
+      runId != null
+        ? (store.getCourseRuns() || []).find(
+            (r) => String(r.run_id) === String(runId)
+          )
+        : null;
+    const spanFromRun = Number(run?.slot_span);
+    if (Number.isFinite(spanFromRun) && spanFromRun >= 2) return spanFromRun;
+    const course = store.getCourse(courseId);
+    return Number(course?.credits) === 15 ? 2 : 1;
+  }
+
+  _getDragRun() {
+    const runId = this.state.draggingRunId;
+    if (runId == null) return null;
+    return (store.getCourseRuns() || []).find(
+      (r) => String(r.run_id) === String(runId)
+    );
+  }
+
+  _hasSkewedSpanOverlap({
+    courseId,
+    candidateStartIdx,
+    candidateSpan,
+    slotDates,
+    slotIdxByDate,
+    excludeRunId = null,
+  }) {
+    if (!Number.isFinite(candidateStartIdx) || candidateSpan <= 1) return false;
+    const candidateEndExclusive = candidateStartIdx + candidateSpan;
+
+    for (const run of store.getCourseRuns() || []) {
+      if (excludeRunId != null && String(run.run_id) === String(excludeRunId)) {
+        continue;
+      }
+      if (Number(run.course_id) !== Number(courseId)) continue;
+
+      const runStartIdx = this._getRunStartIdx(run, slotDates, slotIdxByDate);
+      if (!Number.isFinite(runStartIdx)) continue;
+      if (runStartIdx === candidateStartIdx) continue;
+
+      const runSpan = this._getRunSpan(run);
+      if (runSpan <= 1) continue;
+
+      const runEndExclusive = runStartIdx + runSpan;
+      const overlaps =
+        candidateStartIdx < runEndExclusive && runStartIdx < candidateEndExclusive;
+      if (overlaps) return true;
+    }
+    return false;
+  }
+
+  isSkewedOverlapForDrag(slotDate) {
+    const courseId = this.state.draggingCourseId;
+    if (courseId == null) return false;
+
+    const slotDates = this._sortedSlotDates();
+    const slotIdxByDate = this._slotIdxByDate(slotDates);
+    const candidateStartIdx = slotIdxByDate.get(String(slotDate));
+    if (!Number.isFinite(candidateStartIdx)) return false;
+
+    const candidateSpan = this._getCandidateSpan(
+      courseId,
+      this.state.draggingRunId
+    );
+    if (candidateSpan <= 1) return false;
+
+    const dragRun = this._getDragRun();
+    const dragRunCohorts = Array.isArray(dragRun?.cohorts)
+      ? dragRun.cohorts.filter((id) => id != null)
+      : [];
+    const excludeRunId =
+      dragRunCohorts.length > 1 ? null : this.state.draggingRunId;
+
+    return this._hasSkewedSpanOverlap({
+      courseId,
+      candidateStartIdx,
+      candidateSpan,
+      slotDates,
+      slotIdxByDate,
+      excludeRunId,
+    });
   }
 }

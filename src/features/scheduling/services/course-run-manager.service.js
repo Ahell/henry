@@ -362,7 +362,6 @@ export class CourseRunManager {
               slotDates,
               slotIdxByDate,
               spanByCourseId,
-              excludeRunId: runId,
             })
           ) {
             return;
