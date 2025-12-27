@@ -34,18 +34,19 @@
         position: sticky;
         top: 0;
         z-index: 100;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .header-inner {
         max-width: 1800px;
         margin: 0 auto;
-        display: flex;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
         align-items: center;
-        justify-content: space-between;
         gap: var(--space-4);
       }
 
-      .header-left {
+      .header-brand {
         display: flex;
         align-items: center;
         gap: var(--space-4);
@@ -56,12 +57,18 @@
       .brand h1 {
         margin-bottom: var(--space-1);
         font-size: var(--font-size-2xl);
-        letter-spacing: -0.01em;
+        letter-spacing: -0.015em;
       }
 
       .brand p {
         opacity: 0.85;
         font-size: var(--font-size-sm);
+      }
+
+      .header-tabs {
+        display: flex;
+        justify-content: center;
+        min-width: 0;
       }
 
       .container {
@@ -71,86 +78,24 @@
         padding: 0 var(--space-6);
       }
 
-      nav {
+      .admin-actions {
         display: flex;
+        align-items: center;
         gap: var(--space-2);
         flex-wrap: wrap;
-        align-items: center;
-        background: transparent;
-        padding: 0;
-        border: none;
+        justify-self: end;
       }
 
-      .admin-actions {
-        display: inline-flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-
-      nav button {
-        background: transparent;
-        color: rgba(255, 255, 255, 0.78);
-        border: none;
-        padding: var(--space-2) var(--space-4);
-        border-radius: var(--radius-md);
-        cursor: pointer;
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-semibold);
-        transition: var(--transition-all);
-        letter-spacing: 0.01em;
-      }
-
-      nav button:hover {
-        color: white;
-        background: rgba(255, 255, 255, 0.1);
-      }
-
-      nav button.active {
-        color: white;
-        background: rgba(255, 255, 255, 0.15);
-        box-shadow: none;
-      }
-
-      nav .nav-action {
-        color: white;
-        background: rgba(255, 255, 255, 0.12);
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        padding: var(--space-2) var(--space-3);
-        border-radius: var(--radius-md);
-        font-weight: var(--font-weight-semibold);
-      }
-
-      nav .nav-action:hover {
-        background: rgba(255, 255, 255, 0.18);
-        border-color: rgba(255, 255, 255, 0.3);
-      }
-
-      nav .nav-action:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-      }
-
-      nav .nav-action--primary {
-        background: rgba(59, 130, 246, 0.55);
-        border-color: rgba(59, 130, 246, 0.8);
-      }
-
-      nav .nav-action--primary:hover:not(:disabled) {
-        background: rgba(59, 130, 246, 0.7);
-      }
-
-      nav .nav-action--danger {
-        background: rgba(239, 68, 68, 0.55);
-        border-color: rgba(239, 68, 68, 0.85);
-      }
-
-      nav .nav-action--danger:hover:not(:disabled) {
-        background: rgba(239, 68, 68, 0.7);
+      .admin-actions-label {
+        font-size: 0.55rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.7);
+        margin-right: 2px;
       }
 
       .nav-status {
-        margin-left: var(--space-2);
+        margin-left: var(--space-1);
         color: rgba(255, 255, 255, 0.82);
         font-size: var(--font-size-xs);
         white-space: nowrap;
@@ -250,16 +195,19 @@
           font-size: var(--font-size-2xl);
         }
 
-        main {
-          padding: var(--space-6);
+        .header-inner {
+          grid-template-columns: 1fr;
+          justify-items: start;
         }
 
-        nav {
-          flex-direction: column;
-        }
-
-        nav button {
+        .header-tabs {
+          justify-content: flex-start;
           width: 100%;
+        }
+
+        .admin-actions {
+          width: 100%;
+          justify-content: flex-start;
         }
       }
     </style>
@@ -267,24 +215,20 @@
   <body>
     <header>
       <div class="header-inner">
-        <div class="header-left">
+        <div class="header-brand">
           <div class="brand">
             <h1>FEI Kursplanerare</h1>
           </div>
+        </div>
+        <div class="header-tabs">
           <div id="adminTabs" class="admin-tabs" aria-label="Admin tabs"></div>
-          <nav class="admin-actions" aria-label="Admin actions">
-          <button
-            id="navLoadTestData"
-            class="admin-tab-btn"
-            type="button"
-          >
+        </div>
+        <nav class="admin-actions" aria-label="Admin actions">
+          <span class="admin-actions-label">Admin</span>
+          <button id="navLoadTestData" class="admin-tab-btn" type="button">
             Ladda Testdata
           </button>
-          <button
-            id="navResetDatabase"
-            class="admin-tab-btn"
-            type="button"
-          >
+          <button id="navResetDatabase" class="admin-tab-btn" type="button">
             Återställ Databas
           </button>
           <henry-switch
@@ -293,8 +237,7 @@
             label="Redigera"
           ></henry-switch>
           <span id="navStatus" class="nav-status"></span>
-          </nav>
-        </div>
+        </nav>
       </div>
     </header>
 
