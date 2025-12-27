@@ -1180,8 +1180,16 @@ export class SchedulingTab extends LitElement {
         </td>
         <td class="cohort-cell">
           <div class="cohort-cell-content">
-            <span class="cohort-cell-name">${cohort.name}</span>
+            <div class="cohort-cell-header">
+              <span class="cohort-cell-number">
+                # ${this._getCohortNumber(cohort)}
+              </span>
+              <span class="cohort-cell-date">
+                ${this._formatCohortStartDate(cohort)}
+              </span>
+            </div>
             <div class="cohort-cell-actions">
+              <div class="cohort-section-label">Åtgärder</div>
               <button
                 class="cohort-reset-button"
                 type="button"
@@ -1210,18 +1218,21 @@ export class SchedulingTab extends LitElement {
               </button>
             </div>
             ${markers.length
-              ? html`<div class="cohort-warning-markers" aria-label="Varningar">
-                  ${markers.map(
-                    (m) => html`
-                      <span
-                        class="cohort-warning-pill cohort-warning-pill--${m.kind}"
-                        title="${m.title}"
-                        role="note"
-                        aria-label="${m.label}"
-                        >${m.label}</span
-                      >
-                    `
-                  )}
+              ? html`<div class="cohort-warning-section" aria-label="Varningar">
+                  <div class="cohort-section-label">Varningar</div>
+                  <div class="cohort-warning-markers">
+                    ${markers.map(
+                      (m) => html`
+                        <span
+                          class="cohort-warning-pill cohort-warning-pill--${m.kind}"
+                          title="${m.title}"
+                          role="note"
+                          aria-label="${m.label}"
+                          >${m.label}</span
+                        >
+                      `
+                    )}
+                  </div>
                 </div>`
               : ""}
           </div>
@@ -1336,6 +1347,22 @@ export class SchedulingTab extends LitElement {
     const idx = slotDates.indexOf(startDate);
     if (idx === -1) return [startDate];
     return slotDates.slice(idx, idx + span);
+  }
+
+  _getCohortNumber(cohort) {
+    if (!cohort) return "";
+    const name = String(cohort.name || "").trim();
+    const match = name.match(/\d+/);
+    const number =
+      match?.[0] ||
+      (cohort.cohort_id != null ? String(cohort.cohort_id) : "");
+    return number || name || "";
+  }
+
+  _formatCohortStartDate(cohort) {
+    if (!cohort) return "-";
+    const startDate = String(cohort.start_date || "").trim();
+    return startDate || "-";
   }
 
   _parseDragDataFromEvent(e) {
