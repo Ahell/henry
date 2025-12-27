@@ -81,8 +81,11 @@
         border: none;
       }
 
-      nav.header-right {
-        justify-content: flex-end;
+      .admin-actions {
+        display: inline-flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
       }
 
       nav button {
@@ -186,12 +189,21 @@
       }
 
       henry-switch.nav-edit-switch {
-        --color-text-primary: rgba(255, 255, 255, 0.88);
-        --color-border: rgba(255, 255, 255, 0.22);
-        --color-gray-200: rgba(255, 255, 255, 0.18);
-        /* Use blue for "on" to match header actions */
-        --color-success: rgba(59, 130, 246, 0.75);
-        --color-success-hover: rgba(59, 130, 246, 0.9);
+        --color-text-primary: rgba(255, 255, 255, 0.85);
+        --color-border: rgba(255, 255, 255, 0.18);
+        --color-gray-200: rgba(255, 255, 255, 0.14);
+        --color-success: rgba(255, 255, 255, 0.22);
+        --color-success-hover: rgba(255, 255, 255, 0.28);
+        --color-background: rgba(255, 255, 255, 0.06);
+        --color-surface: rgba(255, 255, 255, 0.06);
+        --color-text-secondary: rgba(255, 255, 255, 0.75);
+        --henry-switch-label-size: var(--font-size-xs);
+        --henry-switch-label-weight: var(--font-weight-semibold);
+        --henry-switch-label-letter-spacing: 0.01em;
+        --henry-switch-width: 36px;
+        --henry-switch-height: 20px;
+        --henry-switch-thumb-size: 14px;
+        --henry-switch-thumb-offset: 3px;
       }
 
       main {
@@ -260,18 +272,17 @@
             <h1>FEI Kursplanerare</h1>
           </div>
           <div id="adminTabs" class="admin-tabs" aria-label="Admin tabs"></div>
-        </div>
-        <nav class="header-right">
+          <nav class="admin-actions" aria-label="Admin actions">
           <button
             id="navLoadTestData"
-            class="nav-action nav-action--primary"
+            class="admin-tab-btn"
             type="button"
           >
             Ladda Testdata
           </button>
           <button
             id="navResetDatabase"
-            class="nav-action nav-action--danger"
+            class="admin-tab-btn"
             type="button"
           >
             Återställ Databas
@@ -281,23 +292,14 @@
             class="nav-edit-switch"
             label="Redigera"
           ></henry-switch>
-          <button class="nav-btn active" data-section="admin">
-            Admin Grunddata
-          </button>
-          <button class="nav-btn" data-section="import-export">
-            Import/Export
-          </button>
           <span id="navStatus" class="nav-status"></span>
-        </nav>
+          </nav>
+        </div>
       </div>
     </header>
 
     <div class="container">
       <main>
-        <div id="import-export" class="section">
-          <import-export></import-export>
-        </div>
-
         <div id="admin" class="section active">
           <admin-panel></admin-panel>
         </div>

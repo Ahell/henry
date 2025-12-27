@@ -37,15 +37,17 @@ export class HenrySwitch extends LitElement {
     }
 
     .label {
-      font-size: var(--font-size-sm);
+      font-size: var(--henry-switch-label-size, var(--font-size-sm));
+      font-weight: var(--henry-switch-label-weight, var(--font-weight-medium));
+      letter-spacing: var(--henry-switch-label-letter-spacing, 0);
       color: var(--color-text-primary);
       cursor: pointer;
     }
 
     .switch {
       position: relative;
-      width: 44px;
-      height: 24px;
+      width: var(--henry-switch-width, 44px);
+      height: var(--henry-switch-height, 24px);
       flex: 0 0 auto;
       cursor: pointer;
     }
@@ -69,9 +71,9 @@ export class HenrySwitch extends LitElement {
     .thumb {
       position: absolute;
       top: 50%;
-      left: 3px;
-      width: 18px;
-      height: 18px;
+      left: var(--henry-switch-thumb-offset, 3px);
+      width: var(--henry-switch-thumb-size, 18px);
+      height: var(--henry-switch-thumb-size, 18px);
       border-radius: 999px;
       transform: translateY(-50%);
       background: #fff;
@@ -90,7 +92,10 @@ export class HenrySwitch extends LitElement {
     }
 
     input:checked + .track .thumb {
-      left: calc(100% - 21px);
+      left: calc(
+        100% - var(--henry-switch-thumb-size, 18px) -
+          var(--henry-switch-thumb-offset, 3px)
+      );
     }
 
     .disabled {
