@@ -19,8 +19,15 @@ export class ReportTab extends LitElement {
     courseQuery: { type: String },
     examinatorQuery: { type: String },
     kursansvarigQuery: { type: String },
+    kursassistenterQuery: { type: String },
+    slotNumberQuery: { type: String },
+    participantsQuery: { type: String },
     startFrom: { type: String },
     startTo: { type: String },
+    endFrom: { type: String },
+    endTo: { type: String },
+    examFrom: { type: String },
+    examTo: { type: String },
     _showAdvancedFilters: { type: Boolean },
     _rows: { type: Array },
   };
@@ -36,8 +43,15 @@ export class ReportTab extends LitElement {
     this.courseQuery = "";
     this.examinatorQuery = "";
     this.kursansvarigQuery = "";
+    this.kursassistenterQuery = "";
+    this.slotNumberQuery = "";
+    this.participantsQuery = "";
     this.startFrom = "";
     this.startTo = "";
+    this.endFrom = "";
+    this.endTo = "";
+    this.examFrom = "";
+    this.examTo = "";
     this._showAdvancedFilters = false;
     this._rows = [];
     this._refresh();
@@ -227,7 +241,8 @@ export class ReportTab extends LitElement {
         run.course_id
       );
       const courseKursansvarigId =
-        run?.kursansvarig_id ?? store.coursesManager.getKursansvarigForCourse(run.course_id);
+        run?.kursansvarig_id ??
+        store.coursesManager.getKursansvarigForCourse(run.course_id);
       const teacherIds = uniqueStrings([
         ...normalizeTeacherIds(run),
         courseExaminatorTeacherId != null ? courseExaminatorTeacherId : null,
@@ -326,8 +341,21 @@ export class ReportTab extends LitElement {
     const kursansvarigQ = String(this.kursansvarigQuery || "")
       .trim()
       .toLowerCase();
+    const kursassistenterQ = String(this.kursassistenterQuery || "")
+      .trim()
+      .toLowerCase();
+    const slotNumberQ = String(this.slotNumberQuery || "")
+      .trim()
+      .toLowerCase();
+    const participantsQ = String(this.participantsQuery || "")
+      .trim()
+      .toLowerCase();
     const startFrom = String(this.startFrom || "").trim();
     const startTo = String(this.startTo || "").trim();
+    const endFrom = String(this.endFrom || "").trim();
+    const endTo = String(this.endTo || "").trim();
+    const examFrom = String(this.examFrom || "").trim();
+    const examTo = String(this.examTo || "").trim();
 
     return (this._rows || []).filter((r) => {
       if (this.year && String(r.year) !== String(this.year)) return false;
@@ -341,6 +369,10 @@ export class ReportTab extends LitElement {
         return false;
       if (startFrom && String(r.start || "") < startFrom) return false;
       if (startTo && String(r.start || "") > startTo) return false;
+      if (endFrom && String(r.end || "") < endFrom) return false;
+      if (endTo && String(r.end || "") > endTo) return false;
+      if (examFrom && String(r.examDate || "") < examFrom) return false;
+      if (examTo && String(r.examDate || "") > examTo) return false;
       if (
         codeQ &&
         !String(r.code || "")
@@ -371,12 +403,41 @@ export class ReportTab extends LitElement {
       ) {
         return false;
       }
+      if (
+        kursassistenterQ &&
+        !String(r.kursassistenter || "")
+          .toLowerCase()
+          .includes(kursassistenterQ)
+      ) {
+        return false;
+      }
+      if (
+        slotNumberQ &&
+        !String((r.slotNumbers || []).join(", "))
+          .toLowerCase()
+          .includes(slotNumberQ)
+      ) {
+        return false;
+      }
+      if (
+        participantsQ &&
+        !String(r.plannedStudents ?? "")
+          .toLowerCase()
+          .includes(participantsQ)
+      ) {
+        return false;
+      }
       if (!q) return true;
-      const hay = `${r.avd} ${r.code} ${r.courseName} ${r.examinator} ${
-        r.kursansvarig
-      } ${r.start} ${r.end} ${r.term} ${r.year} ${
+      const startCompact = this._formatDateYYMMDD(r.start);
+      const endCompact = this._formatDateYYMMDD(r.end);
+      const examCompact = this._formatDateYYMMDD(r.examDate);
+      const hay = `${r.avd} ${r.code} ${r.courseName} ${(
+        r.slotNumbers || []
+      ).join(", ")} ${r.examinator} ${r.kursansvarig} ${
+        r.kursassistenter || ""
+      } ${r.plannedStudents ?? ""} ${r.start} ${r.end} ${r.term} ${r.year} ${
         r.examDate || ""
-      }`.toLowerCase();
+      } ${startCompact} ${endCompact} ${examCompact}`.toLowerCase();
       return hay.includes(q);
     });
   }
@@ -395,8 +456,15 @@ export class ReportTab extends LitElement {
     this.courseQuery = "";
     this.examinatorQuery = "";
     this.kursansvarigQuery = "";
+    this.kursassistenterQuery = "";
+    this.slotNumberQuery = "";
+    this.participantsQuery = "";
     this.startFrom = "";
     this.startTo = "";
+    this.endFrom = "";
+    this.endTo = "";
+    this.examFrom = "";
+    this.examTo = "";
     this._showAdvancedFilters = false;
   }
 
@@ -455,7 +523,11 @@ export class ReportTab extends LitElement {
       { key: "slotNumbers", label: "Kursperiod", width: "130px" },
       { key: "examinator", label: "Examinator", width: "180px" },
       { key: "kursansvarig", label: "Kursansvarig", width: "180px" },
-      { key: "kursassistenter", label: "Kursassistenter", width: "200px" },
+      {
+        key: "kursassistenter",
+        label: "Övrig undervisande personal",
+        width: "200px",
+      },
       { key: "plannedStudents", label: "Deltagare", width: "110px" },
       { key: "start", label: "Kursstart", width: "110px" },
       { key: "end", label: "Kursslut", width: "110px" },
@@ -582,7 +654,7 @@ export class ReportTab extends LitElement {
 
                   <henry-input
                     id="reportCode"
-                    label="Kod"
+                    label="Kurskod"
                     placeholder="AI123U"
                     @input-change=${(e) => {
                       this.codeQuery = e?.detail?.value ?? "";
@@ -591,7 +663,7 @@ export class ReportTab extends LitElement {
 
                   <henry-input
                     id="reportCourse"
-                    label="Kurs"
+                    label="Kursnamn"
                     placeholder="Allmän fastighetsrätt"
                     @input-change=${(e) => {
                       this.courseQuery = e?.detail?.value ?? "";
@@ -617,6 +689,33 @@ export class ReportTab extends LitElement {
                   ></henry-input>
 
                   <henry-input
+                    id="reportAssistants"
+                    label="Övrig undervisande personal"
+                    placeholder="Namn"
+                    @input-change=${(e) => {
+                      this.kursassistenterQuery = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportSlotNumber"
+                    label="Kursperiod"
+                    placeholder="#3"
+                    @input-change=${(e) => {
+                      this.slotNumberQuery = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportParticipants"
+                    label="Deltagare"
+                    placeholder="30"
+                    @input-change=${(e) => {
+                      this.participantsQuery = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
                     id="reportStartFrom"
                     label="Kursstart från"
                     type="date"
@@ -631,6 +730,42 @@ export class ReportTab extends LitElement {
                     type="date"
                     @input-change=${(e) => {
                       this.startTo = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportEndFrom"
+                    label="Kursslut från"
+                    type="date"
+                    @input-change=${(e) => {
+                      this.endFrom = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportEndTo"
+                    label="Kursslut till"
+                    type="date"
+                    @input-change=${(e) => {
+                      this.endTo = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportExamFrom"
+                    label="Tentamensdatum från"
+                    type="date"
+                    @input-change=${(e) => {
+                      this.examFrom = e?.detail?.value ?? "";
+                    }}
+                  ></henry-input>
+
+                  <henry-input
+                    id="reportExamTo"
+                    label="Tentamensdatum till"
+                    type="date"
+                    @input-change=${(e) => {
+                      this.examTo = e?.detail?.value ?? "";
                     }}
                   ></henry-input>
                 </div>
