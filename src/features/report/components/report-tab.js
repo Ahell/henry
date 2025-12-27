@@ -202,6 +202,17 @@ export class ReportTab extends LitElement {
 
     const groups = new Map();
 
+    const getParticipantsForRun = (run) => {
+      const cohortIds = Array.isArray(run?.cohorts) ? run.cohorts : [];
+      if (cohortIds.length > 0) {
+        return cohortIds.reduce((sum, id) => {
+          const cohort = store.getCohort(Number(id));
+          return sum + (Number(cohort?.planned_size) || 0);
+        }, 0);
+      }
+      return Number(run?.planned_students) || 0;
+    };
+
     for (const run of runs || []) {
       if (!run || run.course_id == null) continue;
       const course = store.getCourse(run.course_id) || {};
@@ -224,9 +235,7 @@ export class ReportTab extends LitElement {
       const cohorts = uniqueStrings(
         Array.isArray(run?.cohorts) ? run.cohorts : []
       );
-      const plannedStudents = Number.isFinite(Number(run?.planned_students))
-        ? Number(run.planned_students)
-        : 0;
+      const plannedStudents = getParticipantsForRun(run);
 
       const { start, end } = getStartEnd(run);
       const examDate = getExamDate(run);
