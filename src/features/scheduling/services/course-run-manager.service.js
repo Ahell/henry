@@ -472,11 +472,11 @@ export class CourseRunManager {
             slot_span: effectiveSpan,
             slot_ids: null,
             teacher_id: run.teacher_id,
-            teachers: Array.isArray(run.teachers) ? [...run.teachers] : [],
+            teachers: [],
             cohorts: [targetCohortId],
             planned_students: run.planned_students || 0,
             status: run.status || "planerad",
-            kursansvarig_id: run.kursansvarig_id ?? null,
+            kursansvarig_id: null,
             created_at: run.created_at || new Date().toISOString(),
           };
           runs.push(createdRun);
@@ -496,6 +496,8 @@ export class CourseRunManager {
 
     const previousSlotId = run.slot_id;
     const previousSlotIds = run.slot_ids; // Capture previous slot_ids
+    const previousTeachers = Array.isArray(run.teachers) ? [...run.teachers] : [];
+    const previousKursansvarigId = run.kursansvarig_id ?? null;
     const previousCourseSlotDays = (store.courseSlotDays || []).map((csd) => ({
       ...csd,
     }));
@@ -506,6 +508,8 @@ export class CourseRunManager {
       rollback: () => {
         run.slot_id = previousSlotId;
         run.slot_ids = previousSlotIds; // Restore previous slot_ids
+        run.teachers = [...previousTeachers];
+        run.kursansvarig_id = previousKursansvarigId;
         if (createdSlot) {
           store.deleteSlot(createdSlot.slot_id);
         }
@@ -599,6 +603,82 @@ export class CourseRunManager {
         createdSlot = targetSlot;
       }
 
+      const runCoversSlotId = (r, slotId) => {
+        if (!r || slotId == null) return false;
+        if (Array.isArray(r.slot_ids) && r.slot_ids.length > 0) {
+          return r.slot_ids.some((id) => String(id) === String(slotId));
+        }
+        return String(r.slot_id) === String(slotId);
+      };
+
+      const targetRun = (store.getCourseRuns() || []).find(
+        (r) =>
+          String(r?.course_id) === String(run.course_id) &&
+          String(r?.run_id) !== String(run.run_id) &&
+          runCoversSlotId(r, targetSlot.slot_id)
+      );
+
+      if (targetRun) {
+        const previousRun = { ...run, cohorts: [...(run.cohorts || [])] };
+        const previousTargetCohorts = Array.isArray(targetRun.cohorts)
+          ? [...targetRun.cohorts]
+          : [];
+        const mutationId = store.applyOptimistic({
+          label: "move-course-run-merge",
+          rollback: () => {
+            const runs = CourseRunManager._runs();
+            const exists = runs.some(
+              (r) => String(r.run_id) === String(previousRun.run_id)
+            );
+            if (!exists) {
+              runs.push(previousRun);
+            } else {
+              const existing = CourseRunManager._runById(previousRun.run_id);
+              if (existing) {
+                Object.assign(existing, previousRun);
+              }
+            }
+            targetRun.cohorts = previousTargetCohorts;
+            if (createdSlot) {
+              store.deleteSlot(createdSlot.slot_id);
+            }
+            store.courseSlotDays = previousCourseSlotDays;
+            store.notify();
+          },
+        });
+
+        try {
+          run.cohorts = (run.cohorts || []).filter(
+            (id) => String(id) !== String(fromCohortId)
+          );
+          if (run.cohorts.length === 0) {
+            const runs = CourseRunManager._runs();
+            const index = runs.findIndex(
+              (r) => String(r.run_id) === String(run.run_id)
+            );
+            if (index !== -1) runs.splice(index, 1);
+          }
+
+          const nextCohorts = new Set(
+            (Array.isArray(targetRun.cohorts) ? targetRun.cohorts : []).map(
+              (id) => String(id)
+            )
+          );
+          nextCohorts.add(String(targetCohortId));
+          targetRun.cohorts = Array.from(nextCohorts).map((id) => Number(id));
+
+          store.courseRunsManager.ensureCourseSlotsFromRuns();
+          store.teachingDaysManager._ensureCourseSlotDayDefaults();
+
+          store.notify();
+          await store.saveData({ mutationId });
+          return { mutationId };
+        } catch (error) {
+          await store.rollback(mutationId);
+          throw error;
+        }
+      }
+
       // Reset course days logic
       const clearDaysFor = (cId, sId) => {
         const cs = (store.courseRunsManager.courseSlots || []).find(
@@ -626,6 +706,9 @@ export class CourseRunManager {
       run.slot_id = targetSlot.slot_id;
       // Clear explicit slot_ids to ensure days are generated for the new slot(s)
       run.slot_ids = null;
+      // Reset teacher selections when moving to a new joint run
+      run.teachers = [];
+      run.kursansvarig_id = null;
 
       // Regenerate structures and defaults
       store.courseRunsManager.ensureCourseSlotsFromRuns();
