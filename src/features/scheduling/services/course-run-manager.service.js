@@ -291,6 +291,208 @@ export class CourseRunManager {
 
     const course = store.getCourse(run.course_id);
     const spanForCourse = Number(course?.credits) === 15 ? 2 : 1;
+    const runCohorts = Array.isArray(run.cohorts) ? run.cohorts : [];
+    const uniqueCohortIds = Array.from(
+      new Set(runCohorts.filter((id) => id != null).map((id) => String(id)))
+    );
+    const hasMultipleCohorts = uniqueCohortIds.length > 1;
+
+    if (hasMultipleCohorts) {
+      // Move only the dragged cohort into its own joint run (or join existing).
+      const previousRunCohorts = Array.isArray(run.cohorts)
+        ? [...run.cohorts]
+        : [];
+      const previousCourseSlots = (store.courseRunsManager.courseSlots || []).map(
+        (cs) => ({ ...cs })
+      );
+      const previousCourseSlotDays = (store.courseSlotDays || []).map((csd) => ({
+        ...csd,
+      }));
+      let createdSlot = null;
+      let createdRun = null;
+      let targetRun = null;
+      let previousTargetCohorts = null;
+
+      const mutationId = store.applyOptimistic({
+        label: "move-course-run",
+        rollback: () => {
+          run.cohorts = previousRunCohorts;
+          if (targetRun && previousTargetCohorts) {
+            targetRun.cohorts = previousTargetCohorts;
+          }
+          if (createdRun) {
+            const runs = CourseRunManager._runs();
+            const index = runs.findIndex(
+              (r) => String(r.run_id) === String(createdRun.run_id)
+            );
+            if (index !== -1) runs.splice(index, 1);
+          }
+          if (createdSlot) {
+            store.deleteSlot(createdSlot.slot_id);
+          }
+          store.courseRunsManager.courseSlots = previousCourseSlots;
+          store.courseSlotDays = previousCourseSlotDays;
+          store.notify();
+        },
+      });
+
+      try {
+        // Find or create target slot
+        let targetSlot = store
+          .getSlots()
+          .find((s) => s.start_date === targetSlotDate);
+
+        if (spanForCourse > 1) {
+          const slotDates = CourseRunManager._sortedSlotDates();
+          const slotIdxByDate = CourseRunManager._slotIdxByDate(slotDates);
+          const spanByCourseId = new Map(
+            (store.getCourses() || []).map((c) => [
+              Number(c.course_id),
+              Number(c?.credits) === 15 ? 2 : 1,
+            ])
+          );
+          const candidateStartIdx = slotIdxByDate.get(String(targetSlotDate));
+
+          // Prevent *any* skewed overlap for 15hp courses (offset starts are forbidden).
+          if (
+            CourseRunManager._hasSkewedSpanOverlap({
+              courseId: run.course_id,
+              candidateStartIdx,
+              candidateSpan: spanForCourse,
+              slotDates,
+              slotIdxByDate,
+              spanByCourseId,
+              excludeRunId: runId,
+            })
+          ) {
+            return;
+          }
+        }
+
+        // Business logic hard-rule: require at least one available compatible teacher (optional).
+        {
+          const businessLogic = store.businessLogicManager?.getBusinessLogic?.();
+          const schedulingLogic = businessLogic?.scheduling || {};
+          const requireTeachersEnabled = Array.isArray(schedulingLogic.hardRules)
+            ? schedulingLogic.hardRules.some(
+                (r) => r?.id === "requireAvailableCompatibleTeachers" && r?.enabled !== false
+              )
+            : false;
+
+          if (requireTeachersEnabled) {
+            const slotDates = CourseRunManager._sortedSlotDates();
+            const slotIdxByDate = CourseRunManager._slotIdxByDate(slotDates);
+            const startIdx = slotIdxByDate.get(String(targetSlotDate));
+            if (Number.isFinite(startIdx)) {
+              const ids0 = new Set(
+                getAvailableCompatibleTeachersForCourseInSlot(
+                  run.course_id,
+                  slotDates[startIdx]
+                ).map((t) => t.teacher_id)
+              );
+              let intersection = ids0;
+              for (let i = 1; i < spanForCourse; i += 1) {
+                const date = slotDates[startIdx + i];
+                const ids = new Set(
+                  getAvailableCompatibleTeachersForCourseInSlot(
+                    run.course_id,
+                    date
+                  ).map((t) => t.teacher_id)
+                );
+                intersection = new Set(
+                  [...intersection].filter((id) => ids.has(id))
+                );
+              }
+              if (intersection.size === 0) return;
+            }
+          }
+        }
+
+        if (!targetSlot) {
+          const startDate = new Date(targetSlotDate);
+          const endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
+          targetSlot = store.addSlot({
+            start_date: targetSlotDate,
+            end_date: endDate.toISOString().split("T")[0],
+            evening_pattern: "tis/tor",
+            is_placeholder: false,
+          });
+          createdSlot = targetSlot;
+        }
+
+        if (String(targetSlot.slot_id) === String(run.slot_id)) {
+          return;
+        }
+
+        const runCoversSlotId = (r, slotId) => {
+          if (!r || slotId == null) return false;
+          if (Array.isArray(r.slot_ids) && r.slot_ids.length > 0) {
+            return r.slot_ids.some((id) => String(id) === String(slotId));
+          }
+          return String(r.slot_id) === String(slotId);
+        };
+
+        targetRun = (store.getCourseRuns() || []).find(
+          (r) =>
+            String(r?.course_id) === String(run.course_id) &&
+            runCoversSlotId(r, targetSlot.slot_id)
+        );
+        if (targetRun && String(targetRun.run_id) !== String(run.run_id)) {
+          previousTargetCohorts = Array.isArray(targetRun.cohorts)
+            ? [...targetRun.cohorts]
+            : [];
+        }
+
+        run.cohorts = (run.cohorts || []).filter(
+          (id) => String(id) !== String(fromCohortId)
+        );
+
+        if (targetRun && String(targetRun.run_id) !== String(run.run_id)) {
+          const nextCohorts = new Set(
+            (Array.isArray(targetRun.cohorts) ? targetRun.cohorts : []).map(
+              (id) => String(id)
+            )
+          );
+          nextCohorts.add(String(targetCohortId));
+          targetRun.cohorts = Array.from(nextCohorts).map((id) => Number(id));
+        } else if (!targetRun) {
+          const runs = CourseRunManager._runs();
+          const nextId =
+            runs.reduce((max, r) => Math.max(max, Number(r.run_id) || 0), 0) + 1;
+          const spanFromRun = Number(run?.slot_span);
+          const effectiveSpan =
+            Number.isFinite(spanFromRun) && spanFromRun >= 1
+              ? spanFromRun
+              : spanForCourse;
+          createdRun = {
+            run_id: nextId,
+            course_id: run.course_id,
+            slot_id: targetSlot.slot_id,
+            slot_span: effectiveSpan,
+            slot_ids: null,
+            teacher_id: run.teacher_id,
+            teachers: Array.isArray(run.teachers) ? [...run.teachers] : [],
+            cohorts: [targetCohortId],
+            planned_students: run.planned_students || 0,
+            status: run.status || "planerad",
+            kursansvarig_id: run.kursansvarig_id ?? null,
+            created_at: run.created_at || new Date().toISOString(),
+          };
+          runs.push(createdRun);
+        }
+
+        store.courseRunsManager.ensureCourseSlotsFromRuns();
+        store.teachingDaysManager._ensureCourseSlotDayDefaults();
+
+        store.notify();
+        await store.saveData({ mutationId });
+        return { mutationId };
+      } catch (error) {
+        await store.rollback(mutationId);
+        throw error;
+      }
+    }
 
     const previousSlotId = run.slot_id;
     const previousSlotIds = run.slot_ids; // Capture previous slot_ids
