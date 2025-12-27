@@ -1,5 +1,10 @@
 import { store } from "../../../platform/store/DataStore.js";
 import { FormService } from "../../../platform/services/form.service.js";
+import {
+  DEFAULT_SLOT_LENGTH_DAYS,
+  getSlotRange,
+  normalizeDateOnly,
+} from "../../../utils/date-utils.js";
 
 /**
  * Slot Form Service
@@ -56,8 +61,36 @@ export class SlotFormService {
     if (!baseValid) return false;
 
     if (mode === "edit") {
+      if (!slotId) return false;
       const { start_date } = this.extractFormData(root, mode);
-      if (!start_date) return false;
+      const normalizedStart = normalizeDateOnly(start_date);
+      if (!normalizedStart) return false;
+
+      const slot = store.getSlot(slotId);
+      if (!slot) return false;
+
+      const currentRange = getSlotRange(slot);
+      const lengthDays = currentRange
+        ? Math.max(
+            1,
+            Math.round(
+              (currentRange.end.getTime() - currentRange.start.getTime()) /
+                (1000 * 60 * 60 * 24)
+            ) + 1
+          )
+        : DEFAULT_SLOT_LENGTH_DAYS;
+      const endDate = new Date(normalizedStart);
+      endDate.setDate(endDate.getDate() + lengthDays - 1);
+      const normalizedEnd = normalizeDateOnly(endDate);
+      if (!normalizedEnd) return false;
+      if (new Date(normalizedEnd) <= new Date(normalizedStart)) return false;
+
+      const overlapping = store.slotsManager.findOverlappingSlot(
+        normalizedStart,
+        normalizedEnd,
+        slotId
+      );
+      if (overlapping) return false;
     }
 
     return true;
