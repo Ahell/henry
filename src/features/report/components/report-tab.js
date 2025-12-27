@@ -1,5 +1,8 @@
 import { LitElement, html } from "lit";
-import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
+import {
+  store,
+  DEFAULT_SLOT_LENGTH_DAYS,
+} from "../../../platform/store/DataStore.js";
 import "../../../components/ui/index.js";
 import { reportTabStyles } from "../styles/report-tab.styles.js";
 
@@ -57,6 +60,14 @@ export class ReportTab extends LitElement {
       teachers.map((t) => [String(t.teacher_id), t])
     );
     const slotsById = new Map(slots.map((s) => [String(s.slot_id), s]));
+    const slotOrderById = new Map(
+      slots
+        .slice()
+        .sort((a, b) =>
+          String(a?.start_date || "").localeCompare(String(b?.start_date || ""))
+        )
+        .map((slot, idx) => [String(slot.slot_id), idx + 1])
+    );
 
     const lastDayOfSlot = (slotId) => {
       const days = store.getSlotDays(slotId) || [];
@@ -81,9 +92,10 @@ export class ReportTab extends LitElement {
     };
 
     const getCoveredSlotIds = (run) => {
-      const ids = Array.isArray(run?.slot_ids) && run.slot_ids.length > 0
-        ? run.slot_ids
-        : [run?.slot_id];
+      const ids =
+        Array.isArray(run?.slot_ids) && run.slot_ids.length > 0
+          ? run.slot_ids
+          : [run?.slot_id];
       return ids.filter((id) => id != null).map((id) => String(id));
     };
 
@@ -136,7 +148,11 @@ export class ReportTab extends LitElement {
       return String(t?.name || "");
     };
 
-    const finalizeTeacherFields = (teacherIds, courseExaminatorTeacherId, courseKursansvarigId) => {
+    const finalizeTeacherFields = (
+      teacherIds,
+      courseExaminatorTeacherId,
+      courseKursansvarigId
+    ) => {
       const sorted = (teacherIds || [])
         .map((id) => String(id))
         .filter(Boolean)
@@ -160,11 +176,11 @@ export class ReportTab extends LitElement {
 
       // Calculate assistants: all teachers except examinator and kursansvarig
       const assistantIds = sorted.filter(
-        id => id !== examinatorTeacherId && id !== kursansvarigTeacherId
+        (id) => id !== examinatorTeacherId && id !== kursansvarigTeacherId
       );
 
       const assistantNames = assistantIds
-        .map(id => teachersById.get(id)?.name)
+        .map((id) => teachersById.get(id)?.name)
         .filter(Boolean)
         .join(", ");
 
@@ -190,19 +206,24 @@ export class ReportTab extends LitElement {
       if (!run || run.course_id == null) continue;
       const course = store.getCourse(run.course_id) || {};
       const coveredSlotIds = getCoveredSlotIds(run).sort();
+      const slotNumbers = coveredSlotIds
+        .map((id) => slotOrderById.get(String(id)))
+        .filter((num) => Number.isFinite(Number(num)))
+        .map((num) => `#${num}`);
       const key = `${String(run.course_id)}|${coveredSlotIds.join(",")}`;
 
       const courseExaminatorTeacherId = store.getCourseExaminatorTeacherId(
         run.course_id
       );
-      const courseKursansvarigId = store.coursesManager.getKursansvarigForCourse(
-        run.course_id
-      );
+      const courseKursansvarigId =
+        store.coursesManager.getKursansvarigForCourse(run.course_id);
       const teacherIds = uniqueStrings([
         ...normalizeTeacherIds(run),
         courseExaminatorTeacherId != null ? courseExaminatorTeacherId : null,
       ]);
-      const cohorts = uniqueStrings(Array.isArray(run?.cohorts) ? run.cohorts : []);
+      const cohorts = uniqueStrings(
+        Array.isArray(run?.cohorts) ? run.cohorts : []
+      );
       const plannedStudents = Number.isFinite(Number(run?.planned_students))
         ? Number(run.planned_students)
         : 0;
@@ -222,6 +243,7 @@ export class ReportTab extends LitElement {
           teacherIds,
           cohorts,
           plannedStudents,
+          slotNumbers,
           code: course.code || "",
           courseName: course.name || "",
           start,
@@ -233,14 +255,27 @@ export class ReportTab extends LitElement {
         continue;
       }
 
-      existing.teacherIds = uniqueStrings([...existing.teacherIds, ...teacherIds]);
+      existing.teacherIds = uniqueStrings([
+        ...existing.teacherIds,
+        ...teacherIds,
+      ]);
       existing.cohorts = uniqueStrings([...existing.cohorts, ...cohorts]);
       existing.plannedStudents =
         Number(existing.plannedStudents || 0) + Number(plannedStudents || 0);
-      if (existing.courseExaminatorTeacherId == null && courseExaminatorTeacherId != null) {
+      existing.slotNumbers = uniqueStrings([
+        ...(existing.slotNumbers || []),
+        ...(slotNumbers || []),
+      ]);
+      if (
+        existing.courseExaminatorTeacherId == null &&
+        courseExaminatorTeacherId != null
+      ) {
         existing.courseExaminatorTeacherId = courseExaminatorTeacherId;
       }
-      if (existing.courseKursansvarigId == null && courseKursansvarigId != null) {
+      if (
+        existing.courseKursansvarigId == null &&
+        courseKursansvarigId != null
+      ) {
         existing.courseKursansvarigId = courseKursansvarigId;
       }
       if (examDate > (existing.examDate || "")) {
@@ -267,10 +302,18 @@ export class ReportTab extends LitElement {
   }
 
   _filteredRows() {
-    const q = String(this.query || "").trim().toLowerCase();
-    const codeQ = String(this.codeQuery || "").trim().toLowerCase();
-    const courseQ = String(this.courseQuery || "").trim().toLowerCase();
-    const examinatorQ = String(this.examinatorQuery || "").trim().toLowerCase();
+    const q = String(this.query || "")
+      .trim()
+      .toLowerCase();
+    const codeQ = String(this.codeQuery || "")
+      .trim()
+      .toLowerCase();
+    const courseQ = String(this.courseQuery || "")
+      .trim()
+      .toLowerCase();
+    const examinatorQ = String(this.examinatorQuery || "")
+      .trim()
+      .toLowerCase();
     const kursansvarigQ = String(this.kursansvarigQuery || "")
       .trim()
       .toLowerCase();
@@ -280,27 +323,51 @@ export class ReportTab extends LitElement {
     return (this._rows || []).filter((r) => {
       if (this.year && String(r.year) !== String(this.year)) return false;
       if (this.term && String(r.term) !== String(this.term)) return false;
-      if (this.department && String(r.avd) !== String(this.department)) return false;
-      if (this.teacherId && !(r.teacherIds || []).includes(String(this.teacherId))) return false;
+      if (this.department && String(r.avd) !== String(this.department))
+        return false;
+      if (
+        this.teacherId &&
+        !(r.teacherIds || []).includes(String(this.teacherId))
+      )
+        return false;
       if (startFrom && String(r.start || "") < startFrom) return false;
       if (startTo && String(r.start || "") > startTo) return false;
-      if (codeQ && !String(r.code || "").toLowerCase().includes(codeQ)) return false;
-      if (courseQ && !String(r.courseName || "").toLowerCase().includes(courseQ))
+      if (
+        codeQ &&
+        !String(r.code || "")
+          .toLowerCase()
+          .includes(codeQ)
+      )
+        return false;
+      if (
+        courseQ &&
+        !String(r.courseName || "")
+          .toLowerCase()
+          .includes(courseQ)
+      )
         return false;
       if (
         examinatorQ &&
-        !String(r.examinator || "").toLowerCase().includes(examinatorQ)
+        !String(r.examinator || "")
+          .toLowerCase()
+          .includes(examinatorQ)
       ) {
         return false;
       }
       if (
         kursansvarigQ &&
-        !String(r.kursansvarig || "").toLowerCase().includes(kursansvarigQ)
+        !String(r.kursansvarig || "")
+          .toLowerCase()
+          .includes(kursansvarigQ)
       ) {
         return false;
       }
       if (!q) return true;
-      const hay = `${r.avd} ${r.code} ${r.courseName} ${r.examinator} ${r.kursansvarig} ${r.start} ${r.end} ${r.term} ${r.year} ${r.examDate || ""}`.toLowerCase();
+      const hay = `${r.avd} ${r.code} ${r.courseName} ${r.examinator} ${
+        r.kursansvarig
+      } ${r.start} ${r.end} ${r.term} ${r.year} ${
+        r.examDate || ""
+      }`.toLowerCase();
       return hay.includes(q);
     });
   }
@@ -325,8 +392,13 @@ export class ReportTab extends LitElement {
   }
 
   _yearOptions() {
-    const years = Array.from(new Set((this._rows || []).map((r) => r.year).filter(Boolean))).sort();
-    return [{ value: "", label: "Alla år" }, ...years.map((y) => ({ value: String(y), label: String(y) }))];
+    const years = Array.from(
+      new Set((this._rows || []).map((r) => r.year).filter(Boolean))
+    ).sort();
+    return [
+      { value: "", label: "Alla år" },
+      ...years.map((y) => ({ value: String(y), label: String(y) })),
+    ];
   }
 
   _termOptions() {
@@ -338,16 +410,25 @@ export class ReportTab extends LitElement {
   }
 
   _departmentOptions() {
-    const depts = Array.from(new Set((store.getTeachers() || []).map((t) => t.home_department).filter(Boolean))).sort(
-      (a, b) => String(a).localeCompare(String(b), "sv-SE")
-    );
-    return [{ value: "", label: "Alla avdelningar" }, ...depts.map((d) => ({ value: String(d), label: String(d) }))];
+    const depts = Array.from(
+      new Set(
+        (store.getTeachers() || [])
+          .map((t) => t.home_department)
+          .filter(Boolean)
+      )
+    ).sort((a, b) => String(a).localeCompare(String(b), "sv-SE"));
+    return [
+      { value: "", label: "Alla avdelningar" },
+      ...depts.map((d) => ({ value: String(d), label: String(d) })),
+    ];
   }
 
   _teacherOptions() {
     const teachers = (store.getTeachers() || [])
       .slice()
-      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "sv-SE"));
+      .sort((a, b) =>
+        String(a.name || "").localeCompare(String(b.name || ""), "sv-SE")
+      );
     return [
       { value: "", label: "Alla lärare" },
       ...teachers.map((t) => ({
@@ -359,20 +440,23 @@ export class ReportTab extends LitElement {
 
   _getTableColumns() {
     return [
-      { key: "avd", label: "AVD", width: "80px" },
-      { key: "code", label: "Kod", width: "90px" },
-      { key: "courseName", label: "Kurs", width: "260px" },
+      { key: "avd", label: "Avdelning", width: "80px" },
+      { key: "code", label: "Kurskod", width: "90px" },
+      { key: "courseName", label: "Kursnamn", width: "260px" },
+      { key: "slotNumbers", label: "Kursperiod", width: "130px" },
       { key: "examinator", label: "Examinator", width: "180px" },
       { key: "kursansvarig", label: "Kursansvarig", width: "180px" },
       { key: "kursassistenter", label: "Kursassistenter", width: "200px" },
+      { key: "plannedStudents", label: "Deltagare", width: "110px" },
       { key: "start", label: "Kursstart", width: "110px" },
       { key: "end", label: "Kursslut", width: "110px" },
-      { key: "examDate", label: "Tentamensdatum", width: "130px" },
+      { key: "examDate", label: "Tentamen", width: "130px" },
       {
         key: "term",
         label: "Termin",
         width: "70px",
-        sortValue: (row) => (row?.term === "VT" ? 1 : row?.term === "HT" ? 2 : 99),
+        sortValue: (row) =>
+          row?.term === "VT" ? 1 : row?.term === "HT" ? 2 : 99,
       },
       { key: "year", label: "År", width: "70px" },
     ];
@@ -380,7 +464,26 @@ export class ReportTab extends LitElement {
 
   _renderCell(row, col) {
     const key = col.key;
+    if (key === "start" || key === "end" || key === "examDate") {
+      return html`${this._formatDateYYMMDD(row?.[key] ?? "")}`;
+    }
+    if (key === "slotNumbers") {
+      return html`${(row?.slotNumbers || []).join(", ")}`;
+    }
+    if (key === "plannedStudents") {
+      return html`${Number(row?.plannedStudents || 0)}`;
+    }
     return html`${row?.[key] ?? ""}`;
+  }
+
+  _formatDateYYMMDD(value) {
+    if (!value) return "";
+    const [datePart] = String(value).split("T");
+    const parts = datePart.split("-");
+    if (parts.length !== 3) return datePart;
+    const [yyyy, mm, dd] = parts;
+    if (!yyyy || !mm || !dd) return datePart;
+    return `${yyyy.slice(-2)}${mm}${dd}`;
   }
 
   render() {
@@ -431,7 +534,9 @@ export class ReportTab extends LitElement {
               <henry-button
                 variant="secondary"
                 @click=${this._toggleAdvancedFilters}
-                >${this._showAdvancedFilters ? "Dölj filter" : "Avancerat"}</henry-button
+                >${this._showAdvancedFilters
+                  ? "Dölj filter"
+                  : "Avancerat"}</henry-button
               >
               <henry-button variant="secondary" @click=${this._clearFilters}
                 >Rensa</henry-button
