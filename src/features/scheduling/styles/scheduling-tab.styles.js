@@ -9,7 +9,7 @@ export const schedulingTabStyles = css`
     --gantt-cohort-width: 136px;
     --gantt-slot-width: 180px;
     --gantt-row-height: 160px;
-    --gantt-availability-row-height: 92px;
+    --gantt-availability-row-height: 72px;
     --gantt-teacher-overlay-height: 72px;
     --gantt-date-row-height: 32px;
     --availability-chip-gap: 4px;
@@ -36,6 +36,8 @@ export const schedulingTabStyles = css`
     display: inline-flex;
     gap: var(--space-2);
     align-items: center;
+    position: relative;
+    z-index: 30;
   }
 
   .legend {
@@ -213,7 +215,7 @@ export const schedulingTabStyles = css`
     height: auto;
     overflow: hidden;
     pointer-events: none;
-    z-index: 20;
+    z-index: 5;
   }
 
   .slot-teacher-overlay {
