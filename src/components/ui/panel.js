@@ -29,7 +29,7 @@ export class HenryPanel extends LitElement {
     }
 
     .panel {
-      background: transparent;
+      background: var(--color-surface);
       border: none;
       border-radius: 0;
       margin-bottom: var(--space-6);
@@ -38,9 +38,9 @@ export class HenryPanel extends LitElement {
     }
 
     .panel-header {
-      padding: var(--space-5) var(--space-5) var(--space-3);
-      margin-bottom: 0;
-      border-bottom: none;
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-background);
     }
 
     .panel-header:empty {
@@ -48,7 +48,7 @@ export class HenryPanel extends LitElement {
     }
 
     .panel-content {
-      padding: var(--space-5);
+      padding: var(--space-6);
     }
 
     :host([noPadding]) .panel-content {

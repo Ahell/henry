@@ -62,8 +62,8 @@ export class HenrySwitch extends LitElement {
     .track {
       position: absolute;
       inset: 0;
-      border-radius: 999px;
-      background: var(--color-gray-200);
+      border-radius: var(--radius-full);
+      background: var(--color-gray-light);
       border: 1px solid var(--color-border);
       transition: var(--transition-all);
     }
@@ -74,9 +74,9 @@ export class HenrySwitch extends LitElement {
       left: var(--henry-switch-thumb-offset, 3px);
       width: var(--henry-switch-thumb-size, 18px);
       height: var(--henry-switch-thumb-size, 18px);
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       transform: translateY(-50%);
-      background: #fff;
+      background: var(--color-white);
       box-shadow: var(--shadow-sm);
       transition: var(--transition-all);
     }
@@ -87,8 +87,8 @@ export class HenrySwitch extends LitElement {
     }
 
     input:checked + .track {
-      background: var(--color-success);
-      border-color: var(--color-success);
+      background: var(--color-primary-500);
+      border-color: var(--color-primary-500);
     }
 
     input:checked + .track .thumb {

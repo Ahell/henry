@@ -30,9 +30,12 @@ export class HenryInput extends LitElement {
   static styles = css`
     @import url("/src/styles/tokens.css");
 
+    * {
+      box-sizing: border-box;
+    }
+
     :host {
       display: block;
-      margin-bottom: var(--space-4);
     }
 
     .input-wrapper {
@@ -44,7 +47,7 @@ export class HenryInput extends LitElement {
     label {
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
-      color: var(--color-text-primary);
+      color: var(--color-text-secondary);
       display: flex;
       align-items: center;
       gap: var(--space-1);
@@ -55,30 +58,35 @@ export class HenryInput extends LitElement {
     }
 
     input {
-      padding: var(--input-padding-y) var(--input-padding-x);
-      border: var(--input-border-width) solid var(--color-border);
-      border-radius: var(--radius-base);
-      font-size: var(--font-size-sm);
+      display: block;
+      width: 100%;
+      height: var(--input-height-base);
+      padding: 0 var(--space-3);
       font-family: var(--font-family-base);
-      transition: var(--transition-all);
-      background: var(--color-background);
+      font-size: var(--font-size-base);
       color: var(--color-text-primary);
+      background-color: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-base);
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
     }
 
     input:hover:not(:disabled) {
-      border-color: var(--color-border-hover);
+      border-color: var(--color-gray);
     }
 
     input:focus {
       outline: none;
       border-color: var(--color-primary-500);
-      box-shadow: var(--input-focus-ring);
+      box-shadow: 0 0 0 3px rgba(0, 71, 145, 0.15);
     }
 
     input:disabled {
-      background: var(--color-gray-100);
+      background-color: var(--color-gray-lighter);
+      color: var(--color-text-disabled);
       cursor: not-allowed;
-      opacity: 0.6;
+      box-shadow: none;
     }
 
     input::placeholder {

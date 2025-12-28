@@ -1,107 +1,104 @@
 /**
  * Theme Styles - Henry Course Planner
- * Gemensamma stilar som kan användas i alla komponenter
+ * Uses tokens.css for a consistent KTH design.
  */
 
 @import "./tokens.css";
 
-/* Global resets and base styles */
-* {
+/* --- RESET & BASE --- */
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
-/* Typography utilities */
-.text-xs {
-  font-size: var(--font-size-xs);
-}
-.text-sm {
-  font-size: var(--font-size-sm);
-}
-.text-base {
+body {
+  margin: 0;
+  font-family: var(--font-family-base);
   font-size: var(--font-size-base);
-}
-.text-lg {
-  font-size: var(--font-size-lg);
-}
-.text-xl {
-  font-size: var(--font-size-xl);
-}
-.text-2xl {
-  font-size: var(--font-size-2xl);
-}
-.text-3xl {
-  font-size: var(--font-size-3xl);
-}
-
-.font-normal {
-  font-weight: var(--font-weight-normal);
-}
-.font-medium {
-  font-weight: var(--font-weight-medium);
-}
-.font-semibold {
-  font-weight: var(--font-weight-semibold);
-}
-.font-bold {
-  font-weight: var(--font-weight-bold);
-}
-
-.text-primary {
+  line-height: var(--line-height-normal);
   color: var(--color-text-primary);
+  background-color: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-.text-secondary {
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-kth-blue);
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.02em;
+}
+
+h1 { font-size: var(--font-size-3xl); }
+h2 { font-size: var(--font-size-2xl); }
+h3 { font-size: var(--font-size-xl); }
+h4 { font-size: var(--font-size-lg); }
+
+p {
+  margin-top: 0;
+  margin-bottom: var(--space-4);
   color: var(--color-text-secondary);
 }
-.text-disabled {
-  color: var(--color-text-disabled);
-}
 
-/* Common form element styles */
-.form-input {
-  width: 100%;
-  padding: var(--input-padding-y) var(--input-padding-x);
-  border: var(--input-border-width) solid var(--color-border);
-  border-radius: var(--radius-base);
-  font-size: var(--font-size-sm);
-  font-family: var(--font-family-base);
-  background: var(--color-background);
-  color: var(--color-text-primary);
-  transition: var(--transition-all);
-}
+/* --- UTILITIES: TYPOGRAPHY --- */
 
-.form-input:hover:not(:disabled) {
-  border-color: var(--color-border-hover);
-}
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+.text-2xl { font-size: var(--font-size-2xl); }
+.text-3xl { font-size: var(--font-size-3xl); }
 
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: var(--input-focus-ring);
-}
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
 
-.form-input:disabled {
-  background: var(--color-gray-100);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-kth-blue { color: var(--color-kth-blue); }
+.text-disabled { color: var(--color-text-disabled); }
 
-.form-input::placeholder {
-  color: var(--color-text-disabled);
-}
+/* --- UTILITIES: LAYOUT & SPACING --- */
 
-/* Button base styles */
+.m-0 { margin: 0; }
+.mt-2 { margin-top: var(--space-2); }
+.mt-4 { margin-top: var(--space-4); }
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-6 { margin-bottom: var(--space-6); }
+
+.p-4 { padding: var(--space-4); }
+.p-6 { padding: var(--space-6); }
+
+.gap-2 { gap: var(--space-2); }
+.gap-4 { gap: var(--space-4); }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+
+/* --- COMPONENTS: BUTTONS --- */
+
 .btn-base {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  height: var(--button-height-base);
+  padding: 0 var(--space-5);
   font-family: var(--font-family-base);
-  border: none;
-  border-radius: var(--radius-base);
-  cursor: pointer;
-  transition: var(--transition-all);
   font-weight: var(--font-weight-medium);
-  white-space: nowrap;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-base);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-base);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .btn-base:disabled {
@@ -109,171 +106,148 @@
   cursor: not-allowed;
 }
 
-.btn-base:not(:disabled):hover {
-  transform: none;
-}
-
-.btn-base:not(:disabled):active {
-  transform: none;
-}
-
-/* Button sizes */
-.btn-sm {
-  height: var(--button-height-sm);
-  padding: 0 var(--space-3);
-  font-size: var(--font-size-xs);
-}
-
-.btn-base {
-  height: var(--button-height-base);
-  padding: 0 var(--space-5);
-  font-size: var(--font-size-sm);
-}
-
-.btn-lg {
-  height: var(--button-height-lg);
-  padding: 0 var(--space-8);
-  font-size: var(--font-size-base);
-}
-
-/* Button variants */
 .btn-primary {
-  background: var(--color-primary-500);
-  color: white;
-  box-shadow: none;
+  background-color: var(--color-primary-500);
+  color: var(--color-white);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--color-primary-600);
+  background-color: var(--color-primary-600);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: var(--color-gray-100);
+  background-color: var(--color-white);
+  border-color: var(--color-border);
   color: var(--color-text-primary);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--color-gray-200);
+  border-color: var(--color-gray);
+  background-color: var(--color-broken-white);
+  color: var(--color-kth-blue);
 }
 
 .btn-danger {
-  background: var(--color-danger);
-  color: white;
-  box-shadow: var(--shadow-danger);
+  background-color: var(--color-danger);
+  color: var(--color-white);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: var(--color-danger-hover);
+  background-color: var(--color-red-dark);
 }
 
 .btn-success {
-  background: var(--color-success);
-  color: white;
-  box-shadow: var(--shadow-success);
+  background-color: var(--color-success);
+  color: var(--color-white);
 }
 
 .btn-success:hover:not(:disabled) {
-  background: var(--color-success-hover);
+  background-color: var(--color-green-dark);
 }
 
-/* Card styles */
-.card {
-  background: var(--color-background);
-  border-radius: var(--radius-lg);
-  transition: var(--transition-all);
+/* --- COMPONENTS: FORMS --- */
+
+.form-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
 }
 
-.card-default {
+.form-input {
+  display: block;
+  width: 100%;
+  height: var(--input-height-base);
+  padding: 0 var(--space-3);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background-color: var(--color-white);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-input:hover:not(:disabled) {
+  border-color: var(--color-gray);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(0, 71, 145, 0.15); /* Match token focus ring */
+}
+
+.form-input:disabled {
+  background-color: var(--color-gray-lighter);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* --- COMPONENTS: CARDS --- */
+
+.card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .card-elevated {
+  border: none;
   box-shadow: var(--shadow-base);
-}
-
-.card-elevated:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.card-bordered {
-  border: 2px solid var(--color-primary-500);
 }
 
 .card-padded {
   padding: var(--space-6);
 }
 
-/* Label styles */
-.form-label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
+/* --- TABLES --- */
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+th {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-broken-white);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
 }
 
-.label-required {
-  color: var(--color-danger);
+tr:last-child td {
+  border-bottom: none;
 }
 
-/* Spacing utilities */
-.mb-1 {
-  margin-bottom: var(--space-1);
-}
-.mb-2 {
-  margin-bottom: var(--space-2);
-}
-.mb-3 {
-  margin-bottom: var(--space-3);
-}
-.mb-4 {
-  margin-bottom: var(--space-4);
-}
-.mb-5 {
-  margin-bottom: var(--space-5);
-}
-.mb-6 {
-  margin-bottom: var(--space-6);
-}
-
-.mt-1 {
-  margin-top: var(--space-1);
-}
-.mt-2 {
-  margin-top: var(--space-2);
-}
-.mt-3 {
-  margin-top: var(--space-3);
-}
-.mt-4 {
-  margin-top: var(--space-4);
-}
-.mt-5 {
-  margin-top: var(--space-5);
-}
-.mt-6 {
-  margin-top: var(--space-6);
-}
-
-.gap-1 {
-  gap: var(--space-1);
-}
-.gap-2 {
-  gap: var(--space-2);
-}
-.gap-3 {
-  gap: var(--space-3);
-}
-.gap-4 {
-  gap: var(--space-4);
-}
-.gap-5 {
-  gap: var(--space-5);
-}
-.gap-6 {
-  gap: var(--space-6);
+tr:hover td {
+  background-color: var(--color-broken-white);
 }

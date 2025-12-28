@@ -13,6 +13,7 @@ export class BusinessLogicTab extends LitElement {
     messageType: { type: String },
     saving: { type: Boolean },
     isEditing: { type: Boolean },
+    _dragSourceIndex: { type: Number, state: true },
   };
 
   constructor() {
@@ -22,6 +23,7 @@ export class BusinessLogicTab extends LitElement {
     this.messageType = "";
     this.saving = false;
     this.isEditing = !!store.editMode;
+    this._dragSourceIndex = null;
     this._autoSaveTimer = null;
     this._saveGeneration = 0;
     this._lastScheduledSaveGeneration = 0;
@@ -140,7 +142,6 @@ export class BusinessLogicTab extends LitElement {
       store.businessLogicManager.getBusinessLogic()?.scheduling?.params || {};
     const isEnabled = Boolean(rule?.enabled);
     const isHard = String(rule?.kind || "soft").toLowerCase() === "hard";
-    const isLast = idx === (Number(listLength) || 0) - 1;
     const ruleId = rule?.id;
     const disabled = !this.isEditing;
 
@@ -186,8 +187,20 @@ export class BusinessLogicTab extends LitElement {
     };
 
     return html`
-      <div class="rule ${!isEnabled ? "muted" : ""}">
-        <div>
+      <div 
+        class="rule ${!isEnabled ? "muted" : ""} ${this._dragSourceIndex === idx ? "dragging" : ""}"
+        draggable="${this.isEditing ? "true" : "false"}"
+        @dragstart=${(e) => this._handleDragStart(e, idx)}
+        @dragover=${this._handleDragOver}
+        @drop=${(e) => this._handleDrop(e, idx)}
+        @dragend=${this._handleDragEnd}
+      >
+        <div class="drag-handle" ?disabled=${disabled}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path>
+          </svg>
+        </div>
+        <div class="rule-content">
           <div class="rule-title">${rule?.label || rule?.id}</div>
           <div class="rule-desc">${rule?.description || ""}</div>
         </div>
@@ -206,21 +219,40 @@ export class BusinessLogicTab extends LitElement {
             @switch-change=${(e) =>
               this._setRuleKind(ruleId, e.detail.checked ? "hard" : "soft")}
           ></henry-switch>
-          <henry-button
-            variant="secondary"
-            ?disabled=${disabled || idx === 0}
-            @click=${() => this._moveRule(idx, -1)}
-            >Upp</henry-button
-          >
-          <henry-button
-            variant="secondary"
-            ?disabled=${disabled || isLast}
-            @click=${() => this._moveRule(idx, +1)}
-            >Ner</henry-button
-          >
         </div>
       </div>
     `;
+  }
+
+  _handleDragStart(e, index) {
+    if (!this.isEditing) return;
+    this._dragSourceIndex = index;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index);
+    // Add a slight delay to the dragging class to avoid hiding the element before the drag image is generated
+    setTimeout(() => this.requestUpdate(), 0);
+  }
+
+  _handleDragOver(e) {
+    if (!this.isEditing) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }
+
+  _handleDrop(e, targetIndex) {
+    if (!this.isEditing) return;
+    e.preventDefault();
+    const sourceIndex = this._dragSourceIndex;
+    
+    if (sourceIndex !== null && sourceIndex !== targetIndex) {
+      this._moveRule(sourceIndex, targetIndex - sourceIndex);
+    }
+    
+    this._dragSourceIndex = null;
+  }
+
+  _handleDragEnd(e) {
+    this._dragSourceIndex = null;
   }
 
   _updateSchedulingParam(key, value) {

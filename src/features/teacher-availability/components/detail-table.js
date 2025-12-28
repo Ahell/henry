@@ -88,15 +88,20 @@ export class DetailTable extends LitElement {
           position: relative;
           --first-col-width: ${firstColWidth}px;
           --day-col-width: ${dayColWidth}px;
+          font-family: var(--font-family-base);
         }
         .teacher-timeline-table {
           table-layout: fixed;
           width: calc(var(--first-col-width) + ${days.length} * var(--day-col-width));
           min-width: 100%;
+          border-collapse: separate; 
+          border-spacing: 0;
         }
         .teacher-timeline-table th:first-child,
         .teacher-timeline-table td:first-child {
           width: var(--first-col-width);
+          background: var(--color-white);
+          border-right: 1px solid var(--color-border);
         }
         .teacher-timeline-table th:not(:first-child),
         .teacher-timeline-table td:not(:first-child) {
@@ -105,51 +110,51 @@ export class DetailTable extends LitElement {
           max-width: var(--day-col-width);
         }
         .teacher-timeline-table thead th {
-          background: var(--color-surface-muted, #f5f6fa);
-          color: #0f172a;
+          background: var(--color-surface);
+          color: var(--color-text-primary);
           font-size: var(--font-size-xs);
           font-weight: var(--font-weight-semibold);
           text-align: center;
-          padding: 8px;
-          border-bottom: 1px solid #e5e7eb;
+          padding: var(--space-2);
+          border-bottom: 1px solid var(--color-border);
         }
         thead .week-row th {
           text-align: left;
-          background: #ffffff;
-          color: #0f172a;
+          background: var(--color-white);
+          color: var(--color-text-secondary);
         }
         thead .weekday-row th {
           text-align: left;
-          padding: 6px 8px;
-          background: #ffffff;
-          color: #0f172a;
+          padding: var(--space-2);
+          background: var(--color-white);
+          color: var(--color-text-primary);
         }
         thead .date-row th {
           text-align: center;
-          background: var(--color-gray-100);
-          color: #0f172a;
+          background: var(--color-gray-light);
+          color: var(--color-text-primary);
           border-radius: 0 !important;
         }
         /* Ensure selected/default/alt headers do not change background */
         .teacher-timeline-table thead .date-row th.slot-header {
-          background: var(--color-gray-100) !important;
-          color: #0f172a !important;
-          border-color: #e5e7eb !important;
+          background: var(--color-gray-light) !important;
+          color: var(--color-text-primary) !important;
+          border-color: var(--color-border) !important;
         }
         /* Keep first column sticky with matching background */
         .teacher-timeline-table thead th:first-child {
           position: sticky;
           left: 0;
           z-index: 5;
-          background: #ffffff;
+          background: var(--color-white);
         }
         .teacher-timeline-table thead .date-row th:first-child {
-          background: var(--color-gray-100);
+          background: var(--color-gray-light);
         }
         .teacher-timeline-table thead .weekday-row th:first-child,
         .teacher-timeline-table thead .week-row th:first-child {
           z-index: 5;
-          background: #ffffff;
+          background: var(--color-white);
         }
         /* Neutralize any legacy header class styling */
         .teacher-timeline-table
@@ -159,39 +164,39 @@ export class DetailTable extends LitElement {
           thead
           th.teaching-day-default-dimmed-header,
         .teacher-timeline-table thead th.teaching-day-alt-header {
-          background: var(--color-surface-muted, #f5f6fa);
-          color: #0f172a;
-          border: 1px solid #e5e7eb;
+          background: var(--color-surface);
+          color: var(--color-text-primary);
+          border: 1px solid var(--color-border);
           box-shadow: none;
         }
         /* Status pills */
         .status-pill {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          padding: 2px 8px;
-          border-radius: 999px;
-          font-size: 11px;
-          font-weight: 700;
+          gap: var(--space-2);
+          padding: 2px var(--space-2);
+          border-radius: var(--radius-full);
+          font-size: var(--font-size-xs);
+          font-weight: var(--font-weight-bold);
           border: 1px solid transparent;
-          color: #111827;
-          background: #e5e7eb;
+          color: var(--color-text-primary);
+          background: var(--color-gray-light);
           white-space: nowrap;
         }
         .status-pill--os {
-          background: #e6f0ff;
-          border-color: #c7d8ff;
-          color: #1d4ed8;
+          background: var(--color-light-blue);
+          border-color: var(--color-sky-blue);
+          color: var(--color-kth-blue);
         }
         .status-pill--od {
-          background: #f3f4f6;
-          border-color: #e5e7eb;
-          color: #6b7280;
+          background: var(--color-gray-light);
+          border-color: var(--color-gray);
+          color: var(--color-text-secondary);
         }
         .status-pill--xs {
-          background: #f3e8ff;
-          border-color: #e9d5ff;
-          color: #6d28d9;
+          background: var(--color-success-bg);
+          border-color: var(--color-success);
+          color: var(--color-success-text);
         }
       </style>
       <div class="table-container ${this.isPainting ? "painting-active" : ""}">

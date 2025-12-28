@@ -26,9 +26,12 @@ export class HenrySelect extends LitElement {
   static styles = css`
     @import url("/src/styles/tokens.css");
 
+    * {
+      box-sizing: border-box;
+    }
+
     :host {
       display: block;
-      margin-bottom: var(--space-4);
     }
 
     .select-wrapper {
@@ -40,7 +43,7 @@ export class HenrySelect extends LitElement {
     label {
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
-      color: var(--color-text-primary);
+      color: var(--color-text-secondary);
       display: flex;
       align-items: center;
       gap: var(--space-1);
@@ -51,51 +54,56 @@ export class HenrySelect extends LitElement {
     }
 
     select {
-      padding: var(--input-padding-y) var(--input-padding-x);
-      border: var(--input-border-width) solid var(--color-border);
-      border-radius: var(--radius-base);
-      font-size: var(--font-size-sm);
+      display: block;
+      width: 100%;
+      min-height: var(--input-height-base);
+      padding: 0 var(--space-3);
       font-family: var(--font-family-base);
-      background: var(--color-background);
+      font-size: var(--font-size-base);
       color: var(--color-text-primary);
+      background-color: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-base);
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
       cursor: pointer;
-      transition: var(--transition-all);
     }
 
     select:hover:not(:disabled) {
-      border-color: var(--color-border-hover);
+      border-color: var(--color-gray);
     }
 
     select:focus {
       outline: none;
       border-color: var(--color-primary-500);
-      box-shadow: var(--input-focus-ring);
+      box-shadow: 0 0 0 3px rgba(0, 71, 145, 0.15);
     }
 
     select:disabled {
-      background: var(--color-gray-100);
+      background-color: var(--color-gray-lighter);
+      color: var(--color-text-disabled);
       cursor: not-allowed;
-      opacity: 0.6;
+      box-shadow: none;
     }
 
     select option {
       padding: var(--space-2);
     }
 
-	    select[multiple] {
-	      min-height: 100px;
-	      padding: var(--space-2);
-	    }
+    select[multiple] {
+      min-height: 100px;
+      padding: var(--space-2);
+    }
 
-	    /* Listbox mode (single select with size > 1) */
-	    select.listbox {
-	      height: calc(
-	        var(--henry-select-visible-options, 6) *
-	          var(--henry-select-row-height, 36px)
-	      );
-	      overflow-y: auto;
-	    }
-	  `;
+    /* Listbox mode (single select with size > 1) */
+    select.listbox {
+      height: calc(
+        var(--henry-select-visible-options, 6) *
+          var(--henry-select-row-height, 36px)
+      );
+      overflow-y: auto;
+    }
+  `;
   constructor() {
     super();
     this.label = "";
@@ -111,7 +119,7 @@ export class HenrySelect extends LitElement {
     this.options = [];
   }
 
-	  updated(changedProperties) {
+  updated(changedProperties) {
     if (changedProperties.has("value") && !this.multiple) {
       const selectElement = this.renderRoot.querySelector("select");
       if (selectElement && selectElement.value !== this.value) {
@@ -121,21 +129,21 @@ export class HenrySelect extends LitElement {
   }
 
   render() {
-	    const listbox = !this.multiple && Number(this.size) > 1;
-	    const listboxStyle = listbox
-	      ? `--henry-select-visible-options: ${Number(this.size)};`
-	      : "";
-	    const selectEl = this.multiple
-	      ? html`
-	          <select
-	            ?disabled=${this.disabled}
-	            ?required=${this.required}
-	            ?multiple=${this.multiple}
-	            size=${this.size}
-	            id=${this.id}
-	            name=${this.name || this.id}
-	            @change=${this._handleChange}
-	          >
+    const listbox = !this.multiple && Number(this.size) > 1;
+    const listboxStyle = listbox
+      ? `--henry-select-visible-options: ${Number(this.size)};`
+      : "";
+    const selectEl = this.multiple
+      ? html`
+          <select
+            ?disabled=${this.disabled}
+            ?required=${this.required}
+            ?multiple=${this.multiple}
+            size=${this.size}
+            id=${this.id}
+            name=${this.name || this.id}
+            @change=${this._handleChange}
+          >
             ${this.options && this.options.length > 0
               ? this.options.map(
                   (opt) => html`
@@ -147,31 +155,31 @@ export class HenrySelect extends LitElement {
               : html`<slot></slot>`}
           </select>
         `
-	      : html`
-	          <select
-	            .value=${this.value}
-	            class=${listbox ? "listbox" : ""}
-	            style=${listboxStyle}
-	            ?disabled=${this.disabled}
-	            ?required=${this.required}
-	            ?multiple=${this.multiple}
-	            size=${this.size}
-	            id=${this.id}
-	            name=${this.name || this.id}
-	            @change=${this._handleChange}
-	          >
-	            ${this.hidePlaceholder
-	              ? html`<option value="" disabled hidden ?selected=${!this.value}
-	                  >${this.placeholder || ""}</option
-	                >`
-	              : this.placeholder
-	                ? html`<option value="">${this.placeholder}</option>`
-	                : ""}
-	            ${this.options && this.options.length > 0
-	              ? this.options.map(
-	                  (opt) => html`
-	                    <option value="${opt.value}" ?selected="${opt.selected}">
-	                      ${opt.label}
+      : html`
+          <select
+            .value=${this.value}
+            class=${listbox ? "listbox" : ""}
+            style=${listboxStyle}
+            ?disabled=${this.disabled}
+            ?required=${this.required}
+            ?multiple=${this.multiple}
+            size=${this.size}
+            id=${this.id}
+            name=${this.name || this.id}
+            @change=${this._handleChange}
+          >
+            ${this.hidePlaceholder
+              ? html`<option value="" disabled hidden ?selected=${!this.value}
+                  >${this.placeholder || ""}</option
+                >`
+              : this.placeholder
+              ? html`<option value="">${this.placeholder}</option>`
+              : ""}
+            ${this.options && this.options.length > 0
+              ? this.options.map(
+                  (opt) => html`
+                    <option value="${opt.value}" ?selected="${opt.selected}">
+                      ${opt.label}
                     </option>
                   `
                 )

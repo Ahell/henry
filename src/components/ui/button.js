@@ -68,7 +68,7 @@ export class HenryButton extends LitElement {
     /* Variants */
     button.primary {
       background: var(--color-primary-600);
-      color: white;
+      color: var(--color-white);
       box-shadow: var(--shadow-sm);
     }
 
@@ -78,33 +78,35 @@ export class HenryButton extends LitElement {
     }
 
     button.secondary {
-      background: var(--color-gray-100);
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
       color: var(--color-text-primary);
       box-shadow: var(--shadow-sm);
     }
 
     button.secondary:hover:not(:disabled) {
-      background: var(--color-gray-200);
+      background: var(--color-gray-light);
+      border-color: var(--color-text-primary);
     }
 
     button.danger {
       background: var(--color-danger);
-      color: white;
+      color: var(--color-white);
       box-shadow: var(--shadow-danger);
     }
 
     button.danger:hover:not(:disabled) {
-      background: var(--color-danger-hover);
+      background: var(--color-danger-dark); /* fixed from danger-hover */
     }
 
     button.success {
       background: var(--color-success);
-      color: white;
+      color: var(--color-white);
       box-shadow: var(--shadow-success);
     }
 
     button.success:hover:not(:disabled) {
-      background: var(--color-success-hover);
+      background: var(--color-green-dark); /* fixed from success-hover */
     }
 
     :host([fullWidth]) button {

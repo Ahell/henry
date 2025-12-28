@@ -3,57 +3,61 @@ import { css } from "lit";
 export const importExportStyles = css`
   :host {
     display: block;
-    padding: 1rem;
+    padding: var(--space-4);
   }
 
   .panel {
     background: transparent;
     border: none;
     border-radius: 0;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
   }
 
   h3 {
     margin-top: 0;
-    color: #333;
+    color: var(--color-text-primary);
   }
 
   .button-group {
     display: flex;
-    gap: 1rem;
+    gap: var(--space-4);
     flex-wrap: wrap;
   }
 
   button {
-    background: #007bff;
-    color: white;
+    background-color: var(--color-primary-500);
+    color: var(--color-text-light);
     border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 4px;
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-base);
     cursor: pointer;
-    font-size: 1rem;
-    transition: background 0.2s;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    transition: var(--transition-base);
   }
 
   button:hover {
-    background: #0056b3;
+    background-color: var(--color-primary-600);
   }
 
   button.secondary {
-    background: #6c757d;
+    background-color: var(--color-gray);
+    color: var(--color-white);
   }
 
   button.secondary:hover {
-    background: #5a6268;
+    background-color: var(--color-gray-dark);
   }
 
   button.danger {
-    background: #dc3545;
+    background-color: var(--color-danger);
+    color: var(--color-white);
   }
 
   button.danger:hover {
-    background: #c82333;
+    background-color: var(--color-red-dark);
   }
 
   input[type="file"] {
@@ -61,36 +65,38 @@ export const importExportStyles = css`
   }
 
   .message {
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
+    padding: var(--space-4);
+    border-radius: var(--radius-base);
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-sm);
   }
 
   .message.success {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
+    background-color: var(--color-success-bg);
+    border: 1px solid var(--color-success);
+    color: var(--color-success-text);
   }
 
   .message.error {
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
+    background-color: var(--color-danger-bg);
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger-text);
   }
 
   .data-preview {
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 1rem;
-    margin-top: 1rem;
+    background-color: var(--color-broken-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    padding: var(--space-4);
+    margin-top: var(--space-4);
     max-height: 400px;
     overflow-y: auto;
   }
 
   .data-preview pre {
     margin: 0;
-    font-size: 0.85rem;
-    line-height: 1.4;
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-normal);
   }
 `;

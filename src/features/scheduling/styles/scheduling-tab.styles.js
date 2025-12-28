@@ -22,6 +22,7 @@ export const schedulingTabStyles = css`
     gap: var(--space-4);
     flex-wrap: wrap;
     min-height: var(--button-height-base);
+    margin-bottom: var(--space-4);
   }
 
   .header-actions {
@@ -42,9 +43,13 @@ export const schedulingTabStyles = css`
 
   .legend {
     display: flex;
-    gap: var(--space-8);
+    gap: var(--space-6);
     margin-top: var(--space-4);
     flex-wrap: wrap;
+    padding: var(--space-4);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
   }
 
   .legend-item {
@@ -53,38 +58,25 @@ export const schedulingTabStyles = css`
     gap: var(--space-2);
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
   }
 
   .legend-box {
-    width: 14px;
-    height: 14px;
-    border-radius: var(--radius-base);
-    box-shadow: var(--shadow-xs);
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-sm);
   }
 
-  .law-course.law-order-1 {
-    background: var(--color-secondary-900);
-  }
+  .law-course.law-order-1 { background: var(--color-secondary-900); }
+  .law-course.law-order-2 { background: var(--color-secondary-700); }
+  .law-course.law-order-3 { background: var(--color-secondary-500); }
+  .law-course.law-order-rest { background: var(--color-secondary-300); }
 
-  .law-course.law-order-2 {
-    background: var(--color-secondary-700);
-  }
-
-  .law-course.law-order-3 {
-    background: var(--color-secondary-500);
-  }
-
-  .law-course.law-order-rest {
-    background: var(--color-secondary-300);
-  }
-
-  .normal-course {
-    background: var(--color-primary-500);
-  }
+  .normal-course { background: var(--color-primary-500); }
 
   .teacher-shortage {
     background: var(--color-primary-500);
-    outline: 3px solid var(--color-info);
+    outline: 2px solid var(--color-info);
     outline-offset: 1px;
   }
 
@@ -92,15 +84,14 @@ export const schedulingTabStyles = css`
     border: 2px dashed rgba(255, 255, 255, 0.7);
   }
 
+  /* Main Gantt Area */
   .gantt-scroll-wrapper {
-    /* Allow both horizontal and vertical scrolling inside the gantt area */
     overflow: auto;
-    /* Keep headers visible while rows scroll underneath */
-    max-height: min(70dvh, 720px);
-    background: var(--color-background);
+    max-height: min(75dvh, 800px);
+    background: var(--color-white);
     border: 1px solid var(--color-border);
     border-radius: 0;
-    box-shadow: var(--shadow-xs);
+    box-shadow: none;
     position: relative;
     z-index: 0;
     isolation: isolate;
@@ -120,7 +111,7 @@ export const schedulingTabStyles = css`
       var(--gantt-depot-width) + var(--gantt-cohort-width) +
         (var(--gantt-slot-width) * var(--gantt-slot-count, 0))
     );
-    background: var(--color-background);
+    background: var(--color-white);
   }
 
   .gantt-table th,
@@ -136,24 +127,25 @@ export const schedulingTabStyles = css`
     box-sizing: border-box;
   }
 
-  .gantt-table tr > :first-child {
-    border-left: 1px solid var(--color-border);
-  }
+  /* Remove double borders */
+  .gantt-table tr > :first-child { border-left: none; }
+  .gantt-table thead tr:first-child > th { border-top: none; }
+  .gantt-table th:last-child, .gantt-table td:last-child { border-right: none; }
+  .gantt-table tr:last-child td { border-bottom: none; }
 
-  .gantt-table thead tr:first-child > th {
-    border-top: 1px solid var(--color-border);
-  }
-
+  /* Table Headers */
   .gantt-table th {
-    background: var(--color-gray-100);
+    background: var(--color-broken-white);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    padding: var(--space-2) var(--space-2);
+    color: var(--color-text-secondary);
+    padding: var(--space-2);
     position: sticky;
     top: 0;
     z-index: 10;
     overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
   }
 
   .gantt-table thead tr.availability-row th:not(.cohort-header) {
@@ -164,6 +156,7 @@ export const schedulingTabStyles = css`
     vertical-align: top;
     text-align: left;
     padding: 0;
+    background: var(--color-white); /* Cleaner look for availability area */
   }
 
   .gantt-table thead th.cohort-header .cohort-header-row {
@@ -175,13 +168,14 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table thead tr.date-row th {
-    /* Offset by availability header height + its top+bottom borders to avoid jitter */
-    top: calc(var(--gantt-availability-row-height) + 2px);
+    top: calc(var(--gantt-availability-row-height) + 1px); /* Fixed offset calculation */
     height: var(--gantt-date-row-height);
     z-index: 11;
     vertical-align: middle;
     text-align: center;
     padding: 0;
+    background: var(--color-broken-white);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .gantt-table thead tr.date-row th .slot-date {
@@ -191,30 +185,15 @@ export const schedulingTabStyles = css`
     justify-content: center;
   }
 
-  .gantt-table thead th:not(.cohort-header) {
-    font-family: var(--font-family-base);
-  }
-
-  .slot-col-header {
-    padding: var(--space-2);
-  }
-
-  .gantt-table thead tr.availability-row .slot-col-header {
-    padding: 0;
-  }
-
   .slot-date {
-    font-family: var(--font-family-base);
-    color: var(--color-text-primary);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-semibold);
-    white-space: nowrap;
+    font-family: var(--font-family-base); /* Changed from mono to base as requested */
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    font-weight: var(--font-weight-medium);
+    font-feature-settings: "tnum"; /* Tabular nums if supported */
   }
 
-  .gantt-layout {
-    position: relative;
-  }
-
+  /* Teacher Overlay */
   .slot-teacher-overlay-wrapper {
     position: absolute;
     top: 0;
@@ -237,23 +216,16 @@ export const schedulingTabStyles = css`
       var(--gantt-depot-width) + var(--gantt-cohort-width) +
         (var(--gantt-slot-width) * var(--gantt-slot-count, 0))
     );
-    height: auto;
     min-height: var(--gantt-teacher-overlay-height);
-    align-items: stretch;
-  }
-
-  .slot-teacher-overlay-spacer {
-    background: transparent;
-    visibility: hidden;
   }
 
   .slot-teacher-overlay-cell {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    margin: 6px;
-    padding: 8px 8px 6px;
-    background: var(--color-background);
+    margin: 4px;
+    padding: 6px;
+    background: var(--color-white);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
@@ -274,20 +246,18 @@ export const schedulingTabStyles = css`
 
   .slot-teacher-overlay-label {
     font-size: 0.6rem;
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.01em;
-    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-kth-blue);
+    text-transform: uppercase;
   }
 
   .slot-teacher-overlay-names {
-    font-size: 0.62rem;
-    font-weight: var(--font-weight-semibold);
+    font-size: 0.65rem;
     color: var(--color-text-primary);
     line-height: 1.2;
-    white-space: normal;
-    word-break: break-word;
   }
 
+  /* Availability Row */
   .slot-availability-row {
     width: 100%;
     height: var(--gantt-availability-row-height);
@@ -298,89 +268,13 @@ export const schedulingTabStyles = css`
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-start;
-    padding: 6px;
-    gap: 6px;
+    padding: 4px;
+    gap: 4px;
     background: transparent;
   }
 
   .slot-availability-row[data-has-warnings="false"] {
     justify-content: center;
-  }
-
-  .slot-header-section {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-height: 0;
-  }
-
-  .slot-header-section[aria-hidden="true"] {
-    display: none;
-  }
-
-  .slot-header-label {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 6px;
-    font-size: 0.6rem;
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.01em;
-    color: var(--color-text-secondary);
-    text-transform: none;
-  }
-
-  .slot-availability {
-    width: 100%;
-    display: flex;
-    flex: 0 0 auto;
-    min-height: 0;
-    height: auto;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 6px;
-    padding: 0;
-    border-radius: 0;
-    background: transparent;
-    color: #fff;
-    box-shadow: none;
-    box-sizing: border-box;
-    max-width: 100%;
-    overflow: hidden;
-    overscroll-behavior: contain;
-  }
-
-  .slot-teacher-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin: 6px;
-    padding: 8px 8px 6px;
-    background: var(--color-background);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    height: calc(var(--gantt-teacher-overlay-height) - 12px);
-    box-sizing: border-box;
-    overflow: hidden;
-  }
-
-  .slot-teacher-label {
-    font-size: 0.6rem;
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.01em;
-    color: var(--color-text-secondary);
-  }
-
-  .slot-teacher-names {
-    font-size: 0.62rem;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    line-height: 1.2;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    word-break: break-word;
   }
 
   .slot-warning-pills {
@@ -389,7 +283,7 @@ export const schedulingTabStyles = css`
     flex-wrap: wrap;
     justify-content: flex-start;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     min-height: 18px;
     overflow: hidden;
   }
@@ -399,14 +293,14 @@ export const schedulingTabStyles = css`
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    padding: 2px 7px;
-    border-radius: var(--radius-full);
-    font-size: 0.62rem;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 0.6rem;
     font-weight: var(--font-weight-semibold);
-    line-height: 1.2;
+    line-height: 1;
     border: 1px solid var(--color-border);
-    background: var(--color-gray-100);
-    color: var(--color-text-primary);
+    background: var(--color-gray-lighter);
+    color: var(--color-text-secondary);
     cursor: help;
     user-select: none;
     white-space: nowrap;
@@ -416,136 +310,80 @@ export const schedulingTabStyles = css`
   }
 
   .slot-warning-pill--hard {
-    background: var(--color-danger-light);
-    color: var(--color-danger-hover);
-    border-color: rgba(239, 68, 68, 0.25);
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    border-color: rgba(239, 68, 68, 0.2);
   }
 
   .slot-warning-pill--soft {
-    background: var(--color-warning-light);
-    color: var(--color-warning-hover);
-    border-color: rgba(245, 158, 11, 0.28);
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    border-color: rgba(245, 158, 11, 0.2);
   }
 
+  /* Availability Chips */
   .availability-chip {
     display: inline-flex;
     align-items: center;
-    flex: 0 0 auto;
-    width: auto;
-    max-width: 100%;
-    padding: 2px 7px;
-    border-radius: var(--radius-full);
-    background: rgba(15, 23, 42, 0.18);
-    color: #fff;
-    font-size: 0.6rem;
-    line-height: 1.05;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    font-size: 0.65rem;
+    line-height: 1;
     white-space: nowrap;
-    overflow-wrap: normal;
-    word-break: keep-all;
     overflow: hidden;
     text-overflow: ellipsis;
-    justify-content: flex-start;
-    box-sizing: border-box;
-    position: relative;
-    isolation: isolate;
-  }
-
-  .availability-chip-text {
-    position: relative;
-    z-index: 1;
-    white-space: nowrap;
-    overflow-wrap: normal;
-    word-break: keep-all;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    min-width: 0;
   }
 
   .availability-chip--available {
-    background: var(--color-success);
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+    border-color: transparent;
   }
 
   .availability-chip--drag-available {
-    background: rgba(31, 39, 51, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: #fff;
+    background: var(--color-navy);
+    color: white;
+    border-color: transparent;
   }
 
   .availability-chip--compatible {
-    background: var(--color-info);
+    background: var(--color-info-bg);
+    color: var(--color-info-text);
+    border-color: transparent;
   }
 
   .availability-chip--assigned {
     background: var(--color-success);
+    color: white;
+    border-color: transparent;
   }
 
   .availability-chip--course-unavailable {
-    background: var(--color-danger);
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    border-color: transparent;
   }
 
-  .availability-chip--partial-conflict {
-    background: var(--color-danger);
-    border: 1px dashed var(--color-danger-hover);
-  }
-
-  .availability-chip--partial-conflict::after {
-    content: none;
-  }
-
-  .availability-chip--partial-availability {
-    background: var(--color-info);
-    border: 1px dashed var(--color-info-hover);
-  }
-
-  .availability-chip--partial-availability::after {
-    content: none;
-  }
-
-  /* Assigned + warning patterns (match summary row) */
-  .availability-chip--assigned-course-unavailable {
-    background: var(--color-success);
-    border: 1px solid var(--color-danger);
-  }
-
-  .availability-chip--assigned-course-unavailable::after {
-    content: none;
-  }
-
-  .availability-chip--assigned-partial-conflict {
-    background: var(--color-success);
-    border: 1px dashed var(--color-danger-hover);
-  }
-
-  .availability-chip--assigned-partial-conflict::after {
-    content: none;
-  }
-
-  .availability-chip--assigned-partial-availability {
-    background: var(--color-success);
-    border: 1px dashed var(--color-info-hover);
-  }
-
-  .availability-chip--assigned-partial-availability::after {
-    content: none;
-  }
-
+  /* Cohort Headers & Cells */
   .gantt-table th.cohort-header {
     min-width: var(--gantt-cohort-width);
     width: var(--gantt-cohort-width);
     text-align: left;
-    padding-left: var(--space-3);
+    padding-left: var(--space-4);
     position: sticky;
     z-index: 20;
-    box-shadow: none;
-    vertical-align: bottom;
-    padding-bottom: var(--space-2);
+    box-shadow: 2px 0 5px rgba(0,0,0,0.02); /* Subtle separation */
+    background: var(--color-broken-white);
   }
 
   .gantt-table th.cohort-header:first-child {
     left: 0;
     min-width: var(--gantt-depot-width);
     width: var(--gantt-depot-width);
+    background: var(--color-broken-white);
   }
 
   .gantt-table th.cohort-header:nth-child(2) {
@@ -556,52 +394,39 @@ export const schedulingTabStyles = css`
     min-width: var(--gantt-depot-width);
     width: var(--gantt-depot-width);
     max-width: var(--gantt-depot-width);
-    background: var(--color-gray-50);
+    background: #f0f4f8; /* Distinct background for column 1 */
     position: sticky;
     left: 0;
     z-index: 5;
     vertical-align: top;
     padding: 0;
-    box-shadow: none;
-  }
-
-  .gantt-table td.depot-cell gantt-depot {
-    display: block;
-    height: auto;
-  }
-
-  .gantt-table td.depot-cell.drag-over {
-    background: var(--color-warning-light) !important;
-    box-shadow: inset 0 0 0 2px var(--color-warning);
+    border-right: 1px solid var(--color-border);
   }
 
   .gantt-table td.cohort-cell {
     min-width: var(--gantt-cohort-width);
     width: var(--gantt-cohort-width);
     text-align: left;
-    padding: var(--space-2);
-    padding-left: var(--space-3);
-    font-weight: var(--font-weight-semibold);
-    font-size: var(--font-size-xs);
+    padding: var(--space-3);
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-sm);
     color: var(--color-text-primary);
-    background: var(--color-gray-50);
+    background: #f0f4f8; /* Distinct background for column 2 */
     position: sticky;
     left: var(--gantt-depot-width);
     z-index: 5;
-    box-shadow: none;
     vertical-align: top;
     line-height: 1.2;
+    border-right: 1px solid var(--color-border);
   }
 
   .gantt-table td.cohort-cell .cohort-cell-content {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
-    box-sizing: border-box;
-    min-width: 0;
-    overflow: hidden;
+    min-width: 0; /* Important for overflow */
   }
 
   .gantt-table td.cohort-cell .cohort-cell-header {
@@ -615,184 +440,77 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table td.cohort-cell .cohort-cell-number {
-    font-size: clamp(0.56rem, 0.75vw, 0.7rem);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.1;
+    font-size: 0.8rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-kth-blue);
     white-space: nowrap;
-    color: var(--color-text-secondary);
-    letter-spacing: 0.01em;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
-    display: block;
   }
 
   .gantt-table td.cohort-cell .cohort-cell-date {
-    font-size: clamp(0.56rem, 0.75vw, 0.7rem);
+    font-size: 0.7rem;
     color: var(--color-text-secondary);
-    line-height: 1.1;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    display: block;
-  }
-
-  .gantt-table td.cohort-cell .cohort-section-label {
-    font-size: 0.52rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--color-text-secondary);
-    font-weight: var(--font-weight-semibold);
-  }
-
-  .gantt-table td.cohort-cell .cohort-warning-section {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: stretch;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 6px 8px 8px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
-    background: var(--color-gray-50);
-    max-width: 100%;
-    overflow: hidden;
-  }
-
-  .gantt-table td.cohort-cell .cohort-warning-markers {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: stretch;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .gantt-table td.cohort-cell .cohort-warning-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px 6px;
-    border-radius: var(--radius-full);
-    font-size: 0.62rem;
-    font-weight: var(--font-weight-semibold);
-    line-height: 1.2;
-    border: 1px solid var(--color-border);
-    background: var(--color-gray-100);
-    color: var(--color-text-primary);
-    cursor: help;
-    user-select: none;
+    font-family: var(--font-family-mono);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
   }
 
-  .gantt-table td.cohort-cell .cohort-warning-pill--hard {
-    background: var(--color-danger-light);
-    color: var(--color-danger-hover);
-    border-color: rgba(239, 68, 68, 0.25);
-  }
-
-  .gantt-table td.cohort-cell .cohort-warning-pill--soft {
-    background: var(--color-warning-light);
-    color: var(--color-warning-hover);
-    border-color: rgba(245, 158, 11, 0.28);
-  }
-
+  /* Cohort Warning/Actions Styling */
+  .gantt-table td.cohort-cell .cohort-warning-section,
   .gantt-table td.cohort-cell .cohort-cell-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-    flex: 0 0 auto;
     width: 100%;
-    padding: 6px 8px 8px;
+    padding: 8px;
     border-radius: var(--radius-md);
+    background: var(--color-white);
     border: 1px solid var(--color-border);
-    background: #fff;
-    box-sizing: border-box;
-    max-width: 100%;
-    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    box-sizing: border-box; /* Ensure padding is included in width */
+  }
+
+  .gantt-table td.cohort-cell .cohort-reset-button,
+  .gantt-table td.cohort-cell .cohort-autofill-button {
+    width: 100%;
+    padding: 6px;
+    font-size: 0.7rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: center;
+    border: 1px solid transparent;
+    transition: all 0.2s;
   }
 
   .gantt-table td.cohort-cell .cohort-reset-button {
-    flex: 0 0 auto;
-    font: inherit;
-    font-size: 0.65rem;
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-border);
     background: transparent;
     color: var(--color-text-secondary);
-    cursor: pointer;
-    line-height: 1.2;
-    width: 100%;
-    text-align: center;
-  }
-
-  .gantt-table td.cohort-cell .cohort-reset-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    border-color: var(--color-border);
   }
 
   .gantt-table td.cohort-cell .cohort-reset-button:hover:not(:disabled) {
-    background: rgba(15, 23, 42, 0.04);
+    background: var(--color-gray-lighter);
     color: var(--color-text-primary);
   }
 
-  .gantt-table td.cohort-cell .cohort-reset-button:focus-visible {
-    outline: 2px solid var(--color-primary-400);
-    outline-offset: 2px;
-  }
-
   .gantt-table td.cohort-cell .cohort-autofill-button {
-    flex: 0 0 auto;
-    font: inherit;
-    font-size: 0.65rem;
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
-    border: 1px solid rgba(37, 99, 235, 0.35);
-    background: rgba(37, 99, 235, 0.06);
-    color: var(--color-primary-700);
-    cursor: pointer;
-    line-height: 1.2;
-    width: 100%;
-    text-align: center;
-  }
-
-  .gantt-table td.cohort-cell .cohort-autofill-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    background: var(--color-info-bg);
+    color: var(--color-info-text);
+    font-weight: var(--font-weight-semibold);
   }
 
   .gantt-table td.cohort-cell .cohort-autofill-button:hover:not(:disabled) {
-    background: rgba(37, 99, 235, 0.1);
-    border-color: rgba(37, 99, 235, 0.5);
+    background: var(--color-info);
+    color: white;
   }
 
-  .gantt-table td.cohort-cell .cohort-autofill-button:focus-visible {
-    outline: 2px solid var(--color-primary-400);
-    outline-offset: 2px;
-  }
-
+  /* Slot Cells */
   .gantt-table td.slot-cell {
-    background: var(--color-background);
+    background: var(--color-white);
     position: relative;
     cursor: pointer;
-    transition: background var(--transition-fast),
-      box-shadow var(--transition-fast);
+    transition: background var(--transition-fast);
     overflow: hidden;
     vertical-align: top;
-  }
-
-  .gantt-table tbody td {
-    height: var(--gantt-row-height);
   }
 
   .gantt-table tbody td.slot-cell gantt-cell {
@@ -804,72 +522,58 @@ export const schedulingTabStyles = css`
     tbody
     tr:hover
     td.slot-cell:not(.disabled-slot):not(.no-teachers-available) {
-    background: var(--color-primary-50);
+    background: var(--color-broken-white);
   }
 
   .gantt-table
     td.slot-cell:hover:not(.disabled-slot):not(.no-teachers-available) {
-    background: var(--color-primary-50);
+    background: var(--color-broken-white);
   }
 
   .gantt-table td.slot-cell.drag-over {
-    background: var(--color-info-light);
+    background: var(--color-info-bg);
     box-shadow: inset 0 0 0 2px var(--color-info);
   }
 
   .gantt-table td.slot-cell.drag-over-invalid {
-    background: var(--color-danger-light);
+    background: var(--color-danger-bg);
     box-shadow: inset 0 0 0 2px var(--color-danger);
   }
 
   .gantt-table td.slot-cell.no-teachers-available {
-    background: var(--color-danger-light);
-    box-shadow: inset 0 0 0 2px rgba(239, 68, 68, 0.35);
+    background: var(--color-danger-bg);
+    box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.2);
   }
 
   .gantt-table td.slot-cell.disabled-slot {
-    background: var(--color-gray-100);
+    background: repeating-linear-gradient(
+      45deg,
+      var(--color-broken-white),
+      var(--color-broken-white) 10px,
+      var(--color-gray-lighter) 10px,
+      var(--color-gray-lighter) 20px
+    );
     cursor: not-allowed;
   }
 
-  .gantt-table td.slot-cell.disabled-slot:hover {
-    background: var(--color-gray-100);
-  }
-
-  .gantt-table td.slot-cell.cohort-start-slot {
-    position: relative;
-  }
-
+  /* Summary Row (Footer) */
   .gantt-table tfoot td {
-    background: var(--color-gray-50);
+    background: var(--color-broken-white);
     vertical-align: top;
-    padding: var(--space-2);
-    border-top: 1px solid var(--color-border);
+    padding: var(--space-4);
+    border-top: 2px solid var(--color-border);
   }
-
-  /* === Summary row (rendered directly in scheduling-tab) === */
 
   .gantt-table tfoot .summary-label {
-    font-weight: var(--font-weight-semibold);
-    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-sm);
     text-align: right;
-    padding-right: var(--space-3);
+    padding-right: var(--space-4);
     color: var(--color-text-secondary);
-    background: var(--color-gray-50);
-    border-top: 1px solid var(--color-border);
+    background: var(--color-broken-white);
     position: sticky;
     left: 0;
     z-index: 6;
-    min-width: calc(var(--gantt-depot-width) + var(--gantt-cohort-width));
-    width: calc(var(--gantt-depot-width) + var(--gantt-cohort-width));
-    box-shadow: none;
-  }
-
-  .gantt-table tfoot .summary-cell {
-    background: var(--color-gray-50);
-    vertical-align: top;
-    padding: var(--space-2);
-    border-top: 1px solid var(--color-border);
   }
 
   .gantt-table tfoot .summary-course {
@@ -878,17 +582,21 @@ export const schedulingTabStyles = css`
     gap: var(--space-2);
     padding: var(--space-2);
     border-radius: var(--radius-md);
-    font-size: 0.65rem;
-    color: white;
+    font-size: 0.7rem;
+    color: var(--color-text-primary);
+    background: var(--color-white);
     margin-bottom: var(--space-2);
-    box-shadow: var(--shadow-xs);
-    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
   }
 
   .gantt-table tfoot .summary-course .course-header {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 4px;
   }
 
   .gantt-table tfoot .summary-course .course-name {
@@ -896,269 +604,48 @@ export const schedulingTabStyles = css`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-weight: bold;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-kth-blue);
   }
 
   .gantt-table tfoot .summary-course .participant-count {
     font-weight: bold;
-    background: rgba(255, 255, 255, 0.3);
-    padding: 1px 4px;
-    border-radius: 2px;
+    background: var(--color-gray-lighter);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
   }
 
-  .gantt-table tfoot .summary-course .summary-column-title {
-    font-size: 0.55rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: rgba(255, 255, 255, 0.85);
-  }
-
-  .gantt-table tfoot .summary-course .summary-teacher-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
-  }
-
-  .gantt-table tfoot .summary-course .summary-teacher-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    background: transparent;
-    border-radius: var(--radius-base);
-    padding: 0;
-    box-shadow: inset 0 0 0 1px rgba(31, 39, 51, 0.08);
-    max-height: 180px;
-    overflow: auto;
-  }
-
-  .gantt-table tfoot .summary-course .summary-teacher-row {
-    display: flex;
-    align-items: stretch;
-    justify-content: flex-start;
-    font-size: 0.6rem;
-    color: var(--color-text-primary);
-    text-align: left;
-    padding: 0;
-    border-radius: 0;
-    cursor: pointer;
-    transition: background var(--transition-fast);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .gantt-table tfoot .summary-course .summary-kursansvarig-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    padding-right: 2px;
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row:not(.has-course):not(.assigned-course):not(
-      .course-unavailable
-    ):not(.partial-conflict):hover {
-    background: transparent;
-  }
-
+  /* Toggle Pill for Teachers in Summary */
   .gantt-table tfoot .summary-course .summary-teacher-pill {
     display: flex;
     align-items: center;
-    gap: 0;
+    gap: 6px;
     width: 100%;
-    padding: 4px 24px 4px 6px;
-    border-radius: var(--radius-base);
-    position: relative;
-    isolation: isolate;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    font-weight: var(--font-weight-semibold);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: left;
+    font-weight: var(--font-weight-medium);
+    border: 1px solid transparent;
+    background: var(--color-gray-lighter);
+    color: var(--color-text-primary);
+    transition: all 0.1s;
   }
 
-  .gantt-table tfoot .summary-course .summary-teacher-pill::after {
-    z-index: 0;
+  .gantt-table tfoot .summary-course .summary-teacher-pill:hover {
+    background: var(--color-border);
   }
 
-  .gantt-table tfoot .summary-course .summary-toggle-text {
-    flex: 1;
-    text-align: left;
-    color: #fff;
-    position: relative;
-    z-index: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    overflow-wrap: normal;
-    word-break: keep-all;
+  /* Active states for Summary Teachers */
+  .gantt-table tfoot .summary-course .summary-teacher-row.assigned-course .summary-teacher-pill {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+    border-color: var(--color-success);
   }
 
-  .gantt-table tfoot .summary-course .summary-teacher-pill:focus-visible {
-    outline: 2px solid var(--color-primary-400);
-    outline-offset: 2px;
-  }
-
-  .gantt-table tfoot .summary-course .summary-teacher-pill:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  /* Kursansvarig checkbox styling - black & white */
-  .gantt-table tfoot .summary-course .kursansvarig-checkbox {
-    width: 14px;
-    height: 14px;
-    cursor: pointer;
-    margin: 0;
-    flex-shrink: 0;
-    accent-color: #000000;
-    border: 1px solid #000000;
-  }
-
-  .gantt-table tfoot .summary-course .kursansvarig-checkbox:hover {
-    transform: scale(1.1);
-  }
-
-  .gantt-table tfoot .summary-course .kursansvarig-checkbox:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-
-  .gantt-table tfoot .summary-course .kursansvarig-checkbox:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  /* Optional: Add subtle indicator to pill when teacher is kursansvarig */
-  .gantt-table tfoot .summary-course .summary-teacher-pill.is-kursansvarig {
-    outline: 2px solid var(--color-primary-300);
-    outline-offset: -2px;
-  }
-
-  /* Summary teacher status styling (mirrors teacher-availability patterns) */
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.has-course
-    .summary-teacher-pill {
-    background: var(--color-info);
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.assigned-course
-    .summary-teacher-pill {
-    background: var(--color-success);
-  }
-
-  .gantt-table tfoot .summary-course .summary-teacher-row.course-unavailable,
-  .gantt-table tfoot .summary-course .summary-teacher-row.partial-conflict {
-    background: transparent;
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.course-unavailable:not(.assigned-course)
-    .summary-teacher-pill,
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.partial-conflict:not(.assigned-course)
-    .summary-teacher-pill {
-    background: var(--color-danger);
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.partial-conflict:not(.assigned-course)
-    .summary-teacher-pill {
-    border: 1px dashed var(--color-danger-hover);
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.partial-availability:not(.assigned-course)
-    .summary-teacher-pill {
-    background: var(--color-info);
-    border: 1px dashed var(--color-info-hover);
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.partial-availability
-    .summary-teacher-pill::after,
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.partial-conflict
-    .summary-teacher-pill::after {
-    content: none;
-  }
-
-  /* Assigned + warnings: keep green base and overlay colored stripes */
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.assigned-course.course-unavailable
-    .summary-teacher-pill {
-    background: var(--color-success) !important;
-    border: 1px solid var(--color-danger);
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.assigned-course.course-unavailable
-    .summary-teacher-pill::after {
-    content: none;
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.assigned-course.partial-conflict
-    .summary-teacher-pill {
-    background: var(--color-success) !important;
-    border: 1px dashed var(--color-danger-hover);
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.assigned-course.partial-conflict
-    .summary-teacher-pill::after {
-    content: none;
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.assigned-course.partial-availability
-    .summary-teacher-pill::after {
-    content: none;
-  }
-
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.has-course:hover
-    .summary-teacher-pill,
-  .gantt-table
-    tfoot
-    .summary-course
-    .summary-teacher-row.assigned-course:hover
-    .summary-teacher-pill {
-    filter: brightness(1.02);
+  .gantt-table tfoot .summary-course .summary-teacher-row.has-course .summary-teacher-pill {
+    background: var(--color-info-bg);
+    color: var(--color-info-text);
   }
 
   @media (prefers-reduced-motion: reduce) {

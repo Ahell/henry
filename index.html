@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="/src/styles/theme.css" />
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&display=swap");
+
       * {
         margin: 0;
         padding: 0;
@@ -18,86 +20,74 @@
         font-family: var(--font-family-base);
         background: var(--color-background);
         min-height: 100vh;
-        padding: 0;
         color: var(--color-text-primary);
         line-height: var(--line-height-normal);
-      }
-
-      p,
-      li {
-        font-family: var(--font-family-serif);
-        line-height: var(--line-height-relaxed);
-      }
-
-      h1,
-      h2,
-      h3,
-      h4 {
-        font-family: var(--font-family-base);
-        color: var(--color-primary-500);
-        line-height: var(--line-height-tight);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
 
       .app-shell {
         display: grid;
-        grid-template-columns: minmax(210px, 240px) minmax(0, 1fr);
+        grid-template-columns: 240px 1fr;
         min-height: 100vh;
       }
 
+      /* Sidebar Styling - Cleaner, Professional KTH Look */
       .sidebar {
+        background-color: var(--color-primary-700);
+        color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        height: 100vh;
         position: sticky;
         top: 0;
-        height: 100vh;
-        overflow-y: auto;
-        padding: var(--space-6) var(--space-4) var(--space-6) var(--space-6);
-        background: var(--color-primary-500);
-        color: #ffffff;
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
-        font-family: var(--font-family-base);
-        -webkit-font-smoothing: antialiased;
-        text-rendering: optimizeLegibility;
+        z-index: 50;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.1);
       }
 
       .sidebar-content {
+        padding: var(--space-6);
         display: flex;
         flex-direction: column;
-        gap: var(--space-6);
         height: 100%;
+        gap: var(--space-8);
       }
 
       .sidebar-brand {
         display: flex;
         align-items: center;
         gap: var(--space-3);
-        padding-bottom: var(--space-5);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
       }
 
       .brand-mark {
-        width: 36px;
-        height: 36px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.16);
+        width: 40px;
+        height: 40px;
+        background: var(--color-primary-500);
+        border-radius: var(--radius-md);
         display: grid;
         place-items: center;
-        font-weight: var(--font-weight-bold);
-        letter-spacing: 0.12em;
-        color: #ffffff;
-        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        font-size: 1rem;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       }
 
       .brand-text h1 {
-        font-size: var(--font-size-lg);
-        font-weight: var(--font-weight-semibold);
-        letter-spacing: -0.01em;
-        margin: 0 0 2px;
-        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 0;
+        line-height: 1.2;
       }
 
       .brand-text p {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.6);
         margin: 0;
-        font-size: var(--font-size-xs);
-        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
 
       .sidebar-section {
@@ -107,186 +97,117 @@
       }
 
       .sidebar-label {
-        font-size: 0.6rem;
-        letter-spacing: 0.16em;
+        font-size: 0.7rem;
         text-transform: uppercase;
-        color: #ffffff;
-      }
-
-      .sidebar-utilities {
-        margin-top: auto;
-        padding-top: var(--space-4);
-        border-top: 1px solid rgba(255, 255, 255, 0.12);
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4);
-      }
-
-      .app-content {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        background: var(--color-background);
-        min-height: 100vh;
-      }
-
-      .nav-status {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 10px;
-        border-radius: var(--radius-full);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.12);
-        color: #ffffff;
-        font-size: var(--font-size-xs);
-        white-space: nowrap;
-      }
-
-      .nav-status:empty {
-        display: none;
-      }
-
-      .container {
-        width: 100%;
-        max-width: 1800px;
-        margin: var(--space-6) auto var(--space-8);
-        padding: 0 var(--space-6);
+        letter-spacing: 0.08em;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 600;
+        margin-bottom: var(--space-2);
+        padding-left: var(--space-2);
       }
 
       .admin-tabs {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 4px;
       }
 
       .admin-tab-btn {
-        width: 100%;
         text-align: left;
         background: transparent;
-        color: #ffffff;
         border: none;
-        padding: 4px 0;
-        border-radius: 0;
-        cursor: pointer;
-        font-size: 0.86rem;
+        color: rgba(255, 255, 255, 0.75);
+        padding: 10px 12px;
+        font-size: 0.9rem;
         font-weight: 500;
-        line-height: 1.25;
-        transition: var(--transition-all);
-        letter-spacing: 0;
-        position: relative;
+        cursor: pointer;
+        border-radius: var(--radius-md);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        width: 100%;
       }
 
       .admin-tab-btn:hover {
-        color: #ffffff;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
       }
 
       .admin-tab-btn.active {
-        color: #ffffff;
+        background: var(--color-primary-500);
+        color: #fff;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       }
 
-      .admin-tab-btn.active::before {
-        content: "";
-        position: absolute;
-        left: calc(-1 * var(--space-6));
-        top: 0;
-        width: 3px;
-        height: 100%;
-        background: var(--color-secondary-400);
-      }
-
-      .admin-actions-group {
+      /* Utilities Section at Bottom */
+      .sidebar-utilities {
+        margin-top: auto;
+        padding-top: var(--space-6);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
         display: flex;
         flex-direction: column;
+        gap: var(--space-6);
+      }
+
+      .status-pill {
+        display: inline-flex;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .status-pill:empty { display: none; }
+
+      .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: var(--space-2);
       }
 
+      .utility-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.8);
+        padding: 8px;
+        font-size: 0.75rem;
+        border-radius: var(--radius-base);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .utility-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      .utility-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      /* Main Content Area */
+      .app-content {
+        background-color: var(--color-broken-white);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow-y: auto;
+        padding-bottom: var(--space-8);
+      }
+
+      .container {
+        width: 100%;
+        margin: 0;
+        padding: var(--space-6);
+        flex: 1;
+      }
+
+      /* Custom overrides for the switch in dark sidebar */
       henry-switch.nav-edit-switch {
-        --color-text-primary: rgba(255, 255, 255, 0.9);
-        --color-border: rgba(255, 255, 255, 0.18);
-        --color-gray-200: rgba(255, 255, 255, 0.14);
-        --color-success: rgba(255, 255, 255, 0.22);
-        --color-success-hover: rgba(255, 255, 255, 0.28);
-        --color-background: rgba(255, 255, 255, 0.08);
-        --color-surface: rgba(255, 255, 255, 0.08);
-        --color-text-secondary: rgba(255, 255, 255, 0.7);
-        --henry-switch-label-size: var(--font-size-xs);
-        --henry-switch-label-weight: var(--font-weight-semibold);
-        --henry-switch-label-letter-spacing: 0.01em;
-        --henry-switch-width: 36px;
-        --henry-switch-height: 20px;
-        --henry-switch-thumb-size: 14px;
-        --henry-switch-thumb-offset: 3px;
-      }
-
-      main {
-        background: transparent;
-        border: none;
-        border-radius: 0;
-        box-shadow: none;
-        padding: 0;
-      }
-
-      .section {
-        display: none;
-      }
-
-      .section.active {
-        display: block;
-      }
-
-      h2 {
-        color: var(--color-primary-500);
-        margin-bottom: var(--space-4);
-        font-size: var(--font-size-xl);
-        letter-spacing: -0.01em;
-      }
-
-      footer {
-        text-align: center;
-        color: var(--color-text-secondary);
-        padding: var(--space-6) var(--space-6) var(--space-8);
-        opacity: 0.8;
-        font-size: var(--font-size-sm);
-      }
-
-      @media (max-width: 1024px) {
-        .app-shell {
-          grid-template-columns: 1fr;
-        }
-
-        .sidebar {
-          position: relative;
-          height: auto;
-          border-right: none;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        .admin-tabs {
-          flex-direction: row;
-          flex-wrap: nowrap;
-          overflow-x: auto;
-          padding-bottom: var(--space-2);
-        }
-
-        .admin-tab-btn {
-          width: auto;
-          white-space: nowrap;
-        }
-
-        .admin-actions-group {
-          flex-direction: row;
-          flex-wrap: wrap;
-        }
-      }
-
-      @media (max-width: 768px) {
-        .container {
-          padding: 0 var(--space-4);
-        }
-
-        footer {
-          padding: var(--space-6) var(--space-4) var(--space-8);
-        }
+        --color-text-primary: #ffffff;
       }
     </style>
   </head>
@@ -352,10 +273,6 @@
             </div>
           </main>
         </div>
-
-        <footer>
-          <p>FEI Kursplanerare v1.0</p>
-        </footer>
       </div>
     </div>
 

@@ -17,10 +17,10 @@ export const reportTabStyles = css`
 
   .filters {
     padding: var(--space-4);
-    background: var(--color-gray-50);
-    border: 1px solid var(--color-border-light);
+    background: var(--color-broken-white);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-base);
-    box-shadow: var(--shadow-xs);
+    box-shadow: var(--shadow-sm);
     margin: var(--space-4) 0 var(--space-3);
   }
 
@@ -46,7 +46,7 @@ export const reportTabStyles = css`
     align-items: end;
     gap: var(--space-2);
     flex: 0 0 auto;
-    padding-bottom: 2px;
+    padding-bottom: 0; /* Removed padding to align with inputs */
   }
 
   .filters-advanced {
@@ -55,7 +55,7 @@ export const reportTabStyles = css`
     gap: var(--space-3) var(--space-4);
     margin-top: var(--space-3);
     padding-top: var(--space-3);
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-border);
     align-items: end;
   }
 

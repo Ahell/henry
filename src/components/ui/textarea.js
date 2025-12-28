@@ -22,9 +22,12 @@ export class HenryTextarea extends LitElement {
   static styles = css`
     @import url("/src/styles/tokens.css");
 
+    * {
+      box-sizing: border-box;
+    }
+
     :host {
       display: block;
-      margin-bottom: var(--space-4);
     }
 
     .textarea-wrapper {
@@ -47,6 +50,8 @@ export class HenryTextarea extends LitElement {
     }
 
     textarea {
+      display: block;
+      width: 100%;
       padding: var(--input-padding-y) var(--input-padding-x);
       border: var(--input-border-width) solid var(--color-border);
       border-radius: var(--radius-base);
@@ -69,7 +74,7 @@ export class HenryTextarea extends LitElement {
     }
 
     textarea:disabled {
-      background: var(--color-gray-100);
+      background: var(--color-gray-light);
       cursor: not-allowed;
       opacity: 0.6;
     }

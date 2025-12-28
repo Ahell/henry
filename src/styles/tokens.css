@@ -1,155 +1,156 @@
 /**
  * Design Tokens - Henry Course Planner
- * Centraliserade designvariabler för konsekvent styling
+ * Baserat på KTH:s grafiska profil och visuella identitet.
+ * Refined for a cleaner, more professional look.
  */
 
 :root {
-  /* Colors - Primary (KTH palette) */
-  --color-primary-50: #def0ff; /* Ljusbla */
-  --color-primary-100: #def0ff; /* Ljusbla */
-  --color-primary-200: #6298d2; /* Himmelsbla */
-  --color-primary-300: #6298d2; /* Himmelsbla */
-  --color-primary-400: #004791; /* KTH-bla */
-  --color-primary-500: #004791; /* KTH-bla */
-  --color-primary-600: #004791; /* KTH-bla */
-  --color-primary-700: #000061; /* Marinbla */
-  --color-primary-800: #000061; /* Marinbla */
-  --color-primary-900: #000061; /* Marinbla */
+  /* --- FÄRGER (COLORS) --- */
 
-  /* Colors - Secondary (Digital blue accent) */
-  --color-secondary-50: #def0ff; /* Ljusbla */
-  --color-secondary-100: #6298d2; /* Himmelsbla */
-  --color-secondary-200: #6298d2; /* Himmelsbla */
-  --color-secondary-300: #0029ed; /* Digitalbla */
-  --color-secondary-400: #0029ed; /* Digitalbla */
-  --color-secondary-500: #0029ed; /* Digitalbla */
-  --color-secondary-600: #0029ed; /* Digitalbla */
-  --color-secondary-700: #000061; /* Marinbla */
-  --color-secondary-800: #000061; /* Marinbla */
-  --color-secondary-900: #000061; /* Marinbla */
+  /* KTH Primary Palette */
+  --color-kth-blue: #004791;      /* KTH-blå (Primary Brand) */
+  --color-navy: #000061;          /* Marinblå (Darker Brand/Text) */
+  --color-sky-blue: #6298d2;      /* Himmelsblå (Secondary Brand) */
+  --color-light-blue: #def0ff;    /* Ljusblå (Backgrounds/Highlight) */
+  --color-digital-blue: #0029ed;  /* Digitalblå (Digital Accent) */
 
-  /* Colors - Gray Scale (KTH neutrals) */
-  --color-gray-50: #fcfcfc; /* Bruten vit */
-  --color-gray-100: #ebe5e0; /* Sand */
-  --color-gray-200: #e6e6e6; /* Ljusgra */
-  --color-gray-300: #a5a5a5; /* Gra */
-  --color-gray-400: #a5a5a5; /* Gra */
-  --color-gray-500: #a5a5a5; /* Gra */
-  --color-gray-600: #323232; /* Morkgra */
-  --color-gray-700: #323232; /* Morkgra */
-  --color-gray-800: #212121; /* Bruten svart */
-  --color-gray-900: #212121; /* Bruten svart */
+  /* Neutral/Backgrounds */
+  --color-sand: #f0f0f0;          /* Lighter Sand/Gray for better contrast */
+  --color-sand-dark: #ebe5e0;     /* Original Sand for specific accents */
+  --color-white: #ffffff;         /* Ren vit */
+  --color-broken-white: #f9fafb;  /* Very light gray for subtle backgrounds */
+  --color-broken-black: #1f2937;  /* Dark gray/black for softer text */
+  
+  /* Functional Colors - Green */
+  --color-green-dark: #064e3b;
+  --color-green: #059669;
+  --color-green-light: #d1fae5;
 
-  /* Colors - Semantic (KTH funktionsfarger) */
-  --color-success: #4da060; /* Gron */
-  --color-success-hover: #0d4a21; /* Morkgron */
-  --color-success-light: #c7ebba; /* Ljusgron */
+  /* Functional Colors - Red (Tegel) */
+  --color-red-dark: #7f1d1d;
+  --color-red: #dc2626;
+  --color-red-light: #fee2e2;
 
-  --color-danger: #e86a58; /* Tegel */
-  --color-danger-hover: #78001a; /* Mork tegel */
-  --color-danger-light: #ffccc4; /* Ljus tegel */
+  /* Functional Colors - Yellow */
+  --color-yellow-dark: #78350f;
+  --color-yellow: #d97706;
+  --color-yellow-light: #fef3c7;
 
-  --color-warning: #ffbe00; /* Gul */
-  --color-warning-hover: #a65900; /* Morkgul */
-  --color-warning-light: #fff0b0; /* Ljusgul */
+  /* Functional Colors - Turquoise/Info */
+  --color-turquoise-dark: #164e63;
+  --color-turquoise: #0891b2;
+  --color-turquoise-light: #cffafe;
 
-  --color-info: #339c9c; /* Turkos */
-  --color-info-hover: #1c434c; /* Mork turkos */
-  --color-info-light: #b2e0e0; /* Ljus turkos */
+  /* Functional Colors - Gray Scale */
+  --color-gray-dark: #374151;
+  --color-gray: #9ca3af;
+  --color-gray-light: #e5e7eb;
+  --color-gray-lighter: #f3f4f6;
 
-  /* Colors - UI */
-  --color-background: #ffffff; /* Vit */
-  --color-surface: #ebe5e0; /* Sand */
-  --color-border: #e6e6e6; /* Ljusgra */
-  --color-border-hover: #a5a5a5; /* Gra */
-  --color-text-primary: #212121; /* Bruten svart */
-  --color-text-secondary: #323232; /* Morkgra */
-  --color-text-disabled: #a5a5a5; /* Gra */
+  /* --- SEMANTISKA MAPPNINGAR (SEMANTIC MAPPINGS) --- */
+  
+  /* Brand/Theme */
+  --color-primary-100: var(--color-light-blue);
+  --color-primary-200: var(--color-sky-blue);
+  --color-primary-500: var(--color-kth-blue);
+  --color-primary-600: var(--color-navy); 
+  --color-primary-700: #00004a; /* Even darker for sidebar bg */
+  
+  --color-secondary-500: var(--color-digital-blue);
 
-  /* Typography */
-  --font-family-base: "Figtree", "Helvetica Neue", Arial, sans-serif;
-  --font-family-serif: "Georgia", "Times New Roman", serif;
-  --font-family-mono: "SF Mono", Monaco, "Cascadia Code", "Courier New",
-    monospace;
+  /* UI Elements */
+  --color-background: var(--color-broken-white); /* Softer than pure white */
+  --color-surface: var(--color-white);           /* Cards/Panels should be white */
+  --color-surface-hover: var(--color-gray-lighter);
+  
+  --color-border: var(--color-gray-light);
+  --color-border-hover: var(--color-gray);
+  
+  --color-text-primary: var(--color-broken-black);
+  --color-text-secondary: var(--color-gray-dark);
+  --color-text-light: var(--color-white);
+  --color-text-disabled: var(--color-gray);
 
-  --font-size-xs: 0.75rem; /* 12px */
-  --font-size-sm: 0.875rem; /* 14px */
-  --font-size-base: 1rem; /* 16px */
-  --font-size-lg: 1.125rem; /* 18px */
-  --font-size-xl: 1.25rem; /* 20px */
-  --font-size-2xl: 1.5rem; /* 24px */
-  --font-size-3xl: 2rem; /* 32px */
+  /* Status Colors */
+  --color-success: var(--color-green);
+  --color-success-bg: var(--color-green-light);
+  --color-success-text: var(--color-green-dark);
+
+  --color-danger: var(--color-red);
+  --color-danger-bg: var(--color-red-light);
+  --color-danger-text: var(--color-red-dark);
+
+  --color-warning: var(--color-yellow);
+  --color-warning-bg: var(--color-yellow-light);
+  --color-warning-text: var(--color-yellow-dark);
+
+  --color-info: var(--color-turquoise);
+  --color-info-bg: var(--color-turquoise-light);
+  --color-info-text: var(--color-turquoise-dark);
+
+  /* --- TYPOGRAFI (TYPOGRAPHY) --- */
+  
+  --font-family-base: "Figtree", system-ui, -apple-system, sans-serif;
+  --font-family-serif: "Georgia", serif;
+  --font-family-mono: "SF Mono", "Menlo", monospace;
+
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.5rem;     /* 24px - Increased for better hierarchy */
+  --font-size-2xl: 2rem;      /* 32px */
+  --font-size-3xl: 2.5rem;    /* 40px */
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  --line-height-tight: 1.1;
-  --line-height-snug: 1.2;
-  --line-height-normal: 1.25;
-  --line-height-relaxed: 1.5;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
 
-  /* Spacing */
-  --space-1: 0.25rem; /* 4px */
-  --space-2: 0.5rem; /* 8px */
-  --space-3: 0.75rem; /* 12px */
-  --space-4: 1rem; /* 16px */
-  --space-5: 1.25rem; /* 20px */
-  --space-6: 1.5rem; /* 24px */
-  --space-8: 2rem; /* 32px */
-  --space-10: 2.5rem; /* 40px */
-  --space-12: 3rem; /* 48px */
-  --space-16: 4rem; /* 64px */
+  /* --- SPACING & SIZING --- */
+  
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
 
-  /* Border Radius */
   --radius-sm: 4px;
   --radius-base: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
-  --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-xs: none;
-  --shadow-sm: none;
-  --shadow-base: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-  --shadow-xl: none;
+  /* --- SHADOWS --- */
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-base: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
-  /* Special Shadows */
-  --shadow-primary: none;
-  --shadow-primary-hover: none;
-  --shadow-danger: none;
-  --shadow-success: none;
-
-  /* Transitions */
-  --transition-fast: 150ms ease;
-  --transition-base: 200ms ease;
-  --transition-slow: 300ms ease;
-  --transition-all: all 200ms ease;
-
-  /* Z-index */
-  --z-dropdown: 1000;
-  --z-sticky: 1020;
-  --z-fixed: 1030;
-  --z-modal-backdrop: 1040;
-  --z-modal: 1050;
-  --z-popover: 1060;
-  --z-tooltip: 1070;
-
-  /* Form Elements */
-  --input-height-sm: 32px;
-  --input-height-base: 40px;
-  --input-height-lg: 48px;
-  --input-padding-x: var(--space-3);
-  --input-padding-y: var(--space-2);
-  --input-border-width: 1px;
-  --input-focus-ring: 0 0 0 3px rgba(0, 71, 145, 0.2);
-
-  /* Button */
+  /* --- TRANSITIONS --- */
+  
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* --- COMPONENT SPECIFIC --- */
+  
+  /* Buttons */
   --button-height-sm: 32px;
   --button-height-base: 40px;
   --button-height-lg: 48px;
+  
+  /* Inputs */
+  --input-height-base: 40px;
+  --input-border-width: 1px;
+  --input-focus-ring: 0 0 0 3px rgba(0, 71, 145, 0.15); /* Soft Blue Ring */
 }

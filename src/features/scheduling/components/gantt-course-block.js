@@ -217,22 +217,14 @@ export class GanttCourseBlock extends LitElement {
 
   _getNormalCourseColor(course) {
     const colors = [
-      "#2ecc71",
-      "#3498db",
-      "#e67e22",
-      "#1abc9c",
-      "#e74c3c",
-      "#f39c12",
-      "#16a085",
-      "#d35400",
-      "#27ae60",
-      "#2980b9",
-      "#c0392b",
-      "#f1c40f",
-      "#00cec9",
-      "#0984e3",
-      "#00b894",
-      "#fdcb6e",
+      "#004791", // KTH Blue
+      "#0d4a21", // Dark Green
+      "#a65900", // Dark Yellow
+      "#78001a", // Dark Red
+      "#1c434c", // Dark Turquoise
+      "#0029ed", // Digital Blue
+      "#000061", // Navy
+      "#323232", // Dark Gray
     ];
     const colorIndex = (course.course_id || 0) % colors.length;
     return colors[colorIndex];

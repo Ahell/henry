@@ -28,6 +28,8 @@ export class HenryTable extends LitElement {
   };
 
   static styles = css`
+    @import url("/src/styles/tokens.css");
+
     :host {
       display: block;
       overflow-x: auto;
@@ -36,7 +38,9 @@ export class HenryTable extends LitElement {
     table {
       width: 100%;
       border-collapse: collapse;
+      font-family: var(--font-family-base);
       font-size: var(--font-size-sm);
+      color: var(--color-text-primary);
     }
 
     :host([compact]) table {
@@ -44,7 +48,7 @@ export class HenryTable extends LitElement {
     }
 
     thead {
-      background: var(--color-gray-100);
+      background: var(--color-gray-lighter);
       position: sticky;
       top: 0;
       z-index: 1;
@@ -54,9 +58,12 @@ export class HenryTable extends LitElement {
       padding: var(--space-3) var(--space-4);
       text-align: left;
       font-weight: var(--font-weight-semibold);
-      color: var(--color-text-primary);
+      color: var(--color-text-secondary);
       border-bottom: 2px solid var(--color-border);
       white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: var(--font-size-xs);
     }
 
     :host([compact]) th {
@@ -69,7 +76,7 @@ export class HenryTable extends LitElement {
     }
 
     th.sortable:focus-visible {
-      outline: 2px solid var(--color-primary-400);
+      outline: 2px solid var(--color-primary-500);
       outline-offset: -2px;
     }
 
@@ -88,7 +95,7 @@ export class HenryTable extends LitElement {
 
     td {
       padding: var(--space-3) var(--space-4);
-      border-bottom: 1px solid var(--color-border-light);
+      border-bottom: 1px solid var(--color-border);
     }
 
     :host([compact]) td {
@@ -101,7 +108,7 @@ export class HenryTable extends LitElement {
     }
 
     :host([striped]) tbody tr:nth-child(even) {
-      background: var(--color-gray-50);
+      background: var(--color-broken-white);
     }
 
     :host([hoverable]) tbody tr {
@@ -110,7 +117,7 @@ export class HenryTable extends LitElement {
     }
 
     :host([hoverable]) tbody tr:hover {
-      background: var(--color-info-light);
+      background: var(--color-surface-hover);
     }
 
     .text-left {

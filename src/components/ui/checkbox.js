@@ -16,9 +16,12 @@ export class HenryCheckbox extends LitElement {
   static styles = css`
     @import url("/src/styles/tokens.css");
 
+    * {
+      box-sizing: border-box;
+    }
+
     :host {
       display: block;
-      margin-bottom: var(--space-3);
     }
 
     .checkbox-wrapper {
