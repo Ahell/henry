@@ -27,6 +27,43 @@ export class DetailTable extends LitElement {
     this.isPainting = false;
     this.dayHeaderRenderer = null;
     this.teacherDayCellRenderer = null;
+    this._headerHeights = {
+      week: null,
+      weekday: null,
+      date: null,
+    };
+  }
+
+  updated() {
+    this._syncHeaderHeights();
+  }
+
+  _syncHeaderHeights() {
+    const container = this.querySelector(".table-container");
+    if (!container) return;
+
+    const measure = (selector) => {
+      const row = container.querySelector(selector);
+      if (!row) return null;
+      const rect = row.getBoundingClientRect();
+      return Number.isFinite(rect.height) ? rect.height : null;
+    };
+
+    const week = measure("thead .week-row");
+    const weekday = measure("thead .weekday-row");
+    const date = measure("thead .date-row");
+
+    const apply = (key, value, cssVar) => {
+      if (!Number.isFinite(value) || value <= 0) return;
+      const rounded = Math.round(value);
+      if (this._headerHeights[key] === rounded) return;
+      this._headerHeights[key] = rounded;
+      container.style.setProperty(cssVar, `${rounded}px`);
+    };
+
+    apply("week", week, "--detail-week-row-height");
+    apply("weekday", weekday, "--detail-weekday-row-height");
+    apply("date", date, "--detail-date-row-height");
   }
 
   render() {
@@ -88,6 +125,9 @@ export class DetailTable extends LitElement {
           position: relative;
           --first-col-width: ${firstColWidth}px;
           --day-col-width: ${dayColWidth}px;
+          --detail-week-row-height: 28px;
+          --detail-weekday-row-height: 28px;
+          --detail-date-row-height: 36px;
           font-family: var(--font-family-base);
         }
         .teacher-timeline-table {
@@ -124,6 +164,10 @@ export class DetailTable extends LitElement {
           border-bottom: 2px solid var(--color-border);
           text-transform: uppercase;
           letter-spacing: 0.05em;
+          position: sticky;
+          top: 0;
+          z-index: 4;
+          box-sizing: border-box;
         }
         .teacher-timeline-table th,
         .teacher-timeline-table td {
@@ -142,6 +186,9 @@ export class DetailTable extends LitElement {
           letter-spacing: normal;
           font-weight: var(--font-weight-medium);
           padding: var(--space-2) var(--space-4);
+          top: 0;
+          z-index: 6;
+          height: var(--detail-week-row-height);
         }
         thead .weekday-row th {
           text-align: left;
@@ -152,12 +199,20 @@ export class DetailTable extends LitElement {
           text-transform: none;
           letter-spacing: normal;
           font-weight: var(--font-weight-medium);
+          top: var(--detail-week-row-height);
+          z-index: 5;
+          height: var(--detail-weekday-row-height);
         }
         thead .date-row th {
           text-align: center;
           background: var(--color-gray-lighter);
           color: var(--color-text-secondary);
           border-radius: 0 !important;
+          top: calc(
+            var(--detail-week-row-height) + var(--detail-weekday-row-height)
+          );
+          z-index: 4;
+          height: var(--detail-date-row-height);
         }
         /* Ensure selected/default/alt headers do not change background */
         .teacher-timeline-table thead .date-row th.slot-header {
@@ -172,6 +227,15 @@ export class DetailTable extends LitElement {
           z-index: 5;
           background: var(--color-gray-lighter);
           text-align: left;
+        }
+        .teacher-timeline-table thead .week-row th:first-child {
+          z-index: 7;
+        }
+        .teacher-timeline-table thead .weekday-row th:first-child {
+          z-index: 6;
+        }
+        .teacher-timeline-table thead .date-row th:first-child {
+          z-index: 5;
         }
         .teacher-timeline-table thead .date-row th:first-child {
           background: var(--color-gray-lighter);
