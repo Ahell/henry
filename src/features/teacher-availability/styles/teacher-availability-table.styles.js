@@ -90,6 +90,16 @@ export const teacherAvailabilityTableStyles = css`
     background: var(--color-surface);
   }
 
+  overview-table .teacher-timeline-table th,
+  overview-table .teacher-timeline-table td {
+    border-right: 1px solid var(--color-border);
+  }
+
+  detail-table .teacher-timeline-table th,
+  detail-table .teacher-timeline-table td {
+    border-right: 1px solid var(--color-border);
+  }
+
   .teacher-timeline-table th:last-child,
   .teacher-timeline-table td:last-child {
     border-right: none;

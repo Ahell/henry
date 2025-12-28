@@ -125,6 +125,14 @@ export class DetailTable extends LitElement {
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
+        .teacher-timeline-table th,
+        .teacher-timeline-table td {
+          border-right: 1px solid var(--color-border);
+        }
+        .teacher-timeline-table th:last-child,
+        .teacher-timeline-table td:last-child {
+          border-right: none;
+        }
         thead .week-row th {
           text-align: left;
           background: var(--color-white);
