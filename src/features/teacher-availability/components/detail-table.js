@@ -100,8 +100,13 @@ export class DetailTable extends LitElement {
         .teacher-timeline-table th:first-child,
         .teacher-timeline-table td:first-child {
           width: var(--first-col-width);
-          background: var(--color-white);
           border-right: 1px solid var(--color-border);
+        }
+        .teacher-timeline-table th:first-child {
+          background: var(--color-gray-lighter);
+        }
+        .teacher-timeline-table td:first-child {
+          background: var(--color-surface);
         }
         .teacher-timeline-table th:not(:first-child),
         .teacher-timeline-table td:not(:first-child) {
@@ -110,35 +115,46 @@ export class DetailTable extends LitElement {
           max-width: var(--day-col-width);
         }
         .teacher-timeline-table thead th {
-          background: var(--color-surface);
-          color: var(--color-text-primary);
+          background: var(--color-gray-lighter);
+          color: var(--color-text-secondary);
           font-size: var(--font-size-xs);
           font-weight: var(--font-weight-semibold);
           text-align: center;
-          padding: var(--space-2);
-          border-bottom: 1px solid var(--color-border);
+          padding: var(--space-3) var(--space-4);
+          border-bottom: 2px solid var(--color-border);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
         thead .week-row th {
           text-align: left;
           background: var(--color-white);
           color: var(--color-text-secondary);
+          border-bottom: 0;
+          text-transform: none;
+          letter-spacing: normal;
+          font-weight: var(--font-weight-medium);
+          padding: var(--space-2) var(--space-4);
         }
         thead .weekday-row th {
           text-align: left;
-          padding: var(--space-2);
+          padding: var(--space-2) var(--space-4);
           background: var(--color-white);
-          color: var(--color-text-primary);
+          color: var(--color-text-secondary);
+          border-bottom: 0;
+          text-transform: none;
+          letter-spacing: normal;
+          font-weight: var(--font-weight-medium);
         }
         thead .date-row th {
           text-align: center;
-          background: var(--color-gray-light);
-          color: var(--color-text-primary);
+          background: var(--color-gray-lighter);
+          color: var(--color-text-secondary);
           border-radius: 0 !important;
         }
         /* Ensure selected/default/alt headers do not change background */
         .teacher-timeline-table thead .date-row th.slot-header {
-          background: var(--color-gray-light) !important;
-          color: var(--color-text-primary) !important;
+          background: var(--color-gray-lighter) !important;
+          color: var(--color-text-secondary) !important;
           border-color: var(--color-border) !important;
         }
         /* Keep first column sticky with matching background */
@@ -146,11 +162,11 @@ export class DetailTable extends LitElement {
           position: sticky;
           left: 0;
           z-index: 5;
-          background: var(--color-white);
+          background: var(--color-gray-lighter);
           text-align: left;
         }
         .teacher-timeline-table thead .date-row th:first-child {
-          background: var(--color-gray-light);
+          background: var(--color-gray-lighter);
         }
         .teacher-timeline-table thead .weekday-row th:first-child,
         .teacher-timeline-table thead .week-row th:first-child {
@@ -165,8 +181,8 @@ export class DetailTable extends LitElement {
           thead
           th.teaching-day-default-dimmed-header,
         .teacher-timeline-table thead th.teaching-day-alt-header {
-          background: var(--color-surface);
-          color: var(--color-text-primary);
+          background: var(--color-gray-lighter);
+          color: var(--color-text-secondary);
           border: 1px solid var(--color-border);
           box-shadow: none;
         }
