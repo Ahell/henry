@@ -48,7 +48,7 @@ export const teacherAvailabilityTableStyles = css`
 
   .table-container {
     overflow-x: auto;
-    background: var(--color-background);
+    background: transparent;
   }
 
   .table-container.painting-active {
@@ -66,11 +66,10 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-timeline-table td {
     border: none;
     border-bottom: 1px solid var(--color-border);
-    border-right: 1px solid var(--color-border);
     padding: var(--space-4) var(--space-2);
     text-align: center;
     min-width: 96px;
-    background: var(--color-background);
+    background: var(--color-surface);
   }
 
   .teacher-timeline-table th:last-child,
@@ -79,19 +78,19 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-timeline-table tbody tr:nth-child(even) td {
-    background: var(--color-gray-50);
+    background: var(--color-broken-white);
   }
 
   .teacher-timeline-table tbody tr:hover td {
-    background: var(--color-primary-50);
+    background: var(--color-surface-hover);
   }
 
   .teacher-timeline-table tbody tr:nth-child(even) td:first-child {
-    background: var(--color-gray-50);
+    background: var(--color-broken-white);
   }
 
   .teacher-timeline-table tbody tr:hover td:first-child {
-    background: var(--color-primary-50);
+    background: var(--color-surface-hover);
   }
 
   .teacher-timeline-table th:not(:first-child),
@@ -102,40 +101,48 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-timeline-table th {
-    background: var(--color-gray-100);
+    background: var(--color-gray-lighter);
     font-weight: var(--font-weight-semibold);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     position: sticky;
     top: 0;
     z-index: 2;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+    border-bottom: 2px solid var(--color-border);
+    padding: var(--space-3) var(--space-4);
   }
 
   .teacher-timeline-table thead th:first-child {
     position: sticky;
     left: 0;
     z-index: 3;
-    background: var(--color-gray-100);
+    background: var(--color-gray-lighter);
     font-size: var(--font-size-xs);
   }
 
   .teacher-timeline-table th.slot-header {
     cursor: pointer;
     transition: var(--transition-all);
-    background: var(--color-gray-100);
-    color: var(--color-text-primary);
+    background: var(--color-gray-lighter);
+    color: var(--color-text-secondary);
     border-color: var(--color-border);
     font-size: var(--font-size-xs);
     white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .teacher-timeline-table th.slot-header:hover {
-    background: var(--color-gray-200);
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
   }
 
   .teacher-timeline-table tbody tr td:first-child {
     text-align: left;
     font-weight: var(--font-weight-semibold);
-    background: var(--color-background);
+    background: var(--color-surface);
     position: sticky;
     left: 0;
     z-index: 2;
@@ -580,20 +587,24 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-timeline-table th.teaching-day-default-header,
   .teacher-timeline-table th.teaching-day-default-dimmed-header,
   .teacher-timeline-table th.teaching-day-alt-header {
-    background: var(--color-gray-100) !important;
-    color: var(--color-text-primary) !important;
-    border: 1px solid var(--color-border) !important;
+    background: var(--color-gray-lighter) !important;
+    color: var(--color-text-secondary) !important;
+    border: none !important;
+    border-bottom: 2px solid var(--color-border) !important;
+    border-right: 1px solid var(--color-border) !important;
     box-shadow: none !important;
     opacity: 1 !important;
     filter: none !important;
     border-radius: 0 !important;
     position: static !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
   }
   .teacher-timeline-table th.teaching-day-default-header:hover,
   .teacher-timeline-table th.teaching-day-default-dimmed-header:hover,
   .teacher-timeline-table th.teaching-day-alt-header:hover {
     transform: none !important;
-    background: var(--color-gray-100) !important;
+    background: var(--color-surface-hover) !important;
     color: var(--color-text-primary) !important;
   }
   .teacher-timeline-table th.teaching-day-default-header::before,

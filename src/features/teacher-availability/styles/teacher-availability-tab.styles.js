@@ -63,6 +63,7 @@ export const teacherAvailabilityTabStyles = css`
     align-items: center;
     gap: var(--space-4);
     flex-wrap: wrap;
+    margin-bottom: var(--space-4);
   }
 
   .legend-chip {
