@@ -16,12 +16,23 @@ const setStatus = (message) => {
 const loadBtn = document.getElementById("navLoadTestData");
 const resetBtn = document.getElementById("navResetDatabase");
 const editSwitch = document.getElementById("navEditMode");
+const commitBtn = document.getElementById("navCommitChanges");
+const revertBtn = document.getElementById("navRevertChanges");
 let busy = false;
+let changeBusy = false;
 
 const setBusy = (isBusy) => {
   busy = Boolean(isBusy);
   if (loadBtn) loadBtn.disabled = busy;
   if (resetBtn) resetBtn.disabled = busy;
+};
+
+const updateChangeButtons = () => {
+  const hasChanges = !!store.hasUncommittedChanges;
+  const canCommit = hasChanges && !changeBusy;
+  const canRevert = !!store.hasCommitSnapshot && hasChanges && !changeBusy;
+  if (commitBtn) commitBtn.disabled = !canCommit;
+  if (revertBtn) revertBtn.disabled = !canRevert;
 };
 
 if (loadBtn) {
@@ -74,6 +85,38 @@ if (resetBtn) {
   });
 }
 
+if (commitBtn) {
+  commitBtn.addEventListener("click", () => {
+    if (changeBusy) return;
+    store.commitChanges();
+    setStatus("Ändringar committade.");
+    updateChangeButtons();
+  });
+}
+
+if (revertBtn) {
+  revertBtn.addEventListener("click", async () => {
+    if (changeBusy) return;
+    if (!store.hasCommitSnapshot || !store.hasUncommittedChanges) return;
+    if (!confirm("Revertera alla ändringar sedan senaste commit?")) {
+      return;
+    }
+    changeBusy = true;
+    updateChangeButtons();
+    setStatus("Reverterar ändringar…");
+    try {
+      await store.revertToCommit();
+      setStatus("Ändringar återställda.");
+    } catch (error) {
+      setStatus(`Fel: ${error?.message || String(error)}`);
+      console.error("Failed to revert changes:", error);
+    } finally {
+      changeBusy = false;
+      updateChangeButtons();
+    }
+  });
+}
+
 if (editSwitch) {
   editSwitch.checked = !!store.editMode;
   editSwitch.addEventListener("switch-change", (e) => {
@@ -82,6 +125,12 @@ if (editSwitch) {
     editSwitch.checked = !!store.editMode;
   });
 }
+
+store.subscribe(() => {
+  updateChangeButtons();
+});
+
+updateChangeButtons();
 
 // Admin tabs in header (controlled by <admin-panel>)
 const adminTabsEl = document.getElementById("adminTabs");

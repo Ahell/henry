@@ -91,6 +91,7 @@ export class TeacherAvailabilityTab extends LitElement {
     });
   }
 
+
   _parseDateOnly(dateStr) {
     if (typeof dateStr !== "string") return null;
     const parts = dateStr.split("-");

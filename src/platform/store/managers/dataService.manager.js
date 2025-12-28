@@ -69,7 +69,7 @@ export class DataServiceManager {
     this.store.slotsManager.load(data.slots || []);
     this.store.availabilityManager.load(data.teacherAvailability || []);
     this.store.teachingDaysManager.loadTeachingDays(data.teachingDays || []);
-    this.store.teachingDaysManager.loadSlotDays(data.slotDays || []);
+    this.store.slotDays = data.slotDays || [];
     this.store.teachingDaysManager.loadCourseSlotDays(
       remappedCourseSlotDays || []
     );
@@ -83,6 +83,7 @@ export class DataServiceManager {
     this.store.courseRunsManager.ensureCourseSlotsFromRuns(); // Redundant but safe
     this._syncStoreCollections();
     this.store.teachingDaysManager._ensureCourseSlotDayDefaults();
+    this.store.slotDays = this.store.slotsManager.slotDays;
     this.store.validator.assertAllSlotsNonOverlapping();
 
     // One-time validation during data load (different from reactive notify() validation)
@@ -132,6 +133,8 @@ export class DataServiceManager {
     // Calculate prerequisite problems
     this.store.prerequisiteProblems =
       this.store.prerequisites.findCoursesWithMissingPrerequisites();
+
+    this.store.initializeCommitSnapshot(this.getDataSnapshot());
 
     // Notify listeners that data is loaded
     this.store.events.notify();
@@ -235,12 +238,20 @@ export class DataServiceManager {
     this.store.teachingDaysManager.loadCourseSlotDays([]); // Clear courseSlotDays
     this.store.businessLogicManager.load(data.businessLogic);
 
+    const courseExaminators = Array.isArray(data.courseExaminators)
+      ? data.courseExaminators
+      : [];
+    const courseKursansvarig = Array.isArray(data.courseKursansvarig)
+      ? data.courseKursansvarig
+      : [];
+
     if (data.courses) {
       this.store.coursesManager.load(
         data.courses || [],
         data.coursePrerequisites || [],
         null,
-        data.courseExaminators || []
+        courseExaminators,
+        courseKursansvarig
       );
     }
     if (data.cohorts) {
@@ -266,7 +277,12 @@ export class DataServiceManager {
         this.store.coursesManager.getCourses(),
         data.coursePrerequisites,
         null,
-        data.courseExaminators || this.store.coursesManager.courseExaminators
+        courseExaminators.length > 0
+          ? courseExaminators
+          : this.store.coursesManager.courseExaminators,
+        courseKursansvarig.length > 0
+          ? courseKursansvarig
+          : this.store.coursesManager.courseKursansvarig
       );
     }
     if (data.teachingDays) {
@@ -275,20 +291,42 @@ export class DataServiceManager {
     if (data.examDates) {
       this.store.examDatesManager.load(data.examDates);
     }
-    if (data.courseSlots) {
+    if (data.slotDays) {
+      this.store.slotDays = data.slotDays;
+    }
+    const hasBaseCourseSlots = Array.isArray(data.courseSlots)
+      ? data.courseSlots.some((cs) => cs?.course_slot_id != null)
+      : false;
+    if (hasBaseCourseSlots) {
       this.store.courseRunsManager.load(
         this.store.courseRunsManager.getCourseRuns(),
         data.courseSlots
       );
     }
-    if (data.slotDays) {
-      this.store.teachingDaysManager.loadSlotDays(data.slotDays);
-    }
-    if (data.courseSlotDays) {
-      this.store.teachingDaysManager.loadCourseSlotDays(data.courseSlotDays);
-    }
     this.store.courseRunsManager.ensureCourseSlotsFromRuns();
+    const baseSlots = this.store.courseRunsManager.courseSlots || [];
+    const keyToBaseId = new Map();
+    baseSlots.forEach((cs) => {
+      keyToBaseId.set(`${cs.course_id}-${cs.slot_id}`, cs.course_slot_id);
+    });
+    const expandedIdToBaseId = new Map();
+    const mappingSource = data.cohortSlotCourses || data.courseSlots || [];
+    mappingSource.forEach((es) => {
+      const baseId = keyToBaseId.get(`${es.course_id}-${es.slot_id}`);
+      const expandedId = es.cohort_slot_course_id ?? es.course_slot_id;
+      if (baseId != null && expandedId != null) {
+        expandedIdToBaseId.set(String(expandedId), baseId);
+      }
+    });
+    if (data.courseSlotDays) {
+      const remappedCourseSlotDays = (data.courseSlotDays || []).map((csd) => {
+        const baseId = expandedIdToBaseId.get(String(csd.course_slot_id));
+        return baseId ? { ...csd, course_slot_id: baseId } : csd;
+      });
+      this.store.teachingDaysManager.loadCourseSlotDays(remappedCourseSlotDays);
+    }
     this.store.slotsManager.ensureSlotDaysFromSlots();
+    this.store.slotDays = this.store.slotsManager.slotDays;
     this._syncStoreCollections();
     this.store.events.notify();
   }

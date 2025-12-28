@@ -85,6 +85,8 @@ export class EventManager {
         !previousProblems.has(`${p.cohortId}-${p.runId}-${p.missingPrereqId}`)
     );
 
+    this.store.markUncommittedChanges();
+
     // Notify all listeners
     this.listeners.forEach((l) => l());
 

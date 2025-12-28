@@ -75,6 +75,8 @@ const ensureAvailabilityMutation = (component) => {
     },
   });
 
+  store.markUncommittedChanges();
+
   return component._availabilityMutationId;
 };
 

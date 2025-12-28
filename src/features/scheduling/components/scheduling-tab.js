@@ -55,6 +55,7 @@ export class SchedulingTab extends LitElement {
     });
   }
 
+
   updated() {
     // Auto-scroll horizontally once per mount, after the table exists.
     if (!this._didAutoScroll) {
@@ -298,7 +299,6 @@ export class SchedulingTab extends LitElement {
     const shouldShowTeacherOverlay =
       !!this._dragCourseId && !!this._shouldShowTeacherAvailabilityOverlay;
     this._lastSlotCount = slotDates.length;
-
     return html`
       <henry-panel>
         <div slot="header" class="panel-header">

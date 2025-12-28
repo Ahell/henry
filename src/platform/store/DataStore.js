@@ -37,8 +37,12 @@ export class DataStore {
     this._nextMutationId = 1;
     this._pendingMutations = new Map();
     this._lastCommittedMutationId = 0;
+    this._minRollbackMutationId = 0;
     this._isReconciling = false;
     this._autoSaveSuspendedCount = 0;
+    this._commitSnapshot = null;
+    this._hasUncommittedChanges = false;
+    this._commitTrackingSuspendedCount = 0;
 
     // Initialize services
     this.validator = new DataValidator(this);
@@ -161,7 +165,12 @@ export class DataStore {
     const next = !!enabled;
     if (this.editMode === next) return;
     this.editMode = next;
-    this.notify();
+    this.beginCommitTrackingSuspension();
+    try {
+      this.notify();
+    } finally {
+      this.endCommitTrackingSuspension();
+    }
   }
 
   async saveData({ mutationId, label } = {}) {
@@ -230,6 +239,78 @@ export class DataStore {
     return this._autoSaveSuspendedCount > 0;
   }
 
+  beginCommitTrackingSuspension() {
+    this._commitTrackingSuspendedCount += 1;
+  }
+
+  endCommitTrackingSuspension() {
+    this._commitTrackingSuspendedCount = Math.max(
+      0,
+      this._commitTrackingSuspendedCount - 1
+    );
+  }
+
+  get isCommitTrackingSuspended() {
+    return this._commitTrackingSuspendedCount > 0;
+  }
+
+  get hasUncommittedChanges() {
+    return this._hasUncommittedChanges;
+  }
+
+  get hasCommitSnapshot() {
+    return !!this._commitSnapshot;
+  }
+
+  _cloneSnapshot(snapshot) {
+    if (!snapshot) return null;
+    if (typeof structuredClone === "function") {
+      return structuredClone(snapshot);
+    }
+    return JSON.parse(JSON.stringify(snapshot));
+  }
+
+  _markUncommittedChanges() {
+    this._hasUncommittedChanges = true;
+  }
+
+  markUncommittedChanges() {
+    if (this.isReconciling || this.isCommitTrackingSuspended) return;
+    this._markUncommittedChanges();
+  }
+
+  initializeCommitSnapshot(snapshot, { force = false } = {}) {
+    if (!snapshot) return;
+    if (this._commitSnapshot && !force) return;
+    this._commitSnapshot = this._cloneSnapshot(snapshot);
+    this._hasUncommittedChanges = false;
+  }
+
+  commitChanges() {
+    this.initializeCommitSnapshot(this.getDataSnapshot(), { force: true });
+  }
+
+  async revertToCommit() {
+    if (!this._commitSnapshot) return false;
+    const snapshot = this._cloneSnapshot(this._commitSnapshot);
+    if (!snapshot) return false;
+
+    this._beginReconciling();
+    this.beginAutoSaveSuspension();
+    this.beginCommitTrackingSuspension();
+    try {
+      this.dataServiceManager.hydrate(snapshot);
+    } finally {
+      this.endCommitTrackingSuspension();
+      this.endAutoSaveSuspension();
+      this._endReconciling();
+    }
+
+    this._hasUncommittedChanges = false;
+    await this.saveData({ label: "revert-to-commit" });
+    return true;
+  }
+
   /**
    * Replace the local store with the canonical server payload once the mutation
    * finishes; ignore any stale responses that arrive out of order.
@@ -259,6 +340,9 @@ export class DataStore {
    * runs; otherwise we reload from the backend to stay server-authoritative.
    */
   async rollback(mutationId) {
+    if (mutationId < this._minRollbackMutationId) {
+      return;
+    }
     const entry = this._pendingMutations.get(mutationId);
     this._pendingMutations.delete(mutationId);
 
@@ -573,11 +657,12 @@ export class DataStore {
   }
 
   get slotDays() {
-    return this.teachingDaysManager.slotDays;
+    return this.slotsManager.slotDays;
   }
 
   set slotDays(value) {
-    this.teachingDaysManager.slotDays = value;
+    this.teachingDaysManager.slotDays = value || [];
+    this.slotsManager.slotDays = value || [];
   }
 
   get courseSlotDays() {
@@ -617,11 +702,28 @@ export class DataStore {
   }
 
   importData(data) {
-    this.dataServiceManager.importData(data);
+    this._beginReconciling();
+    this.beginAutoSaveSuspension();
+    this.beginCommitTrackingSuspension();
+    try {
+      const minMutationId = this._nextMutationId;
+      this._pendingMutations.clear();
+      this._lastCommittedMutationId = Math.max(
+        this._lastCommittedMutationId,
+        minMutationId - 1
+      );
+      this._minRollbackMutationId = minMutationId;
+      this.dataServiceManager.importData(data);
+      this.initializeCommitSnapshot(this.getDataSnapshot(), { force: true });
+    } finally {
+      this.endCommitTrackingSuspension();
+      this.endAutoSaveSuspension();
+      this._endReconciling();
+    }
   }
 
   exportData() {
-    return this.dataServiceManager.exportData();
+    return this.getDataSnapshot();
   }
 
   async loadSeedDataToDatabase() {
