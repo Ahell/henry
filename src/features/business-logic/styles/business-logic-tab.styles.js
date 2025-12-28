@@ -29,29 +29,35 @@ export const businessLogicTabStyles = css`
     gap: var(--space-3);
   }
 
+  /* List container with air between rows */
   .rule-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-3); /* Air between rows */
     margin-top: var(--space-4);
   }
 
+  /* Rule items styled with gray background (like Report filters) but sharp & separated */
   .rule {
     display: grid;
     grid-template-columns: auto 1fr auto;
     gap: var(--space-4);
-    padding: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-broken-white); /* Grayer background */
     border: 1px solid var(--color-border);
-    background: var(--color-surface); /* Updated to surface */
+    border-radius: 0; /* No rounded corners */
     align-items: center;
-    border-radius: var(--radius-base);
     transition: transform 0.2s, box-shadow 0.2s;
   }
 
   .rule.dragging {
     opacity: 0.5;
-    background: var(--color-broken-white);
+    background: var(--color-white);
     border: 1px dashed var(--color-border);
+  }
+
+  .rule:hover {
+    box-shadow: var(--shadow-sm); /* Subtle lift on hover */
   }
 
   /* Drag handle styling */
@@ -61,8 +67,9 @@ export const businessLogicTabStyles = css`
     justify-content: center;
     cursor: grab;
     color: var(--color-text-secondary);
-    padding: var(--space-1);
-    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    border-radius: 0;
+    transition: all 0.2s;
   }
 
   .drag-handle:hover {
@@ -84,32 +91,48 @@ export const businessLogicTabStyles = css`
     display: flex;
     flex-direction: column;
     min-width: 0;
+    gap: 2px;
   }
 
   .rule-title {
-    font-weight: 600;
-    margin-bottom: var(--space-1);
+    font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
   }
 
   .rule-desc {
     color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     line-height: var(--line-height-normal);
   }
 
   .rule-actions {
     display: flex;
-    gap: var(--space-2);
+    gap: var(--space-8);
     align-items: center;
     flex-wrap: wrap;
   }
 
   .rule-actions henry-input {
     margin-bottom: 0;
+    /* Force smaller input size to match small buttons */
+    --input-height-base: 32px;
+    --font-size-base: var(--font-size-xs); /* Use xs font for input text */
+    --font-size-sm: var(--font-size-xs);   /* Ensure label uses xs too if present */
+  }
+
+  .rule-actions henry-switch {
+    /* Scale down switch label */
+    --henry-switch-label-size: var(--font-size-xs);
+  }
+
+  /* Ensure buttons are aligned */
+  .rule-actions henry-button {
+    /* Buttons are already set to size="small" in markup */
   }
 
   .muted {
-    opacity: 0.7;
+    opacity: 0.6;
+    background: var(--color-gray-lighter); /* Slightly different gray if disabled */
   }
 `;
