@@ -3,72 +3,56 @@ import { css } from "lit";
 export const importExportStyles = css`
   :host {
     display: block;
+  }
+
+  .layout-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Mimics the 'grayer background' container from Report (.filters) */
+  .section-card {
+    background: var(--color-broken-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
     padding: var(--space-4);
+    margin-bottom: var(--space-4);
   }
 
-  .panel {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: var(--space-6);
-    margin-bottom: var(--space-6);
+  .section-card:last-child {
+    margin-bottom: 0;
   }
 
-  h3 {
+  p {
     margin-top: 0;
-    color: var(--color-text-primary);
+    margin-bottom: var(--space-4);
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
   }
 
   .button-group {
     display: flex;
     gap: var(--space-4);
-    flex-wrap: wrap;
-  }
-
-  button {
-    background-color: var(--color-primary-500);
-    color: var(--color-text-light);
-    border: none;
-    padding: var(--space-3) var(--space-6);
-    border-radius: var(--radius-base);
-    cursor: pointer;
-    font-family: var(--font-family-base);
-    font-size: var(--font-size-base);
-    font-weight: var(--font-weight-medium);
-    transition: var(--transition-base);
-  }
-
-  button:hover {
-    background-color: var(--color-primary-600);
-  }
-
-  button.secondary {
-    background-color: var(--color-gray);
-    color: var(--color-white);
-  }
-
-  button.secondary:hover {
-    background-color: var(--color-gray-dark);
-  }
-
-  button.danger {
-    background-color: var(--color-danger);
-    color: var(--color-white);
-  }
-
-  button.danger:hover {
-    background-color: var(--color-red-dark);
-  }
-
-  input[type="file"] {
-    display: none;
+    align-items: center;
   }
 
   .message {
-    padding: var(--space-4);
+    padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-base);
     margin-bottom: var(--space-4);
     font-size: var(--font-size-sm);
+    font-family: var(--font-family-base);
+    display: flex;
+    align-items: center;
   }
 
   .message.success {
@@ -83,14 +67,20 @@ export const importExportStyles = css`
     color: var(--color-danger-text);
   }
 
+  .preview-section {
+    margin-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-4);
+  }
+
   .data-preview {
-    background-color: var(--color-broken-white);
+    background-color: var(--color-white); /* White background for code inside the gray card */
     border: 1px solid var(--color-border);
     border-radius: var(--radius-base);
     padding: var(--space-4);
-    margin-top: var(--space-4);
     max-height: 400px;
     overflow-y: auto;
+    margin-top: var(--space-2);
   }
 
   .data-preview pre {
@@ -98,5 +88,6 @@ export const importExportStyles = css`
     font-family: var(--font-family-mono);
     font-size: var(--font-size-xs);
     line-height: var(--line-height-normal);
+    color: var(--color-text-primary);
   }
 `;

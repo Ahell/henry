@@ -32,7 +32,7 @@ export class HenryPanel extends LitElement {
       background: var(--color-surface);
       border: none;
       border-radius: 0;
-      margin-bottom: var(--space-6);
+      margin-bottom: var(--space-4);
       box-shadow: none;
       overflow: hidden;
     }

@@ -30,48 +30,58 @@ export class ImportExport extends LitElement {
 
   render() {
     return html`
-      <div class="panel">
-        <h3>Importera data (JSON)</h3>
-        <p>
-          JSON innehåller hela databasen och kan importeras tillbaka utan att
-          tappa relationer.
-        </p>
+      <div class="layout-stack">
+        <henry-panel>
+          <div slot="header" class="panel-header">
+            <henry-text variant="heading-3">Importera / Exportera</henry-text>
+          </div>
 
-        ${this.message
-          ? html`
-              <div class="message ${this.messageType}">${this.message}</div>
-            `
-          : ""}
+          <div class="section-card">
+            <henry-text variant="heading-4" style="margin-bottom: var(--space-3)">Importera data (JSON)</henry-text>
+            <p>
+              JSON innehåller hela databasen och kan importeras tillbaka utan att
+              tappa relationer.
+            </p>
 
-        <div class="button-group">
-          <henry-button variant="primary" @click="${this.triggerFileInput}">
-            Välj fil (JSON)
-          </henry-button>
-        </div>
+            ${this.message
+              ? html`
+                  <div class="message ${this.messageType}">${this.message}</div>
+                `
+              : ""}
 
-        <input
-          type="file"
-          id="fileInput"
-          accept=".json"
-          @change="${this.handleFileUpload}"
-        />
+            <div class="button-group">
+              <henry-button variant="primary" @click="${this.triggerFileInput}">
+                Välj fil (JSON)
+              </henry-button>
+            </div>
+          </div>
 
-      </div>
+          <input
+            type="file"
+            id="fileInput"
+            accept=".json"
+            @change="${this.handleFileUpload}"
+            style="display: none;"
+          />
 
-      <div class="panel">
-        <h3>Exportera data</h3>
-        <p>
-          Exportera hela databasen som JSON för redigering och återimport.
-        </p>
-        <div class="button-group">
-          <henry-button variant="primary" @click="${this.exportAsJson}">
-            Exportera full databas (JSON)
-          </henry-button>
-        </div>
-        <div class="data-preview">
-          <p><strong>Aktuell data:</strong></p>
-          <pre>${JSON.stringify(store.exportData(), null, 2)}</pre>
-        </div>
+          <div class="section-card">
+            <henry-text variant="heading-4" style="margin-bottom: var(--space-3)">Exportera data</henry-text>
+            <p>
+              Exportera hela databasen som JSON för redigering och återimport.
+            </p>
+            <div class="button-group">
+              <henry-button variant="primary" @click="${this.exportAsJson}">
+                Exportera full databas (JSON)
+              </henry-button>
+            </div>
+            
+            <div class="preview-section">
+               <div class="data-preview">
+                  <pre>${JSON.stringify(store.exportData(), null, 2)}</pre>
+               </div>
+            </div>
+          </div>
+        </henry-panel>
       </div>
     `;
   }
