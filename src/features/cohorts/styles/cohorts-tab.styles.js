@@ -4,7 +4,31 @@ export const cohortsTabStyles = css`
   @import url("/src/styles/tokens.css");
 
   :host {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  henry-panel {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .tab-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .tab-scroll {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
   }
 
   .panel-header {

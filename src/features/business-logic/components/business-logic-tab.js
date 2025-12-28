@@ -113,7 +113,7 @@ export class BusinessLogicTab extends LitElement {
         ? html`<div class="${this.messageType}">${this.message}</div>`
         : ""}
 
-      <henry-panel>
+      <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3"
             >Affärslogik - Prioriteringsordning för auto-fyll</henry-text
@@ -124,8 +124,12 @@ export class BusinessLogicTab extends LitElement {
               : ""}
           </div>
         </div>
-        <div class="rule-list">
-          ${rules.map((r, idx) => this._renderRuleRow(r, idx, rules.length))}
+        <div class="tab-body">
+          <div class="tab-scroll">
+            <div class="rule-list">
+              ${rules.map((r, idx) => this._renderRuleRow(r, idx, rules.length))}
+            </div>
+          </div>
         </div>
       </henry-panel>
     `;

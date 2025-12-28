@@ -729,237 +729,241 @@ export class ReportTab extends LitElement {
   render() {
     const rows = this._filteredRows();
     return html`
-      <henry-panel>
+      <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Rapport</henry-text>
         </div>
 
-        <div class="filters">
-          <div class="filters-bar">
-            <henry-input
-              id="reportQuery"
-              class="search"
-              label="Sök"
-              placeholder="Sök på kod, kurs, lärare..."
-              @input-change=${(e) => {
-                this.query = e?.detail?.value ?? "";
-              }}
-            ></henry-input>
+        <div class="tab-body">
+          <div class="filters">
+            <div class="filters-bar">
+              <henry-input
+                id="reportQuery"
+                class="search"
+                label="Sök"
+                placeholder="Sök på kod, kurs, lärare..."
+                @input-change=${(e) => {
+                  this.query = e?.detail?.value ?? "";
+                }}
+              ></henry-input>
 
-            <henry-select
-              id="reportYear"
-              label="År"
-              size="1"
-              placeholder=""
-              ?hidePlaceholder=${true}
-              .options=${this._yearOptions()}
-              @select-change=${(e) => {
-                this.year = e?.detail?.value ?? "";
-              }}
-            ></henry-select>
+              <henry-select
+                id="reportYear"
+                label="År"
+                size="1"
+                placeholder=""
+                ?hidePlaceholder=${true}
+                .options=${this._yearOptions()}
+                @select-change=${(e) => {
+                  this.year = e?.detail?.value ?? "";
+                }}
+              ></henry-select>
 
-            <henry-select
-              id="reportTerm"
-              label="Termin"
-              size="1"
-              placeholder=""
-              ?hidePlaceholder=${true}
-              .options=${this._termOptions()}
-              @select-change=${(e) => {
-                this.term = e?.detail?.value ?? "";
-              }}
-            ></henry-select>
+              <henry-select
+                id="reportTerm"
+                label="Termin"
+                size="1"
+                placeholder=""
+                ?hidePlaceholder=${true}
+                .options=${this._termOptions()}
+                @select-change=${(e) => {
+                  this.term = e?.detail?.value ?? "";
+                }}
+              ></henry-select>
 
-            <div class="filters-actions">
-              <henry-button
-                variant="secondary"
-                @click=${this._toggleAdvancedFilters}
-                >${this._showAdvancedFilters
-                  ? "Dölj filter"
-                  : "Avancerat"}</henry-button
-              >
-              <henry-button variant="secondary" @click=${this._clearFilters}
-                >Rensa</henry-button
-              >
-              <henry-button
-                variant="secondary"
-                @click=${() => this._exportRows(true)}
-                >Exportera CSV (filtrerad)</henry-button
-              >
-              <henry-button
-                variant="secondary"
-                @click=${() => this._exportRows(false)}
-                >Exportera CSV (alla)</henry-button
-              >
-              <henry-button
-                variant="secondary"
-                @click=${() => this._exportPdf(true)}
-                >Exportera PDF (filtrerad)</henry-button
-              >
-              <henry-button
-                variant="secondary"
-                @click=${() => this._exportPdf(false)}
-                >Exportera PDF (alla)</henry-button
-              >
+              <div class="filters-actions">
+                <henry-button
+                  variant="secondary"
+                  @click=${this._toggleAdvancedFilters}
+                  >${this._showAdvancedFilters
+                    ? "Dölj filter"
+                    : "Avancerat"}</henry-button
+                >
+                <henry-button variant="secondary" @click=${this._clearFilters}
+                  >Rensa</henry-button
+                >
+                <henry-button
+                  variant="secondary"
+                  @click=${() => this._exportRows(true)}
+                  >Exportera CSV (filtrerad)</henry-button
+                >
+                <henry-button
+                  variant="secondary"
+                  @click=${() => this._exportRows(false)}
+                  >Exportera CSV (alla)</henry-button
+                >
+                <henry-button
+                  variant="secondary"
+                  @click=${() => this._exportPdf(true)}
+                  >Exportera PDF (filtrerad)</henry-button
+                >
+                <henry-button
+                  variant="secondary"
+                  @click=${() => this._exportPdf(false)}
+                  >Exportera PDF (alla)</henry-button
+                >
+              </div>
             </div>
+
+            ${this._showAdvancedFilters
+              ? html`
+                  <div class="filters-advanced" role="group" aria-label="Filter">
+                    <henry-select
+                      id="reportDept"
+                      label="Avdelning"
+                      size="1"
+                      placeholder=""
+                      ?hidePlaceholder=${true}
+                      .options=${this._departmentOptions()}
+                      @select-change=${(e) => {
+                        this.department = e?.detail?.value ?? "";
+                      }}
+                    ></henry-select>
+
+                    <henry-select
+                      id="reportTeacher"
+                      label="Lärare"
+                      size="1"
+                      placeholder=""
+                      ?hidePlaceholder=${true}
+                      .options=${this._teacherOptions()}
+                      @select-change=${(e) => {
+                        this.teacherId = e?.detail?.value ?? "";
+                      }}
+                    ></henry-select>
+
+                    <henry-input
+                      id="reportCode"
+                      label="Kurskod"
+                      placeholder="AI123U"
+                      @input-change=${(e) => {
+                        this.codeQuery = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportCourse"
+                      label="Kursnamn"
+                      placeholder="Allmän fastighetsrätt"
+                      @input-change=${(e) => {
+                        this.courseQuery = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportExaminator"
+                      label="Examinator"
+                      placeholder="Namn"
+                      @input-change=${(e) => {
+                        this.examinatorQuery = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportResponsible"
+                      label="Kursansvarig"
+                      placeholder="Namn"
+                      @input-change=${(e) => {
+                        this.kursansvarigQuery = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportAssistants"
+                      label="Övrig undervisande personal"
+                      placeholder="Namn"
+                      @input-change=${(e) => {
+                        this.kursassistenterQuery = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportSlotNumber"
+                      label="Kursperiod"
+                      placeholder="#3"
+                      @input-change=${(e) => {
+                        this.slotNumberQuery = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportParticipants"
+                      label="Deltagare"
+                      placeholder="30"
+                      @input-change=${(e) => {
+                        this.participantsQuery = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportStartFrom"
+                      label="Kursstart från"
+                      type="date"
+                      @input-change=${(e) => {
+                        this.startFrom = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportStartTo"
+                      label="Kursstart till"
+                      type="date"
+                      @input-change=${(e) => {
+                        this.startTo = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportEndFrom"
+                      label="Kursslut från"
+                      type="date"
+                      @input-change=${(e) => {
+                        this.endFrom = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportEndTo"
+                      label="Kursslut till"
+                      type="date"
+                      @input-change=${(e) => {
+                        this.endTo = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportExamFrom"
+                      label="Tentamensdatum från"
+                      type="date"
+                      @input-change=${(e) => {
+                        this.examFrom = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+
+                    <henry-input
+                      id="reportExamTo"
+                      label="Tentamensdatum till"
+                      type="date"
+                      @input-change=${(e) => {
+                        this.examTo = e?.detail?.value ?? "";
+                      }}
+                    ></henry-input>
+                  </div>
+                `
+              : null}
           </div>
 
-          ${this._showAdvancedFilters
-            ? html`
-                <div class="filters-advanced" role="group" aria-label="Filter">
-                  <henry-select
-                    id="reportDept"
-                    label="Avdelning"
-                    size="1"
-                    placeholder=""
-                    ?hidePlaceholder=${true}
-                    .options=${this._departmentOptions()}
-                    @select-change=${(e) => {
-                      this.department = e?.detail?.value ?? "";
-                    }}
-                  ></henry-select>
-
-                  <henry-select
-                    id="reportTeacher"
-                    label="Lärare"
-                    size="1"
-                    placeholder=""
-                    ?hidePlaceholder=${true}
-                    .options=${this._teacherOptions()}
-                    @select-change=${(e) => {
-                      this.teacherId = e?.detail?.value ?? "";
-                    }}
-                  ></henry-select>
-
-                  <henry-input
-                    id="reportCode"
-                    label="Kurskod"
-                    placeholder="AI123U"
-                    @input-change=${(e) => {
-                      this.codeQuery = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportCourse"
-                    label="Kursnamn"
-                    placeholder="Allmän fastighetsrätt"
-                    @input-change=${(e) => {
-                      this.courseQuery = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportExaminator"
-                    label="Examinator"
-                    placeholder="Namn"
-                    @input-change=${(e) => {
-                      this.examinatorQuery = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportResponsible"
-                    label="Kursansvarig"
-                    placeholder="Namn"
-                    @input-change=${(e) => {
-                      this.kursansvarigQuery = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportAssistants"
-                    label="Övrig undervisande personal"
-                    placeholder="Namn"
-                    @input-change=${(e) => {
-                      this.kursassistenterQuery = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportSlotNumber"
-                    label="Kursperiod"
-                    placeholder="#3"
-                    @input-change=${(e) => {
-                      this.slotNumberQuery = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportParticipants"
-                    label="Deltagare"
-                    placeholder="30"
-                    @input-change=${(e) => {
-                      this.participantsQuery = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportStartFrom"
-                    label="Kursstart från"
-                    type="date"
-                    @input-change=${(e) => {
-                      this.startFrom = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportStartTo"
-                    label="Kursstart till"
-                    type="date"
-                    @input-change=${(e) => {
-                      this.startTo = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportEndFrom"
-                    label="Kursslut från"
-                    type="date"
-                    @input-change=${(e) => {
-                      this.endFrom = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportEndTo"
-                    label="Kursslut till"
-                    type="date"
-                    @input-change=${(e) => {
-                      this.endTo = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportExamFrom"
-                    label="Tentamensdatum från"
-                    type="date"
-                    @input-change=${(e) => {
-                      this.examFrom = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-
-                  <henry-input
-                    id="reportExamTo"
-                    label="Tentamensdatum till"
-                    type="date"
-                    @input-change=${(e) => {
-                      this.examTo = e?.detail?.value ?? "";
-                    }}
-                  ></henry-input>
-                </div>
-              `
-            : null}
+          <div class="tab-scroll">
+            <henry-table
+              striped
+              hoverable
+              sortable
+              .columns=${this._getTableColumns()}
+              .data=${rows}
+              .renderCell=${(row, col) => this._renderCell(row, col)}
+            ></henry-table>
+          </div>
         </div>
-
-        <henry-table
-          striped
-          hoverable
-          sortable
-          .columns=${this._getTableColumns()}
-          .data=${rows}
-          .renderCell=${(row, col) => this._renderCell(row, col)}
-        ></henry-table>
       </henry-panel>
     `;
   }

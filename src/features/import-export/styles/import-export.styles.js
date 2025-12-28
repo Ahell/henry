@@ -2,13 +2,39 @@ import { css } from "lit";
 
 export const importExportStyles = css`
   :host {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
   }
 
   .layout-stack {
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
+    flex: 1;
+    min-height: 0;
+  }
+
+  henry-panel {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .tab-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .tab-scroll {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
   }
 
   .panel-header {

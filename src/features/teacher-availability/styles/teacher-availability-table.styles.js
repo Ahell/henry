@@ -2,7 +2,12 @@ import { css } from "lit";
 
 export const teacherAvailabilityTableStyles = css`
   :host {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
     --teaching-day-default-bg: var(--color-primary-600);
     --teaching-day-default-text: var(--color-background);
     --teaching-day-default-cursor: pointer;
@@ -46,9 +51,22 @@ export const teacherAvailabilityTableStyles = css`
     display: contents;
   }
 
+  overview-table,
+  detail-table {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+  }
+
   .table-container {
-    overflow-x: auto;
+    overflow: auto; /* Both x and y */
     background: transparent;
+    flex: 1; /* Allow it to grow */
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
   }
 
   .table-container.painting-active {

@@ -99,7 +99,7 @@ export class CoursesTab extends LitElement {
 
   render() {
     return html`
-      <henry-panel>
+      <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga kurser</henry-text>
           <henry-button
@@ -109,25 +109,29 @@ export class CoursesTab extends LitElement {
             >Lägg till kurs</henry-button
           >
         </div>
-        <henry-table
-          striped
-          hoverable
-          .columns="${CourseTableService.getColumns()}"
-          .data="${CourseService.getCourses()}"
-          .renderCell="${(row, col) =>
-            CourseTableService.renderCell(
-              row,
-              col,
-              (courseId) => {
-                this.infoModalOpen = false;
-                this.infoCourseId = null;
-                this.editingCourseId = courseId;
-                this.modalOpen = true;
-              },
-              (courseId) => this._openInfoModal(courseId),
-              (courseId) => this._handleDeleteCourse(courseId)
-            )}"
-        ></henry-table>
+        <div class="tab-body">
+          <div class="tab-scroll">
+            <henry-table
+              striped
+              hoverable
+              .columns="${CourseTableService.getColumns()}"
+              .data="${CourseService.getCourses()}"
+              .renderCell="${(row, col) =>
+                CourseTableService.renderCell(
+                  row,
+                  col,
+                  (courseId) => {
+                    this.infoModalOpen = false;
+                    this.infoCourseId = null;
+                    this.editingCourseId = courseId;
+                    this.modalOpen = true;
+                  },
+                  (courseId) => this._openInfoModal(courseId),
+                  (courseId) => this._handleDeleteCourse(courseId)
+                )}"
+            ></henry-table>
+          </div>
+        </div>
       </henry-panel>
       <course-modal
         mode="add"

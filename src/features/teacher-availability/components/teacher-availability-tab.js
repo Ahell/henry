@@ -168,7 +168,7 @@ export class TeacherAvailabilityTab extends LitElement {
     }
 
     return html`
-      <henry-panel>
+      <henry-panel full-height>
         <div slot="header" class="panel-header">
           <div class="header-text">
             <henry-text variant="heading-3"
@@ -193,17 +193,6 @@ export class TeacherAvailabilityTab extends LitElement {
         </div>
 
         <div class="layout-stack">
-          <div class="legend-row">
-            <div class="legend-left">
-              ${this._renderLegend(this._isDetailView)}
-            </div>
-            ${this._isDetailView
-              ? html`<div class="legend-right">
-                  ${this._renderDetailControls()}
-                </div>`
-              : null}
-          </div>
-
           <teacher-availability-table
             .teachers=${this.teachers}
             .slots=${this.slots}
@@ -212,6 +201,19 @@ export class TeacherAvailabilityTab extends LitElement {
             @paint-state-changed="${this._handlePaintStateChanged}"
             @detail-view-changed="${this._handleDetailViewChanged}"
           ></teacher-availability-table>
+
+          <div class="footer-legend">
+            <div class="legend-row">
+              <div class="legend-left">
+                ${this._renderLegend(this._isDetailView)}
+              </div>
+              ${this._isDetailView
+                ? html`<div class="legend-right">
+                    ${this._renderDetailControls()}
+                  </div>`
+                : null}
+            </div>
+          </div>
         </div>
       </henry-panel>
     `;

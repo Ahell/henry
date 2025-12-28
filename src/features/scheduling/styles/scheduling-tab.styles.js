@@ -4,7 +4,10 @@ export const schedulingTabStyles = css`
   @import url("/src/styles/tokens.css");
 
   :host {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
     --gantt-depot-width: 240px;
     --gantt-cohort-width: 136px;
     --gantt-slot-width: 180px;
@@ -13,6 +16,37 @@ export const schedulingTabStyles = css`
     --gantt-teacher-overlay-height: 72px;
     --gantt-date-row-height: 32px;
     --availability-chip-gap: 4px;
+  }
+
+  henry-panel {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .tab-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .tab-scroll {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
+  }
+
+  .gantt-layout {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .panel-header {
@@ -87,7 +121,7 @@ export const schedulingTabStyles = css`
   /* Main Gantt Area */
   .gantt-scroll-wrapper {
     overflow: auto;
-    max-height: min(75dvh, 800px);
+    max-height: none;
     background: var(--color-white);
     border: 1px solid var(--color-border);
     border-radius: 0;
@@ -95,7 +129,9 @@ export const schedulingTabStyles = css`
     position: relative;
     z-index: 0;
     isolation: isolate;
-    margin-top: var(--space-4);
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
     overscroll-behavior: contain;
   }
 

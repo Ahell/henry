@@ -19,6 +19,7 @@ export class HenryPanel extends LitElement {
   static properties = {
     noPadding: { type: Boolean },
     noHeader: { type: Boolean },
+    fullHeight: { type: Boolean, attribute: "full-height" },
   };
 
   static styles = css`
@@ -26,6 +27,14 @@ export class HenryPanel extends LitElement {
 
     :host {
       display: block;
+    }
+
+    :host([full-height]) {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
     }
 
     .panel {
@@ -37,10 +46,19 @@ export class HenryPanel extends LitElement {
       overflow: hidden;
     }
 
+    :host([full-height]) .panel {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0;
+      border-radius: var(--radius-lg);
+    }
+
     .panel-header {
       padding: var(--space-5) var(--space-6);
       border-bottom: 1px solid var(--color-border);
       background: var(--color-background);
+      flex-shrink: 0;
     }
 
     .panel-header:empty {
@@ -49,6 +67,14 @@ export class HenryPanel extends LitElement {
 
     .panel-content {
       padding: var(--space-6);
+    }
+
+    :host([full-height]) .panel-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
 
     :host([noPadding]) .panel-content {
@@ -64,6 +90,7 @@ export class HenryPanel extends LitElement {
     super();
     this.noPadding = false;
     this.noHeader = false;
+    this.fullHeight = false;
   }
 
   render() {

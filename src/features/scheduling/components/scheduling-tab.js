@@ -258,11 +258,15 @@ export class SchedulingTab extends LitElement {
 
     if (slots.length === 0) {
       return html`
-        <henry-panel>
+        <henry-panel full-height>
           <div slot="header">
             <henry-text variant="heading-3">Schemaläggning</henry-text>
           </div>
-          <p>Inga slots tillgängliga.</p>
+          <div class="tab-body">
+            <div class="tab-scroll">
+              <p>Inga slots tillgängliga.</p>
+            </div>
+          </div>
         </henry-panel>
       `;
     }
@@ -300,7 +304,7 @@ export class SchedulingTab extends LitElement {
       !!this._dragCourseId && !!this._shouldShowTeacherAvailabilityOverlay;
     this._lastSlotCount = slotDates.length;
     return html`
-      <henry-panel>
+      <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Schemaläggning</henry-text>
           <div class="header-actions">
@@ -314,70 +318,72 @@ export class SchedulingTab extends LitElement {
           </div>
         </div>
 
-        <div class="gantt-layout">
-          ${this._renderSlotTeacherOverlay(
-            slotDates,
-            shouldShowTeacherOverlay
-          )}
-          <div class="gantt-scroll-wrapper" tabindex="0">
-          <table
-            class="gantt-table"
-            style="--gantt-slot-count: ${slotDates.length};"
-          >
-            <colgroup>
-              <col style="width: var(--gantt-depot-width);" />
-              <col style="width: var(--gantt-cohort-width);" />
-              ${slotDates.map(
-                () => html`<col style="width: var(--gantt-slot-width);" />`
-              )}
-            </colgroup>
-            <thead>
-              <tr class="availability-row">
-                <th class="cohort-header" rowspan="2">Depå</th>
-                <th class="cohort-header" rowspan="2">
-                  <div class="cohort-header-row">
-                    <span>Kull</span>
-                    <span>Startdatum</span>
-                  </div>
-                </th>
-                ${slotDates.map(
-                  (dateStr) =>
-                    html`<th class="slot-col-header">
-                      ${this._renderSlotAvailabilityHeader(
-                        dateStr,
-                        slotCapacityWarningsBySlotDate,
-                        slotTeacherSelectionWarningsBySlotDate,
-                        slotTeacherCompatibilityWarningsBySlotDate
-                      )}
-                    </th>`
-                )}
-              </tr>
-              <tr class="date-row">
-                ${slotDates.map(
-                  (dateStr, idx) =>
-                    html`<th class="slot-col-header">
-                      <div class="slot-date">
-                        ${this._formatSlotHeaderLabel(dateStr, idx + 1)}
+        <div class="tab-body">
+          <div class="gantt-layout">
+            ${this._renderSlotTeacherOverlay(
+              slotDates,
+              shouldShowTeacherOverlay
+            )}
+            <div class="gantt-scroll-wrapper" tabindex="0">
+              <table
+                class="gantt-table"
+                style="--gantt-slot-count: ${slotDates.length};"
+              >
+                <colgroup>
+                  <col style="width: var(--gantt-depot-width);" />
+                  <col style="width: var(--gantt-cohort-width);" />
+                  ${slotDates.map(
+                    () => html`<col style="width: var(--gantt-slot-width);" />`
+                  )}
+                </colgroup>
+                <thead>
+                  <tr class="availability-row">
+                    <th class="cohort-header" rowspan="2">Depå</th>
+                    <th class="cohort-header" rowspan="2">
+                      <div class="cohort-header-row">
+                        <span>Kull</span>
+                        <span>Startdatum</span>
                       </div>
-                    </th>`
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              ${cohorts.map((cohort) =>
-                this._renderGanttRow(
-                  cohort,
-                  slotDates,
-                  prerequisiteProblems,
-                  cohortMarkersByCohortId
-                )
-              )}
-            </tbody>
-            <tfoot>
-              ${this._renderSummaryRow(slotDates)}
-            </tfoot>
-          </table>
-        </div>
+                    </th>
+                    ${slotDates.map(
+                      (dateStr) =>
+                        html`<th class="slot-col-header">
+                          ${this._renderSlotAvailabilityHeader(
+                            dateStr,
+                            slotCapacityWarningsBySlotDate,
+                            slotTeacherSelectionWarningsBySlotDate,
+                            slotTeacherCompatibilityWarningsBySlotDate
+                          )}
+                        </th>`
+                    )}
+                  </tr>
+                  <tr class="date-row">
+                    ${slotDates.map(
+                      (dateStr, idx) =>
+                        html`<th class="slot-col-header">
+                          <div class="slot-date">
+                            ${this._formatSlotHeaderLabel(dateStr, idx + 1)}
+                          </div>
+                        </th>`
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${cohorts.map((cohort) =>
+                    this._renderGanttRow(
+                      cohort,
+                      slotDates,
+                      prerequisiteProblems,
+                      cohortMarkersByCohortId
+                    )
+                  )}
+                </tbody>
+                <tfoot>
+                  ${this._renderSummaryRow(slotDates)}
+                </tfoot>
+              </table>
+            </div>
+          </div>
         </div>
       </henry-panel>
     `;

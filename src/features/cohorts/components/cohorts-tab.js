@@ -73,7 +73,7 @@ export class CohortsTab extends LitElement {
   render() {
     const canEdit = !!store.editMode;
     return html`
-      <henry-panel>
+      <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga kullar</henry-text>
           <henry-button
@@ -84,23 +84,27 @@ export class CohortsTab extends LitElement {
             Lägg till kull
           </henry-button>
         </div>
-        <henry-table
-          striped
-          hoverable
-          .columns="${CohortTableService.getColumns()}"
-          .data="${store
-            .getCohorts()
-            .slice()
-            .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))}"
-          .renderCell="${(row, col) =>
-            CohortTableService.renderCell(
-              row,
-              col,
-              (cohortId) => this.handleEditCohort(cohortId),
-              (cohortId) => this.handleDeleteCohort(cohortId),
-              (cohortId) => this._openInfoModal(cohortId)
-            )}"
-        ></henry-table>
+        <div class="tab-body">
+          <div class="tab-scroll">
+            <henry-table
+              striped
+              hoverable
+              .columns="${CohortTableService.getColumns()}"
+              .data="${store
+                .getCohorts()
+                .slice()
+                .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))}"
+              .renderCell="${(row, col) =>
+                CohortTableService.renderCell(
+                  row,
+                  col,
+                  (cohortId) => this.handleEditCohort(cohortId),
+                  (cohortId) => this.handleDeleteCohort(cohortId),
+                  (cohortId) => this._openInfoModal(cohortId)
+                )}"
+            ></henry-table>
+          </div>
+        </div>
       </henry-panel>
 
       <cohort-modal

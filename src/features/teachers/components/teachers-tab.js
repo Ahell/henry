@@ -73,7 +73,7 @@ export class TeachersTab extends LitElement {
   render() {
     const canEdit = !!store.editMode;
     return html`
-      <henry-panel>
+      <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga lärare</henry-text>
           <henry-button
@@ -84,20 +84,24 @@ export class TeachersTab extends LitElement {
             Lägg till lärare
           </henry-button>
         </div>
-        <henry-table
-          striped
-          hoverable
-          .columns="${TeacherTableService.getColumns()}"
-          .data="${store.getTeachers()}"
-          .renderCell="${(row, col) =>
-            TeacherTableService.renderCell(
-              row,
-              col,
-              (teacherId) => this.handleEditTeacher(teacherId),
-              (teacherId) => this.handleDeleteTeacher(teacherId),
-              (teacherId) => this._openInfoModal(teacherId)
-            )}"
-        ></henry-table>
+        <div class="tab-body">
+          <div class="tab-scroll">
+            <henry-table
+              striped
+              hoverable
+              .columns="${TeacherTableService.getColumns()}"
+              .data="${store.getTeachers()}"
+              .renderCell="${(row, col) =>
+                TeacherTableService.renderCell(
+                  row,
+                  col,
+                  (teacherId) => this.handleEditTeacher(teacherId),
+                  (teacherId) => this.handleDeleteTeacher(teacherId),
+                  (teacherId) => this._openInfoModal(teacherId)
+                )}"
+            ></henry-table>
+          </div>
+        </div>
       </henry-panel>
 
       <teacher-modal

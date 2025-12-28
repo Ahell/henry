@@ -31,54 +31,58 @@ export class ImportExport extends LitElement {
   render() {
     return html`
       <div class="layout-stack">
-        <henry-panel>
+        <henry-panel full-height>
           <div slot="header" class="panel-header">
             <henry-text variant="heading-3">Importera / Exportera</henry-text>
           </div>
 
-          <div class="section-card">
-            <henry-text variant="heading-4" style="margin-bottom: var(--space-3)">Importera data (JSON)</henry-text>
-            <p>
-              JSON innehåller hela databasen och kan importeras tillbaka utan att
-              tappa relationer.
-            </p>
+          <div class="tab-body">
+            <div class="tab-scroll">
+              <div class="section-card">
+                <henry-text variant="heading-4" style="margin-bottom: var(--space-3)">Importera data (JSON)</henry-text>
+                <p>
+                  JSON innehåller hela databasen och kan importeras tillbaka utan att
+                  tappa relationer.
+                </p>
 
-            ${this.message
-              ? html`
-                  <div class="message ${this.messageType}">${this.message}</div>
-                `
-              : ""}
+                ${this.message
+                  ? html`
+                      <div class="message ${this.messageType}">${this.message}</div>
+                    `
+                  : ""}
 
-            <div class="button-group">
-              <henry-button variant="primary" @click="${this.triggerFileInput}">
-                Välj fil (JSON)
-              </henry-button>
-            </div>
-          </div>
+                <div class="button-group">
+                  <henry-button variant="primary" @click="${this.triggerFileInput}">
+                    Välj fil (JSON)
+                  </henry-button>
+                </div>
+              </div>
 
-          <input
-            type="file"
-            id="fileInput"
-            accept=".json"
-            @change="${this.handleFileUpload}"
-            style="display: none;"
-          />
+              <input
+                type="file"
+                id="fileInput"
+                accept=".json"
+                @change="${this.handleFileUpload}"
+                style="display: none;"
+              />
 
-          <div class="section-card">
-            <henry-text variant="heading-4" style="margin-bottom: var(--space-3)">Exportera data</henry-text>
-            <p>
-              Exportera hela databasen som JSON för redigering och återimport.
-            </p>
-            <div class="button-group">
-              <henry-button variant="primary" @click="${this.exportAsJson}">
-                Exportera full databas (JSON)
-              </henry-button>
-            </div>
-            
-            <div class="preview-section">
-               <div class="data-preview">
-                  <pre>${JSON.stringify(store.exportData(), null, 2)}</pre>
-               </div>
+              <div class="section-card">
+                <henry-text variant="heading-4" style="margin-bottom: var(--space-3)">Exportera data</henry-text>
+                <p>
+                  Exportera hela databasen som JSON för redigering och återimport.
+                </p>
+                <div class="button-group">
+                  <henry-button variant="primary" @click="${this.exportAsJson}">
+                    Exportera full databas (JSON)
+                  </henry-button>
+                </div>
+                
+                <div class="preview-section">
+                  <div class="data-preview">
+                    <pre>${JSON.stringify(store.exportData(), null, 2)}</pre>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </henry-panel>

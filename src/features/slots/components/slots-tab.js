@@ -91,7 +91,7 @@ export class SlotsTab extends LitElement {
         ? html`<div class="${this.messageType}">${this.message}</div>`
         : ""}
 
-      <henry-panel>
+      <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga kursperioder</henry-text>
           <henry-button
@@ -102,13 +102,17 @@ export class SlotsTab extends LitElement {
             Lägg till kursperiod
           </henry-button>
         </div>
-        <henry-table
-          striped
-          hoverable
-          .columns="${this._getTableColumns()}"
-          .data="${sorted}"
-          .renderCell="${(row, col) => this._renderTableCell(row, col)}"
-        ></henry-table>
+        <div class="tab-body">
+          <div class="tab-scroll">
+            <henry-table
+              striped
+              hoverable
+              .columns="${this._getTableColumns()}"
+              .data="${sorted}"
+              .renderCell="${(row, col) => this._renderTableCell(row, col)}"
+            ></henry-table>
+          </div>
+        </div>
       </henry-panel>
 
         <slot-modal

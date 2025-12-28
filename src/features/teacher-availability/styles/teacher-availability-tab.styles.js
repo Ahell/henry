@@ -5,6 +5,8 @@ export const teacherAvailabilityTabStyles = css`
 
   :host {
     display: block;
+    height: 100%;
+    overflow: hidden;
   }
 
   .panel-header {
@@ -55,6 +57,9 @@ export const teacherAvailabilityTabStyles = css`
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .legend-row {
@@ -63,7 +68,13 @@ export const teacherAvailabilityTabStyles = css`
     align-items: center;
     gap: var(--space-4);
     flex-wrap: wrap;
-    margin-bottom: var(--space-4);
+    margin-bottom: 0;
+  }
+
+  .footer-legend {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
   }
 
   .legend-chip {
