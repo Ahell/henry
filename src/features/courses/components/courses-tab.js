@@ -110,6 +110,8 @@ export class CoursesTab extends LitElement {
           >
         </div>
         <henry-table
+          striped
+          hoverable
           .columns="${CourseTableService.getColumns()}"
           .data="${CourseService.getCourses()}"
           .renderCell="${(row, col) =>
