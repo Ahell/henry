@@ -7,9 +7,9 @@ export const importExportStyles = css`
   }
 
   .panel {
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
   }

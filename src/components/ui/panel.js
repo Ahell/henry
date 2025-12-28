@@ -29,11 +29,11 @@ export class HenryPanel extends LitElement {
     }
 
     .panel {
-      background: white;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
+      background: transparent;
+      border: none;
+      border-radius: 0;
       margin-bottom: var(--space-6);
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+      box-shadow: none;
       overflow: hidden;
     }
 
