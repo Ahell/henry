@@ -28,7 +28,7 @@ export const ganttDepotStyles = css`
 
   .depot-block {
     padding: var(--space-2) var(--space-2);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     font-size: 0.7rem;
     color: white;
     cursor: grab;
@@ -37,15 +37,14 @@ export const ganttDepotStyles = css`
     min-width: 0;
     width: 100%;
     box-sizing: border-box;
-    box-shadow: var(--shadow-xs);
+    box-shadow: none;
     border: 1px solid rgba(255, 255, 255, 0.22);
-    transition: transform var(--transition-fast),
-      box-shadow var(--transition-fast);
+    transition: none;
   }
 
   .depot-block:hover {
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
+    box-shadow: none;
+    transform: none;
   }
 
   .depot-block:active {
@@ -83,6 +82,6 @@ export const ganttDepotStyles = css`
 
   .two-block-course {
     border: 2px dashed rgba(255, 255, 255, 0.7);
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+    box-shadow: none;
   }
 `;

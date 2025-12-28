@@ -463,11 +463,7 @@ export const schedulingTabStyles = css`
   }
 
   .availability-chip--available {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
+    background: var(--color-success);
   }
 
   .availability-chip--drag-available {
@@ -477,19 +473,11 @@ export const schedulingTabStyles = css`
   }
 
   .availability-chip--compatible {
-    background: linear-gradient(
-      135deg,
-      var(--color-info),
-      var(--color-info-hover)
-    );
+    background: var(--color-info);
   }
 
   .availability-chip--assigned {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
+    background: var(--color-success);
   }
 
   .availability-chip--course-unavailable {
@@ -498,119 +486,48 @@ export const schedulingTabStyles = css`
 
   .availability-chip--partial-conflict {
     background: var(--color-danger);
+    border: 1px dashed var(--color-danger-hover);
   }
 
   .availability-chip--partial-conflict::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.22) 0px,
-      rgba(255, 255, 255, 0.22) 8px,
-      rgba(255, 255, 255, 0) 8px,
-      rgba(255, 255, 255, 0) 16px
-    );
-    opacity: 0.95;
+    content: none;
   }
 
   .availability-chip--partial-availability {
-    background: linear-gradient(
-      135deg,
-      var(--color-info),
-      var(--color-info-hover)
-    );
+    background: var(--color-info);
+    border: 1px dashed var(--color-info-hover);
   }
 
   .availability-chip--partial-availability::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.32) 0px,
-      rgba(255, 255, 255, 0.32) 8px,
-      rgba(255, 255, 255, 0) 8px,
-      rgba(255, 255, 255, 0) 16px
-    );
-    opacity: 0.9;
+    content: none;
   }
 
   /* Assigned + warning patterns (match summary row) */
   .availability-chip--assigned-course-unavailable {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
+    background: var(--color-success);
+    border: 1px solid var(--color-danger);
   }
 
   .availability-chip--assigned-course-unavailable::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.82) 0px,
-      rgba(239, 68, 68, 0.82) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
+    content: none;
   }
 
   .availability-chip--assigned-partial-conflict {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
+    background: var(--color-success);
+    border: 1px dashed var(--color-danger-hover);
   }
 
   .availability-chip--assigned-partial-conflict::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.28) 0px,
-      rgba(239, 68, 68, 0.28) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
+    content: none;
   }
 
   .availability-chip--assigned-partial-availability {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
+    background: var(--color-success);
+    border: 1px dashed var(--color-info-hover);
   }
 
   .availability-chip--assigned-partial-availability::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(59, 130, 246, 0.28) 0px,
-      rgba(59, 130, 246, 0.28) 8px,
-      rgba(59, 130, 246, 0) 8px,
-      rgba(59, 130, 246, 0) 16px
-    );
-    opacity: 0.9;
+    content: none;
   }
 
   .gantt-table th.cohort-header {
@@ -620,7 +537,7 @@ export const schedulingTabStyles = css`
     padding-left: var(--space-3);
     position: sticky;
     z-index: 20;
-    box-shadow: 6px 0 12px rgba(31, 39, 51, 0.06);
+    box-shadow: none;
     vertical-align: bottom;
     padding-bottom: var(--space-2);
   }
@@ -645,7 +562,7 @@ export const schedulingTabStyles = css`
     z-index: 5;
     vertical-align: top;
     padding: 0;
-    box-shadow: 6px 0 12px rgba(31, 39, 51, 0.06);
+    box-shadow: none;
   }
 
   .gantt-table td.depot-cell gantt-depot {
@@ -671,7 +588,7 @@ export const schedulingTabStyles = css`
     position: sticky;
     left: var(--gantt-depot-width);
     z-index: 5;
-    box-shadow: 6px 0 12px rgba(31, 39, 51, 0.06);
+    box-shadow: none;
     vertical-align: top;
     line-height: 1.2;
   }
@@ -906,11 +823,7 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table td.slot-cell.no-teachers-available {
-    background: linear-gradient(
-      0deg,
-      rgba(239, 68, 68, 0.08),
-      rgba(239, 68, 68, 0.08)
-    );
+    background: var(--color-danger-light);
     box-shadow: inset 0 0 0 2px rgba(239, 68, 68, 0.35);
   }
 
@@ -949,7 +862,7 @@ export const schedulingTabStyles = css`
     z-index: 6;
     min-width: calc(var(--gantt-depot-width) + var(--gantt-cohort-width));
     width: calc(var(--gantt-depot-width) + var(--gantt-cohort-width));
-    box-shadow: 6px 0 12px rgba(31, 39, 51, 0.06);
+    box-shadow: none;
   }
 
   .gantt-table tfoot .summary-cell {
@@ -1123,7 +1036,8 @@ export const schedulingTabStyles = css`
 
   /* Optional: Add subtle indicator to pill when teacher is kursansvarig */
   .gantt-table tfoot .summary-course .summary-teacher-pill.is-kursansvarig {
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    outline: 2px solid var(--color-primary-300);
+    outline-offset: -2px;
   }
 
   /* Summary teacher status styling (mirrors teacher-availability patterns) */
@@ -1132,11 +1046,7 @@ export const schedulingTabStyles = css`
     .summary-course
     .summary-teacher-row.has-course
     .summary-teacher-pill {
-    background: linear-gradient(
-      135deg,
-      var(--color-info),
-      var(--color-info-hover)
-    );
+    background: var(--color-info);
   }
 
   .gantt-table
@@ -1144,11 +1054,7 @@ export const schedulingTabStyles = css`
     .summary-course
     .summary-teacher-row.assigned-course
     .summary-teacher-pill {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
+    background: var(--color-success);
   }
 
   .gantt-table tfoot .summary-course .summary-teacher-row.course-unavailable,
@@ -1172,6 +1078,23 @@ export const schedulingTabStyles = css`
   .gantt-table
     tfoot
     .summary-course
+    .summary-teacher-row.partial-conflict:not(.assigned-course)
+    .summary-teacher-pill {
+    border: 1px dashed var(--color-danger-hover);
+  }
+
+  .gantt-table
+    tfoot
+    .summary-course
+    .summary-teacher-row.partial-availability:not(.assigned-course)
+    .summary-teacher-pill {
+    background: var(--color-info);
+    border: 1px dashed var(--color-info-hover);
+  }
+
+  .gantt-table
+    tfoot
+    .summary-course
     .summary-teacher-row.partial-availability
     .summary-teacher-pill::after,
   .gantt-table
@@ -1179,18 +1102,7 @@ export const schedulingTabStyles = css`
     .summary-course
     .summary-teacher-row.partial-conflict
     .summary-teacher-pill::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.32) 0px,
-      rgba(255, 255, 255, 0.32) 8px,
-      rgba(255, 255, 255, 0) 8px,
-      rgba(255, 255, 255, 0) 16px
-    );
-    opacity: 0.9;
+    content: none;
   }
 
   /* Assigned + warnings: keep green base and overlay colored stripes */
@@ -1199,11 +1111,8 @@ export const schedulingTabStyles = css`
     .summary-course
     .summary-teacher-row.assigned-course.course-unavailable
     .summary-teacher-pill {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    ) !important;
+    background: var(--color-success) !important;
+    border: 1px solid var(--color-danger);
   }
 
   .gantt-table
@@ -1211,18 +1120,7 @@ export const schedulingTabStyles = css`
     .summary-course
     .summary-teacher-row.assigned-course.course-unavailable
     .summary-teacher-pill::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.82) 0px,
-      rgba(239, 68, 68, 0.82) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
+    content: none;
   }
 
   .gantt-table
@@ -1230,11 +1128,8 @@ export const schedulingTabStyles = css`
     .summary-course
     .summary-teacher-row.assigned-course.partial-conflict
     .summary-teacher-pill {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    ) !important;
+    background: var(--color-success) !important;
+    border: 1px dashed var(--color-danger-hover);
   }
 
   .gantt-table
@@ -1242,14 +1137,7 @@ export const schedulingTabStyles = css`
     .summary-course
     .summary-teacher-row.assigned-course.partial-conflict
     .summary-teacher-pill::after {
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.28) 0px,
-      rgba(239, 68, 68, 0.28) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
+    content: none;
   }
 
   .gantt-table
@@ -1257,14 +1145,7 @@ export const schedulingTabStyles = css`
     .summary-course
     .summary-teacher-row.assigned-course.partial-availability
     .summary-teacher-pill::after {
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(59, 130, 246, 0.28) 0px,
-      rgba(59, 130, 246, 0.28) 8px,
-      rgba(59, 130, 246, 0) 8px,
-      rgba(59, 130, 246, 0) 16px
-    );
-    opacity: 0.9;
+    content: none;
   }
 
   .gantt-table

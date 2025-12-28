@@ -110,11 +110,11 @@
 }
 
 .btn-base:not(:disabled):hover {
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .btn-base:not(:disabled):active {
-  transform: translateY(0);
+  transform: none;
 }
 
 /* Button sizes */
@@ -138,17 +138,13 @@
 
 /* Button variants */
 .btn-primary {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary-500) 0%,
-    var(--color-secondary-500) 100%
-  );
+  background: var(--color-primary-500);
   color: white;
-  box-shadow: var(--shadow-primary);
+  box-shadow: none;
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: var(--shadow-primary-hover);
+  background: var(--color-primary-600);
 }
 
 .btn-secondary {

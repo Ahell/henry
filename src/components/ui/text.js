@@ -29,6 +29,8 @@ export class HenryText extends LitElement {
       font-size: var(--font-size-3xl);
       font-weight: var(--font-weight-bold);
       line-height: var(--line-height-tight);
+      font-family: var(--font-family-base);
+      color: var(--color-primary-500);
       margin: 0;
     }
 
@@ -36,6 +38,8 @@ export class HenryText extends LitElement {
       font-size: var(--font-size-2xl);
       font-weight: var(--font-weight-bold);
       line-height: var(--line-height-tight);
+      font-family: var(--font-family-base);
+      color: var(--color-primary-500);
       margin: 0;
     }
 
@@ -43,6 +47,8 @@ export class HenryText extends LitElement {
       font-size: var(--font-size-xl);
       font-weight: var(--font-weight-semibold);
       line-height: var(--line-height-snug);
+      font-family: var(--font-family-base);
+      color: var(--color-primary-500);
       margin: 0;
     }
 
@@ -50,6 +56,8 @@ export class HenryText extends LitElement {
       font-size: var(--font-size-lg);
       font-weight: var(--font-weight-semibold);
       line-height: var(--line-height-snug);
+      font-family: var(--font-family-base);
+      color: var(--color-primary-500);
       margin: 0;
     }
 
@@ -58,6 +66,7 @@ export class HenryText extends LitElement {
       font-size: var(--font-size-base);
       font-weight: var(--font-weight-normal);
       line-height: var(--line-height-normal);
+      font-family: var(--font-family-serif);
       margin: 0;
     }
 
@@ -65,6 +74,7 @@ export class HenryText extends LitElement {
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-normal);
       line-height: var(--line-height-normal);
+      font-family: var(--font-family-serif);
       margin: 0;
     }
 
@@ -72,6 +82,7 @@ export class HenryText extends LitElement {
       font-size: var(--font-size-xs);
       font-weight: var(--font-weight-normal);
       line-height: var(--line-height-normal);
+      font-family: var(--font-family-base);
       margin: 0;
     }
 
@@ -81,6 +92,7 @@ export class HenryText extends LitElement {
       font-weight: var(--font-weight-normal);
       line-height: var(--line-height-snug);
       color: var(--color-text-secondary);
+      font-family: var(--font-family-base);
       margin: 0;
     }
 
@@ -88,6 +100,7 @@ export class HenryText extends LitElement {
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
       line-height: var(--line-height-snug);
+      font-family: var(--font-family-base);
       margin: 0;
     }
 

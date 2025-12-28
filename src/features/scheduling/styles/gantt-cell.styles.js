@@ -24,14 +24,14 @@ export const ganttCellStyles = css`
     position: absolute;
     top: var(--space-2);
     left: var(--space-2);
-    background: rgba(58, 116, 246, 0.92);
+    background: var(--color-primary-500);
     color: #fff;
     font-size: 0.6rem;
     padding: 2px 6px;
     border-radius: var(--radius-full);
     font-weight: var(--font-weight-semibold);
     z-index: 1;
-    box-shadow: var(--shadow-xs);
+    box-shadow: none;
     pointer-events: none;
   }
 

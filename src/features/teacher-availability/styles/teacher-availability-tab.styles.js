@@ -110,32 +110,23 @@ export const teacherAvailabilityTabStyles = css`
     width: 16px;
     height: 12px;
     border-radius: 6px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+    border: 1px solid var(--color-border);
     background: var(--color-gray-200);
   }
 
   .legend-swatch--assigned {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
+    background: var(--color-success);
   }
 
   .legend-swatch--compatible {
-    background: linear-gradient(
-      135deg,
-      var(--color-info),
-      var(--color-info-hover)
-    );
+    background: var(--color-info);
   }
 
   .legend-swatch--compatible-occupied {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--color-info), #64748b 48%),
-      color-mix(in srgb, var(--color-info-hover), #64748b 48%)
+    background: color-mix(
+      in srgb,
+      var(--color-info) 55%,
+      var(--color-gray-300)
     );
   }
 
@@ -144,78 +135,53 @@ export const teacherAvailabilityTabStyles = css`
   }
 
   .legend-swatch--course-unavailable {
-    background: repeating-linear-gradient(
-        135deg,
-        rgba(239, 68, 68, 0.82) 0px,
-        rgba(239, 68, 68, 0.82) 8px,
-        rgba(239, 68, 68, 0) 8px,
-        rgba(239, 68, 68, 0) 16px
-      ),
-      linear-gradient(135deg, var(--color-info), var(--color-info-hover));
+    background: color-mix(
+      in srgb,
+      var(--color-info) 70%,
+      var(--color-danger-light)
+    );
+    border-color: var(--color-danger);
   }
 
   .legend-swatch--partial-conflict {
-    background: repeating-linear-gradient(
-        135deg,
-        rgba(239, 68, 68, 0.28) 0px,
-        rgba(239, 68, 68, 0.28) 8px,
-        rgba(239, 68, 68, 0) 8px,
-        rgba(239, 68, 68, 0) 16px
-      ),
-      linear-gradient(135deg, var(--color-info), var(--color-info-hover));
+    background: color-mix(
+      in srgb,
+      var(--color-info-light) 70%,
+      var(--color-danger-light)
+    );
+    border-color: var(--color-danger);
+    border-style: dashed;
   }
 
   .legend-swatch--assigned-course-unavailable {
-    background: repeating-linear-gradient(
-        135deg,
-        rgba(239, 68, 68, 0.82) 0px,
-        rgba(239, 68, 68, 0.82) 8px,
-        rgba(239, 68, 68, 0) 8px,
-        rgba(239, 68, 68, 0) 16px
-      ),
-      linear-gradient(
-        135deg,
-        var(--color-success),
-        var(--color-success-hover)
-      );
+    background: color-mix(
+      in srgb,
+      var(--color-success) 70%,
+      var(--color-danger-light)
+    );
+    border-color: var(--color-danger);
   }
 
   .legend-swatch--assigned-partial-conflict {
-    background: repeating-linear-gradient(
-        135deg,
-        rgba(239, 68, 68, 0.28) 0px,
-        rgba(239, 68, 68, 0.28) 8px,
-        rgba(239, 68, 68, 0) 8px,
-        rgba(239, 68, 68, 0) 16px
-      ),
-      linear-gradient(
-        135deg,
-        var(--color-success),
-        var(--color-success-hover)
-      );
+    background: color-mix(
+      in srgb,
+      var(--color-success-light) 70%,
+      var(--color-danger-light)
+    );
+    border-color: var(--color-danger);
+    border-style: dashed;
   }
 
   .legend-swatch--partial-availability {
-    background: repeating-linear-gradient(
-        135deg,
-        rgba(59, 130, 246, 0.28) 0px,
-        rgba(59, 130, 246, 0.28) 8px,
-        rgba(59, 130, 246, 0) 8px,
-        rgba(59, 130, 246, 0) 16px
-      ),
-      linear-gradient(135deg, var(--color-info), var(--color-info-hover));
+    background: var(--color-info-light);
+    border-color: var(--color-info);
+    border-style: dashed;
   }
 
   .legend-swatch--no-course-partial {
-    border-color: rgba(239, 68, 68, 0.22);
-    background: repeating-linear-gradient(
-        135deg,
-        rgba(239, 68, 68, 0.22) 0px,
-        rgba(239, 68, 68, 0.22) 8px,
-        transparent 8px,
-        transparent 16px
-      ),
-      #ffffff;
+    border-color: var(--color-danger-light);
+    border-style: dashed;
+    background: var(--color-gray-50);
   }
 
   .legend-left {

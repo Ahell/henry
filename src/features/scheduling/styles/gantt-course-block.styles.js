@@ -10,7 +10,7 @@ export const ganttCourseBlockStyles = css`
   .gantt-block {
     margin: 4px;
     padding: 6px 8px;
-    border-radius: var(--radius-md);
+    border-radius: 0;
     font-size: 0.7rem;
     color: white;
     font-weight: var(--font-weight-semibold);
@@ -25,9 +25,9 @@ export const ganttCourseBlockStyles = css`
     line-height: 1.15;
     position: relative;
     z-index: 2;
-    box-shadow: var(--shadow-xs);
+    box-shadow: none;
     border: 1px solid rgba(255, 255, 255, 0.22);
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    transition: none;
   }
 
   .gantt-block.second-block {
@@ -68,20 +68,23 @@ export const ganttCourseBlockStyles = css`
   }
 
   .gantt-block:hover {
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
+    box-shadow: none;
+    transform: none;
   }
 
   .gantt-block.teacher-shortage {
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.55), var(--shadow-sm);
+    outline: 2px solid var(--color-info);
+    outline-offset: -2px;
   }
 
   .gantt-block.teacher-shortage.no-compatible-teachers {
-    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.55), var(--shadow-sm);
+    outline: 2px solid var(--color-secondary-500);
+    outline-offset: -2px;
   }
 
   .gantt-block.teacher-shortage.no-available-compatible-teachers {
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.55), var(--shadow-sm);
+    outline: 2px solid var(--color-info);
+    outline-offset: -2px;
   }
 
   .gantt-block .teacher-warning-badge {
@@ -98,7 +101,8 @@ export const ganttCourseBlockStyles = css`
     font-weight: 900;
     background: rgba(255, 255, 255, 0.92);
     color: var(--color-info-hover);
-    box-shadow: var(--shadow-sm);
+    box-shadow: none;
+    border: 1px solid rgba(0, 0, 0, 0.08);
     pointer-events: none;
     z-index: 3;
   }
@@ -108,44 +112,21 @@ export const ganttCourseBlockStyles = css`
   }
 
   .gantt-block.missing-prerequisite {
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.6), var(--shadow-sm);
+    outline: 2px solid var(--color-danger);
+    outline-offset: -2px;
   }
 
   .gantt-block.missing-prerequisite::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      45deg,
-      rgba(239, 68, 68, 0.0),
-      rgba(239, 68, 68, 0.0) 10px,
-      rgba(239, 68, 68, 0.14) 10px,
-      rgba(239, 68, 68, 0.14) 20px
-    );
-    pointer-events: none;
-    z-index: 1;
+    content: none;
   }
 
   .gantt-block.before-prerequisite {
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.55), var(--shadow-sm);
+    outline: 2px solid var(--color-warning);
+    outline-offset: -2px;
   }
 
   .gantt-block.before-prerequisite::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: repeating-linear-gradient(
-      45deg,
-      rgba(245, 158, 11, 0.0),
-      rgba(245, 158, 11, 0.0) 10px,
-      rgba(245, 158, 11, 0.12) 10px,
-      rgba(245, 158, 11, 0.12) 20px
-    );
-    pointer-events: none;
-    z-index: 1;
+    content: none;
   }
 
   .prerequisite-course {
@@ -158,6 +139,6 @@ export const ganttCourseBlockStyles = css`
 
   .two-block-course {
     border: 2px dashed rgba(255, 255, 255, 0.7);
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+    box-shadow: none;
   }
 `;

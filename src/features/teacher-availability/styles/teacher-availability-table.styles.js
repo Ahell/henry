@@ -196,23 +196,15 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-cell.assigned-course {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
+    background: var(--color-success);
     color: white;
     font-weight: var(--font-weight-semibold);
     border-color: transparent;
-    box-shadow: var(--shadow-success);
+    box-shadow: none;
   }
 
   .teacher-cell.has-course {
-    background: linear-gradient(
-      135deg,
-      var(--color-info),
-      var(--color-info-hover)
-    );
+    background: var(--color-info);
     color: white;
     border-color: transparent;
   }
@@ -222,29 +214,18 @@ export const teacherAvailabilityTableStyles = css`
     color: white;
     position: relative;
     border-color: transparent;
-    box-shadow: var(--shadow-danger);
+    box-shadow: none;
   }
 
   /* No-course partial unavailability in slot view (some days unavailable): stripe only, no solid fill */
   .teacher-cell.partial-unavailable {
     background: transparent;
-    border-color: rgba(239, 68, 68, 0.22);
+    border-color: var(--color-danger-hover);
+    border-style: dashed;
   }
 
   .teacher-cell.partial-unavailable::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      45deg,
-      rgba(239, 68, 68, 0.22) 0px,
-      rgba(239, 68, 68, 0.22) 8px,
-      transparent 8px,
-      transparent 16px
-    );
-    opacity: 0.95;
+    content: none;
   }
 
   .teacher-cell .cell-content {
@@ -292,31 +273,19 @@ export const teacherAvailabilityTableStyles = css`
 
   /* Segment base colors (per course) */
   .teacher-cell .course-segment.segment-assigned {
-    background: linear-gradient(
-      135deg,
-      var(--color-success),
-      var(--color-success-hover)
-    );
+    background: var(--color-success);
     color: white;
     border-color: transparent;
   }
 
   .teacher-cell .course-segment.segment-compatible-free {
-    background: linear-gradient(
-      135deg,
-      var(--color-info),
-      var(--color-info-hover)
-    );
+    background: var(--color-info);
     color: white;
     border-color: transparent;
   }
 
   .teacher-cell .course-segment.segment-compatible-occupied {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--color-info), #64748b 48%),
-      color-mix(in srgb, var(--color-info-hover), #64748b 48%)
-    );
+    background: color-mix(in srgb, var(--color-info) 60%, var(--color-gray-600));
     color: rgba(255, 255, 255, 0.92);
     border-color: transparent;
   }
@@ -381,69 +350,41 @@ export const teacherAvailabilityTableStyles = css`
 
   /* === Availability overlays (slot view) === */
   /* Info (unavailability exists, but outside this course's active days): blue stripes */
+  .teacher-cell.partial-availability {
+    border-color: var(--color-info-hover);
+    border-style: dashed;
+  }
+
   .teacher-cell.partial-availability::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(59, 130, 246, 0.28) 0px,
-      rgba(59, 130, 246, 0.28) 8px,
-      rgba(59, 130, 246, 0) 8px,
-      rgba(59, 130, 246, 0) 16px
-    );
-    opacity: 0.9;
+    content: none;
+  }
+
+  .teacher-cell .course-segment.partial-availability {
+    border-color: var(--color-info-hover);
+    border-style: dashed;
   }
 
   .teacher-cell .course-segment.partial-availability::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(59, 130, 246, 0.28) 0px,
-      rgba(59, 130, 246, 0.28) 8px,
-      rgba(59, 130, 246, 0) 8px,
-      rgba(59, 130, 246, 0) 16px
-    );
-    opacity: 0.9;
+    content: none;
   }
 
   /* Partial conflict (some active days unavailable): light red stripes */
+  .teacher-cell.partial-conflict {
+    border-color: var(--color-danger-hover);
+    border-style: dashed;
+  }
+
   .teacher-cell.partial-conflict::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.28) 0px,
-      rgba(239, 68, 68, 0.28) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
+    content: none;
+  }
+
+  .teacher-cell .course-segment.partial-conflict {
+    border-color: var(--color-danger-hover);
+    border-style: dashed;
   }
 
   .teacher-cell .course-segment.partial-conflict::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.28) 0px,
-      rgba(239, 68, 68, 0.28) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
+    content: none;
   }
 
   .teacher-cell .course-segment.partial-conflict .course-segment-text {
@@ -451,36 +392,20 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   /* Full conflict (all active days unavailable): strong red stripes */
+  .teacher-cell.course-unavailable {
+    border-color: var(--color-danger-hover);
+  }
+
   .teacher-cell.course-unavailable::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.82) 0px,
-      rgba(239, 68, 68, 0.82) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
+    content: none;
+  }
+
+  .teacher-cell .course-segment.course-unavailable {
+    border-color: var(--color-danger-hover);
   }
 
   .teacher-cell .course-segment.course-unavailable::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.82) 0px,
-      rgba(239, 68, 68, 0.82) 8px,
-      rgba(239, 68, 68, 0) 8px,
-      rgba(239, 68, 68, 0) 16px
-    );
-    opacity: 0.95;
+    content: none;
   }
 
   /* Keep text readable in "course-unavailable" segments */
@@ -490,14 +415,7 @@ export const teacherAvailabilityTableStyles = css`
 
   /* Assigned + Info (utanför kursdagar): ensure blue stripes still visible */
   .teacher-cell .course-segment.segment-assigned.partial-availability::after {
-    background: repeating-linear-gradient(
-      135deg,
-      rgba(59, 130, 246, 0.28) 0px,
-      rgba(59, 130, 246, 0.28) 8px,
-      rgba(59, 130, 246, 0) 8px,
-      rgba(59, 130, 246, 0) 16px
-    );
-    opacity: 0.9;
+    content: none;
   }
 
   /* Default teaching day - purple/lila, active */
@@ -533,21 +451,20 @@ export const teacherAvailabilityTableStyles = css`
   /* === Header markers (tre tydliga tillstånd) === */
   /* 1) Ordinarie datum aktiverat */
   .teacher-timeline-table th.teaching-day-default-header {
-    background: linear-gradient(180deg, #f4f9ff 0%, #eef5ff 100%);
-    color: #1d4ed8;
+    background: var(--color-primary-50);
+    color: var(--color-primary-500);
     cursor: var(--teaching-day-default-cursor);
     font-weight: var(--font-weight-bold);
-    border: 1px solid #d5e6ff;
-    box-shadow: inset 0 -4px 0 #3b82f6;
+    border: 1px solid var(--color-primary-200);
+    box-shadow: none;
     position: relative;
-    border-radius: 8px 8px 0 0;
-    padding: calc(var(--space-2) + 6px) var(--space-2);
+    border-radius: 0;
+    padding: var(--space-2) var(--space-2);
   }
 
   .teacher-timeline-table th.teaching-day-default-header:hover {
-    border-color: #c3d8ff;
-    box-shadow: inset 0 -4px 0 #2563eb;
-    transform: translateY(-2px);
+    border-color: var(--color-primary-300);
+    transform: none;
   }
 
   /* Add a subtle check icon on active default header */
@@ -558,30 +475,30 @@ export const teacherAvailabilityTableStyles = css`
     top: 8px;
     font-size: 0.7rem;
     color: #ffffff;
-    background: #3b82f6;
+    background: var(--color-primary-500);
     width: 18px;
     height: 18px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: none;
   }
 
   /* 2) Ordinarie datum avmarkerat */
   .teacher-timeline-table th.teaching-day-default-dimmed-header {
-    background: linear-gradient(180deg, #fbfbfd 0%, #f7f8fb 100%);
-    color: #6b7280;
+    background: var(--color-gray-50);
+    color: var(--color-text-secondary);
     cursor: var(--teaching-day-default-dimmed-cursor);
     font-weight: var(--font-weight-bold);
     opacity: var(--teaching-day-default-dimmed-opacity);
-    border: 1px dashed #e5e7eb;
-    box-shadow: inset 0 -2px 0 #d1d5db;
+    border: 1px dashed var(--color-border);
+    box-shadow: none;
   }
 
   .teacher-timeline-table th.teaching-day-default-dimmed-header:hover {
     opacity: var(--teaching-day-default-dimmed-hover-opacity);
-    border-color: #cbd5e1;
+    border-color: var(--color-border-hover);
   }
 
   /* small minus icon for dimmed default header */
@@ -591,7 +508,7 @@ export const teacherAvailabilityTableStyles = css`
     right: 8px;
     top: 8px;
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     background: transparent;
     width: 18px;
     height: 18px;
@@ -611,11 +528,11 @@ export const teacherAvailabilityTableStyles = css`
   /* 3) Tillagt icke-ordinarie datum */
   .teacher-timeline-table th.teaching-day-alt-header {
     position: relative;
-    background: #ffffff;
-    color: #6d28d9;
-    border: 1px dashed #c4b5fd;
+    background: var(--color-background);
+    color: var(--color-primary-600);
+    border: 1px dashed var(--color-primary-300);
     font-weight: var(--font-weight-bold);
-    box-shadow: inset 0 -4px 0 #7c3aed;
+    box-shadow: none;
     cursor: pointer;
   }
 
@@ -627,7 +544,7 @@ export const teacherAvailabilityTableStyles = css`
     transform: translateX(-50%);
     width: 8px;
     height: 8px;
-    background: #7c3aed;
+    background: var(--color-primary-500);
     border-radius: 999px;
   }
 
@@ -643,10 +560,10 @@ export const teacherAvailabilityTableStyles = css`
     align-items: center;
     justify-content: center;
     color: #ffffff;
-    background: #7c3aed;
+    background: var(--color-primary-500);
     border-radius: 999px;
     font-size: 0.7rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: none;
   }
   /* focus states for keyboard navigation */
   .teacher-timeline-table th.slot-header:focus-visible {
@@ -655,8 +572,8 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-timeline-table th.teaching-day-alt-header:hover {
-    border-color: #a78bfa;
-    box-shadow: inset 0 -3px 0 #6d28d9;
+    border-color: var(--color-primary-400);
+    box-shadow: none;
   }
 
   /* --- Neutralize date header visuals; use pills in weekday row instead --- */
@@ -664,8 +581,8 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-timeline-table th.teaching-day-default-dimmed-header,
   .teacher-timeline-table th.teaching-day-alt-header {
     background: var(--color-gray-100) !important;
-    color: #0f172a !important;
-    border: 1px solid #e5e7eb !important;
+    color: var(--color-text-primary) !important;
+    border: 1px solid var(--color-border) !important;
     box-shadow: none !important;
     opacity: 1 !important;
     filter: none !important;
@@ -677,7 +594,7 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-timeline-table th.teaching-day-alt-header:hover {
     transform: none !important;
     background: var(--color-gray-100) !important;
-    color: #0f172a !important;
+    color: var(--color-text-primary) !important;
   }
   .teacher-timeline-table th.teaching-day-default-header::before,
   .teacher-timeline-table th.teaching-day-default-dimmed-header::before,
