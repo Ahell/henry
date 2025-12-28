@@ -51,7 +51,7 @@ export const coursesTabStyles = css`
   }
 
   henry-table {
-    margin-top: var(--space-4);
+    margin-top: 0;
   }
 
   .edit-input {

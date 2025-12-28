@@ -47,7 +47,7 @@ export const slotsTabStyles = css`
   }
 
   henry-table {
-    margin-top: var(--space-4);
+    margin-top: 0;
   }
 
   .slot-period-button {

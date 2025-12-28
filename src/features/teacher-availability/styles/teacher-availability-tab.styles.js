@@ -21,6 +21,7 @@ export const teacherAvailabilityTabStyles = css`
   .header-text {
     flex: 1;
     min-width: 260px;
+    text-align: left;
   }
 
   .description {

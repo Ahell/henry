@@ -32,7 +32,7 @@ export class HenryTable extends LitElement {
 
     :host {
       display: block;
-      overflow-x: auto;
+      min-width: 0;
     }
 
     table {

@@ -147,6 +147,7 @@ export class DetailTable extends LitElement {
           left: 0;
           z-index: 5;
           background: var(--color-white);
+          text-align: left;
         }
         .teacher-timeline-table thead .date-row th:first-child {
           background: var(--color-gray-light);

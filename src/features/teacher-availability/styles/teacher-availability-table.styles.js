@@ -138,6 +138,7 @@ export const teacherAvailabilityTableStyles = css`
     z-index: 3;
     background: var(--color-gray-lighter);
     font-size: var(--font-size-xs);
+    text-align: left;
   }
 
   .teacher-timeline-table th.slot-header {
