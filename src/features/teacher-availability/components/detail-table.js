@@ -32,6 +32,11 @@ export class DetailTable extends LitElement {
       weekday: null,
       date: null,
     };
+    this._headerOffsets = {
+      week: null,
+      weekday: null,
+      date: null,
+    };
   }
 
   updated() {
@@ -49,9 +54,23 @@ export class DetailTable extends LitElement {
       return Number.isFinite(rect.height) ? rect.height : null;
     };
 
+    const measureTop = (selector) => {
+      const row = container.querySelector(selector);
+      if (!row) return null;
+      const containerRect = container.getBoundingClientRect();
+      const rect = row.getBoundingClientRect();
+      if (!Number.isFinite(rect.top) || !Number.isFinite(containerRect.top)) {
+        return null;
+      }
+      return rect.top - containerRect.top;
+    };
+
     const week = measure("thead .week-row");
     const weekday = measure("thead .weekday-row");
     const date = measure("thead .date-row");
+    const weekTop = measureTop("thead .week-row");
+    const weekdayTop = measureTop("thead .weekday-row");
+    const dateTop = measureTop("thead .date-row");
 
     const apply = (key, value, cssVar) => {
       if (!Number.isFinite(value) || value <= 0) return;
@@ -61,9 +80,20 @@ export class DetailTable extends LitElement {
       container.style.setProperty(cssVar, `${rounded}px`);
     };
 
+    const applyTop = (key, value, cssVar) => {
+      if (!Number.isFinite(value)) return;
+      const rounded = Math.round(value);
+      if (this._headerOffsets[key] === rounded) return;
+      this._headerOffsets[key] = rounded;
+      container.style.setProperty(cssVar, `${rounded}px`);
+    };
+
     apply("week", week, "--detail-week-row-height");
     apply("weekday", weekday, "--detail-weekday-row-height");
     apply("date", date, "--detail-date-row-height");
+    applyTop("week", weekTop, "--detail-week-row-top");
+    applyTop("weekday", weekdayTop, "--detail-weekday-row-top");
+    applyTop("date", dateTop, "--detail-date-row-top");
   }
 
   render() {
@@ -128,6 +158,11 @@ export class DetailTable extends LitElement {
           --detail-week-row-height: 28px;
           --detail-weekday-row-height: 28px;
           --detail-date-row-height: 36px;
+          --detail-week-row-top: 0px;
+          --detail-weekday-row-top: var(--detail-week-row-height);
+          --detail-date-row-top: calc(
+            var(--detail-week-row-height) + var(--detail-weekday-row-height)
+          );
           font-family: var(--font-family-base);
         }
         .teacher-timeline-table {
@@ -186,7 +221,7 @@ export class DetailTable extends LitElement {
           letter-spacing: normal;
           font-weight: var(--font-weight-medium);
           padding: var(--space-2) var(--space-4);
-          top: 0;
+          top: var(--detail-week-row-top);
           z-index: 6;
           height: var(--detail-week-row-height);
         }
@@ -199,7 +234,7 @@ export class DetailTable extends LitElement {
           text-transform: none;
           letter-spacing: normal;
           font-weight: var(--font-weight-medium);
-          top: var(--detail-week-row-height);
+          top: var(--detail-weekday-row-top);
           z-index: 5;
           height: var(--detail-weekday-row-height);
         }
@@ -208,9 +243,7 @@ export class DetailTable extends LitElement {
           background: var(--color-gray-lighter);
           color: var(--color-text-secondary);
           border-radius: 0 !important;
-          top: calc(
-            var(--detail-week-row-height) + var(--detail-weekday-row-height)
-          );
+          top: var(--detail-date-row-top);
           z-index: 4;
           height: var(--detail-date-row-height);
         }
@@ -257,6 +290,9 @@ export class DetailTable extends LitElement {
           color: var(--color-text-secondary);
           border: 1px solid var(--color-border);
           box-shadow: none;
+          position: sticky !important;
+          top: var(--detail-date-row-top) !important;
+          z-index: 4;
         }
         /* Status pills */
         .status-pill {
