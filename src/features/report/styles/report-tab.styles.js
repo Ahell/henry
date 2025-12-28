@@ -89,7 +89,7 @@ export const reportTabStyles = css`
   }
 
   henry-table {
-    margin-top: var(--space-2);
+    margin-top: 0;
     --henry-table-sort-indicator-gap: var(--space-1);
   }
 `;

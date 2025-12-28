@@ -49,9 +49,6 @@ export class HenryTable extends LitElement {
 
     thead {
       background: var(--color-gray-lighter);
-      position: sticky;
-      top: 0;
-      z-index: 1;
     }
 
     th {
@@ -59,7 +56,12 @@ export class HenryTable extends LitElement {
       text-align: left;
       font-weight: var(--font-weight-semibold);
       color: var(--color-text-secondary);
-      border-bottom: 2px solid var(--color-border);
+      background: var(--color-gray-lighter);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      border-bottom: 0;
+      box-shadow: inset 0 -1px 0 var(--color-border);
       white-space: nowrap;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -105,6 +107,10 @@ export class HenryTable extends LitElement {
     :host([bordered]) th,
     :host([bordered]) td {
       border: 1px solid var(--color-border);
+    }
+
+    :host([bordered]) th {
+      box-shadow: none;
     }
 
     :host([striped]) tbody tr:nth-child(even) {
