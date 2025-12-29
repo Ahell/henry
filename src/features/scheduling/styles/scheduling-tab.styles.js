@@ -122,10 +122,10 @@ export const schedulingTabStyles = css`
   .gantt-scroll-wrapper {
     overflow: auto;
     max-height: none;
-    background: var(--color-white);
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     position: relative;
     z-index: 0;
     isolation: isolate;
@@ -147,7 +147,7 @@ export const schedulingTabStyles = css`
       var(--gantt-depot-width) + var(--gantt-cohort-width) +
         (var(--gantt-slot-width) * var(--gantt-slot-count, 0))
     );
-    background: var(--color-white);
+    background: var(--color-surface);
   }
 
   .gantt-table th,
@@ -171,7 +171,7 @@ export const schedulingTabStyles = css`
 
   /* Table Headers */
   .gantt-table th {
-    background: var(--color-broken-white);
+    background: var(--color-gray-lighter);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-secondary);
@@ -181,7 +181,7 @@ export const schedulingTabStyles = css`
     z-index: 10;
     overflow: hidden;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.05em;
   }
 
   .gantt-table thead tr.availability-row th:not(.cohort-header) {
@@ -192,7 +192,7 @@ export const schedulingTabStyles = css`
     vertical-align: top;
     text-align: left;
     padding: 0;
-    background: var(--color-white); /* Cleaner look for availability area */
+    background: var(--color-gray-lighter);
   }
 
   .gantt-table thead th.cohort-header .cohort-header-row {
@@ -210,7 +210,7 @@ export const schedulingTabStyles = css`
     vertical-align: middle;
     text-align: center;
     padding: 0;
-    background: var(--color-broken-white);
+    background: var(--color-gray-lighter);
     border-bottom: 1px solid var(--color-border);
   }
 
@@ -411,15 +411,15 @@ export const schedulingTabStyles = css`
     padding-left: var(--space-4);
     position: sticky;
     z-index: 20;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.02); /* Subtle separation */
-    background: var(--color-broken-white);
+    box-shadow: none;
+    background: var(--color-gray-lighter);
   }
 
   .gantt-table th.cohort-header:first-child {
     left: 0;
     min-width: var(--gantt-depot-width);
     width: var(--gantt-depot-width);
-    background: var(--color-broken-white);
+    background: var(--color-gray-lighter);
   }
 
   .gantt-table th.cohort-header:nth-child(2) {
@@ -430,7 +430,7 @@ export const schedulingTabStyles = css`
     min-width: var(--gantt-depot-width);
     width: var(--gantt-depot-width);
     max-width: var(--gantt-depot-width);
-    background: #f0f4f8; /* Distinct background for column 1 */
+    background: var(--color-surface);
     position: sticky;
     left: 0;
     z-index: 5;
@@ -447,7 +447,7 @@ export const schedulingTabStyles = css`
     font-weight: var(--font-weight-medium);
     font-size: var(--font-size-sm);
     color: var(--color-text-primary);
-    background: #f0f4f8; /* Distinct background for column 2 */
+    background: var(--color-surface);
     position: sticky;
     left: var(--gantt-depot-width);
     z-index: 5;
