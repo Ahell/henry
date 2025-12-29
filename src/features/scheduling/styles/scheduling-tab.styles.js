@@ -14,6 +14,7 @@ export const schedulingTabStyles = css`
     --gantt-row-height: 160px;
     --gantt-compatibility-row-height: 72px;
     --gantt-availability-row-height: 72px;
+    --gantt-footer-row-min-height: 52px;
     --gantt-teacher-overlay-height: 72px;
     --gantt-date-row-height: 32px;
     --availability-chip-gap: 4px;
@@ -48,6 +49,7 @@ export const schedulingTabStyles = css`
     min-height: 0;
     min-width: 0;
     overflow: hidden;
+    gap: var(--space-3);
   }
 
   .panel-header {
@@ -57,7 +59,6 @@ export const schedulingTabStyles = css`
     gap: var(--space-4);
     flex-wrap: wrap;
     min-height: var(--button-height-base);
-    margin-bottom: var(--space-4);
   }
 
   .header-actions {
@@ -185,21 +186,6 @@ export const schedulingTabStyles = css`
     letter-spacing: 0.05em;
   }
 
-  .gantt-table thead tr.compatibility-row th {
-    top: 0;
-    height: var(--gantt-compatibility-row-height);
-    max-height: var(--gantt-compatibility-row-height);
-    z-index: 12;
-    vertical-align: top;
-    text-align: left;
-    padding: 0;
-    background: var(--color-white);
-    text-transform: none;
-    letter-spacing: normal;
-    font-weight: var(--font-weight-medium);
-    border-bottom: 0;
-  }
-
   .gantt-table thead th.cohort-header .cohort-header-row {
     display: flex;
     align-items: center;
@@ -209,7 +195,7 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table thead tr.date-row th {
-    top: var(--gantt-compatibility-row-height);
+    top: 0;
     z-index: 11;
     vertical-align: middle;
     text-align: center;
@@ -339,63 +325,110 @@ export const schedulingTabStyles = css`
     display: none;
   }
 
+  .slot-compatibility-text {
+    font-size: 0.65rem;
+    color: var(--color-text-primary);
+    line-height: 1.2;
+    white-space: normal;
+    word-break: break-word;
+  }
+
   /* Warnings Footer */
   .warnings-footer {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
     border-top: 1px solid var(--color-border);
     background: var(--color-surface);
   }
 
   .warnings-footer-viewport {
+    position: relative;
     overflow: hidden;
   }
 
-  .warnings-footer-grid {
+.warnings-footer-track {
+  position: relative;
+  min-height: var(--gantt-footer-row-min-height);
+}
+
+  .warnings-footer-spacer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: calc(var(--gantt-depot-width) + var(--gantt-cohort-width));
+    background: var(--color-white);
+    border-right: 1px solid var(--color-border);
+    box-sizing: border-box;
+    z-index: 2;
+  }
+
+  .warnings-footer-slots {
     --warnings-scroll-x: 0px;
     display: grid;
-    grid-template-columns:
-      var(--gantt-depot-width)
-      var(--gantt-cohort-width)
-      repeat(var(--gantt-slot-count, 0), var(--gantt-slot-width));
-    width: calc(
-      var(--gantt-depot-width) + var(--gantt-cohort-width) +
-        (var(--gantt-slot-width) * var(--gantt-slot-count, 0))
-    );
+    grid-template-columns: repeat(var(--gantt-slot-count, 0), var(--gantt-slot-width));
+    width: calc(var(--gantt-slot-width) * var(--gantt-slot-count, 0));
     transform: translateX(calc(var(--warnings-scroll-x) * -1));
+    margin-left: calc(var(--gantt-depot-width) + var(--gantt-cohort-width));
   }
 
-  .warnings-footer-label {
-    grid-column: 1 / span 2;
-    display: flex;
-    align-items: center;
-    min-height: var(--gantt-availability-row-height);
-    padding: var(--space-3) var(--space-4);
-    text-align: left;
-    font-weight: var(--font-weight-semibold);
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-    background: var(--color-gray-lighter);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-right: 1px solid var(--color-border);
-    box-sizing: border-box;
-  }
-
-  .warnings-footer-cell {
-    min-height: var(--gantt-availability-row-height);
-    background: var(--color-surface);
-    border-right: 1px solid var(--color-border);
-    box-sizing: border-box;
-  }
+.warnings-footer-cell {
+  min-height: var(--gantt-footer-row-min-height);
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
 
   .warnings-footer-cell:last-child {
     border-right: none;
   }
 
+  /* Compatibility Footer */
+.compatibility-footer {
+  background: var(--color-surface);
+}
+
+  .compatibility-footer-viewport {
+    position: relative;
+    overflow: hidden;
+  }
+
+.compatibility-footer-track {
+  position: relative;
+  min-height: var(--gantt-footer-row-min-height);
+}
+
+  .compatibility-footer-spacer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: calc(var(--gantt-depot-width) + var(--gantt-cohort-width));
+    background: var(--color-white);
+    border-right: 1px solid var(--color-border);
+    box-sizing: border-box;
+    z-index: 2;
+  }
+
+  .compatibility-footer-slots {
+    --compat-scroll-x: 0px;
+    display: grid;
+    grid-template-columns: repeat(var(--gantt-slot-count, 0), var(--gantt-slot-width));
+    width: calc(var(--gantt-slot-width) * var(--gantt-slot-count, 0));
+    transform: translateX(calc(var(--compat-scroll-x) * -1));
+    margin-left: calc(var(--gantt-depot-width) + var(--gantt-cohort-width));
+  }
+
+.compatibility-footer-cell {
+  min-height: var(--gantt-footer-row-min-height);
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
+
   /* Availability Row */
-  .slot-availability-row {
-    width: 100%;
-    height: var(--gantt-availability-row-height);
-    max-width: 100%;
+.slot-availability-row {
+  width: 100%;
+  height: var(--gantt-availability-row-height);
+  max-width: 100%;
     box-sizing: border-box;
     overflow: hidden;
     display: flex;
@@ -407,9 +440,27 @@ export const schedulingTabStyles = css`
     background: transparent;
   }
 
-  .slot-availability-row[data-has-warnings="false"] {
-    justify-content: center;
-  }
+.slot-availability-row[data-has-warnings="false"] {
+  justify-content: center;
+}
+
+.warnings-footer .slot-availability-row {
+  height: auto;
+  min-height: 0;
+  padding: var(--space-2);
+  gap: var(--space-2);
+}
+
+.warnings-footer .slot-warning-pills {
+  gap: var(--space-2);
+}
+
+.compatibility-footer .slot-compatibility-row {
+  height: auto;
+  min-height: 0;
+  padding: var(--space-2);
+  gap: var(--space-2);
+}
 
   .slot-warning-pills {
     width: 100%;
@@ -420,6 +471,13 @@ export const schedulingTabStyles = css`
     gap: 4px;
     min-height: 18px;
     overflow: hidden;
+  }
+
+  .slot-warning-label {
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
   }
 
   .slot-warning-pill {
@@ -524,19 +582,10 @@ export const schedulingTabStyles = css`
     left: var(--gantt-depot-width);
   }
 
-  .gantt-table thead tr.compatibility-row th.cohort-header {
-    z-index: 32;
-  }
-
   .gantt-table thead tr.date-row th.cohort-header {
     z-index: 31;
   }
 
-  .gantt-table thead tr.compatibility-row th.cohort-header {
-    background: var(--color-white);
-    border-bottom: 0;
-    box-shadow: none;
-  }
 
   .gantt-table td.depot-cell {
     min-width: var(--gantt-depot-width);
@@ -708,8 +757,9 @@ export const schedulingTabStyles = css`
   .gantt-table tfoot td {
     background: var(--color-broken-white);
     vertical-align: top;
-    padding: var(--space-4);
-    border-top: 2px solid var(--color-border);
+    padding: calc(var(--space-4) + var(--space-2)) var(--space-4)
+      var(--space-4);
+    border-top: 1px solid var(--color-border);
   }
 
   .gantt-table tfoot .summary-label {

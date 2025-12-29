@@ -332,19 +332,6 @@ export class SchedulingTab extends LitElement {
                   )}
                 </colgroup>
                 <thead>
-                  <tr class="compatibility-row">
-                    <th class="cohort-header spacer" aria-hidden="true"></th>
-                    <th class="cohort-header spacer" aria-hidden="true"></th>
-                    ${slotDates.map(
-                      (dateStr) =>
-                        html`<th class="slot-col-header">
-                          ${this._renderSlotCompatibilityHeader(
-                            dateStr,
-                            isCompatibilityActive
-                          )}
-                        </th>`
-                    )}
-                  </tr>
                   <tr class="date-row">
                     <th class="cohort-header">Depå</th>
                     <th class="cohort-header">
@@ -383,6 +370,10 @@ export class SchedulingTab extends LitElement {
               slotCapacityWarningsBySlotDate,
               slotTeacherSelectionWarningsBySlotDate,
               slotTeacherCompatibilityWarningsBySlotDate
+            )}
+            ${this._renderCompatibilityFooter(
+              slotDates,
+              isCompatibilityActive
             )}
           </div>
         </div>
@@ -1148,30 +1139,59 @@ export class SchedulingTab extends LitElement {
     return html`
       <div class="warnings-footer" aria-hidden="false">
         <div class="warnings-footer-viewport">
-          <div
-            class="warnings-footer-grid"
-            style="--gantt-slot-count: ${slotDates.length};"
-          >
-            <div class="warnings-footer-label">Varningar</div>
-            ${slotDates.map(
-              (slotDate) => html`
-                <div class="warnings-footer-cell">
-                  ${this._renderSlotWarningsCell(
-                    slotDate,
-                    slotCapacityWarningsBySlotDate,
-                    slotTeacherSelectionWarningsBySlotDate,
-                    slotTeacherCompatibilityWarningsBySlotDate
-                  )}
-                </div>
-              `
-            )}
+          <div class="warnings-footer-track">
+            <div class="warnings-footer-spacer" aria-hidden="true"></div>
+            <div
+              class="warnings-footer-slots"
+              style="--gantt-slot-count: ${slotDates.length};"
+            >
+              ${slotDates.map(
+                (slotDate) => html`
+                  <div class="warnings-footer-cell">
+                    ${this._renderSlotWarningsCell(
+                      slotDate,
+                      slotCapacityWarningsBySlotDate,
+                      slotTeacherSelectionWarningsBySlotDate,
+                      slotTeacherCompatibilityWarningsBySlotDate
+                    )}
+                  </div>
+                `
+              )}
+            </div>
           </div>
         </div>
       </div>
     `;
   }
 
-  _renderSlotCompatibilityHeader(slotDate, isActive) {
+  _renderCompatibilityFooter(slotDates, isActive) {
+    return html`
+      <div class="compatibility-footer" aria-hidden="false">
+        <div class="compatibility-footer-viewport">
+          <div class="compatibility-footer-track">
+            <div class="compatibility-footer-spacer" aria-hidden="true"></div>
+            <div
+              class="compatibility-footer-slots"
+              style="--gantt-slot-count: ${slotDates.length};"
+            >
+              ${slotDates.map(
+                (slotDate) => html`
+                  <div class="compatibility-footer-cell">
+                    ${this._renderSlotCompatibilityCell(
+                      slotDate,
+                      isActive
+                    )}
+                  </div>
+                `
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  _renderSlotCompatibilityCell(slotDate, isActive) {
     if (!isActive) {
       return html`<div
         class="slot-compatibility-row is-empty"
@@ -1180,28 +1200,15 @@ export class SchedulingTab extends LitElement {
     }
 
     const chips = this._teacherOverlayChipsBySlotDate?.get(slotDate) || [];
-    const hasChips = chips.length > 0;
+    const names = chips.map((chip) => chip?.label).filter(Boolean);
+    const hasChips = names.length > 0;
+    const namesText = hasChips ? names.join(", ") : "Inga";
 
     return html`
       <div class="slot-compatibility-row">
         <span class="slot-compatibility-label">Kompatibla lärare</span>
-        <div class="slot-compatibility-chips slot-availability">
-          ${hasChips
-            ? chips.map(
-                (chip) => html`
-                  <span
-                    class="availability-chip availability-chip--${chip.status}"
-                    title="${chip.title}"
-                  >
-                    <span class="availability-chip-text">${chip.label}</span>
-                  </span>
-                `
-              )
-            : html`
-                <span class="availability-chip availability-chip--course-unavailable">
-                  <span class="availability-chip-text">Inga</span>
-                </span>
-              `}
+        <div class="slot-compatibility-text" title="${namesText}">
+          ${namesText}
         </div>
       </div>
     `;
@@ -1236,6 +1243,7 @@ export class SchedulingTab extends LitElement {
 
     return html`
       <div class="slot-availability-row" data-has-warnings="true">
+        <span class="slot-warning-label">Varningar</span>
         <div class="slot-warning-pills">
           ${sortedWarnings.map(
             (pill) => html`
@@ -1320,10 +1328,20 @@ export class SchedulingTab extends LitElement {
       this._updateOverlayVisibility(wrapper);
     }
 
-    const footerGrid = this.shadowRoot?.querySelector(".warnings-footer-grid");
+    const footerGrid = this.shadowRoot?.querySelector(".warnings-footer-slots");
     if (footerGrid) {
       footerGrid.style.setProperty(
         "--warnings-scroll-x",
+        `${wrapper.scrollLeft}px`
+      );
+    }
+
+    const compatSlots = this.shadowRoot?.querySelector(
+      ".compatibility-footer-slots"
+    );
+    if (compatSlots) {
+      compatSlots.style.setProperty(
+        "--compat-scroll-x",
         `${wrapper.scrollLeft}px`
       );
     }
