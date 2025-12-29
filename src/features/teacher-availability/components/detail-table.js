@@ -263,20 +263,15 @@ export class DetailTable extends LitElement {
         }
         .teacher-timeline-table thead .week-row th:first-child {
           z-index: 7;
+          background: var(--color-white);
         }
         .teacher-timeline-table thead .weekday-row th:first-child {
           z-index: 6;
-        }
-        .teacher-timeline-table thead .date-row th:first-child {
-          z-index: 5;
-        }
-        .teacher-timeline-table thead .date-row th:first-child {
-          background: var(--color-gray-lighter);
-        }
-        .teacher-timeline-table thead .weekday-row th:first-child,
-        .teacher-timeline-table thead .week-row th:first-child {
-          z-index: 5;
           background: var(--color-white);
+        }
+        .teacher-timeline-table thead .date-row th:first-child {
+          z-index: 5;
+          background: var(--color-gray-lighter);
         }
         /* Neutralize any legacy header class styling */
         .teacher-timeline-table
