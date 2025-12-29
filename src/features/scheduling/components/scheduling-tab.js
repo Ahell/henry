@@ -320,10 +320,6 @@ export class SchedulingTab extends LitElement {
 
         <div class="tab-body">
           <div class="gantt-layout">
-            ${this._renderSlotTeacherOverlay(
-              slotDates,
-              shouldShowTeacherOverlay
-            )}
             <div class="gantt-scroll-wrapper" tabindex="0">
               <table
                 class="gantt-table"
@@ -337,14 +333,22 @@ export class SchedulingTab extends LitElement {
                   )}
                 </colgroup>
                 <thead>
+                  <tr class="compatibility-row">
+                    <th class="cohort-header spacer" aria-hidden="true"></th>
+                    <th class="cohort-header spacer" aria-hidden="true"></th>
+                    ${slotDates.map(
+                      (dateStr) =>
+                        html`<th class="slot-col-header">
+                          ${this._renderSlotCompatibilityHeader(
+                            dateStr,
+                            shouldShowTeacherOverlay
+                          )}
+                        </th>`
+                    )}
+                  </tr>
                   <tr class="availability-row">
-                    <th class="cohort-header" rowspan="2">Depå</th>
-                    <th class="cohort-header" rowspan="2">
-                      <div class="cohort-header-row">
-                        <span>Kull</span>
-                        <span>Startdatum</span>
-                      </div>
-                    </th>
+                    <th class="cohort-header spacer" aria-hidden="true"></th>
+                    <th class="cohort-header spacer" aria-hidden="true"></th>
                     ${slotDates.map(
                       (dateStr) =>
                         html`<th class="slot-col-header">
@@ -358,6 +362,13 @@ export class SchedulingTab extends LitElement {
                     )}
                   </tr>
                   <tr class="date-row">
+                    <th class="cohort-header">Depå</th>
+                    <th class="cohort-header">
+                      <div class="cohort-header-row">
+                        <span>Kull</span>
+                        <span>Startdatum</span>
+                      </div>
+                    </th>
                     ${slotDates.map(
                       (dateStr, idx) =>
                         html`<th class="slot-col-header">
@@ -1180,6 +1191,42 @@ export class SchedulingTab extends LitElement {
               `
             )}
           </div>
+        </div>
+      </div>
+    `;
+  }
+
+  _renderSlotCompatibilityHeader(slotDate, shouldShow) {
+    if (!shouldShow) {
+      return html`<div class="slot-compatibility-row" aria-hidden="true"></div>`;
+    }
+
+    const chips = this._teacherOverlayChipsBySlotDate?.get(slotDate) || [];
+    const hasChips = chips.length > 0;
+
+    return html`
+      <div
+        class="slot-compatibility-row"
+        data-has-chips="${hasChips ? "true" : "false"}"
+      >
+        <span class="slot-compatibility-label">Kompatibla lärare</span>
+        <div class="slot-compatibility-chips slot-availability">
+          ${hasChips
+            ? chips.map(
+                (chip) => html`
+                  <span
+                    class="availability-chip availability-chip--${chip.status}"
+                    title="${chip.title}"
+                  >
+                    <span class="availability-chip-text">${chip.label}</span>
+                  </span>
+                `
+              )
+            : html`
+                <span class="availability-chip availability-chip--course-unavailable">
+                  <span class="availability-chip-text">Inga</span>
+                </span>
+              `}
         </div>
       </div>
     `;

@@ -12,6 +12,7 @@ export const schedulingTabStyles = css`
     --gantt-cohort-width: 136px;
     --gantt-slot-width: 180px;
     --gantt-row-height: 160px;
+    --gantt-compatibility-row-height: 72px;
     --gantt-availability-row-height: 72px;
     --gantt-teacher-overlay-height: 72px;
     --gantt-date-row-height: 32px;
@@ -122,10 +123,10 @@ export const schedulingTabStyles = css`
   .gantt-scroll-wrapper {
     overflow: auto;
     max-height: none;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
     position: relative;
     z-index: 0;
     isolation: isolate;
@@ -184,15 +185,34 @@ export const schedulingTabStyles = css`
     letter-spacing: 0.05em;
   }
 
-  .gantt-table thead tr.availability-row th:not(.cohort-header) {
+  .gantt-table thead tr.compatibility-row th {
     top: 0;
+    height: var(--gantt-compatibility-row-height);
+    max-height: var(--gantt-compatibility-row-height);
+    z-index: 13;
+    vertical-align: top;
+    text-align: left;
+    padding: 0;
+    background: var(--color-white);
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: var(--font-weight-medium);
+    border-bottom: 0;
+  }
+
+  .gantt-table thead tr.availability-row th {
+    top: var(--gantt-compatibility-row-height);
     height: var(--gantt-availability-row-height);
     max-height: var(--gantt-availability-row-height);
     z-index: 12;
     vertical-align: top;
     text-align: left;
     padding: 0;
-    background: var(--color-gray-lighter);
+    background: var(--color-white);
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: var(--font-weight-medium);
+    border-bottom: 0;
   }
 
   .gantt-table thead th.cohort-header .cohort-header-row {
@@ -204,7 +224,9 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table thead tr.date-row th {
-    top: calc(var(--gantt-availability-row-height) + 1px); /* Fixed offset calculation */
+    top: calc(
+      var(--gantt-compatibility-row-height) + var(--gantt-availability-row-height)
+    );
     height: var(--gantt-date-row-height);
     z-index: 11;
     vertical-align: middle;
@@ -212,6 +234,11 @@ export const schedulingTabStyles = css`
     padding: 0;
     background: var(--color-gray-lighter);
     border-bottom: 1px solid var(--color-border);
+  }
+
+  .gantt-table thead tr.date-row th.cohort-header {
+    text-align: left;
+    padding: var(--space-2) var(--space-4);
   }
 
   .gantt-table thead tr.date-row th .slot-date {
@@ -291,6 +318,45 @@ export const schedulingTabStyles = css`
     font-size: 0.65rem;
     color: var(--color-text-primary);
     line-height: 1.2;
+  }
+
+  /* Compatibility Row */
+  .slot-compatibility-row {
+    width: 100%;
+    height: var(--gantt-compatibility-row-height);
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 4px;
+    gap: 4px;
+    background: transparent;
+  }
+
+  .slot-compatibility-row[aria-hidden="true"] {
+    justify-content: center;
+  }
+
+  .slot-compatibility-label {
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+  }
+
+  .slot-compatibility-chips {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .slot-compatibility-chips::-webkit-scrollbar {
+    display: none;
   }
 
   /* Availability Row */
@@ -424,6 +490,13 @@ export const schedulingTabStyles = css`
 
   .gantt-table th.cohort-header:nth-child(2) {
     left: var(--gantt-depot-width);
+  }
+
+  .gantt-table thead tr.compatibility-row th.cohort-header,
+  .gantt-table thead tr.availability-row th.cohort-header {
+    background: var(--color-white);
+    border-bottom: 0;
+    box-shadow: none;
   }
 
   .gantt-table td.depot-cell {
