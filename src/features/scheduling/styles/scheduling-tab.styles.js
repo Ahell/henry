@@ -189,21 +189,6 @@ export const schedulingTabStyles = css`
     top: 0;
     height: var(--gantt-compatibility-row-height);
     max-height: var(--gantt-compatibility-row-height);
-    z-index: 13;
-    vertical-align: top;
-    text-align: left;
-    padding: 0;
-    background: var(--color-white);
-    text-transform: none;
-    letter-spacing: normal;
-    font-weight: var(--font-weight-medium);
-    border-bottom: 0;
-  }
-
-  .gantt-table thead tr.availability-row th {
-    top: var(--gantt-compatibility-row-height);
-    height: var(--gantt-availability-row-height);
-    max-height: var(--gantt-availability-row-height);
     z-index: 12;
     vertical-align: top;
     text-align: left;
@@ -224,36 +209,31 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table thead tr.date-row th {
-    top: calc(
-      var(--gantt-compatibility-row-height) + var(--gantt-availability-row-height)
-    );
-    height: var(--gantt-date-row-height);
+    top: var(--gantt-compatibility-row-height);
     z-index: 11;
     vertical-align: middle;
     text-align: center;
-    padding: 0;
+    padding: var(--space-3) var(--space-4);
     background: var(--color-gray-lighter);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 0;
+    box-shadow: inset 0 -1px 0 var(--color-border);
   }
 
   .gantt-table thead tr.date-row th.cohort-header {
     text-align: left;
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-3) var(--space-4);
   }
 
   .gantt-table thead tr.date-row th .slot-date {
     display: flex;
-    height: var(--gantt-date-row-height);
     align-items: center;
     justify-content: center;
   }
 
   .slot-date {
-    font-family: var(--font-family-base); /* Changed from mono to base as requested */
-    color: var(--color-text-secondary);
-    font-size: 0.7rem;
-    font-weight: var(--font-weight-medium);
-    font-feature-settings: "tnum"; /* Tabular nums if supported */
+    font: inherit;
+    color: inherit;
+    font-feature-settings: normal;
   }
 
   /* Teacher Overlay */
@@ -357,6 +337,58 @@ export const schedulingTabStyles = css`
 
   .slot-compatibility-chips::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Warnings Footer */
+  .warnings-footer {
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .warnings-footer-viewport {
+    overflow: hidden;
+  }
+
+  .warnings-footer-grid {
+    --warnings-scroll-x: 0px;
+    display: grid;
+    grid-template-columns:
+      var(--gantt-depot-width)
+      var(--gantt-cohort-width)
+      repeat(var(--gantt-slot-count, 0), var(--gantt-slot-width));
+    width: calc(
+      var(--gantt-depot-width) + var(--gantt-cohort-width) +
+        (var(--gantt-slot-width) * var(--gantt-slot-count, 0))
+    );
+    transform: translateX(calc(var(--warnings-scroll-x) * -1));
+  }
+
+  .warnings-footer-label {
+    grid-column: 1 / span 2;
+    display: flex;
+    align-items: center;
+    min-height: var(--gantt-availability-row-height);
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    background: var(--color-gray-lighter);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-right: 1px solid var(--color-border);
+    box-sizing: border-box;
+  }
+
+  .warnings-footer-cell {
+    min-height: var(--gantt-availability-row-height);
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    box-sizing: border-box;
+  }
+
+  .warnings-footer-cell:last-child {
+    border-right: none;
   }
 
   /* Availability Row */
@@ -493,10 +525,6 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table thead tr.compatibility-row th.cohort-header {
-    z-index: 33;
-  }
-
-  .gantt-table thead tr.availability-row th.cohort-header {
     z-index: 32;
   }
 
@@ -504,8 +532,7 @@ export const schedulingTabStyles = css`
     z-index: 31;
   }
 
-  .gantt-table thead tr.compatibility-row th.cohort-header,
-  .gantt-table thead tr.availability-row th.cohort-header {
+  .gantt-table thead tr.compatibility-row th.cohort-header {
     background: var(--color-white);
     border-bottom: 0;
     box-shadow: none;

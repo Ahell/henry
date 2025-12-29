@@ -300,8 +300,7 @@ export class SchedulingTab extends LitElement {
       this._buildSlotTeacherSelectionWarningPillsBySlotDate();
     const slotTeacherCompatibilityWarningsBySlotDate =
       this._buildSlotTeacherCompatibilityWarningPillsBySlotDate();
-    const shouldShowTeacherOverlay =
-      !!this._dragCourseId && !!this._shouldShowTeacherAvailabilityOverlay;
+    const isCompatibilityActive = !!this._dragCourseId;
     this._lastSlotCount = slotDates.length;
     return html`
       <henry-panel full-height>
@@ -341,22 +340,7 @@ export class SchedulingTab extends LitElement {
                         html`<th class="slot-col-header">
                           ${this._renderSlotCompatibilityHeader(
                             dateStr,
-                            shouldShowTeacherOverlay
-                          )}
-                        </th>`
-                    )}
-                  </tr>
-                  <tr class="availability-row">
-                    <th class="cohort-header spacer" aria-hidden="true"></th>
-                    <th class="cohort-header spacer" aria-hidden="true"></th>
-                    ${slotDates.map(
-                      (dateStr) =>
-                        html`<th class="slot-col-header">
-                          ${this._renderSlotAvailabilityHeader(
-                            dateStr,
-                            slotCapacityWarningsBySlotDate,
-                            slotTeacherSelectionWarningsBySlotDate,
-                            slotTeacherCompatibilityWarningsBySlotDate
+                            isCompatibilityActive
                           )}
                         </th>`
                     )}
@@ -394,6 +378,12 @@ export class SchedulingTab extends LitElement {
                 </tfoot>
               </table>
             </div>
+            ${this._renderWarningsFooter(
+              slotDates,
+              slotCapacityWarningsBySlotDate,
+              slotTeacherSelectionWarningsBySlotDate,
+              slotTeacherCompatibilityWarningsBySlotDate
+            )}
           </div>
         </div>
       </henry-panel>
@@ -1149,45 +1139,30 @@ export class SchedulingTab extends LitElement {
     return lines.join("\n");
   }
 
-  _renderSlotAvailabilityHeader(
-    slotDate,
+  _renderWarningsFooter(
+    slotDates,
     slotCapacityWarningsBySlotDate,
     slotTeacherSelectionWarningsBySlotDate,
     slotTeacherCompatibilityWarningsBySlotDate
   ) {
-    const warningPills = [
-      ...(slotCapacityWarningsBySlotDate?.get?.(String(slotDate)) || []),
-      ...(slotTeacherCompatibilityWarningsBySlotDate?.get?.(String(slotDate)) ||
-        []),
-      ...(slotTeacherSelectionWarningsBySlotDate?.get?.(String(slotDate)) ||
-        []),
-    ];
-    const sortedWarnings = warningPills.slice().sort((a, b) => {
-      const order = { hard: 0, soft: 1 };
-      return (order[a?.kind] ?? 9) - (order[b?.kind] ?? 9);
-    });
-
-    const hasWarnings = sortedWarnings.length > 0;
-
     return html`
-      <div
-        class="slot-availability-row"
-        data-has-warnings="${hasWarnings ? "true" : "false"}"
-      >
-        <div
-          class="slot-header-section slot-header-section--warnings"
-          aria-hidden="${hasWarnings ? "false" : "true"}"
-        >
-          <span class="slot-header-label">Varningar</span>
-          <div class="slot-warning-pills">
-            ${sortedWarnings.map(
-              (pill) => html`
-                <span
-                  class="slot-warning-pill slot-warning-pill--${pill.kind}"
-                  title="${pill.title}"
-                  aria-label="${pill.label}"
-                  >${pill.label}</span
-                >
+      <div class="warnings-footer" aria-hidden="false">
+        <div class="warnings-footer-viewport">
+          <div
+            class="warnings-footer-grid"
+            style="--gantt-slot-count: ${slotDates.length};"
+          >
+            <div class="warnings-footer-label">Varningar</div>
+            ${slotDates.map(
+              (slotDate) => html`
+                <div class="warnings-footer-cell">
+                  ${this._renderSlotWarningsCell(
+                    slotDate,
+                    slotCapacityWarningsBySlotDate,
+                    slotTeacherSelectionWarningsBySlotDate,
+                    slotTeacherCompatibilityWarningsBySlotDate
+                  )}
+                </div>
               `
             )}
           </div>
@@ -1196,19 +1171,19 @@ export class SchedulingTab extends LitElement {
     `;
   }
 
-  _renderSlotCompatibilityHeader(slotDate, shouldShow) {
-    if (!shouldShow) {
-      return html`<div class="slot-compatibility-row" aria-hidden="true"></div>`;
+  _renderSlotCompatibilityHeader(slotDate, isActive) {
+    if (!isActive) {
+      return html`<div
+        class="slot-compatibility-row is-empty"
+        aria-hidden="true"
+      ></div>`;
     }
 
     const chips = this._teacherOverlayChipsBySlotDate?.get(slotDate) || [];
     const hasChips = chips.length > 0;
 
     return html`
-      <div
-        class="slot-compatibility-row"
-        data-has-chips="${hasChips ? "true" : "false"}"
-      >
+      <div class="slot-compatibility-row">
         <span class="slot-compatibility-label">Kompatibla lärare</span>
         <div class="slot-compatibility-chips slot-availability">
           ${hasChips
@@ -1227,6 +1202,51 @@ export class SchedulingTab extends LitElement {
                   <span class="availability-chip-text">Inga</span>
                 </span>
               `}
+        </div>
+      </div>
+    `;
+  }
+
+  _renderSlotWarningsCell(
+    slotDate,
+    slotCapacityWarningsBySlotDate,
+    slotTeacherSelectionWarningsBySlotDate,
+    slotTeacherCompatibilityWarningsBySlotDate
+  ) {
+    const warningPills = [
+      ...(slotCapacityWarningsBySlotDate?.get?.(String(slotDate)) || []),
+      ...(slotTeacherCompatibilityWarningsBySlotDate?.get?.(String(slotDate)) ||
+        []),
+      ...(slotTeacherSelectionWarningsBySlotDate?.get?.(String(slotDate)) ||
+        []),
+    ];
+    const sortedWarnings = warningPills.slice().sort((a, b) => {
+      const order = { hard: 0, soft: 1 };
+      return (order[a?.kind] ?? 9) - (order[b?.kind] ?? 9);
+    });
+    const hasWarnings = sortedWarnings.length > 0;
+
+    if (!hasWarnings) {
+      return html`<div
+        class="slot-availability-row"
+        data-has-warnings="false"
+        aria-hidden="true"
+      ></div>`;
+    }
+
+    return html`
+      <div class="slot-availability-row" data-has-warnings="true">
+        <div class="slot-warning-pills">
+          ${sortedWarnings.map(
+            (pill) => html`
+              <span
+                class="slot-warning-pill slot-warning-pill--${pill.kind}"
+                title="${pill.title}"
+                aria-label="${pill.label}"
+                >${pill.label}</span
+              >
+            `
+          )}
         </div>
       </div>
     `;
@@ -1290,12 +1310,23 @@ export class SchedulingTab extends LitElement {
 
   _handleOverlayScroll() {
     const wrapper = this._overlayScrollSource;
+    if (!wrapper) return;
+
     const overlay = this.shadowRoot?.querySelector(
       ".slot-teacher-overlay-wrapper"
     );
-    if (!wrapper || !overlay) return;
-    overlay.scrollLeft = wrapper.scrollLeft;
-    this._updateOverlayVisibility(wrapper);
+    if (overlay) {
+      overlay.scrollLeft = wrapper.scrollLeft;
+      this._updateOverlayVisibility(wrapper);
+    }
+
+    const footerGrid = this.shadowRoot?.querySelector(".warnings-footer-grid");
+    if (footerGrid) {
+      footerGrid.style.setProperty(
+        "--warnings-scroll-x",
+        `${wrapper.scrollLeft}px`
+      );
+    }
   }
 
   _updateOverlayVisibility(wrapper) {
