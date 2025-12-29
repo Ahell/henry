@@ -8,9 +8,9 @@ export const schedulingTabStyles = css`
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    --gantt-depot-width: 240px;
+    --gantt-depot-width: 160px;
     --gantt-cohort-width: 136px;
-    --gantt-slot-width: 180px;
+    --gantt-slot-width: 160px;
     --gantt-row-height: 160px;
     --gantt-compatibility-row-height: 72px;
     --gantt-availability-row-height: 72px;

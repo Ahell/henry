@@ -12,10 +12,10 @@ export const ganttDepotStyles = css`
     min-height: 20px;
     max-height: var(--gantt-row-height);
     overflow: auto;
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2);
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-1);
   }
 
   .depot-empty {
@@ -27,9 +27,9 @@ export const ganttDepotStyles = css`
   }
 
   .depot-block {
-    padding: var(--space-2) var(--space-2);
-    border-radius: 0;
-    font-size: 0.7rem;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
     color: white;
     cursor: grab;
     user-select: none;
@@ -37,19 +37,20 @@ export const ganttDepotStyles = css`
     min-width: 0;
     width: 100%;
     box-sizing: border-box;
-    box-shadow: none;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    transition: none;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: transform 0.1s, box-shadow 0.1s;
+    line-height: 1.2;
   }
 
   .depot-block:hover {
-    box-shadow: none;
-    transform: none;
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
   }
 
   .depot-block:active {
     cursor: grabbing;
-    transform: translateY(0);
+    transform: scale(0.98);
   }
 
   .depot-block.dragging {
@@ -57,14 +58,15 @@ export const ganttDepotStyles = css`
   }
 
   .depot-block .course-code {
-    font-weight: bold;
+    font-weight: var(--font-weight-bold);
     display: inline;
     margin-right: 6px;
+    letter-spacing: 0.02em;
   }
 
   .depot-block .course-name {
-    font-size: 0.65rem;
-    opacity: 0.88;
+    font-size: 0.7rem;
+    opacity: 0.95;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
