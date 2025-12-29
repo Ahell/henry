@@ -71,6 +71,12 @@ export const importExportStyles = css`
     align-items: center;
   }
 
+  .button-group henry-button {
+    --henry-button-primary-bg: var(--color-kth-blue-soft);
+    --henry-button-primary-color: var(--color-white);
+    --henry-button-primary-bg-hover: var(--color-kth-blue);
+  }
+
   .message {
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-base);
