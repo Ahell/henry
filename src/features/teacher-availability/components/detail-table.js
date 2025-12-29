@@ -178,7 +178,7 @@ export class DetailTable extends LitElement {
           border-right: 1px solid var(--color-border);
         }
         .teacher-timeline-table th:first-child {
-          background: var(--color-gray-lighter);
+          background: var(--color-table-header-bg);
         }
         .teacher-timeline-table td:first-child {
           background: var(--color-surface);
@@ -190,7 +190,7 @@ export class DetailTable extends LitElement {
           max-width: var(--day-col-width);
         }
         .teacher-timeline-table thead th {
-          background: var(--color-gray-lighter);
+          background: var(--color-table-header-bg);
           color: var(--color-text-secondary);
           font-size: var(--font-size-xs);
           font-weight: var(--font-weight-semibold);
@@ -240,7 +240,7 @@ export class DetailTable extends LitElement {
         }
         thead .date-row th {
           text-align: center;
-          background: var(--color-gray-lighter);
+          background: var(--color-table-header-bg);
           color: var(--color-text-secondary);
           border-radius: 0 !important;
           top: var(--detail-date-row-top);
@@ -249,7 +249,7 @@ export class DetailTable extends LitElement {
         }
         /* Ensure selected/default/alt headers do not change background */
         .teacher-timeline-table thead .date-row th.slot-header {
-          background: var(--color-gray-lighter) !important;
+          background: var(--color-table-header-bg) !important;
           color: var(--color-text-secondary) !important;
           border-color: var(--color-border) !important;
         }
@@ -258,7 +258,7 @@ export class DetailTable extends LitElement {
           position: sticky;
           left: 0;
           z-index: 5;
-          background: var(--color-gray-lighter);
+          background: var(--color-table-header-bg);
           text-align: left;
         }
         .teacher-timeline-table thead .week-row th:first-child {
@@ -271,7 +271,7 @@ export class DetailTable extends LitElement {
         }
         .teacher-timeline-table thead .date-row th:first-child {
           z-index: 5;
-          background: var(--color-gray-lighter);
+          background: var(--color-table-header-bg);
         }
         /* Neutralize any legacy header class styling */
         .teacher-timeline-table
@@ -281,7 +281,7 @@ export class DetailTable extends LitElement {
           thead
           th.teaching-day-default-dimmed-header,
         .teacher-timeline-table thead th.teaching-day-alt-header {
-          background: var(--color-gray-lighter);
+          background: var(--color-table-header-bg);
           color: var(--color-text-secondary);
           border: 1px solid var(--color-border);
           box-shadow: none;

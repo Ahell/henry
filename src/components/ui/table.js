@@ -48,7 +48,7 @@ export class HenryTable extends LitElement {
     }
 
     thead {
-      background: var(--color-gray-lighter);
+      background: var(--color-table-header-bg);
     }
 
     th {
@@ -56,7 +56,7 @@ export class HenryTable extends LitElement {
       text-align: left;
       font-weight: var(--font-weight-semibold);
       color: var(--color-text-secondary);
-      background: var(--color-gray-lighter);
+      background: var(--color-table-header-bg);
       position: sticky;
       top: 0;
       z-index: 2;

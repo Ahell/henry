@@ -84,6 +84,18 @@
   --color-text-secondary: var(--color-gray-dark);
   --color-text-light: var(--color-white);
 
+  /* Table headers */
+  --color-table-header-bg: color-mix(
+    in srgb,
+    var(--color-gray-200) 65%,
+    var(--color-white) 35%
+  );
+  --color-table-header-bg-muted: color-mix(
+    in srgb,
+    var(--color-gray-200) 45%,
+    var(--color-white) 55%
+  );
+
   --henry-switch-checked-bg: var(--color-kth-blue-soft);
   --henry-switch-checked-border: var(--color-kth-blue);
   --color-text-disabled: var(--color-gray);

@@ -337,7 +337,7 @@ export class SchedulingTab extends LitElement {
                     <th class="cohort-header">
                       <div class="cohort-header-row">
                         <span>Kull</span>
-                        <span>Startdatum</span>
+                        <span>Start</span>
                       </div>
                     </th>
                     ${slotDates.map(

@@ -241,7 +241,7 @@ table {
 
 th {
   padding: var(--space-3) var(--space-4);
-  background-color: var(--color-broken-white);
+  background-color: var(--color-table-header-bg);
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-xs);
   text-transform: uppercase;

@@ -172,7 +172,7 @@ export const schedulingTabStyles = css`
 
   /* Table Headers */
   .gantt-table th {
-    background: var(--color-gray-lighter);
+    background: var(--color-table-header-bg);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-secondary);
@@ -199,7 +199,7 @@ export const schedulingTabStyles = css`
     vertical-align: middle;
     text-align: center;
     padding: var(--space-3) var(--space-4);
-    background: var(--color-gray-lighter);
+    background: var(--color-table-header-bg);
     border-bottom: 0;
     box-shadow: inset 0 -1px 0 var(--color-border);
   }
@@ -567,14 +567,14 @@ export const schedulingTabStyles = css`
     position: sticky;
     z-index: 30;
     box-shadow: none;
-    background: var(--color-gray-lighter);
+    background: var(--color-table-header-bg);
   }
 
   .gantt-table th.cohort-header:first-child {
     left: 0;
     min-width: var(--gantt-depot-width);
     width: var(--gantt-depot-width);
-    background: var(--color-gray-lighter);
+    background: var(--color-table-header-bg);
   }
 
   .gantt-table th.cohort-header:nth-child(2) {

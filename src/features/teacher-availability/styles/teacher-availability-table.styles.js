@@ -129,7 +129,7 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-timeline-table th {
-    background: var(--color-gray-lighter);
+    background: var(--color-table-header-bg);
     font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-xs);
     position: sticky;
@@ -146,7 +146,7 @@ export const teacherAvailabilityTableStyles = css`
     position: sticky;
     left: 0;
     z-index: 3;
-    background: var(--color-gray-lighter);
+    background: var(--color-table-header-bg);
     font-size: var(--font-size-xs);
     text-align: left;
   }
@@ -154,7 +154,7 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-timeline-table th.slot-header {
     cursor: pointer;
     transition: var(--transition-all);
-    background: var(--color-gray-lighter);
+    background: var(--color-table-header-bg);
     color: var(--color-text-secondary);
     border-color: var(--color-border);
     font-size: var(--font-size-xs);
@@ -523,7 +523,7 @@ export const teacherAvailabilityTableStyles = css`
 
   /* 2) Ordinarie datum avmarkerat */
   .teacher-timeline-table th.teaching-day-default-dimmed-header {
-    background: var(--color-gray-50);
+    background: var(--color-table-header-bg-muted);
     color: var(--color-text-secondary);
     cursor: var(--teaching-day-default-dimmed-cursor);
     font-weight: var(--font-weight-bold);
@@ -616,7 +616,7 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-timeline-table th.teaching-day-default-header,
   .teacher-timeline-table th.teaching-day-default-dimmed-header,
   .teacher-timeline-table th.teaching-day-alt-header {
-    background: var(--color-gray-lighter) !important;
+    background: var(--color-table-header-bg) !important;
     color: var(--color-text-secondary) !important;
     border: none !important;
     border-bottom: 2px solid var(--color-border) !important;
