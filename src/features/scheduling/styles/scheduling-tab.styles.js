@@ -603,7 +603,7 @@ export const schedulingTabStyles = css`
     min-width: var(--gantt-cohort-width);
     width: var(--gantt-cohort-width);
     text-align: left;
-    padding: var(--space-3);
+    padding: var(--space-2);
     font-weight: var(--font-weight-medium);
     font-size: var(--font-size-sm);
     color: var(--color-text-primary);
@@ -620,7 +620,7 @@ export const schedulingTabStyles = css`
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: var(--space-2);
     width: 100%;
     min-width: 0; /* Important for overflow */
   }
@@ -636,7 +636,7 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table td.cohort-cell .cohort-cell-number {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: var(--font-weight-bold);
     color: var(--color-kth-blue);
     white-space: nowrap;
@@ -645,9 +645,9 @@ export const schedulingTabStyles = css`
   }
 
   .gantt-table td.cohort-cell .cohort-cell-date {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--color-text-secondary);
-    font-family: var(--font-family-mono);
+    font-family: var(--font-family-base);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -657,24 +657,89 @@ export const schedulingTabStyles = css`
   .gantt-table td.cohort-cell .cohort-warning-section,
   .gantt-table td.cohort-cell .cohort-cell-actions {
     width: 100%;
-    padding: 8px;
-    border-radius: var(--radius-md);
-    background: var(--color-white);
-    border: 1px solid var(--color-border);
-    box-shadow: var(--shadow-sm);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
     box-sizing: border-box; /* Ensure padding is included in width */
+  }
+
+  .gantt-table td.cohort-cell .cohort-cell-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--space-2);
+    column-gap: var(--space-1);
+    align-items: center;
+  }
+
+  .gantt-table td.cohort-cell .cohort-warning-section {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+  }
+
+  .gantt-table td.cohort-cell .cohort-section-label {
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .gantt-table td.cohort-cell .cohort-cell-actions .cohort-section-label,
+  .gantt-table td.cohort-cell .cohort-warning-section .cohort-section-label {
+    grid-column: 1 / -1;
+  }
+
+  .gantt-table td.cohort-cell .cohort-warning-markers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .gantt-table td.cohort-cell .cohort-warning-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-semibold);
+    border: 1px solid var(--color-border);
+    background: var(--color-gray-lighter);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  .gantt-table td.cohort-cell .cohort-warning-pill--hard {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    border-color: rgba(239, 68, 68, 0.2);
+  }
+
+  .gantt-table td.cohort-cell .cohort-warning-pill--soft {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    border-color: rgba(245, 158, 11, 0.2);
   }
 
   .gantt-table td.cohort-cell .cohort-reset-button,
   .gantt-table td.cohort-cell .cohort-autofill-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
-    padding: 6px;
-    font-size: 0.7rem;
+    min-height: 24px;
+    padding: 4px 6px;
+    font-size: 0.65rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
     text-align: center;
+    line-height: 1;
+    white-space: nowrap;
     border: 1px solid transparent;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
   }
 
   .gantt-table td.cohort-cell .cohort-reset-button {
@@ -697,6 +762,13 @@ export const schedulingTabStyles = css`
   .gantt-table td.cohort-cell .cohort-autofill-button:hover:not(:disabled) {
     background: var(--color-info);
     color: white;
+  }
+
+  .gantt-table td.cohort-cell .cohort-reset-button:disabled,
+  .gantt-table td.cohort-cell .cohort-autofill-button:disabled {
+    opacity: 1;
+    cursor: default;
+    filter: none;
   }
 
   /* Slot Cells */

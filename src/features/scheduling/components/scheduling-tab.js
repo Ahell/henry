@@ -1399,7 +1399,7 @@ export class SchedulingTab extends LitElement {
         const slot = store.getSlot(run.slot_id);
         const course = store.getCourse(run.course_id);
 
-        scheduledCourseIds.add(run.course_id);
+        scheduledCourseIds.add(String(run.course_id));
 
         if (!slot) return;
 
@@ -1418,6 +1418,14 @@ export class SchedulingTab extends LitElement {
           continuationRunsByDate[dateStr].push(run);
         });
       });
+
+    const allCourses = store.getCourses() || [];
+    const hasDepotCourses = allCourses.some(
+      (course) => !scheduledCourseIds.has(String(course.course_id))
+    );
+    const hasScheduledCourses = scheduledCourseIds.size > 0;
+    const autoFillDisabled = !this.isEditing || autoFillBusy || !hasDepotCourses;
+    const resetDisabled = !this.isEditing || !hasScheduledCourses;
 
     return html`
       <tr>
@@ -1449,7 +1457,7 @@ export class SchedulingTab extends LitElement {
               <button
                 class="cohort-reset-button"
                 type="button"
-                ?disabled=${!this.isEditing}
+                ?disabled=${resetDisabled}
                 title="Flytta alla kurser tillbaka till depån"
                 @click=${(e) => {
                   e.preventDefault();
@@ -1462,7 +1470,7 @@ export class SchedulingTab extends LitElement {
               <button
                 class="cohort-autofill-button"
                 type="button"
-                ?disabled=${!this.isEditing || autoFillBusy}
+                ?disabled=${autoFillDisabled}
                 title="Auto-fyll schema för denna kull"
                 @click=${(e) => {
                   e.preventDefault();
@@ -1470,7 +1478,7 @@ export class SchedulingTab extends LitElement {
                   this._handleAutoFillCohortClick(cohort.cohort_id);
                 }}
               >
-                ${autoFillBusy ? "Auto-fyll…" : "Auto-fyll"}
+                ${autoFillBusy ? "Auto-fyll" : "Auto-fyll"}
               </button>
             </div>
             ${markers.length
