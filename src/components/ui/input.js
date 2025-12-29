@@ -63,7 +63,7 @@ export class HenryInput extends LitElement {
       height: var(--input-height-base);
       padding: 0 var(--space-3);
       font-family: var(--font-family-base);
-      font-size: var(--font-size-base);
+      font-size: var(--henry-input-font-size, var(--font-size-base));
       color: var(--color-text-primary);
       background-color: var(--color-white);
       border: 1px solid var(--color-border);

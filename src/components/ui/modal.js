@@ -21,6 +21,8 @@ export class HenryModal extends LitElement {
       --henry-button-primary-bg: var(--color-kth-blue-soft);
       --henry-button-primary-color: var(--color-white);
       --henry-button-primary-bg-hover: var(--color-kth-blue);
+      --henry-input-font-size: var(--font-size-sm);
+      --henry-select-font-size: var(--font-size-sm);
     }
 
     :host {
@@ -94,7 +96,7 @@ export class HenryModal extends LitElement {
 
     .modal-title {
       margin: 0;
-      font-size: var(--font-size-xl);
+      font-size: var(--henry-modal-title-size, var(--font-size-lg));
       font-weight: var(--font-weight-semibold);
       color: var(--color-text-primary);
     }
