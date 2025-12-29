@@ -365,16 +365,18 @@ export class SchedulingTab extends LitElement {
                 </tfoot>
               </table>
             </div>
-            ${this._renderWarningsFooter(
-              slotDates,
-              slotCapacityWarningsBySlotDate,
-              slotTeacherSelectionWarningsBySlotDate,
-              slotTeacherCompatibilityWarningsBySlotDate
-            )}
-            ${this._renderCompatibilityFooter(
-              slotDates,
-              isCompatibilityActive
-            )}
+            <div class="scheduling-footer">
+              ${this._renderWarningsFooter(
+                slotDates,
+                slotCapacityWarningsBySlotDate,
+                slotTeacherSelectionWarningsBySlotDate,
+                slotTeacherCompatibilityWarningsBySlotDate
+              )}
+              ${this._renderCompatibilityFooter(
+                slotDates,
+                isCompatibilityActive
+              )}
+            </div>
           </div>
         </div>
       </henry-panel>

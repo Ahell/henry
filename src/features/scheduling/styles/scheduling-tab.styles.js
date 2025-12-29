@@ -14,7 +14,6 @@ export const schedulingTabStyles = css`
     --gantt-row-height: 160px;
     --gantt-compatibility-row-height: 72px;
     --gantt-availability-row-height: 72px;
-    --gantt-footer-row-min-height: 52px;
     --gantt-teacher-overlay-height: 72px;
     --gantt-date-row-height: 32px;
     --availability-chip-gap: 4px;
@@ -333,11 +332,14 @@ export const schedulingTabStyles = css`
     word-break: break-word;
   }
 
-  /* Warnings Footer */
-  .warnings-footer {
+  .scheduling-footer {
     margin-top: var(--space-4);
     padding-top: var(--space-4);
     border-top: 1px solid var(--color-border);
+  }
+
+  /* Warnings Footer */
+  .warnings-footer {
     background: var(--color-surface);
   }
 
@@ -348,7 +350,6 @@ export const schedulingTabStyles = css`
 
 .warnings-footer-track {
   position: relative;
-  min-height: var(--gantt-footer-row-min-height);
 }
 
   .warnings-footer-spacer {
@@ -373,7 +374,6 @@ export const schedulingTabStyles = css`
   }
 
 .warnings-footer-cell {
-  min-height: var(--gantt-footer-row-min-height);
   background: var(--color-surface);
   box-sizing: border-box;
 }
@@ -385,6 +385,7 @@ export const schedulingTabStyles = css`
   /* Compatibility Footer */
 .compatibility-footer {
   background: var(--color-surface);
+  margin-top: var(--space-3);
 }
 
   .compatibility-footer-viewport {
@@ -394,7 +395,6 @@ export const schedulingTabStyles = css`
 
 .compatibility-footer-track {
   position: relative;
-  min-height: var(--gantt-footer-row-min-height);
 }
 
   .compatibility-footer-spacer {
@@ -419,7 +419,6 @@ export const schedulingTabStyles = css`
   }
 
 .compatibility-footer-cell {
-  min-height: var(--gantt-footer-row-min-height);
   background: var(--color-surface);
   box-sizing: border-box;
 }
@@ -447,19 +446,19 @@ export const schedulingTabStyles = css`
 .warnings-footer .slot-availability-row {
   height: auto;
   min-height: 0;
-  padding: var(--space-2);
-  gap: var(--space-2);
+  padding: 2px;
+  gap: 6px;
 }
 
 .warnings-footer .slot-warning-pills {
-  gap: var(--space-2);
+  gap: 6px;
 }
 
 .compatibility-footer .slot-compatibility-row {
   height: auto;
   min-height: 0;
-  padding: var(--space-2);
-  gap: var(--space-2);
+  padding: 2px;
+  gap: 2px;
 }
 
   .slot-warning-pills {
