@@ -41,7 +41,7 @@
 
       /* Sidebar Styling - Cleaner, Professional KTH Look */
       .sidebar {
-        background-color: var(--color-primary-700);
+        background-color: var(--color-kth-blue);
         color: #ffffff;
         display: flex;
         flex-direction: column;
@@ -50,7 +50,6 @@
         position: sticky;
         top: 0;
         z-index: 50;
-        box-shadow: 4px 0 24px rgba(0,0,0,0.1);
       }
 
       .sidebar-content {
@@ -119,6 +118,12 @@
         gap: 4px;
       }
 
+      .admin-actions-group {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
       .admin-tab-btn {
         text-align: left;
         background: transparent;
@@ -141,10 +146,10 @@
       }
 
       .admin-tab-btn.active {
-        background: var(--color-primary-500);
+        background: var(--color-kth-blue);
         color: #fff;
         font-weight: 600;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: none;
       }
 
       /* Utilities Section at Bottom */
@@ -234,7 +239,23 @@
 
       /* Custom overrides for the switch in dark sidebar */
       henry-switch.nav-edit-switch {
-        --color-text-primary: #ffffff;
+        --color-text-primary: rgba(255, 255, 255, 0.75);
+        --color-gray-light: var(--color-white-15);
+        --color-border: var(--color-white-50);
+        --henry-switch-checked-bg: var(--color-kth-blue);
+        --henry-switch-checked-border: var(--color-white-70);
+        --henry-switch-width: 36px;
+        --henry-switch-height: 20px;
+        --henry-switch-thumb-size: 14px;
+        --henry-switch-thumb-offset: 3px;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: var(--radius-md);
+      }
+      henry-switch.nav-edit-switch:hover {
+        background: rgba(255, 255, 255, 0.08);
       }
     </style>
   </head>
@@ -285,6 +306,7 @@
                   id="navEditMode"
                   class="nav-edit-switch"
                   label="Redigera"
+                  label-position="left"
                 ></henry-switch>
               </div>
             </div>

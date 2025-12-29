@@ -116,7 +116,7 @@ export const schedulingTabStyles = css`
   }
 
   .two-block-course {
-    border: 2px dashed rgba(255, 255, 255, 0.7);
+    border: 2px dashed var(--color-white-70);
   }
 
   /* Main Gantt Area */
@@ -503,13 +503,13 @@ export const schedulingTabStyles = css`
   .slot-warning-pill--hard {
     background: var(--color-danger-bg);
     color: var(--color-danger-text);
-    border-color: rgba(239, 68, 68, 0.2);
+    border-color: var(--color-red-20);
   }
 
   .slot-warning-pill--soft {
     background: var(--color-warning-bg);
     color: var(--color-warning-text);
-    border-color: rgba(245, 158, 11, 0.2);
+    border-color: var(--color-yellow-20);
   }
 
   /* Availability Chips */
@@ -536,7 +536,7 @@ export const schedulingTabStyles = css`
 
   .availability-chip--drag-available {
     background: var(--color-navy);
-    color: white;
+    color: var(--color-white);
     border-color: transparent;
   }
 
@@ -548,7 +548,7 @@ export const schedulingTabStyles = css`
 
   .availability-chip--assigned {
     background: var(--color-success);
-    color: white;
+    color: var(--color-white);
     border-color: transparent;
   }
 
@@ -715,13 +715,13 @@ export const schedulingTabStyles = css`
   .gantt-table td.cohort-cell .cohort-warning-pill--hard {
     background: var(--color-danger-bg);
     color: var(--color-danger-text);
-    border-color: rgba(239, 68, 68, 0.2);
+    border-color: var(--color-red-20);
   }
 
   .gantt-table td.cohort-cell .cohort-warning-pill--soft {
     background: var(--color-warning-bg);
     color: var(--color-warning-text);
-    border-color: rgba(245, 158, 11, 0.2);
+    border-color: var(--color-yellow-20);
   }
 
   .gantt-table td.cohort-cell .cohort-reset-button,
@@ -730,42 +730,48 @@ export const schedulingTabStyles = css`
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 24px;
-    padding: 4px 6px;
-    font-size: 0.65rem;
+    min-height: 26px;
+    padding: 5px 8px;
+    font-family: var(--font-family-base);
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-medium);
     border-radius: var(--radius-sm);
     cursor: pointer;
     text-align: center;
-    line-height: 1;
+    line-height: 1.1;
     white-space: nowrap;
     border: 1px solid transparent;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s;
   }
 
   .gantt-table td.cohort-cell .cohort-reset-button {
-    background: transparent;
-    color: var(--color-text-secondary);
-    border-color: var(--color-border);
+    background: var(--color-white);
+    color: var(--color-kth-blue);
+    border-color: var(--color-kth-blue);
   }
 
   .gantt-table td.cohort-cell .cohort-reset-button:hover:not(:disabled) {
-    background: var(--color-gray-lighter);
-    color: var(--color-text-primary);
+    background: var(--color-sand-dark);
+    color: var(--color-kth-blue);
   }
 
   .gantt-table td.cohort-cell .cohort-autofill-button {
-    background: var(--color-info-bg);
-    color: var(--color-info-text);
-    font-weight: var(--font-weight-semibold);
+    background: var(--color-light-blue);
+    color: var(--color-navy);
+    border-color: var(--color-kth-blue);
   }
 
   .gantt-table td.cohort-cell .cohort-autofill-button:hover:not(:disabled) {
-    background: var(--color-info);
-    color: white;
+    background: var(--color-sky-blue);
+    border-color: var(--color-kth-blue);
+    color: var(--color-navy);
   }
 
   .gantt-table td.cohort-cell .cohort-reset-button:disabled,
   .gantt-table td.cohort-cell .cohort-autofill-button:disabled {
+    background: var(--color-sand-dark);
+    border-color: var(--color-sand-dark);
+    color: var(--color-text-disabled);
     opacity: 1;
     cursor: default;
     filter: none;
@@ -810,7 +816,7 @@ export const schedulingTabStyles = css`
 
   .gantt-table td.slot-cell.no-teachers-available {
     background: var(--color-danger-bg);
-    box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.2);
+    box-shadow: inset 0 0 0 2px var(--color-red-20);
   }
 
   .gantt-table td.slot-cell.disabled-slot {
@@ -852,7 +858,7 @@ export const schedulingTabStyles = css`
     padding: var(--space-2);
     border-radius: var(--radius-md);
     font-size: 0.7rem;
-    color: var(--color-text-primary);
+    color: var(--course-text-color, var(--color-text-primary));
     background: var(--color-white);
     margin-bottom: var(--space-2);
     box-shadow: var(--shadow-sm);
@@ -864,7 +870,7 @@ export const schedulingTabStyles = css`
     align-items: center;
     gap: 8px;
     padding-bottom: 4px;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-white-50);
     margin-bottom: 4px;
   }
 
@@ -874,7 +880,7 @@ export const schedulingTabStyles = css`
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: var(--font-weight-bold);
-    color: var(--color-kth-blue);
+    color: var(--course-text-color, var(--color-kth-blue));
   }
 
   .gantt-table tfoot .summary-course .participant-count {

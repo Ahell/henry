@@ -12,8 +12,8 @@ export const ganttCourseBlockStyles = css`
     padding: 6px 8px;
     border-radius: var(--radius-sm);
     font-family: var(--font-family-base);
-    font-size: 0.75rem; /* Better readability */
-    color: var(--color-white);
+    font-size: 0.8rem;
+    color: var(--course-text-color, var(--color-white));
     font-weight: var(--font-weight-medium);
     cursor: grab;
     overflow: hidden;
@@ -23,11 +23,11 @@ export const ganttCourseBlockStyles = css`
     align-items: flex-start;
     justify-content: flex-start;
     text-align: left;
-    line-height: 1.2;
+    line-height: 1.25;
     position: relative;
     z-index: 2;
     box-shadow: var(--shadow-sm); /* Subtle depth */
-    border: 1px solid rgba(255, 255, 255, 0.15); /* Soft highlight border */
+    border: 1px solid var(--color-white-15); /* Soft highlight border */
     transition: transform 0.1s, box-shadow 0.1s;
   }
 
@@ -49,14 +49,14 @@ export const ganttCourseBlockStyles = css`
 
   .gantt-block .course-code {
     font-weight: var(--font-weight-bold);
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     letter-spacing: 0.02em;
     margin-bottom: 2px;
   }
 
   .gantt-block .course-name {
-    font-size: 0.7rem;
-    font-weight: var(--font-weight-normal);
+    font-size: 0.72rem;
+    font-weight: var(--font-weight-medium);
     opacity: 0.95;
     max-width: 100%;
     overflow: hidden;
@@ -92,7 +92,7 @@ export const ganttCourseBlockStyles = css`
     font-weight: 900;
     background: var(--color-white);
     color: var(--color-info-text);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 2px var(--color-broken-black-20);
   }
 
   .gantt-block.no-compatible-teachers .teacher-warning-badge {
@@ -104,6 +104,6 @@ export const ganttCourseBlockStyles = css`
   }
 
   .two-block-course {
-    border: 2px dashed rgba(255, 255, 255, 0.5);
+    border: 2px dashed var(--color-white-50);
   }
 `;

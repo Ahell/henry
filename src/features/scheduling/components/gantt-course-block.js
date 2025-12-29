@@ -75,8 +75,10 @@ export class GanttCourseBlock extends LitElement {
     if (hasTeacherShortage) {
       blockClasses.push("teacher-shortage", teacherShortageStatus);
     }
-    const bgColor = this._getCourseColor(course);
-    const inlineStyle = `background-color: ${bgColor};`;
+    const colorToken = this._getCourseColorToken(course);
+    const textToken = this._getCourseTextToken(course);
+    const bgColor = `var(${colorToken})`;
+    const inlineStyle = `background-color: ${bgColor}; --course-text-color: var(${textToken});`;
     const shortName = this._shortenCourseName(course.name);
 
     // Build tooltip
@@ -210,24 +212,44 @@ export class GanttCourseBlock extends LitElement {
       .join(", ");
   }
 
-  _getCourseColor(course) {
-    if (!course) return "#666";
-    return this._getNormalCourseColor(course);
+  _getCourseColorToken(course) {
+    if (!course) return "--color-course-fallback";
+    const tokens = [
+      "--color-course-1",
+      "--color-course-2",
+      "--color-course-3",
+      "--color-course-4",
+      "--color-course-5",
+      "--color-course-6",
+      "--color-course-7",
+      "--color-course-8",
+      "--color-course-9",
+      "--color-course-10",
+      "--color-course-11",
+      "--color-course-12",
+    ];
+    const colorIndex = (course.course_id || 0) % tokens.length;
+    return tokens[colorIndex];
   }
 
-  _getNormalCourseColor(course) {
-    const colors = [
-      "#004791", // KTH Blue
-      "#0d4a21", // Dark Green
-      "#a65900", // Dark Yellow
-      "#78001a", // Dark Red
-      "#1c434c", // Dark Turquoise
-      "#0029ed", // Digital Blue
-      "#000061", // Navy
-      "#323232", // Dark Gray
+  _getCourseTextToken(course) {
+    if (!course) return "--color-course-text-fallback";
+    const tokens = [
+      "--color-course-text-1",
+      "--color-course-text-2",
+      "--color-course-text-3",
+      "--color-course-text-4",
+      "--color-course-text-5",
+      "--color-course-text-6",
+      "--color-course-text-7",
+      "--color-course-text-8",
+      "--color-course-text-9",
+      "--color-course-text-10",
+      "--color-course-text-11",
+      "--color-course-text-12",
     ];
-    const colorIndex = (course.course_id || 0) % colors.length;
-    return colors[colorIndex];
+    const colorIndex = (course.course_id || 0) % tokens.length;
+    return tokens[colorIndex];
   }
 
   _shortenCourseName(name) {

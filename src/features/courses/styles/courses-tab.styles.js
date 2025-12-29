@@ -76,13 +76,13 @@ export const coursesTabStyles = css`
     cursor: pointer;
     font: inherit;
     text-decoration: underline;
-    text-decoration-color: rgba(15, 23, 42, 0.3);
+    text-decoration-color: var(--color-broken-black-30);
     text-underline-offset: 2px;
   }
 
   .course-code-button:hover {
     color: var(--color-primary-800);
-    text-decoration-color: rgba(15, 23, 42, 0.5);
+    text-decoration-color: var(--color-broken-black-50);
   }
 
   .course-info-grid {

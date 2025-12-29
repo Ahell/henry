@@ -67,13 +67,22 @@ export class HenryButton extends LitElement {
 
     /* Variants */
     button.primary {
-      background: var(--color-primary-600);
-      color: var(--color-white);
+      background: var(
+        --henry-button-primary-bg,
+        var(--color-primary-600)
+      );
+      color: var(
+        --henry-button-primary-color,
+        var(--color-white)
+      );
       box-shadow: var(--shadow-sm);
     }
 
     button.primary:hover:not(:disabled) {
-      background: var(--color-primary-700);
+      background: var(
+        --henry-button-primary-bg-hover,
+        var(--color-primary-700)
+      );
       box-shadow: var(--shadow-md);
     }
 

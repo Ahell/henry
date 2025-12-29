@@ -61,6 +61,12 @@ export class HenryPanel extends LitElement {
       flex-shrink: 0;
     }
 
+    ::slotted(.panel-header) {
+      --henry-button-primary-bg: var(--color-kth-blue-soft);
+      --henry-button-primary-color: var(--color-white);
+      --henry-button-primary-bg-hover: var(--color-kth-blue);
+    }
+
     .panel-header:empty {
       display: none;
     }

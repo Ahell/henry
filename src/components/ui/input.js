@@ -79,7 +79,7 @@ export class HenryInput extends LitElement {
     input:focus {
       outline: none;
       border-color: var(--color-primary-500);
-      box-shadow: 0 0 0 3px rgba(0, 71, 145, 0.15);
+      box-shadow: var(--input-focus-ring);
     }
 
     input:disabled {

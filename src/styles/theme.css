@@ -149,6 +149,19 @@ p {
   background-color: var(--color-green-dark);
 }
 
+/* Header buttons should use the same KTH blue as "Idag" */
+.panel-header henry-button,
+.header-buttons henry-button {
+  --henry-button-primary-bg: var(--color-kth-blue-soft);
+  --henry-button-primary-color: var(--color-white);
+  --henry-button-primary-bg-hover: var(--color-kth-blue);
+}
+
+henry-switch {
+  --henry-switch-checked-bg: var(--color-kth-blue-soft);
+  --henry-switch-checked-border: var(--color-kth-blue);
+}
+
 /* --- COMPONENTS: FORMS --- */
 
 .form-label {
@@ -181,7 +194,7 @@ p {
 .form-input:focus {
   outline: none;
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(0, 71, 145, 0.15); /* Match token focus ring */
+  box-shadow: var(--input-focus-ring);
 }
 
 .form-input:disabled {

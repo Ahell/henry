@@ -87,8 +87,11 @@ export class HenrySwitch extends LitElement {
     }
 
     input:checked + .track {
-      background: var(--color-primary-500);
-      border-color: var(--color-primary-500);
+      background: var(--henry-switch-checked-bg, var(--color-light-blue));
+      border-color: var(
+        --henry-switch-checked-border,
+        var(--henry-switch-checked-bg, var(--color-light-blue))
+      );
     }
 
     input:checked + .track .thumb {

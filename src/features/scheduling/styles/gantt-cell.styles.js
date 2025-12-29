@@ -25,7 +25,7 @@ export const ganttCellStyles = css`
     top: var(--space-2);
     left: var(--space-2);
     background: var(--color-primary-500);
-    color: #fff;
+    color: var(--color-white);
     font-size: 0.6rem;
     padding: 2px 6px;
     border-radius: var(--radius-full);

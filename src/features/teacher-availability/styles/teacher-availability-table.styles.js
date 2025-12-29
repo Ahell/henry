@@ -14,7 +14,7 @@ export const teacherAvailabilityTableStyles = css`
     --teaching-day-default-hover-bg: color-mix(
       in srgb,
       var(--teaching-day-default-bg),
-      black 15%
+      var(--color-broken-black) 15%
     );
     --teaching-day-default-dimmed-bg: var(--color-primary-100);
     --teaching-day-default-dimmed-text: var(--color-primary-700);
@@ -27,7 +27,7 @@ export const teacherAvailabilityTableStyles = css`
     --teaching-day-alt-hover-bg: color-mix(
       in srgb,
       var(--teaching-day-alt-bg),
-      black 10%
+      var(--color-broken-black) 10%
     );
     --exam-date-locked-bg: var(--color-primary-600);
     --exam-date-locked-text: var(--color-background);
@@ -43,7 +43,7 @@ export const teacherAvailabilityTableStyles = css`
     --exam-date-new-hover-bg: color-mix(
       in srgb,
       var(--exam-date-new-bg),
-      black 10%
+      var(--color-broken-black) 10%
     );
   }
 
@@ -233,7 +233,7 @@ export const teacherAvailabilityTableStyles = css`
 
   .teacher-cell.assigned-course {
     background: var(--color-success);
-    color: white;
+    color: var(--color-white);
     font-weight: var(--font-weight-semibold);
     border-color: transparent;
     box-shadow: none;
@@ -241,13 +241,13 @@ export const teacherAvailabilityTableStyles = css`
 
   .teacher-cell.has-course {
     background: var(--color-info);
-    color: white;
+    color: var(--color-white);
     border-color: transparent;
   }
 
   .teacher-cell.unavailable {
     background: var(--color-danger);
-    color: white;
+    color: var(--color-white);
     position: relative;
     border-color: transparent;
     box-shadow: none;
@@ -310,19 +310,19 @@ export const teacherAvailabilityTableStyles = css`
   /* Segment base colors (per course) */
   .teacher-cell .course-segment.segment-assigned {
     background: var(--color-success);
-    color: white;
+    color: var(--color-white);
     border-color: transparent;
   }
 
   .teacher-cell .course-segment.segment-compatible-free {
     background: var(--color-info);
-    color: white;
+    color: var(--color-white);
     border-color: transparent;
   }
 
   .teacher-cell .course-segment.segment-compatible-occupied {
     background: color-mix(in srgb, var(--color-info) 60%, var(--color-gray-600));
-    color: rgba(255, 255, 255, 0.92);
+    color: var(--color-white-92);
     border-color: transparent;
   }
 
@@ -336,7 +336,7 @@ export const teacherAvailabilityTableStyles = css`
     overflow: hidden;
     padding: 0;
     background: transparent;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--color-broken-black-8);
     border-radius: var(--radius-sm);
   }
 
@@ -362,7 +362,7 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-cell.partially-unavailable .cell-content,
   .teacher-cell.partial-availability .cell-content {
     background: transparent;
-    color: white;
+    color: var(--color-white);
     box-shadow: none;
     position: relative;
     z-index: 1;
@@ -370,7 +370,7 @@ export const teacherAvailabilityTableStyles = css`
 
   .teacher-cell.partial-conflict .cell-content {
     background: transparent;
-    color: white;
+    color: var(--color-white);
     box-shadow: none;
     position: relative;
     z-index: 1;
@@ -378,7 +378,7 @@ export const teacherAvailabilityTableStyles = css`
 
   .teacher-cell.course-unavailable .cell-content {
     background: transparent;
-    color: white;
+    color: var(--color-white);
     box-shadow: none;
     position: relative;
     z-index: 1;
@@ -424,7 +424,7 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-cell .course-segment.partial-conflict .course-segment-text {
-    color: white;
+    color: var(--color-white);
   }
 
   /* Full conflict (all active days unavailable): strong red stripes */
@@ -446,7 +446,7 @@ export const teacherAvailabilityTableStyles = css`
 
   /* Keep text readable in "course-unavailable" segments */
   .teacher-cell .course-segment.course-unavailable .course-segment-text {
-    color: white;
+    color: var(--color-white);
   }
 
   /* Assigned + Info (utanför kursdagar): ensure blue stripes still visible */
@@ -469,12 +469,12 @@ export const teacherAvailabilityTableStyles = css`
     cursor: var(--teaching-day-default-cursor);
     font-weight: var(--font-weight-bold);
     border: none;
-    border-bottom: 3px solid var(--color-primary-500, #3b82f6);
+    border-bottom: 3px solid var(--color-primary-500);
     box-shadow: none;
   }
 
   .teacher-timeline-table th.teaching-day-default-header:hover {
-    border-bottom-color: var(--color-primary-600, #2563eb);
+    border-bottom-color: var(--color-primary-600);
   }
 
   /* Default teaching day - dimmed (inactive) */
@@ -510,7 +510,7 @@ export const teacherAvailabilityTableStyles = css`
     right: 8px;
     top: 8px;
     font-size: 0.7rem;
-    color: #ffffff;
+    color: var(--color-white);
     background: var(--color-primary-500);
     width: 18px;
     height: 18px;
@@ -595,7 +595,7 @@ export const teacherAvailabilityTableStyles = css`
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
+    color: var(--color-white);
     background: var(--color-primary-500);
     border-radius: 999px;
     font-size: 0.7rem;
@@ -603,7 +603,7 @@ export const teacherAvailabilityTableStyles = css`
   }
   /* focus states for keyboard navigation */
   .teacher-timeline-table th.slot-header:focus-visible {
-    outline: 3px solid rgba(59, 130, 246, 0.2);
+    outline: 3px solid var(--color-kth-blue-20);
     outline-offset: 2px;
   }
 
@@ -696,7 +696,7 @@ export const teacherAvailabilityTableStyles = css`
 
   .teacher-cell.partially-unavailable {
     background: var(--color-danger);
-    color: white;
+    color: var(--color-white);
     position: relative;
   }
 
@@ -757,7 +757,7 @@ export const teacherAvailabilityTableStyles = css`
     line-height: 1;
     background: var(--exam-date-locked-bg);
     color: var(--exam-date-locked-text);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--color-broken-black-8);
     box-shadow: var(--shadow-sm);
     pointer-events: none;
     z-index: 2;

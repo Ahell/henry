@@ -13,39 +13,44 @@
   --color-sky-blue: #6298d2;      /* Himmelsblå (Secondary Brand) */
   --color-light-blue: #def0ff;    /* Ljusblå (Backgrounds/Highlight) */
   --color-digital-blue: #0029ed;  /* Digitalblå (Digital Accent) */
+  --color-kth-blue-soft: color-mix(
+    in srgb,
+    var(--color-kth-blue) 85%,
+    var(--color-sky-blue) 15%
+  );
 
   /* Neutral/Backgrounds */
-  --color-sand: #f0f0f0;          /* Lighter Sand/Gray for better contrast */
-  --color-sand-dark: #ebe5e0;     /* Original Sand for specific accents */
+  --color-sand: #ebe5e0;          /* Sand */
+  --color-sand-dark: #ebe5e0;     /* Sand (same shade) */
   --color-white: #ffffff;         /* Ren vit */
-  --color-broken-white: #f9fafb;  /* Very light gray for subtle backgrounds */
-  --color-broken-black: #1f2937;  /* Dark gray/black for softer text */
+  --color-broken-white: #fcfcfc;  /* Bruten vit */
+  --color-broken-black: #212121;  /* Bruten svart */
   
   /* Functional Colors - Green */
-  --color-green-dark: #064e3b;
-  --color-green: #059669;
-  --color-green-light: #d1fae5;
+  --color-green-dark: #0d4a21;
+  --color-green: #4da060;
+  --color-green-light: #c7ebba;
 
   /* Functional Colors - Red (Tegel) */
-  --color-red-dark: #7f1d1d;
-  --color-red: #dc2626;
-  --color-red-light: #fee2e2;
+  --color-red-dark: #78001a;
+  --color-red: #e86a58;
+  --color-red-light: #ffccc4;
 
   /* Functional Colors - Yellow */
-  --color-yellow-dark: #78350f;
-  --color-yellow: #d97706;
-  --color-yellow-light: #fef3c7;
+  --color-yellow-dark: #a65900;
+  --color-yellow: #ffbe00;
+  --color-yellow-light: #fff0b0;
 
   /* Functional Colors - Turquoise/Info */
-  --color-turquoise-dark: #164e63;
-  --color-turquoise: #0891b2;
-  --color-turquoise-light: #cffafe;
+  --color-turquoise-dark: #1c434c;
+  --color-turquoise: #339c9c;
+  --color-turquoise-light: #b2e0e0;
 
   /* Functional Colors - Gray Scale */
-  --color-gray-dark: #374151;
-  --color-gray: #9ca3af;
-  --color-gray-light: #e5e7eb;
-  --color-gray-lighter: #f3f4f6;
+  --color-gray-dark: #323232;
+  --color-gray: #a5a5a5;
+  --color-gray-light: #e6e6e6;
+  --color-gray-lighter: #fcfcfc;
 
   /* --- SEMANTISKA MAPPNINGAR (SEMANTIC MAPPINGS) --- */
   
@@ -54,9 +59,13 @@
   --color-primary-200: var(--color-sky-blue);
   --color-primary-500: var(--color-kth-blue);
   --color-primary-600: var(--color-navy); 
-  --color-primary-700: #00004a; /* Even darker for sidebar bg */
+  --color-primary-700: var(--color-navy);
+  --color-primary-800: var(--color-navy);
   
   --color-secondary-500: var(--color-digital-blue);
+  --color-secondary-300: var(--color-sky-blue);
+  --color-secondary-700: var(--color-kth-blue);
+  --color-secondary-900: var(--color-navy);
 
   /* UI Elements */
   --color-background: var(--color-broken-white); /* Softer than pure white */
@@ -65,20 +74,33 @@
   
   --color-border: var(--color-gray-light);
   --color-border-hover: var(--color-gray);
+
+  --color-gray-50: var(--color-broken-white);
+  --color-gray-200: var(--color-gray-light);
+  --color-gray-300: var(--color-gray);
+  --color-gray-600: var(--color-gray-dark);
   
   --color-text-primary: var(--color-broken-black);
   --color-text-secondary: var(--color-gray-dark);
   --color-text-light: var(--color-white);
+
+  --henry-switch-checked-bg: var(--color-kth-blue-soft);
+  --henry-switch-checked-border: var(--color-kth-blue);
   --color-text-disabled: var(--color-gray);
+  --color-overlay: var(--color-broken-black-50);
 
   /* Status Colors */
   --color-success: var(--color-green);
   --color-success-bg: var(--color-green-light);
   --color-success-text: var(--color-green-dark);
+  --color-success-hover: var(--color-green-dark);
+  --color-success-light: var(--color-green-light);
 
   --color-danger: var(--color-red);
   --color-danger-bg: var(--color-red-light);
   --color-danger-text: var(--color-red-dark);
+  --color-danger-hover: var(--color-red-dark);
+  --color-danger-light: var(--color-red-light);
 
   --color-warning: var(--color-yellow);
   --color-warning-bg: var(--color-yellow-light);
@@ -87,6 +109,98 @@
   --color-info: var(--color-turquoise);
   --color-info-bg: var(--color-turquoise-light);
   --color-info-text: var(--color-turquoise-dark);
+  --color-info-hover: var(--color-turquoise-dark);
+  --color-info-light: var(--color-turquoise-light);
+
+  /* Course palette (KTH infografik-ordning) */
+  --color-course-1: color-mix(
+    in srgb,
+    var(--color-kth-blue) 55%,
+    var(--color-broken-white)
+  );
+  --color-course-2: color-mix(
+    in srgb,
+    var(--color-sky-blue) 45%,
+    var(--color-broken-white)
+  );
+  --color-course-3: color-mix(
+    in srgb,
+    var(--color-navy) 40%,
+    var(--color-broken-white)
+  );
+  --color-course-4: color-mix(
+    in srgb,
+    var(--color-red) 50%,
+    var(--color-broken-white)
+  );
+  --color-course-5: color-mix(
+    in srgb,
+    var(--color-red-dark) 40%,
+    var(--color-broken-white)
+  );
+  --color-course-6: color-mix(
+    in srgb,
+    var(--color-turquoise) 45%,
+    var(--color-broken-white)
+  );
+  --color-course-7: color-mix(
+    in srgb,
+    var(--color-turquoise-dark) 40%,
+    var(--color-broken-white)
+  );
+  --color-course-8: color-mix(
+    in srgb,
+    var(--color-green) 45%,
+    var(--color-broken-white)
+  );
+  --color-course-9: color-mix(
+    in srgb,
+    var(--color-green-dark) 40%,
+    var(--color-broken-white)
+  );
+  --color-course-10: color-mix(
+    in srgb,
+    var(--color-yellow) 45%,
+    var(--color-broken-white)
+  );
+  --color-course-11: color-mix(
+    in srgb,
+    var(--color-yellow-dark) 40%,
+    var(--color-broken-white)
+  );
+  --color-course-12: color-mix(
+    in srgb,
+    var(--color-digital-blue) 45%,
+    var(--color-broken-white)
+  );
+  --color-course-fallback: var(--color-gray-dark);
+  --color-course-text-1: var(--color-navy);
+  --color-course-text-2: var(--color-navy);
+  --color-course-text-3: var(--color-navy);
+  --color-course-text-4: var(--color-navy);
+  --color-course-text-5: var(--color-navy);
+  --color-course-text-6: var(--color-navy);
+  --color-course-text-7: var(--color-navy);
+  --color-course-text-8: var(--color-navy);
+  --color-course-text-9: var(--color-navy);
+  --color-course-text-10: var(--color-navy);
+  --color-course-text-11: var(--color-navy);
+  --color-course-text-12: var(--color-navy);
+  --color-course-text-fallback: var(--color-navy);
+
+  /* Alpha variants (KTH palette) */
+  --color-white-15: rgba(255, 255, 255, 0.15);
+  --color-white-50: rgba(255, 255, 255, 0.5);
+  --color-white-70: rgba(255, 255, 255, 0.7);
+  --color-white-92: rgba(255, 255, 255, 0.92);
+  --color-broken-black-8: rgba(33, 33, 33, 0.08);
+  --color-broken-black-20: rgba(33, 33, 33, 0.2);
+  --color-broken-black-30: rgba(33, 33, 33, 0.3);
+  --color-broken-black-50: rgba(33, 33, 33, 0.5);
+  --color-kth-blue-15: rgba(0, 71, 145, 0.15);
+  --color-kth-blue-20: rgba(0, 71, 145, 0.2);
+  --color-red-20: rgba(232, 106, 88, 0.2);
+  --color-yellow-20: rgba(255, 190, 0, 0.2);
 
   /* --- TYPOGRAFI (TYPOGRAPHY) --- */
   
@@ -132,10 +246,10 @@
 
   /* --- SHADOWS --- */
   
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-base: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-sm: 0 1px 2px 0 rgb(33 33 33 / 0.05);
+  --shadow-base: 0 4px 6px -1px rgb(33 33 33 / 0.1), 0 2px 4px -2px rgb(33 33 33 / 0.1);
+  --shadow-md: 0 10px 15px -3px rgb(33 33 33 / 0.1), 0 4px 6px -4px rgb(33 33 33 / 0.1);
+  --shadow-lg: 0 20px 25px -5px rgb(33 33 33 / 0.1), 0 8px 10px -6px rgb(33 33 33 / 0.1);
 
   /* --- TRANSITIONS --- */
   
@@ -152,5 +266,5 @@
   /* Inputs */
   --input-height-base: 40px;
   --input-border-width: 1px;
-  --input-focus-ring: 0 0 0 3px rgba(0, 71, 145, 0.15); /* Soft Blue Ring */
+  --input-focus-ring: 0 0 0 3px var(--color-kth-blue-15); /* Soft Blue Ring */
 }
