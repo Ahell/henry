@@ -476,7 +476,7 @@ export const schedulingTabStyles = css`
     text-align: left;
     padding-left: var(--space-4);
     position: sticky;
-    z-index: 20;
+    z-index: 30;
     box-shadow: none;
     background: var(--color-gray-lighter);
   }
@@ -490,6 +490,18 @@ export const schedulingTabStyles = css`
 
   .gantt-table th.cohort-header:nth-child(2) {
     left: var(--gantt-depot-width);
+  }
+
+  .gantt-table thead tr.compatibility-row th.cohort-header {
+    z-index: 33;
+  }
+
+  .gantt-table thead tr.availability-row th.cohort-header {
+    z-index: 32;
+  }
+
+  .gantt-table thead tr.date-row th.cohort-header {
+    z-index: 31;
   }
 
   .gantt-table thead tr.compatibility-row th.cohort-header,
