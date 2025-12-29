@@ -18,6 +18,12 @@ export class HenryModal extends LitElement {
 
   static styles = css`
     :host {
+      --henry-button-primary-bg: var(--color-kth-blue-soft);
+      --henry-button-primary-color: var(--color-white);
+      --henry-button-primary-bg-hover: var(--color-kth-blue);
+    }
+
+    :host {
       display: none;
     }
 
@@ -105,6 +111,12 @@ export class HenryModal extends LitElement {
       display: flex;
       justify-content: flex-end;
       gap: var(--space-3);
+    }
+
+    .modal-footer ::slotted(henry-button) {
+      --henry-button-primary-bg: var(--color-kth-blue-soft);
+      --henry-button-primary-color: var(--color-white);
+      --henry-button-primary-bg-hover: var(--color-kth-blue);
     }
   `;
 

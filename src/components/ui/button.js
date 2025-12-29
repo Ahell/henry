@@ -105,7 +105,7 @@ export class HenryButton extends LitElement {
     }
 
     button.danger:hover:not(:disabled) {
-      background: var(--color-danger-dark); /* fixed from danger-hover */
+      background: var(--color-danger-hover);
     }
 
     button.success {
