@@ -61,7 +61,7 @@ export const importExportStyles = css`
     margin-bottom: var(--space-4);
     color: var(--color-text-secondary);
     font-family: var(--font-family-base);
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     line-height: var(--line-height-normal);
   }
 

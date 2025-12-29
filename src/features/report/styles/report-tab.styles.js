@@ -46,6 +46,8 @@ export const reportTabStyles = css`
     border-radius: var(--radius-base);
     box-shadow: var(--shadow-sm);
     margin: var(--space-4) 0 var(--space-3);
+    --henry-input-font-size: var(--font-size-sm);
+    --henry-select-font-size: var(--font-size-sm);
   }
 
   .filters-bar {
