@@ -45,6 +45,8 @@ export const teacherAvailabilityTableStyles = css`
       var(--exam-date-new-bg),
       var(--color-broken-black) 10%
     );
+    --availability-stripe-angle: 135deg;
+    --availability-stripe-size: 8px;
   }
 
   .table-card {
@@ -256,12 +258,11 @@ export const teacherAvailabilityTableStyles = css`
   /* No-course partial unavailability in slot view (some days unavailable): stripe only, no solid fill */
   .teacher-cell.partial-unavailable {
     background: transparent;
-    border-color: var(--color-danger-hover);
-    border-style: dashed;
-  }
-
-  .teacher-cell.partial-unavailable::after {
-    content: none;
+    --availability-stripe-color: color-mix(
+      in srgb,
+      var(--color-danger) 55%,
+      transparent
+    );
   }
 
   .teacher-cell .cell-content {
@@ -387,40 +388,36 @@ export const teacherAvailabilityTableStyles = css`
   /* === Availability overlays (slot view) === */
   /* Info (unavailability exists, but outside this course's active days): blue stripes */
   .teacher-cell.partial-availability {
-    border-color: var(--color-info-hover);
-    border-style: dashed;
-  }
-
-  .teacher-cell.partial-availability::after {
-    content: none;
+    --availability-stripe-color: color-mix(
+      in srgb,
+      var(--color-info) 60%,
+      transparent
+    );
   }
 
   .teacher-cell .course-segment.partial-availability {
-    border-color: var(--color-info-hover);
-    border-style: dashed;
-  }
-
-  .teacher-cell .course-segment.partial-availability::after {
-    content: none;
+    --availability-stripe-color: color-mix(
+      in srgb,
+      var(--color-info) 60%,
+      transparent
+    );
   }
 
   /* Partial conflict (some active days unavailable): light red stripes */
   .teacher-cell.partial-conflict {
-    border-color: var(--color-danger-hover);
-    border-style: dashed;
-  }
-
-  .teacher-cell.partial-conflict::after {
-    content: none;
+    --availability-stripe-color: color-mix(
+      in srgb,
+      var(--color-danger) 65%,
+      transparent
+    );
   }
 
   .teacher-cell .course-segment.partial-conflict {
-    border-color: var(--color-danger-hover);
-    border-style: dashed;
-  }
-
-  .teacher-cell .course-segment.partial-conflict::after {
-    content: none;
+    --availability-stripe-color: color-mix(
+      in srgb,
+      var(--color-danger) 65%,
+      transparent
+    );
   }
 
   .teacher-cell .course-segment.partial-conflict .course-segment-text {
@@ -429,19 +426,19 @@ export const teacherAvailabilityTableStyles = css`
 
   /* Full conflict (all active days unavailable): strong red stripes */
   .teacher-cell.course-unavailable {
-    border-color: var(--color-danger-hover);
-  }
-
-  .teacher-cell.course-unavailable::after {
-    content: none;
+    --availability-stripe-color: color-mix(
+      in srgb,
+      var(--color-danger) 80%,
+      transparent
+    );
   }
 
   .teacher-cell .course-segment.course-unavailable {
-    border-color: var(--color-danger-hover);
-  }
-
-  .teacher-cell .course-segment.course-unavailable::after {
-    content: none;
+    --availability-stripe-color: color-mix(
+      in srgb,
+      var(--color-danger) 80%,
+      transparent
+    );
   }
 
   /* Keep text readable in "course-unavailable" segments */
@@ -449,9 +446,26 @@ export const teacherAvailabilityTableStyles = css`
     color: var(--color-white);
   }
 
-  /* Assigned + Info (utanför kursdagar): ensure blue stripes still visible */
-  .teacher-cell .course-segment.segment-assigned.partial-availability::after {
-    content: none;
+  /* Stripe overlay for availability combinations */
+  .teacher-cell.partial-unavailable::after,
+  .teacher-cell.partial-availability::after,
+  .teacher-cell.partial-conflict::after,
+  .teacher-cell.course-unavailable::after,
+  .teacher-cell .course-segment.partial-availability::after,
+  .teacher-cell .course-segment.partial-conflict::after,
+  .teacher-cell .course-segment.course-unavailable::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      var(--availability-stripe-angle),
+      var(--availability-stripe-color) 0,
+      var(--availability-stripe-color) var(--availability-stripe-size),
+      transparent var(--availability-stripe-size),
+      transparent calc(var(--availability-stripe-size) * 2)
+    );
+    border-radius: inherit;
+    pointer-events: none;
   }
 
   /* Default teaching day - purple/lila, active */

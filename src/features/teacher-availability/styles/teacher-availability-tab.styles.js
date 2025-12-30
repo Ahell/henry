@@ -148,53 +148,63 @@ export const teacherAvailabilityTabStyles = css`
   }
 
   .legend-swatch--course-unavailable {
-    background: color-mix(
-      in srgb,
-      var(--color-info) 70%,
-      var(--color-danger-light)
+    background: repeating-linear-gradient(
+      135deg,
+      var(--color-info) 0,
+      var(--color-info) 8px,
+      var(--color-danger-light) 8px,
+      var(--color-danger-light) 16px
     );
-    border-color: var(--color-danger);
   }
 
   .legend-swatch--partial-conflict {
-    background: color-mix(
-      in srgb,
-      var(--color-info-light) 70%,
-      var(--color-danger-light)
+    background: repeating-linear-gradient(
+      135deg,
+      var(--color-info-light) 0,
+      var(--color-info-light) 8px,
+      var(--color-danger-light) 8px,
+      var(--color-danger-light) 16px
     );
-    border-color: var(--color-danger);
-    border-style: dashed;
   }
 
   .legend-swatch--assigned-course-unavailable {
-    background: color-mix(
-      in srgb,
-      var(--color-success) 70%,
-      var(--color-danger-light)
+    background: repeating-linear-gradient(
+      135deg,
+      var(--color-success) 0,
+      var(--color-success) 8px,
+      var(--color-danger-light) 8px,
+      var(--color-danger-light) 16px
     );
-    border-color: var(--color-danger);
   }
 
   .legend-swatch--assigned-partial-conflict {
-    background: color-mix(
-      in srgb,
-      var(--color-success-light) 70%,
-      var(--color-danger-light)
+    background: repeating-linear-gradient(
+      135deg,
+      var(--color-success-light) 0,
+      var(--color-success-light) 8px,
+      var(--color-danger-light) 8px,
+      var(--color-danger-light) 16px
     );
-    border-color: var(--color-danger);
-    border-style: dashed;
   }
 
   .legend-swatch--partial-availability {
-    background: var(--color-info-light);
-    border-color: var(--color-info);
-    border-style: dashed;
+    background: repeating-linear-gradient(
+      135deg,
+      var(--color-info-light) 0,
+      var(--color-info-light) 8px,
+      var(--color-gray-50) 8px,
+      var(--color-gray-50) 16px
+    );
   }
 
   .legend-swatch--no-course-partial {
-    border-color: var(--color-danger-light);
-    border-style: dashed;
-    background: var(--color-gray-50);
+    background: repeating-linear-gradient(
+      135deg,
+      var(--color-gray-50) 0,
+      var(--color-gray-50) 8px,
+      var(--color-danger-light) 8px,
+      var(--color-danger-light) 16px
+    );
   }
 
   .legend-left {
