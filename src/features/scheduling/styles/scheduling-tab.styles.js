@@ -934,6 +934,15 @@ export const schedulingTabStyles = css`
   .gantt-table tfoot .summary-course .summary-toggle-text {
     font-size: 0.62rem;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .gantt-table tfoot .summary-course .summary-toggle-text--tight {
+    font-size: 0.56rem;
+    letter-spacing: -0.01em;
   }
 
   .gantt-table tfoot .summary-course .summary-kursansvarig-cell {

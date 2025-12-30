@@ -1989,6 +1989,20 @@ export class SchedulingTab extends LitElement {
     return `#${safeOrder} ${startCompact}-${endCompact}`;
   }
 
+  _formatTeacherNameForSummary(name) {
+    const raw = String(name || "").trim();
+    if (!raw) return { label: "", isTight: false };
+    const parts = raw.split(/\s+/).filter(Boolean);
+    let label = raw;
+    if (parts.length >= 2 && raw.length > 20) {
+      const firstInitial = parts[0].slice(0, 1);
+      const rest = parts.slice(1).join(" ");
+      label = firstInitial ? `${firstInitial}. ${rest}` : raw;
+    }
+    const isTight = label.length > 18;
+    return { label, isTight };
+  }
+
   _runHasCohort(run, cohortId) {
     if (!run || cohortId == null) return false;
     if (!Array.isArray(run.cohorts)) return false;
@@ -2087,6 +2101,9 @@ export class SchedulingTab extends LitElement {
                       const isAssigned = assignedTeacherIds.includes(
                         teacher.teacher_id
                       );
+                      const nameInfo = this._formatTeacherNameForSummary(
+                        teacher.name
+                      );
                       const availability =
                         this._teacherAvailabilityForCourseInSlot({
                           teacherId: teacher.teacher_id,
@@ -2132,8 +2149,11 @@ export class SchedulingTab extends LitElement {
                               });
                             }}
                           >
-                            <span class="summary-toggle-text"
-                              >${teacher.name}</span
+                            <span
+                              class="summary-toggle-text ${nameInfo.isTight
+                                ? "summary-toggle-text--tight"
+                                : ""}"
+                              >${nameInfo.label}</span
                             >
                           </button>
                           <div class="summary-kursansvarig-cell">
