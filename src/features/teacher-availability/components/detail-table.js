@@ -253,6 +253,10 @@ export class DetailTable extends LitElement {
           color: var(--color-text-secondary) !important;
           border-color: var(--color-border) !important;
         }
+        .teacher-timeline-table thead .date-row th.slot-header:hover {
+          background: var(--teacher-header-hover-bg) !important;
+          color: var(--teacher-header-hover-text) !important;
+        }
         /* Keep first column sticky with matching background */
         .teacher-timeline-table thead th:first-child {
           position: sticky;

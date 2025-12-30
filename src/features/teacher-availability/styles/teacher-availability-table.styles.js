@@ -47,6 +47,12 @@ export const teacherAvailabilityTableStyles = css`
     );
     --availability-stripe-angle: 135deg;
     --availability-stripe-size: 8px;
+    --teacher-header-hover-bg: color-mix(
+      in srgb,
+      var(--color-table-header-bg) 88%,
+      var(--color-text-primary) 12%
+    );
+    --teacher-header-hover-text: var(--color-text-primary);
   }
 
   .table-card {
@@ -166,8 +172,8 @@ export const teacherAvailabilityTableStyles = css`
   }
 
   .teacher-timeline-table th.slot-header:hover {
-    background: var(--color-surface-hover);
-    color: var(--color-text-primary);
+    background: var(--teacher-header-hover-bg);
+    color: var(--teacher-header-hover-text);
   }
 
   .teacher-timeline-table tbody tr td:first-child {
@@ -647,8 +653,8 @@ export const teacherAvailabilityTableStyles = css`
   .teacher-timeline-table th.teaching-day-default-dimmed-header:hover,
   .teacher-timeline-table th.teaching-day-alt-header:hover {
     transform: none !important;
-    background: var(--color-surface-hover) !important;
-    color: var(--color-text-primary) !important;
+    background: var(--teacher-header-hover-bg) !important;
+    color: var(--teacher-header-hover-text) !important;
   }
   .teacher-timeline-table th.teaching-day-default-header::before,
   .teacher-timeline-table th.teaching-day-default-dimmed-header::before,
