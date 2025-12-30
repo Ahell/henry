@@ -1,7 +1,7 @@
 // API Service - Handles all backend communication
 export class ApiService {
   constructor() {
-    this.baseUrl = "http://localhost:3001";
+    this.baseUrl = import.meta.env.VITE_API_BASE_URL || "";
   }
 
   async loadData() {
