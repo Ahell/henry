@@ -65,8 +65,15 @@ function slotOp(a, slot_id) {
 
 function parseDayRange(a) {
   if (!a?.from_date) return null;
-  const startStr = (a.from_date || "").split("T")[0];
-  const endStr = (a.to_date || a.from_date || "").split("T")[0];
+  const startStr = normalizeDateOnly(a.from_date);
+  const endStr = normalizeDateOnly(a.to_date || a.from_date || "");
   if (!startStr) return null;
   return { start_date: startStr, end_date: endStr || startStr };
+}
+
+function normalizeDateOnly(value) {
+  if (!value) return "";
+  const raw = String(value);
+  const splitOnT = raw.split("T")[0];
+  return splitOnT.split(" ")[0];
 }

@@ -61,26 +61,28 @@ export class TeacherAvailabilityService {
    * Check if there is a slot-level "busy" entry for a teacher.
    */
   static hasBusySlotEntry(teacherId, slotId, fromDate) {
-    return store.teacherAvailability.some(
-      (a) =>
-        a.teacher_id === teacherId &&
-        a.slot_id === slotId &&
-        a.type === "busy" &&
-        (fromDate ? a.from_date === fromDate : true)
-    );
+    const normalizedFrom = fromDate ? normalizeDateOnly(fromDate) : null;
+    return store.teacherAvailability.some((a) => {
+      if (String(a.teacher_id) !== String(teacherId)) return false;
+      if (String(a.slot_id) !== String(slotId)) return false;
+      if (a.type !== "busy") return false;
+      if (!normalizedFrom) return true;
+      return normalizeDateOnly(a.from_date) === normalizedFrom;
+    });
   }
 
   /**
    * Find a slot-level "busy" entry for a teacher.
    */
   static findBusySlotEntry(teacherId, slotId, fromDate) {
-    return store.teacherAvailability.find(
-      (a) =>
-        a.teacher_id === teacherId &&
-        a.slot_id === slotId &&
-        a.type === "busy" &&
-        (fromDate ? a.from_date === fromDate : true)
-    );
+    const normalizedFrom = fromDate ? normalizeDateOnly(fromDate) : null;
+    return store.teacherAvailability.find((a) => {
+      if (String(a.teacher_id) !== String(teacherId)) return false;
+      if (String(a.slot_id) !== String(slotId)) return false;
+      if (a.type !== "busy") return false;
+      if (!normalizedFrom) return true;
+      return normalizeDateOnly(a.from_date) === normalizedFrom;
+    });
   }
 
   /**
@@ -109,19 +111,24 @@ export class TeacherAvailabilityService {
     
     if (!days || days.length === 0) {
         console.warn("Could not find slot days for conversion", { slotId, slotFromDate });
-        return;
+        return false;
     }
 
+    const normalizedClicked = clickedDate ? normalizeDateOnly(clickedDate) : null;
+
     days.forEach((day) => {
-      if (day !== clickedDate) {
-        store.addTeacherAvailability({
-          teacher_id: teacherId,
-          from_date: day,
-          to_date: day,
-          type: "busy",
-        });
+      if (normalizedClicked && normalizeDateOnly(day) === normalizedClicked) {
+        return;
       }
+      if (this._hasDayEntry(teacherId, day)) return;
+      store.addTeacherAvailability({
+        teacher_id: teacherId,
+        from_date: day,
+        to_date: day,
+        type: "busy",
+      });
     });
+    return true;
   }
 
   /**
@@ -134,15 +141,28 @@ export class TeacherAvailabilityService {
   ) {
     const entry = this.findBusySlotEntry(teacherId, slotId);
     if (entry) {
-      this.convertSlotEntryToDayEntries(
+      const converted = this.convertSlotEntryToDayEntries(
         teacherId,
         slotId,
         entry.from_date,
         clickedDate
       );
-      this.removeBusySlotEntry(teacherId, slotId, entry.from_date);
+      if (converted) {
+        this.removeBusySlotEntry(teacherId, slotId, entry.from_date);
+      }
       return entry;
     }
+  }
+
+  static _hasDayEntry(teacherId, dateStr) {
+    const normalizedDate = normalizeDateOnly(dateStr);
+    return store.teacherAvailability.some(
+      (a) =>
+        String(a.teacher_id) === String(teacherId) &&
+        normalizeDateOnly(a.from_date) === normalizedDate &&
+        a.type === "busy" &&
+        !a.slot_id
+    );
   }
 
   /**
@@ -185,4 +205,11 @@ export class TeacherAvailabilityService {
       store.notify();
     }
   }
+}
+
+function normalizeDateOnly(value) {
+  if (!value) return "";
+  const raw = String(value);
+  const splitOnT = raw.split("T")[0];
+  return splitOnT.split(" ")[0];
 }

@@ -216,10 +216,13 @@ export class SlotsManager {
       Array.isArray(this.slotDays) &&
       this.slotDays.some((sd) => String(sd.slot_id) === String(slot.slot_id))
     ) {
-      return this.slotDays
+      const dates = this.slotDays
         .filter((sd) => String(sd.slot_id) === String(slot.slot_id))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .map((sd) => normalizeDate(sd.date));
+
+      // Deduplicate dates using Set to handle duplicate slotDay entries
+      return [...new Set(dates)];
     }
 
     if (!slot) return [];

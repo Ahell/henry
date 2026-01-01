@@ -1,7 +1,43 @@
-import { db } from "../../../../db/index.js";
+import {
+  db,
+  ensureSlotDaysForSlot,
+  DEFAULT_SLOT_LENGTH_DAYS,
+} from "../../../../db/index.js";
 
 export function insertTeacherAvailability(ops = [], { remapTeacherId, remapSlotId }) {
   if (!ops.length) return;
+
+  const hasDayRangeOps = ops.some((op) => op.type === "dayRange");
+  if (hasDayRangeOps) {
+    const slots = db
+      .prepare("SELECT slot_id, start_date, end_date FROM slots")
+      .all();
+    slots.forEach((slot) => {
+      try {
+        const normalizedStart = normalizeDateOnly(slot?.start_date);
+        let endDate = normalizeDateOnly(slot?.end_date);
+        if (!endDate && normalizedStart) {
+          const end = new Date(normalizedStart);
+          if (!Number.isNaN(end.getTime())) {
+            end.setDate(end.getDate() + DEFAULT_SLOT_LENGTH_DAYS - 1);
+            endDate = end.toISOString().split("T")[0];
+          }
+        }
+        if (!normalizedStart || !endDate) return;
+        ensureSlotDaysForSlot({
+          ...slot,
+          start_date: normalizedStart,
+          end_date: endDate,
+        });
+      } catch (error) {
+        console.warn(
+          "Failed to ensure slot_days for slot",
+          slot?.slot_id,
+          error
+        );
+      }
+    });
+  }
 
   const insertSlot = db.prepare(
     "INSERT OR IGNORE INTO teacher_slot_unavailability (id, teacher_id, slot_id, created_at) VALUES (?, ?, ?, ?)"
@@ -51,7 +87,9 @@ function applyDayRangeOp(op, { insertDay, deleteDay, remapTeacherId }) {
   const startStr = op.start_date;
   const endStr = op.end_date || op.start_date;
   const dayRows = db
-    .prepare("SELECT slot_day_id FROM slot_days WHERE date >= ? AND date <= ?")
+    .prepare(
+      "SELECT slot_day_id FROM slot_days WHERE date(date) >= date(?) AND date(date) <= date(?)"
+    )
     .all(startStr, endStr);
 
   dayRows.forEach((dr) => {
@@ -63,3 +101,9 @@ function applyDayRangeOp(op, { insertDay, deleteDay, remapTeacherId }) {
   });
 }
 
+function normalizeDateOnly(value) {
+  if (!value) return "";
+  const raw = String(value);
+  const splitOnT = raw.split("T")[0];
+  return splitOnT.split(" ")[0];
+}

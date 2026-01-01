@@ -35,13 +35,19 @@ export class AvailabilityManager {
    * @returns {Object} Created availability record with generated ID
    */
   addTeacherAvailability(availability) {
-    const id =
-      Math.max(...this.teacherAvailability.map((a) => a.id), 0) + 1;
+    const ids = (this.teacherAvailability || [])
+      .map((a) => Number(a.id))
+      .filter((id) => Number.isFinite(id));
+    const id = (ids.length ? Math.max(...ids) : 0) + 1;
+    const fromDate = normalizeDateOnly(availability.from_date);
+    const toDate = normalizeDateOnly(
+      availability.to_date || availability.from_date
+    );
     const newAvailability = {
       id,
       teacher_id: availability.teacher_id,
-      from_date: availability.from_date || "",
-      to_date: availability.to_date || "",
+      from_date: fromDate,
+      to_date: toDate,
       slot_id: availability.slot_id || null,
       type: availability.type || "busy",
     };
@@ -93,11 +99,12 @@ export class AvailabilityManager {
    * @param {number} slotId - Slot ID
    */
   toggleTeacherAvailabilityForSlot(teacherId, slotDate, slotId) {
+    const normalizedSlotDate = normalizeDateOnly(slotDate);
     const slotEntry = this.teacherAvailability.find(
       (a) =>
-        a.teacher_id === teacherId &&
-        a.from_date === slotDate &&
-        a.slot_id === slotId
+        String(a.teacher_id) === String(teacherId) &&
+        normalizeDateOnly(a.from_date) === normalizedSlotDate &&
+        String(a.slot_id) === String(slotId)
     );
 
     if (slotEntry) {
@@ -105,14 +112,20 @@ export class AvailabilityManager {
       // unavailability inside that slot so the teacher becomes fully available
       // for the whole slot.
       const daysInSlot = this.slotsManager.getSlotDays(slotId);
-      const daySet = new Set(daysInSlot);
+      const daySet = new Set(
+        (daysInSlot || []).map((day) => normalizeDateOnly(day))
+      );
       this.teacherAvailability = this.teacherAvailability.filter((a) => {
-        if (a.teacher_id !== teacherId) return true;
+        if (String(a.teacher_id) !== String(teacherId)) return true;
         if (a.type !== "busy") return true;
-        if (a.slot_id && a.slot_id === slotId && a.from_date === slotDate) {
+        if (
+          a.slot_id &&
+          String(a.slot_id) === String(slotId) &&
+          normalizeDateOnly(a.from_date) === normalizedSlotDate
+        ) {
           return false;
         }
-        if (!a.slot_id && daySet.has(a.from_date)) {
+        if (!a.slot_id && daySet.has(normalizeDateOnly(a.from_date))) {
           return false;
         }
         return true;
@@ -123,11 +136,12 @@ export class AvailabilityManager {
 
     const days = this.slotsManager.getSlotDays(slotId);
     const dayEntries = days
+      .map((day) => normalizeDateOnly(day))
       .map((day) =>
         this.teacherAvailability.find(
           (a) =>
-            a.teacher_id === teacherId &&
-            a.from_date === day &&
+            String(a.teacher_id) === String(teacherId) &&
+            normalizeDateOnly(a.from_date) === day &&
             a.type === "busy" &&
             !a.slot_id
         )
@@ -139,8 +153,8 @@ export class AvailabilityManager {
     } else {
       this.addTeacherAvailability({
         teacher_id: teacherId,
-        from_date: slotDate,
-        to_date: slotDate,
+        from_date: normalizedSlotDate,
+        to_date: normalizedSlotDate,
         slot_id: slotId,
         type: "busy",
       });
@@ -153,8 +167,11 @@ export class AvailabilityManager {
    * @param {string} dateStr - Date (ISO format)
    */
   toggleTeacherAvailabilityForDay(teacherId, dateStr) {
+    const normalizedDate = normalizeDateOnly(dateStr);
     const existing = this.teacherAvailability.find(
-      (a) => a.teacher_id === teacherId && a.from_date === dateStr
+      (a) =>
+        String(a.teacher_id) === String(teacherId) &&
+        normalizeDateOnly(a.from_date) === normalizedDate
     );
 
     if (existing) {
@@ -178,13 +195,14 @@ export class AvailabilityManager {
    * @returns {boolean} True if teacher is unavailable
    */
   isTeacherUnavailable(teacherId, slotDate, slotId = null) {
+    const normalizedSlotDate = normalizeDateOnly(slotDate);
     const hasSlotEntry = this.teacherAvailability.some(
       (a) =>
-        a.teacher_id === teacherId &&
-        a.from_date === slotDate &&
+        String(a.teacher_id) === String(teacherId) &&
+        normalizeDateOnly(a.from_date) === normalizedSlotDate &&
         a.type === "busy" &&
         a.slot_id &&
-        (slotId === null || a.slot_id === slotId)
+        (slotId === null || String(a.slot_id) === String(slotId))
     );
 
     if (hasSlotEntry) return true;
@@ -195,8 +213,8 @@ export class AvailabilityManager {
     const unavailableDays = days.filter((day) =>
       this.teacherAvailability.some(
         (a) =>
-          a.teacher_id === teacherId &&
-          a.from_date === day &&
+          String(a.teacher_id) === String(teacherId) &&
+          normalizeDateOnly(a.from_date) === normalizeDateOnly(day) &&
           a.type === "busy" &&
           !a.slot_id
       )
@@ -212,10 +230,11 @@ export class AvailabilityManager {
    * @returns {boolean} True if teacher is unavailable on this day
    */
   isTeacherUnavailableOnDay(teacherId, dateStr) {
+    const normalizedDate = normalizeDateOnly(dateStr);
     return this.teacherAvailability.some(
       (a) =>
-        a.teacher_id === teacherId &&
-        a.from_date === dateStr &&
+        String(a.teacher_id) === String(teacherId) &&
+        normalizeDateOnly(a.from_date) === normalizedDate &&
         a.type === "busy"
     );
   }
@@ -229,13 +248,14 @@ export class AvailabilityManager {
    * @returns {number} Percentage from 0.0 (fully available) to 1.0 (fully unavailable)
    */
   getTeacherUnavailablePercentageForSlot(teacherId, slotDate, slotId = null) {
+    const normalizedSlotDate = normalizeDateOnly(slotDate);
     const hasSlotEntry = this.teacherAvailability.some(
       (a) =>
-        a.teacher_id === teacherId &&
-        a.from_date === slotDate &&
+        String(a.teacher_id) === String(teacherId) &&
+        normalizeDateOnly(a.from_date) === normalizedSlotDate &&
         a.type === "busy" &&
         a.slot_id &&
-        (slotId === null || a.slot_id === slotId)
+        (slotId === null || String(a.slot_id) === String(slotId))
     );
 
     if (hasSlotEntry) return 1.0;
@@ -246,8 +266,8 @@ export class AvailabilityManager {
     const unavailableDays = days.filter((day) =>
       this.teacherAvailability.some(
         (a) =>
-          a.teacher_id === teacherId &&
-          a.from_date === day &&
+          String(a.teacher_id) === String(teacherId) &&
+          normalizeDateOnly(a.from_date) === normalizeDateOnly(day) &&
           a.type === "busy" &&
           !a.slot_id
       )
@@ -255,4 +275,11 @@ export class AvailabilityManager {
 
     return unavailableDays.length / days.length;
   }
+}
+
+function normalizeDateOnly(value) {
+  if (!value) return "";
+  const raw = String(value);
+  const splitOnT = raw.split("T")[0];
+  return splitOnT.split(" ")[0];
 }

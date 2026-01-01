@@ -126,6 +126,10 @@ export function handleCellMouseDown(component, e) {
         date
       );
 
+      if (removed && store.isTeacherUnavailableOnDay(teacherId, date)) {
+        store.toggleTeacherAvailabilityForDay(teacherId, date);
+      }
+
       component._paintMode = "remove";
       component._isMouseDown = true;
       schedulePaintUpdate(component);
@@ -218,11 +222,14 @@ export function handleCellMouseEnter(component, e) {
       const isDayLevel = store.isTeacherUnavailableOnDay(teacherId, date);
 
       if (!isDayLevel && component._detailSlotDate && component._detailSlotId) {
-        TeacherAvailabilityService.convertSlotEntryToDayEntriesAndRemove(
+        const removed = TeacherAvailabilityService.convertSlotEntryToDayEntriesAndRemove(
           component._detailSlotId,
           teacherId,
           date
         );
+        if (removed && store.isTeacherUnavailableOnDay(teacherId, date)) {
+          store.toggleTeacherAvailabilityForDay(teacherId, date);
+        }
       } else {
         store.toggleTeacherAvailabilityForDay(teacherId, date);
       }
