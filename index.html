@@ -24,7 +24,8 @@
       body {
         font-family: var(--font-family-base);
         background: var(--color-background);
-        height: 100vh;
+        height: 100dvh;
+        min-height: calc(var(--vh, 1vh) * 100);
         color: var(--color-text-primary);
         line-height: var(--line-height-normal);
         -webkit-font-smoothing: antialiased;
@@ -35,7 +36,8 @@
       .app-shell {
         display: grid;
         grid-template-columns: 240px 1fr;
-        height: 100vh;
+        height: 100dvh;
+        min-height: calc(var(--vh, 1vh) * 100);
         overflow: hidden;
       }
 
@@ -46,7 +48,8 @@
         display: flex;
         flex-direction: column;
         border-right: 1px solid rgba(255, 255, 255, 0.05);
-        height: 100vh;
+        height: 100dvh;
+        max-height: calc(var(--vh, 1vh) * 100);
         position: sticky;
         top: 0;
         z-index: 50;
@@ -60,6 +63,7 @@
         min-height: 0;
         gap: var(--space-8);
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
       }
 
@@ -335,10 +339,11 @@
           left: 0;
           top: 0;
           bottom: 0;
-          width: 260px;
+          width: min(320px, 82vw);
           transform: translateX(-100%);
           transition: transform 0.25s ease;
           box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+          padding-top: env(safe-area-inset-top);
         }
 
         .app-shell.sidebar-open .sidebar {
@@ -351,6 +356,50 @@
 
         .mobile-topbar {
           display: flex;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .mobile-topbar {
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          padding: calc(var(--space-3) + env(safe-area-inset-top))
+            var(--space-4) var(--space-3);
+        }
+
+        .container {
+          padding: var(--space-3);
+        }
+
+        .sidebar-content {
+          padding: var(--space-5);
+          gap: var(--space-6);
+        }
+
+        .admin-tab-btn {
+          padding: 12px 12px;
+          font-size: 0.95rem;
+        }
+
+        .utility-btn {
+          padding: 10px;
+        }
+      }
+
+      @media (max-width: 540px) {
+        .mobile-topbar {
+          padding: calc(var(--space-2) + env(safe-area-inset-top))
+            var(--space-3) var(--space-2);
+        }
+
+        .sidebar-toggle {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .sidebar-content {
+          padding: var(--space-4);
         }
       }
     </style>

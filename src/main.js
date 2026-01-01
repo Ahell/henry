@@ -2,6 +2,24 @@ import "./features/admin/index.js";
 import { store } from "./platform/store/DataStore.js";
 
 const statusEl = document.getElementById("navStatus");
+const setViewportHeightVar = () => {
+  const height =
+    window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
+  if (!height) return;
+  document.documentElement.style.setProperty("--vh", `${height * 0.01}px`);
+};
+
+setViewportHeightVar();
+window.addEventListener("resize", setViewportHeightVar, { passive: true });
+window.addEventListener("orientationchange", setViewportHeightVar, { passive: true });
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", setViewportHeightVar, {
+    passive: true,
+  });
+  window.visualViewport.addEventListener("scroll", setViewportHeightVar, {
+    passive: true,
+  });
+}
 const setStatus = (message) => {
   if (!statusEl) return;
   statusEl.textContent = message || "";
