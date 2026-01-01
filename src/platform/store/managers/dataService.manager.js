@@ -5,11 +5,114 @@ export class DataServiceManager {
   constructor(store) {
     this.store = store;
     this.dataService = new DataService();
+    this._lastServerSnapshot = null;
   }
 
   _syncStoreCollections() {
     this.store.cohorts = this.store.cohortsManager.getCohorts();
     this.store.slots = this.store.slotsManager.getSlots();
+  }
+
+  _cloneSnapshot(snapshot) {
+    if (!snapshot) return null;
+    if (typeof structuredClone === "function") {
+      return structuredClone(snapshot);
+    }
+    return JSON.parse(JSON.stringify(snapshot));
+  }
+
+  _stripTransientFields(value) {
+    if (Array.isArray(value)) {
+      return value.map((item) => this._stripTransientFields(item));
+    }
+    if (value && typeof value === "object") {
+      const next = {};
+      Object.keys(value).forEach((key) => {
+        if (key === "created_at" || key === "updated_at") return;
+        next[key] = this._stripTransientFields(value[key]);
+      });
+      return next;
+    }
+    return value;
+  }
+
+  _snapshotForDiff(snapshot) {
+    return this._stripTransientFields(snapshot);
+  }
+
+  _deepEqual(a, b) {
+    if (a === b) return true;
+    try {
+      return JSON.stringify(a) === JSON.stringify(b);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  _diffSnapshots(before = {}, after = {}) {
+    const cleanedBefore = this._snapshotForDiff(before || {});
+    const cleanedAfter = this._snapshotForDiff(after || {});
+    const changed = [];
+    const data = {};
+    Object.keys(cleanedAfter).forEach((key) => {
+      if (!this._deepEqual(cleanedBefore?.[key], cleanedAfter?.[key])) {
+        changed.push(key);
+        data[key] = after[key];
+      }
+    });
+    return { changed, data };
+  }
+
+  _expandChangedKeys(changed = [], snapshot = {}) {
+    const expanded = new Set(changed);
+    const scheduleKeys = ["courseRuns", "courseSlots", "cohortSlotCourses"];
+    const hasScheduleChange = scheduleKeys.some((key) => expanded.has(key));
+
+    if (hasScheduleChange) {
+      expanded.add("courseSlotDays");
+      if (!expanded.has("cohortSlotCourses") && snapshot.cohortSlotCourses) {
+        expanded.add("cohortSlotCourses");
+      }
+      if (!expanded.has("courseSlots") && snapshot.courseSlots) {
+        expanded.add("courseSlots");
+      }
+    }
+
+    if (expanded.has("slots")) {
+      expanded.add("slotDays");
+      expanded.add("teacherAvailability");
+    }
+
+    if (expanded.has("slotDays")) {
+      expanded.add("teacherAvailability");
+    }
+
+    return expanded;
+  }
+
+  _buildDeltaPayload(snapshot) {
+    if (!snapshot || typeof snapshot !== "object") return snapshot;
+    if (!this._lastServerSnapshot) {
+      const allKeys = Object.keys(snapshot);
+      return { _delta: true, changed: allKeys, ...snapshot };
+    }
+
+    const { changed } = this._diffSnapshots(
+      this._lastServerSnapshot,
+      snapshot
+    );
+    const expanded = this._expandChangedKeys(changed, snapshot);
+    const payload = { _delta: true, changed: Array.from(expanded) };
+    expanded.forEach((key) => {
+      if (key in snapshot) {
+        payload[key] = snapshot[key];
+      }
+    });
+    return payload;
+  }
+
+  _setLastServerSnapshot(snapshot) {
+    this._lastServerSnapshot = this._cloneSnapshot(snapshot);
   }
 
   hydrate(data) {
@@ -134,13 +237,23 @@ export class DataServiceManager {
     this.store.prerequisiteProblems =
       this.store.prerequisites.findCoursesWithMissingPrerequisites();
 
-    this.store.initializeCommitSnapshot(this.getDataSnapshot());
+    const snapshot = this.getDataSnapshot();
+    this.store.initializeCommitSnapshot(snapshot);
+    this._setLastServerSnapshot(snapshot);
 
     // Notify listeners that data is loaded
     this.store.events.notify();
 
     // Handle alerts for prerequisite problems
     this._handleLoadAlerts();
+  }
+
+  hydratePartial(delta) {
+    if (!delta || typeof delta !== "object") return;
+    const { _delta, changed, ...payload } = delta;
+    const base = this.getDataSnapshot();
+    const merged = { ...base, ...payload };
+    this.hydrate(merged);
   }
 
   // Load data from backend
@@ -190,7 +303,9 @@ export class DataServiceManager {
     this.store.coursesManager.syncCoursePrerequisitesFromCourses();
     this.store.coursesManager.syncCourseExaminatorsFromCourses();
     this.store.coursesManager.syncCourseKursansvarigFromCourses();
-    return this.dataService.saveData(this.getDataSnapshot());
+    const snapshot = this.getDataSnapshot();
+    const payload = this._buildDeltaPayload(snapshot);
+    return this.dataService.saveData(payload);
   }
 
   getDataSnapshot() {

@@ -37,6 +37,15 @@ export class DataService {
   _extractBulkSnapshot(response) {
     const candidate = response && response.data ? response.data : response;
     if (!candidate || typeof candidate !== "object") return null;
+    if (candidate._delta === true) {
+      return candidate;
+    }
+    if (Array.isArray(candidate.changed)) {
+      return { _delta: true, ...candidate };
+    }
+    if (candidate.success === true) {
+      return { _delta: true, changed: [] };
+    }
     const keys = [
       "courses",
       "cohorts",

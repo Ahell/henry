@@ -357,11 +357,23 @@ export class DataStore {
       }
     }
 
-    this._beginReconciling();
-    try {
-      this.dataServiceManager.hydrate(serverPayload);
-    } finally {
-      this._endReconciling();
+    const isDelta = !!(serverPayload && serverPayload._delta);
+    const hasDeltaChanges =
+      !isDelta ||
+      !Array.isArray(serverPayload.changed) ||
+      serverPayload.changed.length > 0;
+
+    if (hasDeltaChanges) {
+      this._beginReconciling();
+      try {
+        if (isDelta) {
+          this.dataServiceManager.hydratePartial(serverPayload);
+        } else {
+          this.dataServiceManager.hydrate(serverPayload);
+        }
+      } finally {
+        this._endReconciling();
+      }
     }
   }
 
