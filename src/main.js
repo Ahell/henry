@@ -139,6 +139,51 @@ store.init();
 
 // Admin tabs in header (controlled by <admin-panel>)
 const adminTabsEl = document.getElementById("adminTabs");
+const appShellEl = document.querySelector(".app-shell");
+const sidebarToggleEl = document.getElementById("sidebarToggle");
+const sidebarBackdropEl = document.getElementById("sidebarBackdrop");
+const sidebarQuery = window.matchMedia("(max-width: 960px)");
+
+const setSidebarOpen = (isOpen) => {
+  if (!appShellEl) return;
+  appShellEl.classList.toggle("sidebar-open", isOpen);
+  if (sidebarToggleEl) {
+    sidebarToggleEl.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+};
+
+const isSmallScreen = () => sidebarQuery.matches;
+
+const syncSidebarForViewport = () => {
+  if (isSmallScreen()) {
+    setSidebarOpen(false);
+  } else {
+    setSidebarOpen(true);
+  }
+};
+
+syncSidebarForViewport();
+if (typeof sidebarQuery.addEventListener === "function") {
+  sidebarQuery.addEventListener("change", syncSidebarForViewport);
+} else if (typeof sidebarQuery.addListener === "function") {
+  sidebarQuery.addListener(syncSidebarForViewport);
+}
+
+if (sidebarToggleEl) {
+  sidebarToggleEl.addEventListener("click", () => {
+    const isOpen = appShellEl?.classList.contains("sidebar-open");
+    setSidebarOpen(!isOpen);
+  });
+}
+
+if (sidebarBackdropEl) {
+  sidebarBackdropEl.addEventListener("click", () => setSidebarOpen(false));
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (isSmallScreen()) setSidebarOpen(false);
+});
 
 const renderAdminTabs = (tabs = [], activeKey) => {
   if (!adminTabsEl) return;
@@ -167,6 +212,14 @@ const highlightAdminTab = (activeKey) => {
     btn.classList.toggle("active", btn.dataset.adminTab === activeKey);
   });
 };
+
+if (adminTabsEl) {
+  adminTabsEl.addEventListener("click", (event) => {
+    if (!isSmallScreen()) return;
+    const target = event.target?.closest?.(".admin-tab-btn");
+    if (target) setSidebarOpen(false);
+  });
+}
 
 customElements.whenDefined("admin-panel").then(() => {
   const panel = document.querySelector("admin-panel");
