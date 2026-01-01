@@ -7,6 +7,15 @@ import { FormService } from "../../../platform/services/form.service.js";
  * Complete course business logic and form processing
  */
 export class CourseService {
+  static async _withAutoSaveSuspended(fn) {
+    store.beginAutoSaveSuspension();
+    try {
+      return await fn();
+    } finally {
+      store.endAutoSaveSuspension();
+    }
+  }
+
   static normalizeCourseCode(code) {
     return String(code ?? "")
       .trim()
@@ -191,19 +200,21 @@ export class CourseService {
       throw new Error("Fyll i giltiga högskolepoäng för kursen.");
     }
 
-    const { course: newCourse, mutationId } = this.createCourse(
-      {
-        code: formData.code,
-        name: formData.name,
-        credits: formData.credits,
-        prerequisites: formData.prerequisites,
-      },
-      formData.examinatorTeacherId,
-      formData.selectedTeacherIds
-    );
+    return this._withAutoSaveSuspended(async () => {
+      const { course: newCourse, mutationId } = this.createCourse(
+        {
+          code: formData.code,
+          name: formData.name,
+          credits: formData.credits,
+          prerequisites: formData.prerequisites,
+        },
+        formData.examinatorTeacherId,
+        formData.selectedTeacherIds
+      );
 
-    await store.saveData({ mutationId });
-    return newCourse;
+      await store.saveData({ mutationId });
+      return newCourse;
+    });
   }
 
   /**
@@ -227,10 +238,12 @@ export class CourseService {
    * @returns {boolean} Success status
    */
   static async deleteCourseById(courseId) {
-    const { removed, mutationId } = this.deleteCourse(courseId);
-    if (!removed) return false;
-    await store.saveData({ mutationId });
-    return true;
+    return this._withAutoSaveSuspended(async () => {
+      const { removed, mutationId } = this.deleteCourse(courseId);
+      if (!removed) return false;
+      await store.saveData({ mutationId });
+      return true;
+    });
   }
 
   /**
@@ -243,19 +256,21 @@ export class CourseService {
       throw new Error("Fyll i giltiga högskolepoäng för kursen.");
     }
 
-    const { course: newCourse, mutationId } = this.createCourse(
-      {
-        code: formData.code,
-        name: formData.name,
-        credits: formData.credits,
-        prerequisites: formData.prerequisites,
-      },
-      formData.examinatorTeacherId,
-      formData.selectedTeacherIds
-    );
+    return this._withAutoSaveSuspended(async () => {
+      const { course: newCourse, mutationId } = this.createCourse(
+        {
+          code: formData.code,
+          name: formData.name,
+          credits: formData.credits,
+          prerequisites: formData.prerequisites,
+        },
+        formData.examinatorTeacherId,
+        formData.selectedTeacherIds
+      );
 
-    await store.saveData({ mutationId });
-    return newCourse;
+      await store.saveData({ mutationId });
+      return newCourse;
+    });
   }
 
   /**
@@ -265,20 +280,22 @@ export class CourseService {
    * @returns {Object} Updated course
    */
   static async saveUpdatedCourse(courseId, formData) {
-    const { course: updatedCourse, mutationId } = this.updateCourse(
-      courseId,
-      {
-        code: formData.code,
-        name: formData.name,
-        credits: formData.credits,
-        prerequisites: formData.prerequisites,
-      },
-      formData.examinatorTeacherId,
-      formData.selectedTeacherIds
-    );
+    return this._withAutoSaveSuspended(async () => {
+      const { course: updatedCourse, mutationId } = this.updateCourse(
+        courseId,
+        {
+          code: formData.code,
+          name: formData.name,
+          credits: formData.credits,
+          prerequisites: formData.prerequisites,
+        },
+        formData.examinatorTeacherId,
+        formData.selectedTeacherIds
+      );
 
-    await store.saveData({ mutationId });
-    return updatedCourse;
+      await store.saveData({ mutationId });
+      return updatedCourse;
+    });
   }
 
   /**
