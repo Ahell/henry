@@ -74,13 +74,14 @@ export class TeacherAvailabilityTable extends LitElement {
   render() {
     if (this.slots.length === 0) return this._renderEmpty("Inga tidsluckor tillgängliga.");
     if (this.teachers.length === 0) return this._renderEmpty("Inga lärare tillgängliga.");
+    const renderContext = TeacherAvailabilityTableService.buildRenderContext();
 
     if (this._detailSlotDate) {
-      return this._renderDetailView();
+      return this._renderDetailView(renderContext);
     }
 
     const slotDates = [...new Set(this.slots.map((s) => s.start_date))].sort();
-    return this._renderOverviewView(slotDates);
+    return this._renderOverviewView(slotDates, renderContext);
   }
 
   _renderEmpty(message) {
@@ -89,7 +90,7 @@ export class TeacherAvailabilityTable extends LitElement {
 
   // --- Rendering Logic (Consolidated from renderers.js) ---
 
-  _renderDetailView() {
+  _renderDetailView(renderContext) {
     const daysFromStore = store.getSlotDays(this._detailSlotId || this._detailSlotDate);
     const days = daysFromStore && daysFromStore.length ? daysFromStore : this._computeSlotDays();
     
@@ -99,6 +100,7 @@ export class TeacherAvailabilityTable extends LitElement {
         dateStr: day,
         courseId: this._detailCourseFilter,
         applyToAllCourses: this._applyToAllCourses,
+        context: renderContext,
       })?.className || ""
     );
 
@@ -110,34 +112,38 @@ export class TeacherAvailabilityTable extends LitElement {
         .slotId=${this._detailSlotId}
         .slotDate=${this._detailSlotDate}
         .isPainting=${this.isPainting}
-        .dayHeaderRenderer=${(dateStr) => this._renderDayHeader(dateStr)}
-        .teacherDayCellRenderer=${(teacher, dateStr) => this._renderDayCell(teacher, dateStr)}
+        .dayHeaderRenderer=${(dateStr) =>
+          this._renderDayHeader(dateStr, renderContext)}
+        .teacherDayCellRenderer=${(teacher, dateStr) =>
+          this._renderDayCell(teacher, dateStr, renderContext)}
         @cell-mousedown=${(e) => this._handleCellMouseDown(e)}
         @cell-enter=${(e) => this._handleCellMouseEnter(e)}
       ></detail-table>
     `;
   }
 
-  _renderOverviewView(slotDates) {
+  _renderOverviewView(slotDates, renderContext) {
     return html`
       <overview-table
         .teachers=${this.teachers}
         .slotDates=${slotDates}
         .isPainting=${this.isPainting}
         .dateHeaderRenderer=${(date) => this._renderSlotDateHeader(date)}
-        .teacherCellRenderer=${(teacher, slotDate) => this._renderTeacherCell(teacher, slotDate)}
+        .teacherCellRenderer=${(teacher, slotDate) =>
+          this._renderTeacherCell(teacher, slotDate, renderContext)}
         @cell-mousedown=${(e) => this._handleCellMouseDown(e)}
         @cell-enter=${(e) => this._handleCellMouseEnter(e)}
       ></overview-table>
     `;
   }
 
-  _renderDayHeader(dateStr) {
+  _renderDayHeader(dateStr, renderContext) {
     const presentation = TeacherAvailabilityTableService.getDetailDayHeaderPresentation({
       slotId: this._detailSlotId,
       dateStr,
       courseId: this._detailCourseFilter,
       applyToAllCourses: this._applyToAllCourses,
+      context: renderContext,
     });
 
     // Check for active state override logic
@@ -178,26 +184,19 @@ export class TeacherAvailabilityTable extends LitElement {
     });
   }
 
-  _renderDayCell(teacher, dateStr) {
+  _renderDayCell(teacher, dateStr, renderContext) {
      const presentation = TeacherAvailabilityTableService.getDetailDayCellPresentation({
        slotId: this._detailSlotId,
        slotDate: this._detailSlotDate,
        dateStr,
        teacherId: teacher.teacher_id,
        courseId: this._detailCourseFilter,
+       context: renderContext,
      });
 
      const slot = this._detailSlotId != null
        ? this.slots.find((s) => s.slot_id === this._detailSlotId)
        : this.slots.find((s) => s.start_date === this._detailSlotDate);
-
-     const overviewPresentation = slot
-       ? TeacherAvailabilityTableService.getOverviewCellPresentation({
-           teacher,
-           slot,
-           slotDate: this._detailSlotDate,
-         })
-       : null;
 
      // Logic for calculating segments/content (Complex logic from renderers.js)
      // For brevity, I'm simplifying slightly but keeping core logic.
@@ -223,7 +222,7 @@ export class TeacherAvailabilityTable extends LitElement {
       </td>`;
   }
 
-  _renderTeacherCell(teacher, slotDate) {
+  _renderTeacherCell(teacher, slotDate, renderContext) {
     const slot = this.slots.find((s) => s.start_date === slotDate);
     if (!slot) return html`<td><div class="teacher-cell"></div></td>`;
 
@@ -231,6 +230,7 @@ export class TeacherAvailabilityTable extends LitElement {
       teacher,
       slot,
       slotDate,
+      context: renderContext,
     });
     
     // Logic for segments (stripes)
