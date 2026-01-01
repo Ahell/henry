@@ -17,7 +17,6 @@ export function migrateJointCourseRuns(db) {
     const tableInfo = db.prepare("PRAGMA table_info(cohort_slot_courses)").all();
     if (!tableInfo.find((c) => c.name === "joint_run_id")) {
       db.exec("ALTER TABLE cohort_slot_courses ADD COLUMN joint_run_id INTEGER");
-      console.log("Added joint_run_id column to cohort_slot_courses");
     }
   } catch (err) {
     console.error("Error checking/adding column:", err);
@@ -34,7 +33,6 @@ export function migrateJointCourseRuns(db) {
     return;
   }
 
-  console.log(`Migrating ${rowsToMigrate.length} rows to JointCourseRun structure...`);
 
   const insertJointRun = db.prepare(`
     INSERT INTO joint_course_runs (course_id, slot_id, teachers, slot_span)
@@ -92,5 +90,4 @@ export function migrateJointCourseRuns(db) {
     }
   })();
   
-  console.log("Migration to JointCourseRun complete (including slot overrides).");
 }

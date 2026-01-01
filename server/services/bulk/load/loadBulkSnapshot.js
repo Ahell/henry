@@ -33,12 +33,6 @@ export function loadBulkSnapshot() {
   });
   const businessLogic = loadBusinessLogic();
 
-  logBulkLoadStats({
-    ...base,
-    ...scheduling,
-    ...availability,
-  });
-
   return buildSnapshot({
     ...base,
     ...scheduling,
@@ -106,18 +100,6 @@ function loadBusinessLogic() {
     console.warn("Failed to parse business_logic setting:", error);
     return { businessLogic: null };
   }
-}
-
-function logBulkLoadStats({ courses, cohorts, teachers, slots, courseRuns, courseRunSlots, teacherAvailability }) {
-  console.log("Bulk load successful:", {
-    courses: courses.length,
-    cohorts: cohorts.length,
-    teachers: teachers.length,
-    slots: slots.length,
-    courseRuns: courseRuns.length,
-    courseRunSlots: courseRunSlots.length,
-    teacherAvailability: teacherAvailability.length,
-  });
 }
 
 function buildSnapshot(data) {

@@ -21,19 +21,6 @@ export async function persistBulkData(payload = {}) {
     payload && payload._delta === true && Array.isArray(payload.changed);
   const normalized = normalizeBulkPayload(payload);
 
-  console.log("Bulk save received:", {
-    courses: normalized.dedupedCourses?.length,
-    cohorts: normalized.dedupedCohorts?.length,
-    teachers: normalized.dedupedTeachers?.length,
-    slots: normalized.dedupedSlots?.length,
-    courseRuns: Array.isArray(payload.courseRuns)
-      ? payload.courseRuns.length
-      : 0,
-    teacherAvailability: Array.isArray(payload.teacherAvailability)
-      ? payload.teacherAvailability.length
-      : Object.keys(payload.teacherAvailability || {}).length,
-  });
-
   const tx = db.transaction(() => {
     if (!isDelta) {
       clearBulkTables();
@@ -74,7 +61,6 @@ export async function persistBulkData(payload = {}) {
   });
 
   tx();
-  console.log("Bulk save completed successfully");
   return { success: true };
 }
 

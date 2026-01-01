@@ -40,8 +40,8 @@ npm run dev           # Startar allt med live reload
 
 ### Debug-tips
 
-- **Frontend**: `console.log()` syns i browser DevTools
-- **Backend**: `console.log()` syns i terminalen
+- **Frontend**: loggar syns i browser DevTools
+- **Backend**: loggar syns i terminalen
 - **API-anrop**: Använd Network-fliken i DevTools
 - **Databas**: Öppna `henry.db` (i repo-roten) med SQLite-verktyg
 

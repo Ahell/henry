@@ -26,7 +26,6 @@ export class CohortsManager {
   }
 
   async addCohort(cohort) {
-    console.log("🟢 addCohort called with:", cohort);
     const id = Math.max(...this.cohorts.map((c) => c.cohort_id), 0) + 1;
     const newCohort = {
       cohort_id: id,
@@ -35,16 +34,10 @@ export class CohortsManager {
       planned_size: cohort.planned_size || 0,
     };
     this.cohorts.push(newCohort);
-    console.log("🟢 Cohorts after push:", this.cohorts.length);
 
     this.renumberCohorts();
-    console.log(
-      "🟢 Cohorts after renumber:",
-      this.cohorts.map((c) => c.name)
-    );
 
     this.events.notify();
-    console.log("🟢 addCohort complete");
     return newCohort;
   }
 

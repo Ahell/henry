@@ -76,7 +76,6 @@ router.post("/reset-all", (req, res) => {
       value: JSON.stringify(getResetBusinessLogic()),
     });
 
-    console.log("Admin: reset all database tables");
     res.json({ success: true, message: "All database tables cleared" });
   } catch (error) {
     console.error("Failed to reset database:", error);
@@ -102,7 +101,6 @@ router.post("/load-test-data", async (req, res) => {
 
     await response.json();
 
-    console.log("Admin: seeded database with test data");
     res.json({ success: true, message: "Seed data loaded" });
   } catch (error) {
     console.error("Failed to load seed data:", error);

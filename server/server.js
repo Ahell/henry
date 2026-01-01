@@ -10,6 +10,4 @@ app.use("/api", apiRouter);
 
 const HOST = process.env.HOST || "127.0.0.1";
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, HOST, () => {
-  console.log(`Backend server running on http://${HOST}:${PORT}`);
-});
+app.listen(PORT, HOST);

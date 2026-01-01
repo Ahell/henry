@@ -13,11 +13,7 @@ export function migrateRemoveOrphanedRecords(db, tableName, foreignKeyChecks) {
     .prepare(`DELETE FROM ${tableName} WHERE ${conditions}`)
     .run();
 
-  if (result.changes > 0) {
-    console.log(
-      `Cleaning up ${result.changes} orphaned rows from ${tableName}`
-    );
-  }
+  void result;
 }
 
 // Consolidated function that handles all orphaned record removal

@@ -163,7 +163,6 @@ export class HenryButton extends LitElement {
           } else if (parent) {
             const form = parent.closest ? parent.closest("form") : null;
             if (form) {
-            console.log("Found form, requesting submit");
               form.requestSubmit();
               return;
             }
