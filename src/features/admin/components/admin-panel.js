@@ -6,6 +6,7 @@ import "../../scheduling/index.js";
 import "../../business-logic/index.js";
 import "../../report/index.js";
 import "../../import-export/index.js";
+import "../../documentation/index.js";
 import "../../courses/components/courses-tab.js";
 import "../../teachers/components/teachers-tab.js";
 import "../../cohorts/components/cohorts-tab.js";
@@ -67,6 +68,11 @@ export class AdminPanel extends LitElement {
         key: "importExport",
         label: "Import/Export",
         component: html`<import-export></import-export>`,
+      },
+      {
+        key: "documentation",
+        label: "Dokumentation",
+        component: html`<documentation-tab></documentation-tab>`,
       },
     ];
     store.subscribe(() => this.requestUpdate());
