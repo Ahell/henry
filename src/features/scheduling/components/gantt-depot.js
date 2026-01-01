@@ -10,6 +10,7 @@ export class GanttDepot extends LitElement {
   static properties = {
     cohortId: { type: Number },
     scheduledCourseIds: { type: Array },
+    renderContext: { type: Object },
     disabled: { type: Boolean },
   };
 
@@ -19,11 +20,13 @@ export class GanttDepot extends LitElement {
     super();
     this.cohortId = null;
     this.scheduledCourseIds = [];
+    this.renderContext = null;
     this.disabled = false;
   }
 
   render() {
-    const courses = store.getCourses();
+    const context = this.renderContext;
+    const courses = context?.courses || store.getCourses();
 
     // Filter out already scheduled courses
     const scheduledSet = new Set(
@@ -33,10 +36,19 @@ export class GanttDepot extends LitElement {
       (c) => !scheduledSet.has(String(c.course_id))
     );
 
-    // Sort courses: those with prerequisites first
-    const sortedCourses = availableCourses.sort((a, b) => {
-      const aPrereqs = this._getAllPrerequisites(a.course_id);
-      const bPrereqs = this._getAllPrerequisites(b.course_id);
+    // Sort courses: those with prerequisites first (cache to avoid repeated scans)
+    const prereqCache = new Map();
+    const getPrereqs = (courseId) => {
+      const key = String(courseId);
+      if (!prereqCache.has(key)) {
+        prereqCache.set(key, this._getAllPrerequisites(courseId));
+      }
+      return prereqCache.get(key) || [];
+    };
+
+    const sortedCourses = availableCourses.slice().sort((a, b) => {
+      const aPrereqs = getPrereqs(a.course_id);
+      const bPrereqs = getPrereqs(b.course_id);
       const aHasPrereqs = aPrereqs.length > 0;
       const bHasPrereqs = bPrereqs.length > 0;
 
@@ -142,7 +154,9 @@ export class GanttDepot extends LitElement {
   }
 
   _getAllPrerequisites(courseId) {
-    const course = store.getCourse(courseId);
+    const context = this.renderContext;
+    const course =
+      context?.courseById?.get(String(courseId)) || store.getCourse(courseId);
     if (!course || !course.prerequisites || course.prerequisites.length === 0) {
       return [];
     }
@@ -155,7 +169,9 @@ export class GanttDepot extends LitElement {
       if (allPrereqs.has(prereqId)) continue;
 
       allPrereqs.add(prereqId);
-      const prereqCourse = store.getCourse(prereqId);
+      const prereqCourse =
+        context?.courseById?.get(String(prereqId)) ||
+        store.getCourse(prereqId);
       if (prereqCourse?.prerequisites) {
         prereqCourse.prerequisites.forEach((p) => stack.push(p));
       }
@@ -165,19 +181,25 @@ export class GanttDepot extends LitElement {
   }
 
   _hasPrerequisites(courseId) {
-    const course = store.getCourse(courseId);
+    const context = this.renderContext;
+    const course =
+      context?.courseById?.get(String(courseId)) || store.getCourse(courseId);
     return course?.prerequisites && course.prerequisites.length > 0;
   }
 
   _getPrerequisiteNames(courseId) {
-    const course = store.getCourse(courseId);
+    const context = this.renderContext;
+    const course =
+      context?.courseById?.get(String(courseId)) || store.getCourse(courseId);
     if (!course?.prerequisites || course.prerequisites.length === 0) {
       return "-";
     }
 
     return course.prerequisites
       .map((prereqId) => {
-        const prereqCourse = store.getCourse(prereqId);
+        const prereqCourse =
+          context?.courseById?.get(String(prereqId)) ||
+          store.getCourse(prereqId);
         return prereqCourse ? prereqCourse.code : null;
       })
       .filter(Boolean)

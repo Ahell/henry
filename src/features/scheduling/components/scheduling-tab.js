@@ -36,8 +36,18 @@ export class SchedulingTab extends LitElement {
     this._overlayScrollSource = null;
     this._visibleOverlayRange = null;
     this._lastSlotCount = 0;
+    this._dataVersion = 0;
+    this._renderContextVersion = -1;
+    this._renderContextCache = null;
+    this._warningCacheVersion = -1;
+    this._warningCache = null;
     this._handleOverlayScroll = this._handleOverlayScroll.bind(this);
     store.subscribe(() => {
+      this._dataVersion += 1;
+      this._renderContextVersion = -1;
+      this._renderContextCache = null;
+      this._warningCacheVersion = -1;
+      this._warningCache = null;
       const next = !!store.editMode;
       if (this.isEditing !== next) {
         this.setEditMode(next);
@@ -256,8 +266,8 @@ export class SchedulingTab extends LitElement {
   }
 
   render() {
-    const cohorts = store.getCohorts();
-    const slots = store.getSlots();
+    const context = this._getRenderContext();
+    const { cohorts, slots, slotDates } = context;
 
     if (slots.length === 0) {
       return html`
@@ -274,35 +284,13 @@ export class SchedulingTab extends LitElement {
       `;
     }
 
-    const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
-    const prerequisiteProblems = this._computeSchedulingPrerequisiteProblems();
-    const prerequisiteWarnings =
-      this._computePrerequisiteRuleWarnings(prerequisiteProblems);
-    const overlapWarnings = this._computeCohortSlotOverlapWarnings();
-    const capacityWarnings = this._computeCourseRunCapacityWarnings();
-    const skewedOverlapWarnings = this._computeSkewed15HpOverlapWarnings();
-    const teacherAvailabilityWarnings =
-      this._computeMissingAvailableCompatibleTeacherWarnings();
-    const emptySlotWarnings = this._computeEmptySlotWarnings();
-    const depotWarnings = this._computeDepotCourseWarnings();
-
-    const allWarnings = [
-      ...prerequisiteWarnings,
-      ...overlapWarnings,
-      ...capacityWarnings,
-      ...skewedOverlapWarnings,
-      ...teacherAvailabilityWarnings,
-      ...emptySlotWarnings,
-      ...depotWarnings,
-    ];
-    const cohortMarkersByCohortId =
-      this._buildCohortWarningMarkersByCohortId(allWarnings);
-    const slotCapacityWarningsBySlotDate =
-      this._buildSlotCapacityWarningPillsBySlotDate(capacityWarnings);
-    const slotTeacherSelectionWarningsBySlotDate =
-      this._buildSlotTeacherSelectionWarningPillsBySlotDate();
-    const slotTeacherCompatibilityWarningsBySlotDate =
-      this._buildSlotTeacherCompatibilityWarningPillsBySlotDate();
+    const {
+      prerequisiteProblems,
+      cohortMarkersByCohortId,
+      slotCapacityWarningsBySlotDate,
+      slotTeacherSelectionWarningsBySlotDate,
+      slotTeacherCompatibilityWarningsBySlotDate,
+    } = this._getWarningCache(context);
     const isCompatibilityActive = !!this._dragCourseId;
     this._lastSlotCount = slotDates.length;
     return html`
@@ -353,7 +341,11 @@ export class SchedulingTab extends LitElement {
                       (dateStr, idx) =>
                         html`<th class="slot-col-header">
                           <div class="slot-date">
-                            ${this._formatSlotHeaderLabel(dateStr, idx + 1)}
+                            ${this._formatSlotHeaderLabel(
+                              dateStr,
+                              idx + 1,
+                              context
+                            )}
                           </div>
                         </th>`
                     )}
@@ -365,12 +357,13 @@ export class SchedulingTab extends LitElement {
                       cohort,
                       slotDates,
                       prerequisiteProblems,
-                      cohortMarkersByCohortId
+                      cohortMarkersByCohortId,
+                      context
                     )
                   )}
                 </tbody>
                 <tfoot>
-                  ${this._renderSummaryRow(slotDates)}
+                  ${this._renderSummaryRow(slotDates, context)}
                 </tfoot>
               </table>
             </div>
@@ -392,7 +385,291 @@ export class SchedulingTab extends LitElement {
     `;
   }
 
-  _computeCourseRunCapacityWarnings() {
+  _getRenderContext() {
+    if (
+      this._renderContextCache &&
+      this._renderContextVersion === this._dataVersion
+    ) {
+      return this._renderContextCache;
+    }
+    const context = this._buildRenderContext();
+    this._renderContextCache = context;
+    this._renderContextVersion = this._dataVersion;
+    return context;
+  }
+
+  _getWarningCache(context) {
+    if (
+      this._warningCache &&
+      this._warningCacheVersion === this._dataVersion
+    ) {
+      return this._warningCache;
+    }
+
+    const prerequisiteProblems =
+      this._computeSchedulingPrerequisiteProblems(context);
+    const prerequisiteWarnings =
+      this._computePrerequisiteRuleWarnings(prerequisiteProblems);
+    const overlapWarnings = this._computeCohortSlotOverlapWarnings(context);
+    const capacityWarnings = this._computeCourseRunCapacityWarnings(context);
+    const skewedOverlapWarnings = this._computeSkewed15HpOverlapWarnings(context);
+    const teacherAvailabilityWarnings =
+      this._computeMissingAvailableCompatibleTeacherWarnings(context);
+    const emptySlotWarnings = this._computeEmptySlotWarnings(context);
+    const depotWarnings = this._computeDepotCourseWarnings(context);
+
+    const allWarnings = [
+      ...prerequisiteWarnings,
+      ...overlapWarnings,
+      ...capacityWarnings,
+      ...skewedOverlapWarnings,
+      ...teacherAvailabilityWarnings,
+      ...emptySlotWarnings,
+      ...depotWarnings,
+    ];
+
+    const warningCache = {
+      prerequisiteProblems,
+      cohortMarkersByCohortId:
+        this._buildCohortWarningMarkersByCohortId(allWarnings),
+      slotCapacityWarningsBySlotDate:
+        this._buildSlotCapacityWarningPillsBySlotDate(capacityWarnings),
+      slotTeacherSelectionWarningsBySlotDate:
+        this._buildSlotTeacherSelectionWarningPillsBySlotDate(context),
+      slotTeacherCompatibilityWarningsBySlotDate:
+        this._buildSlotTeacherCompatibilityWarningPillsBySlotDate(context),
+    };
+
+    this._warningCache = warningCache;
+    this._warningCacheVersion = this._dataVersion;
+    return warningCache;
+  }
+
+  _buildRenderContext() {
+    const normalizeDate = (value) => (value || "").split("T")[0];
+    const slots = store.getSlots() || [];
+    const courses = store.getCourses() || [];
+    const cohorts = store.getCohorts() || [];
+    const teachers = store.getTeachers() || [];
+    const runs = store.getCourseRuns() || [];
+
+    const slotDates = [...new Set(slots.map((s) => s.start_date).filter(Boolean))].sort();
+    const slotById = new Map(slots.map((s) => [String(s.slot_id), s]));
+    const slotByStartDate = new Map(
+      slots.map((s) => [String(s.start_date), s])
+    );
+    const sortedSlots = slots
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(a.start_date) - new Date(b.start_date) ||
+          Number(a.slot_id) - Number(b.slot_id)
+      );
+    const slotIndexById = new Map(
+      sortedSlots.map((s, idx) => [String(s.slot_id), idx])
+    );
+    const slotIndexByDate = new Map(
+      slotDates.map((dateStr, idx) => [String(dateStr), idx])
+    );
+
+    const courseById = new Map(
+      courses.map((course) => [String(course.course_id), course])
+    );
+    const cohortById = new Map(
+      cohorts.map((cohort) => [String(cohort.cohort_id), cohort])
+    );
+    const teacherById = new Map(
+      teachers.map((teacher) => [String(teacher.teacher_id), teacher])
+    );
+    const spanByCourseId = new Map(
+      courses.map((course) => [
+        String(course.course_id),
+        Number(course.credits) === 15 ? 2 : 1,
+      ])
+    );
+
+    const slotDaysBySlotId = new Map();
+    const slotDaySetBySlotId = new Map();
+    (store.slotDays || []).forEach((sd) => {
+      if (!sd) return;
+      const slotId = sd.slot_id;
+      if (slotId == null) return;
+      const date = normalizeDate(sd.date || sd.slot_day_id_date || "");
+      if (!date) return;
+      const key = String(slotId);
+      if (!slotDaysBySlotId.has(key)) {
+        slotDaysBySlotId.set(key, []);
+      }
+      slotDaysBySlotId.get(key).push(date);
+    });
+    slots.forEach((slot) => {
+      if (!slot?.slot_id) return;
+      const key = String(slot.slot_id);
+      let days = slotDaysBySlotId.get(key);
+      if (!days || days.length === 0) {
+        days = (store.getSlotDays(slot.slot_id) || [])
+          .map(normalizeDate)
+          .filter(Boolean);
+        slotDaysBySlotId.set(key, days);
+      }
+      if (!slotDaySetBySlotId.has(key)) {
+        slotDaySetBySlotId.set(key, new Set(days));
+      }
+    });
+
+    const dayBusyByTeacher = new Map();
+    const slotBusyByTeacher = new Map();
+    (store.teacherAvailability || []).forEach((entry) => {
+      if (!entry || entry.type !== "busy") return;
+      const teacherKey = String(entry.teacher_id);
+      if (entry.slot_id) {
+        if (!slotBusyByTeacher.has(teacherKey)) {
+          slotBusyByTeacher.set(teacherKey, new Set());
+        }
+        slotBusyByTeacher.get(teacherKey).add(String(entry.slot_id));
+        return;
+      }
+      const date = normalizeDate(entry.from_date);
+      if (!date) return;
+      if (!dayBusyByTeacher.has(teacherKey)) {
+        dayBusyByTeacher.set(teacherKey, new Set());
+      }
+      dayBusyByTeacher.get(teacherKey).add(date);
+    });
+
+    const compatibleTeachersByCourseId = new Map();
+    teachers.forEach((teacher) => {
+      (teacher.compatible_courses || []).forEach((courseId) => {
+        const key = String(courseId);
+        if (!compatibleTeachersByCourseId.has(key)) {
+          compatibleTeachersByCourseId.set(key, []);
+        }
+        compatibleTeachersByCourseId.get(key).push(teacher);
+      });
+    });
+
+    const getRunSpan = (run) => {
+      const spanFromRun = Number(run?.slot_span);
+      if (Number.isFinite(spanFromRun) && spanFromRun >= 2) return spanFromRun;
+      return spanByCourseId.get(String(run?.course_id)) || 1;
+    };
+
+    const getRunSlotDates = (run) => {
+      if (!run) return [];
+      if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+        const dates = run.slot_ids
+          .map((slotId) => slotById.get(String(slotId))?.start_date)
+          .filter(Boolean);
+        if (dates.length > 0) return dates;
+      }
+      const startDate = slotById.get(String(run.slot_id))?.start_date;
+      if (!startDate) return [];
+      const span = getRunSpan(run);
+      const idx = slotIndexByDate.get(String(startDate));
+      if (!Number.isFinite(idx)) return [startDate];
+      return slotDates.slice(idx, idx + span);
+    };
+
+    const getRunCoveredSlotIds = (run) => {
+      if (!run) return [];
+      if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
+        return run.slot_ids.map((id) => String(id));
+      }
+      const startIdx = slotIndexById.get(String(run.slot_id));
+      if (!Number.isFinite(startIdx)) {
+        return run.slot_id != null ? [String(run.slot_id)] : [];
+      }
+      const span = getRunSpan(run);
+      const ids = [];
+      for (let i = 0; i < span; i += 1) {
+        const slot = sortedSlots[startIdx + i];
+        if (slot?.slot_id == null) continue;
+        ids.push(String(slot.slot_id));
+      }
+      return ids.length > 0
+        ? ids
+        : run.slot_id != null
+        ? [String(run.slot_id)]
+        : [];
+    };
+
+    const runSlotDatesByRun = new Map();
+    const runCoveredSlotIdsByRun = new Map();
+    const runsByCohortId = new Map();
+    const runsBySlotId = new Map();
+    const runsBySlotIdWithCohort = new Map();
+    const courseIdsBySlotId = new Map();
+
+    runs.forEach((run) => {
+      const slotDatesForRun = getRunSlotDates(run);
+      runSlotDatesByRun.set(run, slotDatesForRun);
+      const coveredSlotIds = getRunCoveredSlotIds(run);
+      runCoveredSlotIdsByRun.set(run, coveredSlotIds);
+
+      const hasCohorts =
+        Array.isArray(run?.cohorts) && run.cohorts.some((id) => id != null);
+
+      if (Array.isArray(run?.cohorts)) {
+        run.cohorts.forEach((cohortId) => {
+          if (cohortId == null) return;
+          const key = String(cohortId);
+          if (!runsByCohortId.has(key)) runsByCohortId.set(key, []);
+          runsByCohortId.get(key).push(run);
+        });
+      }
+
+      coveredSlotIds.forEach((slotId) => {
+        if (!runsBySlotId.has(slotId)) runsBySlotId.set(slotId, []);
+        runsBySlotId.get(slotId).push(run);
+        if (hasCohorts) {
+          if (!runsBySlotIdWithCohort.has(slotId)) {
+            runsBySlotIdWithCohort.set(slotId, []);
+          }
+          runsBySlotIdWithCohort.get(slotId).push(run);
+        }
+        if (hasCohorts && run?.course_id != null) {
+          if (!courseIdsBySlotId.has(slotId)) {
+            courseIdsBySlotId.set(slotId, new Set());
+          }
+          courseIdsBySlotId.get(slotId).add(String(run.course_id));
+        }
+      });
+    });
+
+    return {
+      slots,
+      courses,
+      cohorts,
+      teachers,
+      runs,
+      slotDates,
+      slotById,
+      slotByStartDate,
+      sortedSlots,
+      slotIndexById,
+      slotIndexByDate,
+      courseById,
+      cohortById,
+      teacherById,
+      spanByCourseId,
+      slotDaysBySlotId,
+      slotDaySetBySlotId,
+      dayBusyByTeacher,
+      slotBusyByTeacher,
+      compatibleTeachersByCourseId,
+      runSlotDatesByRun,
+      runCoveredSlotIdsByRun,
+      runsByCohortId,
+      runsBySlotId,
+      runsBySlotIdWithCohort,
+      courseIdsBySlotId,
+      activeCourseDaysByKey: new Map(),
+      teacherShortageStatusByCourseSlotDate: new Map(),
+      normalizeDate,
+    };
+  }
+
+  _computeCourseRunCapacityWarnings(context) {
     const businessLogic = store.businessLogicManager.getBusinessLogic();
     const params = businessLogic?.scheduling?.params || {};
     const hardCap = Number(params.maxStudentsHard);
@@ -401,8 +678,10 @@ export class SchedulingTab extends LitElement {
     const hard = Number.isFinite(hardCap) ? hardCap : 130;
     const preferred = Number.isFinite(preferredCap) ? preferredCap : 100;
 
-    const slots = store.getSlots() || [];
+    const slots = context?.slots || store.getSlots() || [];
     const warnings = [];
+    const runsBySlotId = context?.runsBySlotId || new Map();
+    const cohortById = context?.cohortById || new Map();
 
     for (const slot of slots) {
       const slotDate = slot?.start_date;
@@ -410,14 +689,12 @@ export class SchedulingTab extends LitElement {
 
       // courseId -> Set(cohortId)
       const cohortIdsByCourseId = new Map();
-      const runsInSlot = (store.getCourseRuns() || [])
-        .filter((run) => this._runCoversSlotId(run, slot.slot_id))
-        .filter(
-          (run) =>
-            run?.course_id != null &&
-            Array.isArray(run.cohorts) &&
-            run.cohorts.some((id) => id != null)
-        );
+      const runsInSlot = (runsBySlotId.get(String(slot.slot_id)) || []).filter(
+        (run) =>
+          run?.course_id != null &&
+          Array.isArray(run.cohorts) &&
+          run.cohorts.some((id) => id != null)
+      );
 
       for (const run of runsInSlot) {
         const courseKey = String(run.course_id);
@@ -433,7 +710,8 @@ export class SchedulingTab extends LitElement {
       for (const [courseKey, cohortSet] of cohortIdsByCourseId.entries()) {
         let total = 0;
         cohortSet.forEach((cohortId) => {
-          const cohort = store.getCohort(cohortId);
+          const cohort =
+            cohortById.get(String(cohortId)) || store.getCohort(cohortId);
           if (cohort) total += Number(cohort.planned_size) || 0;
         });
 
@@ -474,21 +752,23 @@ export class SchedulingTab extends LitElement {
     return `${text.slice(0, Math.max(0, maxLen - 1))}…`;
   }
 
-  _computeSkewed15HpOverlapWarnings() {
-    const slotsOrdered = (store.getSlots() || [])
-      .slice()
-      .sort(
-        (a, b) =>
-          new Date(a.start_date) - new Date(b.start_date) ||
-          Number(a.slot_id) - Number(b.slot_id)
-      );
-    const indexBySlotId = new Map(
-      slotsOrdered.map((s, idx) => [String(s.slot_id), idx])
-    );
+  _computeSkewed15HpOverlapWarnings(context) {
+    const slotsOrdered =
+      context?.sortedSlots ||
+      (store.getSlots() || [])
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(a.start_date) - new Date(b.start_date) ||
+            Number(a.slot_id) - Number(b.slot_id)
+        );
+    const indexBySlotId =
+      context?.slotIndexById ||
+      new Map(slotsOrdered.map((s, idx) => [String(s.slot_id), idx]));
 
-    const runs = (store.getCourseRuns() || []).filter((run) => {
+    const runs = (context?.runs || store.getCourseRuns() || []).filter((run) => {
       if (!run || run.course_id == null || run.slot_id == null) return false;
-      return this._getRunSpan(run) >= 2;
+      return this._getRunSpan(run, context) >= 2;
     });
 
     const startIdxByCourseId = new Map(); // courseId -> Set(startIdx)
@@ -509,7 +789,9 @@ export class SchedulingTab extends LitElement {
       if (!set) continue;
       // Skewed overlap: another run starts one slot earlier for same 15hp course.
       if (!set.has(startIdx - 1)) continue;
-      const slotDate = store.getSlot(run.slot_id)?.start_date;
+      const slotDate =
+        context?.slotById?.get(String(run.slot_id))?.start_date ||
+        store.getSlot(run.slot_id)?.start_date;
       const cohortIds = Array.isArray(run.cohorts) ? run.cohorts : [];
       cohortIds
         .filter((id) => id != null)
@@ -526,7 +808,7 @@ export class SchedulingTab extends LitElement {
     return warnings;
   }
 
-  _computeMissingAvailableCompatibleTeacherWarnings() {
+  _computeMissingAvailableCompatibleTeacherWarnings(context) {
     const rules =
       store.businessLogicManager.getBusinessLogic()?.scheduling?.rules || [];
     const requireRule = rules.find(
@@ -536,30 +818,34 @@ export class SchedulingTab extends LitElement {
     if (requireRule && requireRule.enabled === false) return [];
 
     const warnings = [];
-    const slots = store.getSlots() || [];
-    const slotDates = [...new Set(slots.map((s) => s.start_date))].sort();
-    const slotByStartDate = new Map(slots.map((s) => [s.start_date, s]));
-    const teachers = store.getTeachers() || [];
+    const slots = context?.slots || store.getSlots() || [];
+    const slotDates =
+      context?.slotDates ||
+      [...new Set(slots.map((s) => s.start_date))].sort();
+    const slotByStartDate =
+      context?.slotByStartDate || new Map(slots.map((s) => [s.start_date, s]));
+    const runsByCohortId = context?.runsByCohortId || new Map();
 
-    for (const cohort of store.getCohorts() || []) {
+    for (const cohort of context?.cohorts || store.getCohorts() || []) {
       if (!cohort || cohort.cohort_id == null) continue;
 
-      const runsInCohort = (store.getCourseRuns() || []).filter((r) =>
-        this._runHasCohort(r, cohort.cohort_id)
-      );
+      const runsInCohort =
+        runsByCohortId.get(String(cohort.cohort_id)) ||
+        (store.getCourseRuns() || []).filter((r) =>
+          this._runHasCohort(r, cohort.cohort_id)
+        );
       if (runsInCohort.length === 0) continue;
 
       let violation = null;
       for (const run of runsInCohort) {
         if (!run || run.course_id == null || run.slot_id == null) continue;
 
-        const dates = this._getRunSlotDates(run, slotDates);
+        const dates = this._getRunSlotDates(run, slotDates, context);
         if (dates.length === 0) continue;
 
-        const compatibleTeachers = teachers.filter(
-          (t) =>
-            Array.isArray(t.compatible_courses) &&
-            t.compatible_courses.includes(run.course_id)
+        const compatibleTeachers = this._getCompatibleTeachers(
+          run.course_id,
+          context
         );
         if (compatibleTeachers.length === 0) {
           violation = { slotDate: dates[0], courseId: run.course_id };
@@ -570,7 +856,13 @@ export class SchedulingTab extends LitElement {
           const slot = slotByStartDate.get(dateStr);
           const slotId = slot?.slot_id ?? null;
           const hasAnyAvailable = compatibleTeachers.some(
-            (t) => !store.isTeacherUnavailable(t.teacher_id, dateStr, slotId)
+            (t) =>
+              !this._isTeacherUnavailableInSlot({
+                teacherId: t.teacher_id,
+                slotId,
+                slotDate: dateStr,
+                context,
+              })
           );
           if (!hasAnyAvailable) {
             violation = { slotDate: dateStr, courseId: run.course_id };
@@ -593,18 +885,24 @@ export class SchedulingTab extends LitElement {
     return warnings;
   }
 
-  _computeEmptySlotWarnings() {
+  _computeEmptySlotWarnings(context) {
     const warnings = [];
-    const slots = (store.getSlots() || [])
-      .slice()
-      .sort(
-        (a, b) =>
-          new Date(a.start_date) - new Date(b.start_date) ||
-          Number(a.slot_id) - Number(b.slot_id)
-      );
+    const slots =
+      context?.sortedSlots ||
+      (store.getSlots() || [])
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(a.start_date) - new Date(b.start_date) ||
+            Number(a.slot_id) - Number(b.slot_id)
+        );
     if (slots.length === 0) return warnings;
 
-    const cohorts = store.getCohorts() || [];
+    const cohorts = context?.cohorts || store.getCohorts() || [];
+    const runsByCohortId = context?.runsByCohortId || new Map();
+    const slotIndexById =
+      context?.slotIndexById ||
+      new Map(slots.map((s, idx) => [String(s.slot_id), idx]));
     for (const cohort of cohorts) {
       if (!cohort || cohort.cohort_id == null) continue;
 
@@ -620,18 +918,19 @@ export class SchedulingTab extends LitElement {
       if (startIdx >= slots.length) continue;
 
       const coveredIdx = new Set();
-      (store.getCourseRuns() || [])
-        .filter((r) => this._runHasCohort(r, cohort.cohort_id))
-        .forEach((run) => {
-          const startIndex = slots.findIndex(
-            (s) => String(s.slot_id) === String(run.slot_id)
-          );
-          if (startIndex < 0) return;
-          const span = this._getRunSpan(run);
-          for (let i = startIndex; i < startIndex + span; i += 1) {
-            coveredIdx.add(i);
-          }
-        });
+      const runsInCohort =
+        runsByCohortId.get(String(cohort.cohort_id)) ||
+        (store.getCourseRuns() || []).filter((r) =>
+          this._runHasCohort(r, cohort.cohort_id)
+        );
+      runsInCohort.forEach((run) => {
+        const startIndex = slotIndexById.get(String(run.slot_id));
+        if (!Number.isFinite(startIndex)) return;
+        const span = this._getRunSpan(run, context);
+        for (let i = startIndex; i < startIndex + span; i += 1) {
+          coveredIdx.add(i);
+        }
+      });
 
       const afterStartCovered = Array.from(coveredIdx).filter(
         (i) => i >= startIdx
@@ -657,21 +956,24 @@ export class SchedulingTab extends LitElement {
     return warnings;
   }
 
-  _computeDepotCourseWarnings() {
+  _computeDepotCourseWarnings(context) {
     const warnings = [];
-    const courses = store.getCourses() || [];
+    const courses = context?.courses || store.getCourses() || [];
     if (!courses.length) return warnings;
 
-    const runs = store.getCourseRuns() || [];
-    for (const cohort of store.getCohorts() || []) {
+    const runsByCohortId = context?.runsByCohortId || new Map();
+    for (const cohort of context?.cohorts || store.getCohorts() || []) {
       if (!cohort || cohort.cohort_id == null) continue;
 
       const scheduledCourseIds = new Set();
-      runs.forEach((run) => {
+      const runsInCohort =
+        runsByCohortId.get(String(cohort.cohort_id)) ||
+        (store.getCourseRuns() || []).filter((r) =>
+          this._runHasCohort(r, cohort.cohort_id)
+        );
+      runsInCohort.forEach((run) => {
         if (!run || run.course_id == null) return;
-        if (this._runHasCohort(run, cohort.cohort_id)) {
-          scheduledCourseIds.add(String(run.course_id));
-        }
+        scheduledCourseIds.add(String(run.course_id));
       });
 
       const remainingCourses = courses.filter(
@@ -898,31 +1200,35 @@ export class SchedulingTab extends LitElement {
     return out;
   }
 
-  _buildSlotTeacherSelectionWarningPillsBySlotDate() {
+  _buildSlotTeacherSelectionWarningPillsBySlotDate(context) {
     const out = new Map(); // slotDate -> pills[]
-    const slots = store.getSlots() || [];
-    const courseById = new Map(
-      (store.getCourses() || []).map((c) => [String(c.course_id), c])
-    );
+    const slots = context?.slots || store.getSlots() || [];
+    const courseById =
+      context?.courseById ||
+      new Map((store.getCourses() || []).map((c) => [String(c.course_id), c]));
+    const runsBySlotId =
+      context?.runsBySlotIdWithCohort || context?.runsBySlotId || new Map();
+    const courseIdsBySlotId = context?.courseIdsBySlotId || new Map();
 
     for (const slot of slots) {
       if (!slot?.slot_id || !slot?.start_date) continue;
 
-      const runsInSlot = (store.getCourseRuns() || [])
-        .filter((run) => this._runCoversSlotId(run, slot.slot_id))
-        // Ignore orphan runs with no cohort (they shouldn't count as "scheduled" in the grid)
-        .filter(
-          (run) =>
-            Array.isArray(run.cohorts) && run.cohorts.some((id) => id != null)
-        );
+      const runsInSlot = (runsBySlotId.get(String(slot.slot_id)) || []).filter(
+        (run) =>
+          Array.isArray(run.cohorts) && run.cohorts.some((id) => id != null)
+      );
 
       if (!runsInSlot.length) continue;
 
       const missingCourseCodes = [];
       const missingKursansvarCodes = [];
-      const courseIdsInSlot = Array.from(
-        new Set(runsInSlot.map((r) => r?.course_id).filter((id) => id != null))
-      ).map((id) => String(id));
+      const courseIdsInSlot = courseIdsBySlotId.has(String(slot.slot_id))
+        ? Array.from(courseIdsBySlotId.get(String(slot.slot_id)) || [])
+        : Array.from(
+            new Set(
+              runsInSlot.map((r) => r?.course_id).filter((id) => id != null)
+            )
+          ).map((id) => String(id));
 
       for (const courseIdStr of courseIdsInSlot) {
         const assignedTeachers = new Set();
@@ -941,7 +1247,8 @@ export class SchedulingTab extends LitElement {
         if (assignedTeachers.size === 0) {
           const available = this._computeTeacherOverlayChips(
             courseId,
-            slot.start_date
+            slot.start_date,
+            context
           );
           if (Array.isArray(available) && available.length > 0) {
             const course =
@@ -988,34 +1295,41 @@ export class SchedulingTab extends LitElement {
     return out;
   }
 
-  _buildSlotTeacherCompatibilityWarningPillsBySlotDate() {
+  _buildSlotTeacherCompatibilityWarningPillsBySlotDate(context) {
     const out = new Map(); // slotDate -> pills[]
-    const slots = store.getSlots() || [];
-    const courseById = new Map(
-      (store.getCourses() || []).map((c) => [String(c.course_id), c])
-    );
+    const slots = context?.slots || store.getSlots() || [];
+    const courseById =
+      context?.courseById ||
+      new Map((store.getCourses() || []).map((c) => [String(c.course_id), c]));
+    const runsBySlotId =
+      context?.runsBySlotIdWithCohort || context?.runsBySlotId || new Map();
+    const courseIdsBySlotId = context?.courseIdsBySlotId || new Map();
 
     for (const slot of slots) {
       if (!slot?.slot_id || !slot?.start_date) continue;
 
-      const runsInSlot = (store.getCourseRuns() || [])
-        .filter((run) => this._runCoversSlotId(run, slot.slot_id))
-        // Ignore orphan runs with no cohort (they shouldn't count as "scheduled" in the grid)
-        .filter(
-          (run) =>
-            Array.isArray(run.cohorts) && run.cohorts.some((id) => id != null)
-        );
+      const runsInSlot = (runsBySlotId.get(String(slot.slot_id)) || []).filter(
+        (run) =>
+          Array.isArray(run.cohorts) && run.cohorts.some((id) => id != null)
+      );
 
       if (!runsInSlot.length) continue;
 
       const missingCourseCodes = [];
-      const courseIdsInSlot = Array.from(
-        new Set(runsInSlot.map((r) => r?.course_id).filter((id) => id != null))
-      ).map((id) => String(id));
+      const courseIdsInSlot = courseIdsBySlotId.has(String(slot.slot_id))
+        ? Array.from(courseIdsBySlotId.get(String(slot.slot_id)) || [])
+        : Array.from(
+            new Set(
+              runsInSlot.map((r) => r?.course_id).filter((id) => id != null)
+            )
+          ).map((id) => String(id));
 
       for (const courseIdStr of courseIdsInSlot) {
         const courseId = Number(courseIdStr);
-        const compatibleTeachers = getCompatibleTeachersForCourse(courseId);
+        const compatibleTeachers = this._getCompatibleTeachers(
+          courseId,
+          context
+        );
         if (compatibleTeachers.length > 0) continue;
 
         const course =
@@ -1389,10 +1703,26 @@ export class SchedulingTab extends LitElement {
       return;
     }
     this._visibleOverlayRange = next;
-    this.requestUpdate();
+    this._applyOverlayVisibility(next);
   }
 
-  _renderGanttRow(cohort, slotDates, prerequisiteProblems, cohortMarkersById) {
+  _applyOverlayVisibility(range) {
+    const overlay = this.shadowRoot?.querySelector(".slot-teacher-overlay");
+    if (!overlay) return;
+    const cells = overlay.querySelectorAll(".slot-teacher-overlay-cell");
+    cells.forEach((cell, idx) => {
+      const isVisible = range ? idx >= range.start && idx <= range.end : true;
+      cell.classList.toggle("is-hidden", !isVisible);
+    });
+  }
+
+  _renderGanttRow(
+    cohort,
+    slotDates,
+    prerequisiteProblems,
+    cohortMarkersById,
+    context
+  ) {
     const runsByDate = {};
     const continuationRunsByDate = {};
     const scheduledCourseIds = new Set();
@@ -1401,18 +1731,15 @@ export class SchedulingTab extends LitElement {
       store.isReconciling;
     const markers = cohortMarkersById?.get?.(String(cohort.cohort_id)) || [];
 
-    store
-      .getCourseRuns()
-      .filter((r) => this._runHasCohort(r, cohort.cohort_id))
-      .forEach((run) => {
-        const slot = store.getSlot(run.slot_id);
-        const course = store.getCourse(run.course_id);
+    const runsInCohort =
+      context?.runsByCohortId?.get(String(cohort.cohort_id)) ||
+      store
+        .getCourseRuns()
+        .filter((r) => this._runHasCohort(r, cohort.cohort_id));
+    runsInCohort.forEach((run) => {
+      scheduledCourseIds.add(String(run.course_id));
 
-        scheduledCourseIds.add(String(run.course_id));
-
-        if (!slot) return;
-
-        const runSlotDates = this._getRunSlotDates(run, slotDates);
+      const runSlotDates = this._getRunSlotDates(run, slotDates, context);
         if (runSlotDates.length === 0) return;
 
         runSlotDates.forEach((dateStr, idx) => {
@@ -1428,7 +1755,7 @@ export class SchedulingTab extends LitElement {
         });
       });
 
-    const allCourses = store.getCourses() || [];
+    const allCourses = context?.courses || store.getCourses() || [];
     const hasDepotCourses = allCourses.some(
       (course) => !scheduledCourseIds.has(String(course.course_id))
     );
@@ -1448,6 +1775,7 @@ export class SchedulingTab extends LitElement {
           <gantt-depot
             .cohortId="${cohort.cohort_id}"
             .scheduledCourseIds="${Array.from(scheduledCourseIds)}"
+            .renderContext="${context}"
             .disabled=${!this.isEditing}
           ></gantt-depot>
         </td>
@@ -1549,6 +1877,7 @@ export class SchedulingTab extends LitElement {
                 .isCohortStartSlot="${isCohortStartSlot}"
                 .cohortStartDate="${cohort.start_date}"
                 .prerequisiteProblems="${prerequisiteProblems}"
+                .renderContext="${context}"
                 .disabled=${!this.isEditing}
               ></gantt-cell>
             </td>
@@ -1593,30 +1922,42 @@ export class SchedulingTab extends LitElement {
     }
   }
 
-  _getRunSpan(run) {
+  _getRunSpan(run, context) {
     const spanFromRun = Number(run?.slot_span);
     if (Number.isFinite(spanFromRun) && spanFromRun >= 2) return spanFromRun;
+
+    if (context?.spanByCourseId && run?.course_id != null) {
+      return context.spanByCourseId.get(String(run.course_id)) || 1;
+    }
 
     const course = store.getCourse(run?.course_id);
     const credits = Number(course?.credits);
     return credits === 15 ? 2 : 1;
   }
 
-  _getRunSlotDates(run, slotDates) {
+  _getRunSlotDates(run, slotDates, context) {
     if (!run) return [];
+    if (context?.runSlotDatesByRun?.has(run)) {
+      return context.runSlotDatesByRun.get(run) || [];
+    }
 
     // Prefer explicit slot_ids when present (backend provides these).
     if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
       const fromIds = run.slot_ids
-        .map((slotId) => store.getSlot(slotId)?.start_date)
+        .map((slotId) =>
+          context?.slotById?.get(String(slotId))?.start_date ||
+          store.getSlot(slotId)?.start_date
+        )
         .filter(Boolean);
       if (fromIds.length > 0) return fromIds;
     }
 
-    const startDate = store.getSlot(run.slot_id)?.start_date;
+    const startDate =
+      context?.slotById?.get(String(run.slot_id))?.start_date ||
+      store.getSlot(run.slot_id)?.start_date;
     if (!startDate) return [];
 
-    const span = this._getRunSpan(run);
+    const span = this._getRunSpan(run, context);
     const idx = slotDates.indexOf(startDate);
     if (idx === -1) return [startDate];
     return slotDates.slice(idx, idx + span);
@@ -1654,12 +1995,12 @@ export class SchedulingTab extends LitElement {
     );
     if (!offset) return slotDate;
 
-    const slotDates = [
-      ...new Set((store.getSlots() || []).map((s) => s.start_date)),
-    ].sort();
-    const idx = slotDates.indexOf(slotDate);
+    const context = this._getRenderContext();
+    const slotDates = context?.slotDates || [];
+    const idx = context?.slotIndexByDate?.get(String(slotDate));
+    if (!Number.isFinite(idx)) return null;
     const adjustedIdx = idx - offset;
-    if (idx === -1 || adjustedIdx < 0) return null;
+    if (adjustedIdx < 0) return null;
     return slotDates[adjustedIdx] || null;
   }
 
@@ -1745,51 +2086,81 @@ export class SchedulingTab extends LitElement {
    * Uses transitive prerequisites (A -> B -> C implies A is prerequisite for C).
    * This does NOT modify persisted course prerequisites; it only affects UI warnings in scheduling.
    */
-  _computeSchedulingPrerequisiteProblems() {
+  _computeSchedulingPrerequisiteProblems(context) {
     const problems = [];
-    const slotDates = [
-      ...new Set((store.getSlots() || []).map((s) => s.start_date)),
-    ].sort();
-
-    const runsByCohort = new Map();
-    for (const run of store.getCourseRuns() || []) {
-      for (const cohortId of run.cohorts || []) {
-        const list = runsByCohort.get(cohortId) || [];
-        list.push(run);
-        runsByCohort.set(cohortId, list);
+    const slotDates =
+      context?.slotDates ||
+      [...new Set((store.getSlots() || []).map((s) => s.start_date))].sort();
+    const runsByCohort =
+      context?.runsByCohortId ||
+      (() => {
+        const map = new Map();
+        for (const run of store.getCourseRuns() || []) {
+          for (const cohortId of run.cohorts || []) {
+            const list = map.get(cohortId) || [];
+            list.push(run);
+            map.set(cohortId, list);
+          }
+        }
+        return map;
+      })();
+    const courseById =
+      context?.courseById ||
+      new Map((store.getCourses() || []).map((c) => [c.course_id, c]));
+    const slotById =
+      context?.slotById ||
+      new Map((store.getSlots() || []).map((s) => [String(s.slot_id), s]));
+    const allPrereqsByCourseId = new Map();
+    const getAllPrereqs = (courseId) => {
+      const key = String(courseId);
+      if (!allPrereqsByCourseId.has(key)) {
+        allPrereqsByCourseId.set(
+          key,
+          store.getAllPrerequisites(courseId) || []
+        );
       }
-    }
+      return allPrereqsByCourseId.get(key) || [];
+    };
 
-    const courseById = new Map();
-    for (const course of store.getCourses() || []) {
-      courseById.set(course.course_id, course);
-    }
-
-    for (const cohort of store.getCohorts() || []) {
-      const runsInCohort = runsByCohort.get(cohort.cohort_id) || [];
+    for (const cohort of context?.cohorts || store.getCohorts() || []) {
+      const runsInCohort =
+        runsByCohort.get(String(cohort.cohort_id)) ||
+        runsByCohort.get(cohort.cohort_id) ||
+        [];
+      const runByCourseId = new Map();
+      runsInCohort.forEach((run) => {
+        if (!run || run.course_id == null) return;
+        const key = String(run.course_id);
+        if (!runByCourseId.has(key)) {
+          runByCourseId.set(key, run);
+        }
+      });
 
       // First pass: compute base problems using transitive prerequisites.
       const baseProblemCourseIds = new Set();
 
       for (const run of runsInCohort) {
-        const course = courseById.get(run.course_id);
+        const course =
+          courseById.get(String(run.course_id)) ||
+          courseById.get(run.course_id);
         if (!course) continue;
 
-        const runSlot = store.getSlot(run.slot_id);
+        const runSlot =
+          slotById.get(String(run.slot_id)) || store.getSlot(run.slot_id);
         if (!runSlot) continue;
 
-        const allPrereqs = store.getAllPrerequisites(course.course_id) || [];
+        const allPrereqs = getAllPrereqs(course.course_id);
         const uniquePrereqs = new Set(allPrereqs);
         if (uniquePrereqs.size === 0) continue;
 
         const runDate = new Date(runSlot.start_date);
 
         for (const prereqId of uniquePrereqs) {
-          const prereqCourse = courseById.get(prereqId);
+          const prereqCourse =
+            courseById.get(String(prereqId)) || courseById.get(prereqId);
           if (!prereqCourse) continue;
 
-          const prereqRun =
-            runsInCohort.find((r) => r.course_id === prereqId) || null;
+          const prereqRun = runByCourseId.get(String(prereqId)) || null;
 
           if (!prereqRun) {
             const problem = {
@@ -1809,10 +2180,16 @@ export class SchedulingTab extends LitElement {
             continue;
           }
 
-          const prereqSlot = store.getSlot(prereqRun.slot_id);
+          const prereqSlot =
+            slotById.get(String(prereqRun.slot_id)) ||
+            store.getSlot(prereqRun.slot_id);
           if (!prereqSlot) continue;
 
-          const prereqEndDate = this._getRunEndDate(prereqRun, slotDates);
+          const prereqEndDate = this._getRunEndDate(
+            prereqRun,
+            slotDates,
+            context
+          );
 
           if (prereqEndDate && runDate <= prereqEndDate) {
             const problem = {
@@ -1841,7 +2218,9 @@ export class SchedulingTab extends LitElement {
       while (changed) {
         changed = false;
         for (const run of runsInCohort) {
-          const course = courseById.get(run.course_id);
+          const course =
+            courseById.get(String(run.course_id)) ||
+            courseById.get(run.course_id);
           if (!course) continue;
           if (problemCourseIds.has(course.course_id)) continue;
           if (
@@ -1864,7 +2243,9 @@ export class SchedulingTab extends LitElement {
       // Add a single "chain blocked" problem for each course that is only problematic
       // due to a prerequisite having its own issues.
       for (const run of runsInCohort) {
-        const course = courseById.get(run.course_id);
+        const course =
+          courseById.get(String(run.course_id)) ||
+          courseById.get(run.course_id);
         if (!course) continue;
         if (!problemCourseIds.has(course.course_id)) continue;
         if (baseProblemCourseIds.has(course.course_id)) continue;
@@ -1873,7 +2254,7 @@ export class SchedulingTab extends LitElement {
           ? course.prerequisites
           : [];
         const blocking = directPrereqs
-          .map((pid) => courseById.get(pid))
+          .map((pid) => courseById.get(String(pid)) || courseById.get(pid))
           .filter(Boolean)
           .filter((c) => problemCourseIds.has(c.course_id))
           .sort((a, b) => (a.code || "").localeCompare(b.code || ""))[0];
@@ -1898,34 +2279,38 @@ export class SchedulingTab extends LitElement {
     return problems;
   }
 
-  _getRunEndDate(run, slotDates) {
-    const dates = this._getRunSlotDates(run, slotDates);
+  _getRunEndDate(run, slotDates, context) {
+    const dates = this._getRunSlotDates(run, slotDates, context);
     const lastDate = dates.length ? dates[dates.length - 1] : null;
 
     const lastSlot =
       (lastDate
-        ? (store.getSlots() || []).find((s) => s.start_date === lastDate)
+        ? context?.slotByStartDate?.get(String(lastDate)) ||
+          (store.getSlots() || []).find((s) => s.start_date === lastDate)
         : null) || store.getSlot(run?.slot_id);
 
     const range = getSlotRange(lastSlot);
     return range?.end || null;
   }
 
-  _computeCohortSlotOverlapWarnings() {
+  _computeCohortSlotOverlapWarnings(context) {
     const warnings = [];
-    const slotDates = [
-      ...new Set((store.getSlots() || []).map((s) => s.start_date)),
-    ].sort();
+    const slotDates =
+      context?.slotDates ||
+      [...new Set((store.getSlots() || []).map((s) => s.start_date))].sort();
+    const runsByCohortId = context?.runsByCohortId || new Map();
 
-    for (const cohort of store.getCohorts() || []) {
-      const runsInCohort = (store.getCourseRuns() || []).filter((r) =>
-        this._runHasCohort(r, cohort.cohort_id)
-      );
+    for (const cohort of context?.cohorts || store.getCohorts() || []) {
+      const runsInCohort =
+        runsByCohortId.get(String(cohort.cohort_id)) ||
+        (store.getCourseRuns() || []).filter((r) =>
+          this._runHasCohort(r, cohort.cohort_id)
+        );
 
       const uniqueCoursesBySlotDate = new Map();
       for (const run of runsInCohort) {
         if (run?.course_id == null) continue;
-        const dates = this._getRunSlotDates(run, slotDates);
+        const dates = this._getRunSlotDates(run, slotDates, context);
         if (dates.length === 0) continue;
 
         for (const dateStr of dates) {
@@ -1977,10 +2362,12 @@ export class SchedulingTab extends LitElement {
     return `${yy}${mm}${dd}`;
   }
 
-  _formatSlotHeaderLabel(dateStr, order) {
+  _formatSlotHeaderLabel(dateStr, order, context) {
     const startCompact = this._formatDateYYMMDD(dateStr);
     if (!startCompact) return "";
-    const slot = (store.getSlots() || []).find((s) => s.start_date === dateStr);
+    const slot =
+      context?.slotByStartDate?.get(String(dateStr)) ||
+      (store.getSlots() || []).find((s) => s.start_date === dateStr);
     let endDate = slot?.end_date;
     if (!endDate) {
       const start = this._parseDateOnly(dateStr);
@@ -2018,30 +2405,38 @@ export class SchedulingTab extends LitElement {
     return run.cohorts.some((id) => String(id) === String(cohortId));
   }
 
-  _renderSummaryRow(slotDates) {
+  _renderSummaryRow(slotDates, context) {
     return html`
       <tr>
         <td class="summary-label" colspan="2">Kurser & Lärare:</td>
-        ${slotDates.map((dateStr) => this._renderSummaryCell(dateStr))}
+        ${slotDates.map((dateStr) =>
+          this._renderSummaryCell(dateStr, context)
+        )}
       </tr>
     `;
   }
 
-  _renderSummaryCell(slotDate) {
-    const slot = store.getSlots().find((s) => s.start_date === slotDate);
+  _renderSummaryCell(slotDate, context) {
+    const slot =
+      context?.slotByStartDate?.get(String(slotDate)) ||
+      store.getSlots().find((s) => s.start_date === slotDate);
     if (!slot) return html`<td class="summary-cell"></td>`;
 
-    const runsInSlot = (store.getCourseRuns() || [])
-      .filter((run) => this._runCoversSlotId(run, slot.slot_id))
-      // Ignore orphan runs with no cohort (they shouldn't count as "scheduled" in the grid)
-      .filter(
-        (run) =>
-          Array.isArray(run.cohorts) && run.cohorts.some((id) => id != null)
-      );
+    const runsInSlot = (
+      context?.runsBySlotIdWithCohort?.get(String(slot.slot_id)) ||
+      (store.getCourseRuns() || [])
+        .filter((run) => this._runCoversSlotId(run, slot.slot_id, context))
+        .filter(
+          (run) =>
+            Array.isArray(run.cohorts) && run.cohorts.some((id) => id != null)
+        )
+    );
 
     const courseMap = new Map();
     for (const run of runsInSlot) {
-      const course = store.getCourse(run.course_id);
+      const course =
+        context?.courseById?.get(String(run.course_id)) ||
+        store.getCourse(run.course_id);
       if (!course) continue;
 
       if (!courseMap.has(course.course_id)) {
@@ -2058,7 +2453,9 @@ export class SchedulingTab extends LitElement {
       // cohorts -> participants
       if (Array.isArray(run.cohorts)) {
         for (const cohortId of run.cohorts) {
-          const cohort = store.getCohort(cohortId);
+          const cohort =
+            context?.cohortById?.get(String(cohortId)) ||
+            store.getCohort(cohortId);
           if (cohort) entry.totalParticipants += cohort.planned_size || 0;
         }
       }
@@ -2079,8 +2476,9 @@ export class SchedulingTab extends LitElement {
           const bgColor = this._getCourseColor(course);
           const textColor = this._getCourseTextColor(course);
           const assignedTeacherIds = Array.from(item.assignedTeachers);
-          const compatibleTeachers = getCompatibleTeachersForCourse(
-            course.course_id
+          const compatibleTeachers = this._getCompatibleTeachers(
+            course.course_id,
+            context
           );
           const currentKursansvarigId =
             item.runs.length > 0 ? item.runs[0].kursansvarig_id : null;
@@ -2119,6 +2517,7 @@ export class SchedulingTab extends LitElement {
                           slot,
                           slotDate,
                           courseId: course.course_id,
+                          context,
                         });
                       const isKursansvarig =
                         Number(currentKursansvarigId) === teacher.teacher_id;
@@ -2207,60 +2606,160 @@ export class SchedulingTab extends LitElement {
     `;
   }
 
-  _runCoversSlotId(run, slotId) {
+  _runCoversSlotId(run, slotId, context) {
     if (!run || slotId == null) return false;
+    if (context?.runCoveredSlotIdsByRun?.has(run)) {
+      const covered = context.runCoveredSlotIdsByRun.get(run) || [];
+      return covered.some((id) => String(id) === String(slotId));
+    }
     if (Array.isArray(run.slot_ids) && run.slot_ids.length > 0) {
       return run.slot_ids.some((id) => String(id) === String(slotId));
     }
     if (String(run.slot_id) === String(slotId)) return true;
 
-    const span = this._getRunSpan(run);
+    const span = this._getRunSpan(run, context);
     if (!Number.isFinite(span) || span <= 1) return false;
 
-    const ordered = (store.getSlots() || [])
-      .slice()
-      .sort(
-        (a, b) =>
-          new Date(a.start_date) - new Date(b.start_date) ||
-          Number(a.slot_id) - Number(b.slot_id)
-      );
-    const indexById = new Map(
-      ordered.map((s, idx) => [String(s.slot_id), idx])
-    );
+    const ordered =
+      context?.sortedSlots ||
+      (store.getSlots() || [])
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(a.start_date) - new Date(b.start_date) ||
+            Number(a.slot_id) - Number(b.slot_id)
+        );
+    const indexById =
+      context?.slotIndexById ||
+      new Map(ordered.map((s, idx) => [String(s.slot_id), idx]));
     const startIdx = indexById.get(String(run.slot_id));
     const targetIdx = indexById.get(String(slotId));
     if (!Number.isFinite(startIdx) || !Number.isFinite(targetIdx)) return false;
     return targetIdx >= startIdx && targetIdx < startIdx + span;
   }
 
-  _teacherAvailabilityForCourseInSlot({ teacherId, slot, slotDate, courseId }) {
+  _getCompatibleTeachers(courseId, context) {
+    if (context?.compatibleTeachersByCourseId) {
+      return context.compatibleTeachersByCourseId.get(String(courseId)) || [];
+    }
+    return getCompatibleTeachersForCourse(courseId);
+  }
+
+  _getActiveCourseDays(slotId, courseId, context) {
+    if (!context) return store.getActiveCourseDaysInSlot(slotId, courseId);
+    const key = `${slotId}:${courseId}`;
+    if (!context.activeCourseDaysByKey.has(key)) {
+      const days = (store.getActiveCourseDaysInSlot(slotId, courseId) || [])
+        .map((d) => context.normalizeDate(d))
+        .filter(Boolean);
+      context.activeCourseDaysByKey.set(key, days);
+    }
+    return context.activeCourseDaysByKey.get(key) || [];
+  }
+
+  _getSlotDays(slotId, context) {
+    if (context?.slotDaysBySlotId) {
+      return context.slotDaysBySlotId.get(String(slotId)) || [];
+    }
     const normalizeDate = (v) => (v || "").split("T")[0];
-    const slotDays = (store.getSlotDays(slot.slot_id) || [])
+    return (store.getSlotDays(slotId) || [])
       .map(normalizeDate)
       .filter(Boolean);
+  }
 
-    const hasSlotBusyEntry = (store.teacherAvailability || []).some(
+  _getSlotDaySet(slotId, context) {
+    if (context?.slotDaySetBySlotId) {
+      return context.slotDaySetBySlotId.get(String(slotId)) || new Set();
+    }
+    return new Set(this._getSlotDays(slotId, context));
+  }
+
+  _getTeacherDayBusySet(teacherId, context) {
+    if (context?.dayBusyByTeacher) {
+      return context.dayBusyByTeacher.get(String(teacherId)) || new Set();
+    }
+    const normalizeDate = (v) => (v || "").split("T")[0];
+    const daySet = new Set();
+    (store.teacherAvailability || []).forEach((a) => {
+      if (!a || a.type !== "busy" || a.slot_id) return;
+      if (String(a.teacher_id) !== String(teacherId)) return;
+      const date = normalizeDate(a.from_date);
+      if (date) daySet.add(date);
+    });
+    return daySet;
+  }
+
+  _hasSlotBusyEntry(teacherId, slotId, context) {
+    if (context?.slotBusyByTeacher) {
+      const slotSet = context.slotBusyByTeacher.get(String(teacherId));
+      if (!slotSet) return false;
+      return slotSet.has(String(slotId));
+    }
+    return (store.teacherAvailability || []).some(
       (a) =>
         String(a.teacher_id) === String(teacherId) &&
-        String(a.slot_id) === String(slot.slot_id) &&
+        String(a.slot_id) === String(slotId) &&
         a.type === "busy"
     );
+  }
 
+  _isTeacherUnavailableInSlot({ teacherId, slotId, slotDate, context }) {
+    const normalizeDate =
+      context?.normalizeDate || ((v) => (v || "").split("T")[0]);
+    const resolvedSlotId =
+      slotId ??
+      context?.slotByStartDate?.get(String(slotDate))?.slot_id ??
+      store.getSlots().find((s) => s.start_date === slotDate)?.slot_id ??
+      null;
+    if (resolvedSlotId == null) {
+      return store.isTeacherUnavailable(teacherId, slotDate, slotId);
+    }
+    if (this._hasSlotBusyEntry(teacherId, resolvedSlotId, context)) return true;
+    const slotDays = this._getSlotDays(resolvedSlotId, context);
+    if (slotDays.length === 0) return false;
+    const daySet = this._getTeacherDayBusySet(teacherId, context);
+    let count = 0;
+    for (const day of slotDays) {
+      if (daySet.has(normalizeDate(day))) {
+        count += 1;
+      }
+    }
+    return count > 0 && count === slotDays.length;
+  }
+
+  _teacherAvailabilityForCourseInSlot({
+    teacherId,
+    slot,
+    slotDate,
+    courseId,
+    context,
+  }) {
+    const normalizeDate =
+      context?.normalizeDate || ((v) => (v || "").split("T")[0]);
+    const slotDays = this._getSlotDays(slot.slot_id, context);
+    const slotDaySet = this._getSlotDaySet(slot.slot_id, context);
+
+    const hasSlotBusyEntry = this._hasSlotBusyEntry(
+      teacherId,
+      slot.slot_id,
+      context
+    );
+
+    const daySet = this._getTeacherDayBusySet(teacherId, context);
     const isUnavailableOnDay = (day) =>
-      hasSlotBusyEntry || store.isTeacherUnavailableOnDay(teacherId, day);
+      hasSlotBusyEntry || daySet.has(normalizeDate(day));
 
     const unavailableDaysInSlot = hasSlotBusyEntry
       ? slotDays
-      : slotDays.filter((d) => store.isTeacherUnavailableOnDay(teacherId, d));
+      : slotDays.filter((d) => daySet.has(normalizeDate(d)));
 
     let classNameSuffix = "";
     if (unavailableDaysInSlot.length > 0) {
-      const activeDays = (
-        store.getActiveCourseDaysInSlot(slot.slot_id, courseId) || []
-      )
-        .map(normalizeDate)
-        .filter(Boolean)
-        .filter((d) => slotDays.includes(d));
+      const activeDays = (this._getActiveCourseDays(
+        slot.slot_id,
+        courseId,
+        context
+      ) || []).filter((d) => slotDaySet.has(d));
 
       if (activeDays.length > 0) {
         const unavailableActiveDays = activeDays.filter((d) =>
@@ -2283,7 +2782,12 @@ export class SchedulingTab extends LitElement {
         ? "Delvis otillgänglig för kursens kursdagar"
         : classNameSuffix === "partial-availability"
         ? "Otillgänglig i perioden (men inte på kursens kursdagar)"
-        : store.isTeacherUnavailable(teacherId, slotDate, slot.slot_id)
+        : this._isTeacherUnavailableInSlot({
+            teacherId,
+            slotId: slot.slot_id,
+            slotDate,
+            context,
+          })
         ? "Otillgänglig i perioden"
         : "Tillgänglig";
 
@@ -2477,16 +2981,18 @@ export class SchedulingTab extends LitElement {
   _setTeacherOverlayForCourse(courseId) {
     this._dragCourseId = courseId;
 
-    const slotDates = [
-      ...new Set((store.getSlots() || []).map((s) => s.start_date)),
-    ].sort();
+    const context = this._getRenderContext();
+    const slotDates = context.slotDates || [];
     const map = new Map();
 
     slotDates.forEach((slotDate) => {
-      map.set(slotDate, this._computeTeacherOverlayChips(courseId, slotDate));
+      map.set(
+        slotDate,
+        this._computeTeacherOverlayChips(courseId, slotDate, context)
+      );
     });
 
-    const compatibleCount = getCompatibleTeachersForCourse(courseId).length;
+    const compatibleCount = this._getCompatibleTeachers(courseId, context).length;
     this._shouldShowTeacherAvailabilityOverlay = compatibleCount > 0;
 
     this._teacherOverlayChipsBySlotDate = map;
@@ -2494,48 +3000,51 @@ export class SchedulingTab extends LitElement {
     this.requestUpdate();
   }
 
-  _computeTeacherOverlayChips(courseId, slotDate) {
-    const slot = store.getSlots().find((s) => s.start_date === slotDate);
+  _computeTeacherOverlayChips(courseId, slotDate, context) {
+    const slot =
+      context?.slotByStartDate?.get(String(slotDate)) ||
+      store.getSlots().find((s) => s.start_date === slotDate);
     if (!slot) return [];
 
-    const normalizeDate = (v) => (v || "").split("T")[0];
-    const slotDays = (store.getSlotDays(slot.slot_id) || [])
-      .map(normalizeDate)
-      .filter(Boolean);
-
-    const runsCoveringSlot = (store.getCourseRuns() || []).filter((run) =>
-      this._runCoversSlotId(run, slot.slot_id)
+    const normalizeDate =
+      context?.normalizeDate || ((v) => (v || "").split("T")[0]);
+    const slotDays = this._getSlotDays(slot.slot_id, context);
+    const runsCoveringSlot = (
+      context?.runsBySlotId?.get(String(slot.slot_id)) ||
+      (store.getCourseRuns() || []).filter((run) =>
+        this._runCoversSlotId(run, slot.slot_id, context)
+      )
     );
+    const assignedTeacherIds = new Set();
+    runsCoveringSlot.forEach((run) => {
+      if (Array.isArray(run.teachers)) {
+        run.teachers.forEach((tid) => {
+          if (tid != null) assignedTeacherIds.add(String(tid));
+        });
+      }
+    });
 
     const isTeacherOccupiedInSlot = (teacherId) =>
-      runsCoveringSlot.some(
-        (run) =>
-          Array.isArray(run.teachers) &&
-          run.teachers.some((tid) => String(tid) === String(teacherId))
-      );
-
-    const hasSlotBusyEntry = (teacherId) =>
-      (store.teacherAvailability || []).some(
-        (a) =>
-          String(a.teacher_id) === String(teacherId) &&
-          String(a.slot_id) === String(slot.slot_id) &&
-          a.type === "busy"
-      );
+      assignedTeacherIds.has(String(teacherId));
 
     const isTeacherMarkedUnavailableInSlot = (teacherId) => {
-      if (hasSlotBusyEntry(teacherId)) return true;
+      if (this._hasSlotBusyEntry(teacherId, slot.slot_id, context)) return true;
       if (
         typeof store.isTeacherUnavailable === "function" &&
-        store.isTeacherUnavailable(teacherId, slotDate, slot.slot_id)
+        this._isTeacherUnavailableInSlot({
+          teacherId,
+          slotId: slot.slot_id,
+          slotDate,
+          context,
+        })
       ) {
         return true;
       }
-      return slotDays.some((day) =>
-        store.isTeacherUnavailableOnDay(teacherId, day)
-      );
+      const daySet = this._getTeacherDayBusySet(teacherId, context);
+      return slotDays.some((day) => daySet.has(normalizeDate(day)));
     };
 
-    return getCompatibleTeachersForCourse(courseId)
+    return this._getCompatibleTeachers(courseId, context)
       .filter((teacher) => !isTeacherOccupiedInSlot(teacher.teacher_id))
       .filter(
         (teacher) => !isTeacherMarkedUnavailableInSlot(teacher.teacher_id)

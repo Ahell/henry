@@ -16,6 +16,7 @@ export class GanttCourseBlock extends LitElement {
     cohortId: { type: Number },
     prerequisiteProblems: { type: Array },
     isSecondBlock: { type: Boolean },
+    renderContext: { type: Object },
     disabled: { type: Boolean },
   };
 
@@ -27,20 +28,31 @@ export class GanttCourseBlock extends LitElement {
     this.cohortId = null;
     this.prerequisiteProblems = [];
     this.isSecondBlock = false;
+    this.renderContext = null;
     this.disabled = false;
   }
 
   render() {
     if (!this.run) return html``;
 
-    const course = store.getCourse(this.run.course_id);
+    const context = this.renderContext;
+    const course =
+      context?.courseById?.get(String(this.run.course_id)) ||
+      store.getCourse(this.run.course_id);
     if (!course) return html``;
 
-    const hasPrereqs = this._hasPrerequisites(course.course_id);
-    const slot = store.getSlot(this.run.slot_id);
+    const hasPrereqs = this._hasPrerequisites(course.course_id, context);
+    const slot =
+      context?.slotById?.get(String(this.run.slot_id)) ||
+      store.getSlot(this.run.slot_id);
     const slotDate = slot?.start_date;
     const teacherShortageStatus = slotDate
-      ? getTeacherShortageStatusForCourseInSlot(course.course_id, slotDate)
+      ? this._getTeacherShortageStatus(
+          course.course_id,
+          slotDate,
+          slot,
+          context
+        )
       : TEACHER_SHORTAGE_STATUS.OK;
     const hasTeacherShortage =
       teacherShortageStatus !== TEACHER_SHORTAGE_STATUS.OK;
@@ -83,7 +95,10 @@ export class GanttCourseBlock extends LitElement {
 
     // Build tooltip
     let prereqInfo = hasPrereqs
-      ? `\nSpärrkurser: ${this._getPrerequisiteNames(course.course_id)}`
+      ? `\nSpärrkurser: ${this._getPrerequisiteNames(
+          course.course_id,
+          context
+        )}`
       : "";
 
     if (hasMissingPrereq) {
@@ -192,24 +207,123 @@ export class GanttCourseBlock extends LitElement {
     );
   }
 
-  _hasPrerequisites(courseId) {
-    const course = store.getCourse(courseId);
+  _hasPrerequisites(courseId, context) {
+    const course =
+      context?.courseById?.get(String(courseId)) || store.getCourse(courseId);
     return course?.prerequisites && course.prerequisites.length > 0;
   }
 
-  _getPrerequisiteNames(courseId) {
-    const course = store.getCourse(courseId);
+  _getPrerequisiteNames(courseId, context) {
+    const course =
+      context?.courseById?.get(String(courseId)) || store.getCourse(courseId);
     if (!course?.prerequisites || course.prerequisites.length === 0) {
       return "-";
     }
 
     return course.prerequisites
       .map((prereqId) => {
-        const prereqCourse = store.getCourse(prereqId);
+        const prereqCourse =
+          context?.courseById?.get(String(prereqId)) ||
+          store.getCourse(prereqId);
         return prereqCourse ? prereqCourse.code : null;
       })
       .filter(Boolean)
       .join(", ");
+  }
+
+  _getTeacherShortageStatus(courseId, slotDate, slot, context) {
+    if (!context) {
+      return getTeacherShortageStatusForCourseInSlot(courseId, slotDate);
+    }
+
+    const key = `${courseId}:${slotDate}`;
+    if (context.teacherShortageStatusByCourseSlotDate?.has(key)) {
+      return context.teacherShortageStatusByCourseSlotDate.get(key);
+    }
+
+    const compatibleTeachers =
+      context.compatibleTeachersByCourseId?.get(String(courseId)) || [];
+    if (compatibleTeachers.length === 0) {
+      context.teacherShortageStatusByCourseSlotDate?.set(
+        key,
+        TEACHER_SHORTAGE_STATUS.NO_COMPATIBLE_TEACHERS
+      );
+      return TEACHER_SHORTAGE_STATUS.NO_COMPATIBLE_TEACHERS;
+    }
+
+    const resolvedSlot =
+      slot || context.slotByStartDate?.get(String(slotDate));
+    if (!resolvedSlot) {
+      context.teacherShortageStatusByCourseSlotDate?.set(
+        key,
+        TEACHER_SHORTAGE_STATUS.OK
+      );
+      return TEACHER_SHORTAGE_STATUS.OK;
+    }
+
+    const runsForCourseInSlot = (context.runs || []).filter(
+      (r) =>
+        String(r.slot_id) === String(resolvedSlot.slot_id) &&
+        String(r.course_id) === String(courseId)
+    );
+
+    const hasAssignedTeacher = runsForCourseInSlot.some(
+      (r) => Array.isArray(r.teachers) && r.teachers.length > 0
+    );
+    if (hasAssignedTeacher) {
+      context.teacherShortageStatusByCourseSlotDate?.set(
+        key,
+        TEACHER_SHORTAGE_STATUS.OK
+      );
+      return TEACHER_SHORTAGE_STATUS.OK;
+    }
+
+    const availableTeachers = compatibleTeachers.filter(
+      (teacher) =>
+        !this._isTeacherUnavailableInSlot(
+          teacher.teacher_id,
+          resolvedSlot,
+          slotDate,
+          context
+        )
+    );
+
+    if (availableTeachers.length === 0) {
+      context.teacherShortageStatusByCourseSlotDate?.set(
+        key,
+        TEACHER_SHORTAGE_STATUS.NO_AVAILABLE_COMPATIBLE_TEACHERS
+      );
+      return TEACHER_SHORTAGE_STATUS.NO_AVAILABLE_COMPATIBLE_TEACHERS;
+    }
+
+    context.teacherShortageStatusByCourseSlotDate?.set(
+      key,
+      TEACHER_SHORTAGE_STATUS.OK
+    );
+    return TEACHER_SHORTAGE_STATUS.OK;
+  }
+
+  _isTeacherUnavailableInSlot(teacherId, slot, slotDate, context) {
+    if (!context) {
+      return store.isTeacherUnavailable(teacherId, slotDate, slot?.slot_id);
+    }
+    const slotId = slot?.slot_id;
+    if (slotId == null) {
+      return store.isTeacherUnavailable(teacherId, slotDate, slotId);
+    }
+    const slotSet = context.slotBusyByTeacher?.get(String(teacherId));
+    if (slotSet?.has(String(slotId))) return true;
+
+    const slotDays = context.slotDaysBySlotId?.get(String(slotId)) || [];
+    if (slotDays.length === 0) return false;
+    const daySet = context.dayBusyByTeacher?.get(String(teacherId)) || new Set();
+    let count = 0;
+    for (const day of slotDays) {
+      if (daySet.has(context.normalizeDate(day))) {
+        count += 1;
+      }
+    }
+    return count > 0 && count === slotDays.length;
   }
 
   _getCourseColorToken(course) {
