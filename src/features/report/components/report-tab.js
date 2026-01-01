@@ -32,6 +32,7 @@ export class ReportTab extends LitElement {
     examTo: { type: String },
     _showAdvancedFilters: { type: Boolean },
     _rows: { type: Array },
+    isExporting: { type: Boolean },
   };
 
   constructor() {
@@ -56,6 +57,7 @@ export class ReportTab extends LitElement {
     this.examTo = "";
     this._showAdvancedFilters = false;
     this._rows = [];
+    this.isExporting = false;
     this._refresh();
     store.subscribe(() => {
       this._refresh();
@@ -569,29 +571,44 @@ export class ReportTab extends LitElement {
     return `${yyyy.slice(-2)}${mm}${dd}`;
   }
 
-  _exportRows(useFiltered) {
-    const rows = useFiltered ? this._filteredRows() : (this._rows || []);
-    const columns = this._getTableColumns();
-    const header = columns.map((col) => this._escapeCsv(col.label || col.key));
-    const lines = [header.join(";")];
+  async _exportRows(useFiltered) {
+    if (this.isExporting) return;
+    await this._runExport(async () => {
+      const rows = useFiltered ? this._filteredRows() : (this._rows || []);
+      const columns = this._getTableColumns();
+      const header = columns.map((col) => this._escapeCsv(col.label || col.key));
+      const lines = [header.join(";")];
 
-    rows.forEach((row) => {
-      const values = columns.map((col) =>
-        this._escapeCsv(this._getExportValue(row, col.key))
-      );
-      lines.push(values.join(";"));
+      rows.forEach((row) => {
+        const values = columns.map((col) =>
+          this._escapeCsv(this._getExportValue(row, col.key))
+        );
+        lines.push(values.join(";"));
+      });
+
+      const today = new Date();
+      const stamp = `${today.getFullYear()}-${String(
+        today.getMonth() + 1
+      ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      const fileDate = this._formatDateYYMMDD(stamp);
+      const suffix = useFiltered ? "filtrerad" : "alla";
+      const filename = `rapport-${suffix}-${fileDate || "export"}.csv`;
+
+      const csv = `\ufeff${lines.join("\n")}`;
+      this._downloadFile(csv, filename, "text/csv;charset=utf-8;");
     });
+  }
 
-    const today = new Date();
-    const stamp = `${today.getFullYear()}-${String(
-      today.getMonth() + 1
-    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const fileDate = this._formatDateYYMMDD(stamp);
-    const suffix = useFiltered ? "filtrerad" : "alla";
-    const filename = `rapport-${suffix}-${fileDate || "export"}.csv`;
-
-    const csv = `\ufeff${lines.join("\n")}`;
-    this._downloadFile(csv, filename, "text/csv;charset=utf-8;");
+  async _runExport(task) {
+    this.isExporting = true;
+    this.requestUpdate();
+    await new Promise(requestAnimationFrame);
+    try {
+      await task();
+    } finally {
+      this.isExporting = false;
+      this.requestUpdate();
+    }
   }
 
   _getExportValue(row, key) {
@@ -626,58 +643,61 @@ export class ReportTab extends LitElement {
     URL.revokeObjectURL(url);
   }
 
-  _exportPdf(useFiltered) {
-    const rows = useFiltered ? this._filteredRows() : (this._rows || []);
-    const columns = this._getTableColumns();
+  async _exportPdf(useFiltered) {
+    if (this.isExporting) return;
+    await this._runExport(async () => {
+      const rows = useFiltered ? this._filteredRows() : (this._rows || []);
+      const columns = this._getTableColumns();
 
-    const today = new Date();
-    const stamp = `${today.getFullYear()}-${String(
-      today.getMonth() + 1
-    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const fileDate = this._formatDateYYMMDD(stamp);
-    const suffix = useFiltered ? "filtrerad" : "alla";
-    const title = `Rapport (${suffix})`;
-    const filename = `rapport-${suffix}-${fileDate || "export"}.pdf`;
+      const today = new Date();
+      const stamp = `${today.getFullYear()}-${String(
+        today.getMonth() + 1
+      ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      const fileDate = this._formatDateYYMMDD(stamp);
+      const suffix = useFiltered ? "filtrerad" : "alla";
+      const title = `Rapport (${suffix})`;
+      const filename = `rapport-${suffix}-${fileDate || "export"}.pdf`;
 
-    const doc = new jsPDF({
-      orientation: "landscape",
-      unit: "pt",
-      format: "a4",
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "pt",
+        format: "a4",
+      });
+
+      const head = [columns.map((col) => col.label || col.key)];
+      const body = rows.map((row) =>
+        columns.map((col) => this._getPdfValue(row, col.key))
+      );
+
+      autoTable(doc, {
+        head,
+        body,
+        margin: { top: 48, left: 32, right: 32, bottom: 32 },
+        styles: {
+          fontSize: 8,
+          cellPadding: 3,
+          textColor: [17, 24, 39],
+        },
+        headStyles: {
+          fillColor: [243, 244, 246],
+          textColor: [17, 24, 39],
+          fontStyle: "bold",
+        },
+        columnStyles: this._getPdfColumnStyles(columns),
+        didDrawPage: (data) => {
+          doc.setFontSize(12);
+          doc.text(title, data.settings.margin.left, 24);
+          doc.setFontSize(9);
+          doc.text(
+            `Export: ${fileDate || stamp}`,
+            data.settings.margin.left,
+            36
+          );
+        },
+      });
+
+      doc.save(filename);
     });
-
-    const head = [columns.map((col) => col.label || col.key)];
-    const body = rows.map((row) =>
-      columns.map((col) => this._getPdfValue(row, col.key))
-    );
-
-    autoTable(doc, {
-      head,
-      body,
-      margin: { top: 48, left: 32, right: 32, bottom: 32 },
-      styles: {
-        fontSize: 8,
-        cellPadding: 3,
-        textColor: [17, 24, 39],
-      },
-      headStyles: {
-        fillColor: [243, 244, 246],
-        textColor: [17, 24, 39],
-        fontStyle: "bold",
-      },
-      columnStyles: this._getPdfColumnStyles(columns),
-      didDrawPage: (data) => {
-        doc.setFontSize(12);
-        doc.text(title, data.settings.margin.left, 24);
-        doc.setFontSize(9);
-        doc.text(
-          `Export: ${fileDate || stamp}`,
-          data.settings.margin.left,
-          36
-        );
-      },
-    });
-
-    doc.save(filename);
   }
 
   _getPdfColumnStyles(columns) {
@@ -772,6 +792,12 @@ export class ReportTab extends LitElement {
               ></henry-select>
 
               <div class="filters-actions">
+                <span
+                  class="save-spinner"
+                  title="Exporterar"
+                  ?hidden="${!this.isExporting}"
+                  aria-hidden="true"
+                ></span>
                 <henry-button
                   variant="secondary"
                   @click=${this._toggleAdvancedFilters}
@@ -784,21 +810,25 @@ export class ReportTab extends LitElement {
                 >
                 <henry-button
                   variant="secondary"
+                  ?disabled=${this.isExporting}
                   @click=${() => this._exportRows(true)}
                   >Exportera CSV (filtrerad)</henry-button
                 >
                 <henry-button
                   variant="secondary"
+                  ?disabled=${this.isExporting}
                   @click=${() => this._exportRows(false)}
                   >Exportera CSV (alla)</henry-button
                 >
                 <henry-button
                   variant="secondary"
+                  ?disabled=${this.isExporting}
                   @click=${() => this._exportPdf(true)}
                   >Exportera PDF (filtrerad)</henry-button
                 >
                 <henry-button
                   variant="secondary"
+                  ?disabled=${this.isExporting}
                   @click=${() => this._exportPdf(false)}
                   >Exportera PDF (alla)</henry-button
                 >

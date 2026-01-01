@@ -6,10 +6,6 @@ import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import { SlotFormService } from "../services/slot-form.service.js";
 import { SlotService } from "../services/slot.service.js";
-import {
-  showSuccessMessage,
-  showErrorMessage,
-} from "../../../utils/message-helpers.js";
 
 export class SlotModal extends LitElement {
   static properties = {
@@ -97,26 +93,22 @@ export class SlotModal extends LitElement {
       return;
     }
 
-    try {
-      const formData = SlotFormService.extractFormData(
-        this.renderRoot,
-        this.mode
-      );
-      let result;
-
-      if (this.mode === "add") {
-        result = await SlotService.saveNewSlot(formData);
-        showSuccessMessage(this, "Kursperiod tillagd!");
-      } else {
-        result = await SlotService.saveUpdatedSlot(this.slotId, formData);
-        showSuccessMessage(this, "Kursperiod uppdaterad!");
-      }
-
-      this.dispatchEvent(new CustomEvent("slot-saved", { detail: result }));
-      this._handleClose();
-    } catch (err) {
-      showErrorMessage(this, `Kunde inte spara kursperiod: ${err.message}`);
-    }
+    const formData = SlotFormService.extractFormData(
+      this.renderRoot,
+      this.mode
+    );
+    const action = this.mode === "add" ? "add" : "update";
+    this.dispatchEvent(
+      new CustomEvent("modal-save", {
+        detail: {
+          action,
+          slotId: this.slotId,
+          formData,
+        },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   _handleClose() {

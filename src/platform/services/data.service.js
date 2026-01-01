@@ -20,15 +20,44 @@ export class DataService {
 
   async saveData(payload) {
     try {
-      await this.api.saveData(payload);
+      const response = await this.api.saveData(payload);
+      const canonicalData = this._extractBulkSnapshot(response);
+      if (canonicalData) {
+        return canonicalData;
+      }
 
       // After saving, reload the canonical dataset so the client can reconcile with server state
-      const canonicalData = await this.api.loadData();
-      return canonicalData;
+      return await this.api.loadData();
     } catch (error) {
       console.error("Failed to save to backend:", error);
       throw error;
     }
+  }
+
+  _extractBulkSnapshot(response) {
+    const candidate = response && response.data ? response.data : response;
+    if (!candidate || typeof candidate !== "object") return null;
+    const keys = [
+      "courses",
+      "cohorts",
+      "teachers",
+      "teacherCourses",
+      "courseExaminators",
+      "courseKursansvarig",
+      "slots",
+      "courseRuns",
+      "teacherAvailability",
+      "courseSlots",
+      "cohortSlotCourses",
+      "courseRunSlots",
+      "slotDays",
+      "teacherDayUnavailability",
+      "courseSlotDays",
+      "coursePrerequisites",
+      "businessLogic",
+    ];
+    const hasSnapshotKey = keys.some((key) => key in candidate);
+    return hasSnapshotKey ? candidate : null;
   }
 
   async loadTestData() {

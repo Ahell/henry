@@ -11,6 +11,7 @@ export class TeacherAvailabilityTab extends LitElement {
     paintMode: { type: String },
     teachers: { type: Array },
     slots: { type: Array },
+    isSaving: { type: Boolean },
     _isDetailView: { type: Boolean },
     _detailSlotId: { type: Number },
     _detailSlotDate: { type: String },
@@ -26,6 +27,7 @@ export class TeacherAvailabilityTab extends LitElement {
     this.paintMode = null;
     this.teachers = [];
     this.slots = [];
+    this.isSaving = false;
     this._isDetailView = false;
     this._detailSlotId = null;
     this._detailSlotDate = null;
@@ -38,6 +40,7 @@ export class TeacherAvailabilityTab extends LitElement {
         this.isPainting = next;
         if (!next) this.paintMode = null;
       }
+      this.isSaving = store.isEditLocked;
       this._updateData();
       this.requestUpdate();
     });
@@ -180,6 +183,12 @@ export class TeacherAvailabilityTab extends LitElement {
           <div class="header-actions">
             <div class="paint-status"></div>
             <div class="header-buttons">
+              <span
+                class="save-spinner"
+                title="Sparar"
+                ?hidden="${!this.isSaving}"
+                aria-hidden="true"
+              ></span>
               <henry-button
                 variant="primary"
                 @click=${this._isDetailView

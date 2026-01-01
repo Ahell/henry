@@ -11,6 +11,14 @@ import {
  * Complete slot business logic and form processing
  */
 export class SlotService {
+  static async _withAutoSaveSuspended(fn) {
+    store.beginAutoSaveSuspension();
+    try {
+      return await fn();
+    } finally {
+      store.endAutoSaveSuspension();
+    }
+  }
   /**
    * Create a new slot
    * @param {Object} slotData - Slot data
@@ -81,12 +89,14 @@ export class SlotService {
    * @returns {Object} Created slot
    */
   static async saveNewSlot(formData) {
-    const { slot, mutationId } = this.createSlot({
-      start_date: formData.start_date,
-    });
+    return this._withAutoSaveSuspended(async () => {
+      const { slot, mutationId } = this.createSlot({
+        start_date: formData.start_date,
+      });
 
-    await store.saveData({ mutationId });
-    return slot;
+      await store.saveData({ mutationId });
+      return slot;
+    });
   }
 
   /**
@@ -96,12 +106,14 @@ export class SlotService {
    * @returns {Object} Updated slot
    */
   static async saveUpdatedSlot(slotId, formData) {
-    const { slot, mutationId } = this.updateSlot(slotId, {
-      start_date: formData.start_date,
-    });
+    return this._withAutoSaveSuspended(async () => {
+      const { slot, mutationId } = this.updateSlot(slotId, {
+        start_date: formData.start_date,
+      });
 
-    await store.saveData({ mutationId });
-    return slot;
+      await store.saveData({ mutationId });
+      return slot;
+    });
   }
 
   /**
@@ -110,16 +122,18 @@ export class SlotService {
    * @returns {boolean} Success status
    */
   static async deleteSlotById(slotId) {
-    const existing = store.getSlot(slotId);
-    if (!existing) return false;
+    return this._withAutoSaveSuspended(async () => {
+      const existing = store.getSlot(slotId);
+      if (!existing) return false;
 
-    const { removed, mutationId } = this.deleteSlot(slotId);
-    if (!removed) {
-      await store.rollback(mutationId);
-      return false;
-    }
-    await store.saveData({ mutationId });
-    return true;
+      const { removed, mutationId } = this.deleteSlot(slotId);
+      if (!removed) {
+        await store.rollback(mutationId);
+        return false;
+      }
+      await store.saveData({ mutationId });
+      return true;
+    });
   }
 
   /**

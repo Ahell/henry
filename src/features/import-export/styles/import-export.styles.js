@@ -71,6 +71,15 @@ export const importExportStyles = css`
     align-items: center;
   }
 
+  .save-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--color-primary-600);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
   .button-group henry-button {
     --henry-button-primary-bg: var(--color-kth-blue-soft);
     --henry-button-primary-color: var(--color-white);
@@ -121,5 +130,11 @@ export const importExportStyles = css`
     font-size: var(--font-size-xs);
     line-height: var(--line-height-normal);
     color: var(--color-text-primary);
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;

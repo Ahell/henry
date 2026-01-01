@@ -85,11 +85,13 @@ const persistAvailabilityMutation = async (component) => {
   const mutationId = component._availabilityMutationId;
   component._availabilityMutationId = null;
   try {
+    store.beginEditLock();
     await store.saveData({ mutationId });
   } catch (err) {
     await store.rollback(mutationId);
     console.error("Failed to spara lärartillgänglighet:", err);
   } finally {
+    store.endEditLock();
     if (component._autoSaveSuspendedForPaint) {
       store.endAutoSaveSuspension();
       component._autoSaveSuspendedForPaint = false;

@@ -1,9 +1,6 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
-import {
-  showSuccessMessage,
-  showErrorMessage,
-} from "../../../utils/message-helpers.js";
+import { showErrorMessage } from "../../../utils/message-helpers.js";
 import {
   initializeEditState,
   subscribeToStore,
@@ -23,6 +20,9 @@ export class TeachersTab extends LitElement {
     modalMode: { type: String }, // 'add' or 'edit'
     infoTeacherId: { type: Number },
     infoModalOpen: { type: Boolean },
+    message: { type: String },
+    messageType: { type: String },
+    isSaving: { type: Boolean },
   };
 
   constructor() {
@@ -32,6 +32,7 @@ export class TeachersTab extends LitElement {
     this.modalMode = "add";
     this.infoTeacherId = null;
     this.infoModalOpen = false;
+    this.isSaving = false;
     initializeEditState(this, "editingTeacherId");
     subscribeToStore(this);
   }
@@ -45,7 +46,7 @@ export class TeachersTab extends LitElement {
   }
 
   handleEditTeacher(teacherId) {
-    if (!store.editMode) return;
+    if (!store.editMode || this.isSaving) return;
     this.modalMode = "edit";
     this.editingTeacherId = teacherId;
     this.infoModalOpen = false;
@@ -70,19 +71,67 @@ export class TeachersTab extends LitElement {
     this.infoTeacherId = null;
   }
 
+  async _runSave(task) {
+    this.isSaving = true;
+    store.beginAutoSaveSuspension();
+    store.beginEditLock();
+
+    try {
+      return await task();
+    } finally {
+      store.endEditLock();
+      store.endAutoSaveSuspension();
+      this.isSaving = false;
+    }
+  }
+
+  async _handleModalSave(e) {
+    if (this.isSaving) return;
+    const { action, teacherId, formData } = e.detail;
+    const isUpdate = action === "update";
+
+    this.modalOpen = false;
+    if (isUpdate) {
+      this.editingTeacherId = null;
+    }
+
+    try {
+      await this._runSave(async () => {
+        if (action === "add") {
+          await TeacherService.saveNewTeacher(formData);
+        } else if (action === "update") {
+          await TeacherService.saveUpdatedTeacher(teacherId, formData);
+        }
+      });
+    } catch (error) {
+      showErrorMessage(this, `Fel: ${error.message}`);
+    }
+  }
+
   render() {
     const canEdit = !!store.editMode;
     return html`
+      ${this.message
+        ? html`<div class="message ${this.messageType}">${this.message}</div>`
+        : ""}
       <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga lärare</henry-text>
-          <henry-button
-            variant="primary"
-            ?disabled=${!canEdit}
-            @click="${this._openAddModal}"
-          >
-            Lägg till lärare
-          </henry-button>
+          <div class="header-actions">
+            <span
+              class="save-spinner"
+              title="Sparar"
+              ?hidden="${!this.isSaving}"
+              aria-hidden="true"
+            ></span>
+            <henry-button
+              variant="primary"
+              ?disabled=${!canEdit || this.isSaving}
+              @click="${this._openAddModal}"
+            >
+              Lägg till lärare
+            </henry-button>
+          </div>
         </div>
         <div class="tab-body">
           <div class="tab-scroll">
@@ -97,7 +146,8 @@ export class TeachersTab extends LitElement {
                   col,
                   (teacherId) => this.handleEditTeacher(teacherId),
                   (teacherId) => this.handleDeleteTeacher(teacherId),
-                  (teacherId) => this._openInfoModal(teacherId)
+                  (teacherId) => this._openInfoModal(teacherId),
+                  this.isSaving
                 )}"
             ></henry-table>
           </div>
@@ -108,7 +158,7 @@ export class TeachersTab extends LitElement {
         .open="${this.modalOpen}"
         .mode="${this.modalMode}"
         .teacherId="${this.editingTeacherId}"
-        @teacher-saved="${this._closeModal}"
+        @modal-save="${this._handleModalSave}"
         @modal-close="${this._closeModal}"
       ></teacher-modal>
       <teacher-info-modal
@@ -120,7 +170,7 @@ export class TeachersTab extends LitElement {
   }
 
   async handleDeleteTeacher(teacherId) {
-    if (!store.editMode) return;
+    if (!store.editMode || this.isSaving) return;
     const teacher = store.getTeacher(teacherId);
     if (!teacher) return;
 
@@ -133,10 +183,9 @@ export class TeachersTab extends LitElement {
     }
 
     try {
-      const removed = await TeacherService.deleteTeacherById(teacherId);
-      if (removed) {
-        showSuccessMessage(this, `Lärare "${teacher.name}" borttagen!`);
-      }
+      await this._runSave(async () => {
+        await TeacherService.deleteTeacherById(teacherId);
+      });
     } catch (error) {
       showErrorMessage(this, `Fel: ${error.message}`);
     }

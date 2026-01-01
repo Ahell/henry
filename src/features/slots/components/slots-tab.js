@@ -1,14 +1,10 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
-import {
-  showSuccessMessage,
-  showErrorMessage,
-} from "../../../utils/message-helpers.js";
+import { showErrorMessage } from "../../../utils/message-helpers.js";
 import {
   initializeEditState,
   subscribeToStore,
 } from "../../admin/utils/admin-helpers.js";
-import { SlotTableService } from "../services/slot-table.service.js";
 import { SlotService } from "../services/slot.service.js";
 import "./slot-modal.component.js";
 import "./slot-info-modal.component.js";
@@ -26,6 +22,7 @@ export class SlotsTab extends LitElement {
     messageType: { type: String },
     infoSlotId: { type: Number },
     infoModalOpen: { type: Boolean },
+    isSaving: { type: Boolean },
   };
 
   constructor() {
@@ -36,10 +33,12 @@ export class SlotsTab extends LitElement {
     this.editingSlotId = null;
     this.infoSlotId = null;
     this.infoModalOpen = false;
+    this.isSaving = false;
     subscribeToStore(this);
   }
 
   _openAddModal() {
+    if (this.isSaving) return;
     this.infoModalOpen = false;
     this.infoSlotId = null;
     this.editModalOpen = false;
@@ -52,7 +51,7 @@ export class SlotsTab extends LitElement {
   }
 
   _openEditModal(slotId) {
-    if (!store.editMode) return;
+    if (!store.editMode || this.isSaving) return;
     this.addModalOpen = false;
     this.infoModalOpen = false;
     this.infoSlotId = null;
@@ -78,6 +77,46 @@ export class SlotsTab extends LitElement {
     this.infoSlotId = null;
   }
 
+  async _runSave(task) {
+    this.isSaving = true;
+    store.beginAutoSaveSuspension();
+    store.beginEditLock();
+
+    try {
+      return await task();
+    } finally {
+      store.endEditLock();
+      store.endAutoSaveSuspension();
+      this.isSaving = false;
+    }
+  }
+
+  async _handleModalSave(e) {
+    if (this.isSaving) return;
+    const { action, slotId, formData } = e.detail;
+    const isUpdate = action === "update";
+
+    if (action === "add") {
+      this.addModalOpen = false;
+    }
+    if (isUpdate) {
+      this.editModalOpen = false;
+      this.editingSlotId = null;
+    }
+
+    try {
+      await this._runSave(async () => {
+        if (action === "add") {
+          await SlotService.saveNewSlot(formData);
+        } else if (action === "update") {
+          await SlotService.saveUpdatedSlot(slotId, formData);
+        }
+      });
+    } catch (error) {
+      showErrorMessage(this, `Fel: ${error.message}`);
+    }
+  }
+
   render() {
     const canEdit = !!store.editMode;
     // Always get fresh slots from store to avoid stale data
@@ -88,19 +127,27 @@ export class SlotsTab extends LitElement {
 
     return html`
       ${this.message
-        ? html`<div class="${this.messageType}">${this.message}</div>`
+        ? html`<div class="message ${this.messageType}">${this.message}</div>`
         : ""}
 
       <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga kursperioder</henry-text>
-          <henry-button
-            variant="primary"
-            ?disabled=${!canEdit}
-            @click="${this._openAddModal}"
-          >
-            Lägg till kursperiod
-          </henry-button>
+          <div class="header-actions">
+            <span
+              class="save-spinner"
+              title="Sparar"
+              ?hidden="${!this.isSaving}"
+              aria-hidden="true"
+            ></span>
+            <henry-button
+              variant="primary"
+              ?disabled=${!canEdit || this.isSaving}
+              @click="${this._openAddModal}"
+            >
+              Lägg till kursperiod
+            </henry-button>
+          </div>
         </div>
         <div class="tab-body">
           <div class="tab-scroll">
@@ -118,14 +165,14 @@ export class SlotsTab extends LitElement {
         <slot-modal
           .open="${this.addModalOpen}"
           mode="add"
-          @slot-saved="${this._closeAddModal}"
+          @modal-save="${this._handleModalSave}"
           @modal-close="${this._closeAddModal}"
         ></slot-modal>
         <slot-modal
           .open="${this.editModalOpen}"
           .slotId="${this.editingSlotId}"
           mode="edit"
-          @slot-saved="${this._closeEditModal}"
+          @modal-save="${this._handleModalSave}"
           @modal-close="${this._closeEditModal}"
         ></slot-modal>
         <slot-info-modal
@@ -176,14 +223,14 @@ export class SlotsTab extends LitElement {
             <henry-button
               variant="secondary"
               size="small"
-              ?disabled=${!store.editMode}
+              ?disabled=${!store.editMode || this.isSaving}
               @click="${() => this._openEditModal(slot.slot_id)}"
               >Redigera</henry-button
             >
             <henry-button
               variant="danger"
               size="small"
-              ?disabled=${!store.editMode}
+              ?disabled=${!store.editMode || this.isSaving}
               @click="${() => this.handleDeleteSlot(slot.slot_id)}"
               >Ta bort</henry-button
             >
@@ -196,7 +243,7 @@ export class SlotsTab extends LitElement {
   }
 
   async handleDeleteSlot(slotId) {
-    if (!store.editMode) return;
+    if (!store.editMode || this.isSaving) return;
     const runs = store.getCourseRunsBySlot(slotId);
     if (runs && runs.length > 0) {
       showErrorMessage(
@@ -210,10 +257,9 @@ export class SlotsTab extends LitElement {
     }
 
     try {
-      const removed = await SlotService.deleteSlotById(slotId);
-      if (removed) {
-        showSuccessMessage(this, "Slot borttagen.");
-      }
+      await this._runSave(async () => {
+        await SlotService.deleteSlotById(slotId);
+      });
     } catch (err) {
       showErrorMessage(this, err.message || "Kunde inte ta bort slot.");
     }

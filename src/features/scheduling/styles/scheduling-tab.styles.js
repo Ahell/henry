@@ -76,6 +76,15 @@ export const schedulingTabStyles = css`
     z-index: 30;
   }
 
+  .save-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--color-primary-600);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
   .legend {
     display: flex;
     gap: var(--space-6);
@@ -113,6 +122,12 @@ export const schedulingTabStyles = css`
     background: var(--color-primary-500);
     outline: 2px solid var(--color-info);
     outline-offset: 1px;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .two-block-course {

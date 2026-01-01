@@ -6,6 +6,14 @@ import { BaseFormService } from "../../../platform/services/base-form.service.js
  * Complete cohort business logic and form processing
  */
 export class CohortService {
+  static async _withAutoSaveSuspended(fn) {
+    store.beginAutoSaveSuspension();
+    try {
+      return await fn();
+    } finally {
+      store.endAutoSaveSuspension();
+    }
+  }
   /**
    * Check if a cohort start date is unique
    * @param {string} startDate - The start date to check
@@ -99,13 +107,15 @@ export class CohortService {
    * @returns {Object} Created cohort
    */
   static async saveNewCohort(formData) {
-    const { cohort, mutationId } = this.createCohort({
-      start_date: formData.start_date,
-      planned_size: formData.planned_size,
-    });
+    return this._withAutoSaveSuspended(async () => {
+      const { cohort, mutationId } = this.createCohort({
+        start_date: formData.start_date,
+        planned_size: formData.planned_size,
+      });
 
-    await store.saveData({ mutationId });
-    return cohort;
+      await store.saveData({ mutationId });
+      return cohort;
+    });
   }
 
   /**
@@ -115,13 +125,15 @@ export class CohortService {
    * @returns {Object} Updated cohort
    */
   static async saveUpdatedCohort(cohortId, formData) {
-    const { cohort, mutationId } = this.updateCohort(cohortId, {
-      start_date: formData.start_date,
-      planned_size: formData.planned_size,
-    });
+    return this._withAutoSaveSuspended(async () => {
+      const { cohort, mutationId } = this.updateCohort(cohortId, {
+        start_date: formData.start_date,
+        planned_size: formData.planned_size,
+      });
 
-    await store.saveData({ mutationId });
-    return cohort;
+      await store.saveData({ mutationId });
+      return cohort;
+    });
   }
 
   /**
@@ -130,10 +142,12 @@ export class CohortService {
    * @returns {boolean} Success status
    */
   static async deleteCohortById(cohortId) {
-    const { removed, mutationId } = this.deleteCohort(cohortId);
-    if (!removed) return false;
-    await store.saveData({ mutationId });
-    return true;
+    return this._withAutoSaveSuspended(async () => {
+      const { removed, mutationId } = this.deleteCohort(cohortId);
+      if (!removed) return false;
+      await store.saveData({ mutationId });
+      return true;
+    });
   }
 
   /**

@@ -47,6 +47,15 @@ export const teacherAvailabilityTabStyles = css`
     flex: 0 0 auto;
   }
 
+  .save-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--color-primary-600);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
   .paint-status {
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
@@ -223,5 +232,11 @@ export const teacherAvailabilityTabStyles = css`
     align-items: center;
     justify-content: flex-end;
     flex: 0 0 auto;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;

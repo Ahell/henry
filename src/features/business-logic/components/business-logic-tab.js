@@ -74,6 +74,7 @@ export class BusinessLogicTab extends LitElement {
 
       const myGen = generation;
       this.saving = true;
+      store.beginEditLock();
       this.requestUpdate();
 
       try {
@@ -99,6 +100,7 @@ export class BusinessLogicTab extends LitElement {
           this.saving = false;
           this.requestUpdate();
         }
+        store.endEditLock();
       }
     }, 400);
   }
@@ -110,7 +112,7 @@ export class BusinessLogicTab extends LitElement {
 
     return html`
       ${this.message
-        ? html`<div class="${this.messageType}">${this.message}</div>`
+        ? html`<div class="message ${this.messageType}">${this.message}</div>`
         : ""}
 
       <henry-panel full-height>
@@ -119,9 +121,12 @@ export class BusinessLogicTab extends LitElement {
             >Affärslogik - Prioriteringsordning för auto-fyll</henry-text
           >
           <div class="header-actions">
-            ${this.saving
-              ? html`<henry-text variant="caption">Sparar…</henry-text>`
-              : ""}
+            <span
+              class="save-spinner"
+              title="Sparar"
+              ?hidden="${!this.saving}"
+              aria-hidden="true"
+            ></span>
           </div>
         </div>
         <div class="tab-body">
@@ -268,7 +273,7 @@ export class BusinessLogicTab extends LitElement {
     const n = Number(value);
     params[key] = Number.isFinite(n) ? n : value;
 
-    store.businessLogicManager.setBusinessLogic({
+    this._updateBusinessLogic({
       ...current,
       scheduling: {
         ...scheduling,
@@ -290,7 +295,7 @@ export class BusinessLogicTab extends LitElement {
       r?.id === ruleId ? { ...r, enabled: Boolean(enabled) } : r
     );
 
-    store.businessLogicManager.setBusinessLogic({
+    this._updateBusinessLogic({
       ...current,
       scheduling: {
         ...scheduling,
@@ -313,7 +318,7 @@ export class BusinessLogicTab extends LitElement {
       r?.id === ruleId ? { ...r, kind: normalizedKind } : r
     );
 
-    store.businessLogicManager.setBusinessLogic({
+    this._updateBusinessLogic({
       ...current,
       scheduling: {
         ...scheduling,
@@ -338,7 +343,7 @@ export class BusinessLogicTab extends LitElement {
     const [item] = list.splice(idx, 1);
     list.splice(targetIdx, 0, item);
 
-    store.businessLogicManager.setBusinessLogic({
+    this._updateBusinessLogic({
       ...current,
       scheduling: {
         ...scheduling,
@@ -346,6 +351,15 @@ export class BusinessLogicTab extends LitElement {
       },
     });
     this._scheduleAutoSave();
+  }
+
+  _updateBusinessLogic(nextBusinessLogic) {
+    store.beginAutoSaveSuspension();
+    try {
+      store.businessLogicManager.setBusinessLogic(nextBusinessLogic);
+    } finally {
+      store.endAutoSaveSuspension();
+    }
   }
 }
 

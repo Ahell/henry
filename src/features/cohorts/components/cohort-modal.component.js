@@ -5,11 +5,6 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
 import { CohortFormService } from "../services/cohort-form.service.js";
-import { CohortService } from "../services/cohort.service.js";
-import {
-  showSuccessMessage,
-  showErrorMessage,
-} from "../../../utils/message-helpers.js";
 
 export class CohortModal extends LitElement {
   static properties = {
@@ -70,26 +65,22 @@ export class CohortModal extends LitElement {
       return;
     }
 
-    try {
-      const formData = CohortFormService.extractFormData(
-        this.renderRoot,
-        this.mode
-      );
-      let result;
-
-      if (this.mode === "add") {
-        result = await CohortService.saveNewCohort(formData);
-        showSuccessMessage(this, "Kull tillagd!");
-      } else {
-        result = await CohortService.saveUpdatedCohort(this.cohortId, formData);
-        showSuccessMessage(this, "Kull uppdaterad!");
-      }
-
-      this.dispatchEvent(new CustomEvent("cohort-saved", { detail: result }));
-      this._handleClose();
-    } catch (err) {
-      showErrorMessage(this, `Kunde inte spara kull: ${err.message}`);
-    }
+    const formData = CohortFormService.extractFormData(
+      this.renderRoot,
+      this.mode
+    );
+    const action = this.mode === "add" ? "add" : "update";
+    this.dispatchEvent(
+      new CustomEvent("modal-save", {
+        detail: {
+          action,
+          cohortId: this.cohortId,
+          formData,
+        },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   _handleClose() {

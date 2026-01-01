@@ -53,6 +53,31 @@ export const businessLogicTabStyles = css`
     gap: var(--space-3);
   }
 
+  .message {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-base);
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family-base);
+    display: flex;
+    align-items: center;
+  }
+
+  .message.error {
+    background-color: var(--color-danger-bg);
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger-text);
+  }
+
+  .save-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--color-primary-600);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
   /* List container with air between rows */
   .rule-list {
     display: flex;
@@ -158,5 +183,11 @@ export const businessLogicTabStyles = css`
   .muted {
     opacity: 0.6;
     background: var(--color-gray-lighter); /* Slightly different gray if disabled */
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;

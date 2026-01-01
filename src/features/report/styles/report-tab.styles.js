@@ -75,6 +75,15 @@ export const reportTabStyles = css`
     padding-bottom: 0; /* Removed padding to align with inputs */
   }
 
+  .save-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--color-primary-600);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
   .filters-advanced {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -93,5 +102,11 @@ export const reportTabStyles = css`
   henry-table {
     margin-top: 0;
     --henry-table-sort-indicator-gap: var(--space-1);
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;

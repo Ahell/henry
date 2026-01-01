@@ -1,9 +1,6 @@
 import { LitElement, html } from "lit";
 import { store } from "../../../platform/store/DataStore.js";
-import {
-  showSuccessMessage,
-  showErrorMessage,
-} from "../../../utils/message-helpers.js";
+import { showErrorMessage } from "../../../utils/message-helpers.js";
 import {
   initializeEditState,
   subscribeToStore,
@@ -23,6 +20,9 @@ export class CohortsTab extends LitElement {
     modalMode: { type: String }, // 'add' or 'edit'
     infoCohortId: { type: Number },
     infoModalOpen: { type: Boolean },
+    message: { type: String },
+    messageType: { type: String },
+    isSaving: { type: Boolean },
   };
 
   constructor() {
@@ -32,6 +32,7 @@ export class CohortsTab extends LitElement {
     this.modalMode = "add";
     this.infoCohortId = null;
     this.infoModalOpen = false;
+    this.isSaving = false;
     initializeEditState(this, "editingCohortId");
     subscribeToStore(this);
   }
@@ -45,7 +46,7 @@ export class CohortsTab extends LitElement {
   }
 
   handleEditCohort(cohortId) {
-    if (!store.editMode) return;
+    if (!store.editMode || this.isSaving) return;
     this.modalMode = "edit";
     this.editingCohortId = cohortId;
     this.infoModalOpen = false;
@@ -70,19 +71,67 @@ export class CohortsTab extends LitElement {
     this.infoCohortId = null;
   }
 
+  async _runSave(task) {
+    this.isSaving = true;
+    store.beginAutoSaveSuspension();
+    store.beginEditLock();
+
+    try {
+      return await task();
+    } finally {
+      store.endEditLock();
+      store.endAutoSaveSuspension();
+      this.isSaving = false;
+    }
+  }
+
+  async _handleModalSave(e) {
+    if (this.isSaving) return;
+    const { action, cohortId, formData } = e.detail;
+    const isUpdate = action === "update";
+
+    this.modalOpen = false;
+    if (isUpdate) {
+      this.editingCohortId = null;
+    }
+
+    try {
+      await this._runSave(async () => {
+        if (action === "add") {
+          await CohortService.saveNewCohort(formData);
+        } else if (action === "update") {
+          await CohortService.saveUpdatedCohort(cohortId, formData);
+        }
+      });
+    } catch (error) {
+      showErrorMessage(this, `Fel: ${error.message}`);
+    }
+  }
+
   render() {
     const canEdit = !!store.editMode;
     return html`
+      ${this.message
+        ? html`<div class="message ${this.messageType}">${this.message}</div>`
+        : ""}
       <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga kullar</henry-text>
-          <henry-button
-            variant="primary"
-            ?disabled=${!canEdit}
-            @click="${this._openAddModal}"
-          >
-            Lägg till kull
-          </henry-button>
+          <div class="header-actions">
+            <span
+              class="save-spinner"
+              title="Sparar"
+              ?hidden="${!this.isSaving}"
+              aria-hidden="true"
+            ></span>
+            <henry-button
+              variant="primary"
+              ?disabled=${!canEdit || this.isSaving}
+              @click="${this._openAddModal}"
+            >
+              Lägg till kull
+            </henry-button>
+          </div>
         </div>
         <div class="tab-body">
           <div class="tab-scroll">
@@ -100,7 +149,8 @@ export class CohortsTab extends LitElement {
                   col,
                   (cohortId) => this.handleEditCohort(cohortId),
                   (cohortId) => this.handleDeleteCohort(cohortId),
-                  (cohortId) => this._openInfoModal(cohortId)
+                  (cohortId) => this._openInfoModal(cohortId),
+                  this.isSaving
                 )}"
             ></henry-table>
           </div>
@@ -111,7 +161,7 @@ export class CohortsTab extends LitElement {
         .open="${this.modalOpen}"
         .mode="${this.modalMode}"
         .cohortId="${this.editingCohortId}"
-        @cohort-saved="${this._closeModal}"
+        @modal-save="${this._handleModalSave}"
         @modal-close="${this._closeModal}"
       ></cohort-modal>
       <cohort-info-modal
@@ -123,11 +173,9 @@ export class CohortsTab extends LitElement {
   }
 
   async handleDeleteCohort(cohortId) {
-    if (!store.editMode) return;
+    if (!store.editMode || this.isSaving) return;
     const cohort = store.getCohort(cohortId);
     if (!cohort) return;
-
-    const cohortName = cohort.name; // Note: Cohorts usually just have start_date, check if 'name' property exists or construct it
 
     if (
       !confirm(
@@ -138,10 +186,9 @@ export class CohortsTab extends LitElement {
     }
 
     try {
-      const removed = await CohortService.deleteCohortById(cohortId);
-      if (removed) {
-        showSuccessMessage(this, `Kull borttagen!`);
-      }
+      await this._runSave(async () => {
+        await CohortService.deleteCohortById(cohortId);
+      });
     } catch (error) {
       showErrorMessage(this, `Fel: ${error.message}`);
     }

@@ -11,7 +11,14 @@ export class TeacherTableService {
     ];
   }
 
-  static renderCell(teacher, column, onEdit, onDelete, onInfo) {
+  static renderCell(
+    teacher,
+    column,
+    onEdit,
+    onDelete,
+    onInfo,
+    isSaving = false
+  ) {
     if (!teacher || !column) return html``;
 
     switch (column.key) {
@@ -44,7 +51,7 @@ export class TeacherTableService {
             <henry-button
               variant="secondary"
               size="small"
-              ?disabled=${!store.editMode}
+              ?disabled=${!store.editMode || isSaving}
               @click="${() => onEdit?.(teacher.teacher_id)}"
             >
               Redigera
@@ -52,7 +59,7 @@ export class TeacherTableService {
             <henry-button
               variant="danger"
               size="small"
-              ?disabled=${!store.editMode}
+              ?disabled=${!store.editMode || isSaving}
               @click="${() => onDelete?.(teacher.teacher_id)}"
             >
               Ta bort

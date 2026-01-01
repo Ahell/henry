@@ -6,6 +6,14 @@ import { BaseFormService } from "../../../platform/services/base-form.service.js
  * Complete teacher business logic and form processing
  */
 export class TeacherService {
+  static async _withAutoSaveSuspended(fn) {
+    store.beginAutoSaveSuspension();
+    try {
+      return await fn();
+    } finally {
+      store.endAutoSaveSuspension();
+    }
+  }
   static normalizeTeacherName(name) {
     return String(name ?? "")
       .trim()
@@ -175,14 +183,16 @@ export class TeacherService {
    * @returns {Object} Created teacher
    */
   static async saveNewTeacher(formData) {
-    const { examinator_courses, ...teacherData } = formData || {};
-    const { teacher, mutationId } = this.createTeacher(
-      teacherData,
-      examinator_courses
-    );
+    return this._withAutoSaveSuspended(async () => {
+      const { examinator_courses, ...teacherData } = formData || {};
+      const { teacher, mutationId } = this.createTeacher(
+        teacherData,
+        examinator_courses
+      );
 
-    await store.saveData({ mutationId });
-    return teacher;
+      await store.saveData({ mutationId });
+      return teacher;
+    });
   }
 
   /**
@@ -192,15 +202,17 @@ export class TeacherService {
    * @returns {Object} Updated teacher
    */
   static async saveUpdatedTeacher(teacherId, formData) {
-    const { examinator_courses, ...teacherData } = formData || {};
-    const { teacher, mutationId } = this.updateTeacher(
-      teacherId,
-      teacherData,
-      examinator_courses
-    );
+    return this._withAutoSaveSuspended(async () => {
+      const { examinator_courses, ...teacherData } = formData || {};
+      const { teacher, mutationId } = this.updateTeacher(
+        teacherId,
+        teacherData,
+        examinator_courses
+      );
 
-    await store.saveData({ mutationId });
-    return teacher;
+      await store.saveData({ mutationId });
+      return teacher;
+    });
   }
 
   /**
@@ -209,10 +221,12 @@ export class TeacherService {
    * @returns {boolean} Success status
    */
   static async deleteTeacherById(teacherId) {
-    const { removed, mutationId } = this.deleteTeacher(teacherId);
-    if (!removed) return false;
-    await store.saveData({ mutationId });
-    return true;
+    return this._withAutoSaveSuspended(async () => {
+      const { removed, mutationId } = this.deleteTeacher(teacherId);
+      if (!removed) return false;
+      await store.saveData({ mutationId });
+      return true;
+    });
   }
 
   /**

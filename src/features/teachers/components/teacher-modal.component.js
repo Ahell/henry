@@ -6,11 +6,6 @@ import { LitElement, html } from "lit";
 import { keyed } from "lit/directives/keyed.js";
 import { store } from "../../../platform/store/DataStore.js";
 import { TeacherFormService } from "../services/teacher-form.service.js";
-import { TeacherService } from "../services/teacher.service.js";
-import {
-  showSuccessMessage,
-  showErrorMessage,
-} from "../../../utils/message-helpers.js";
 
 export class TeacherModal extends LitElement {
   static properties = {
@@ -100,29 +95,22 @@ export class TeacherModal extends LitElement {
       return;
     }
 
-    try {
-      const formData = TeacherFormService.extractFormData(
-        this.renderRoot,
-        this.mode
-      );
-      let result;
-
-      if (this.mode === "add") {
-        result = await TeacherService.saveNewTeacher(formData);
-        showSuccessMessage(this, "Lärare tillagd!");
-      } else {
-        result = await TeacherService.saveUpdatedTeacher(
-          this.teacherId,
-          formData
-        );
-        showSuccessMessage(this, "Lärare uppdaterad!");
-      }
-
-      this.dispatchEvent(new CustomEvent("teacher-saved", { detail: result }));
-      this._handleClose();
-    } catch (err) {
-      showErrorMessage(this, `Kunde inte spara lärare: ${err.message}`);
-    }
+    const formData = TeacherFormService.extractFormData(
+      this.renderRoot,
+      this.mode
+    );
+    const action = this.mode === "add" ? "add" : "update";
+    this.dispatchEvent(
+      new CustomEvent("modal-save", {
+        detail: {
+          action,
+          teacherId: this.teacherId,
+          formData,
+        },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   _handleClose() {

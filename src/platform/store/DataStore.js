@@ -30,6 +30,8 @@ export class DataStore {
   constructor() {
     // Global UI state (not persisted)
     this.editMode = true;
+    this._desiredEditMode = this.editMode;
+    this._editLockCount = 0;
 
     this.cohorts = [];
     this.slots = [];
@@ -168,14 +170,37 @@ export class DataStore {
 
   setEditMode(enabled) {
     const next = !!enabled;
+    if (this._desiredEditMode === next && this.editMode === next) return;
+    this._desiredEditMode = next;
+    this._applyEditMode();
+  }
+
+  _applyEditMode() {
+    const next = this._editLockCount > 0 ? false : this._desiredEditMode;
     if (this.editMode === next) return;
     this.editMode = next;
     this.beginCommitTrackingSuspension();
+    this.beginAutoSaveSuspension();
     try {
       this.notify();
     } finally {
+      this.endAutoSaveSuspension();
       this.endCommitTrackingSuspension();
     }
+  }
+
+  beginEditLock() {
+    this._editLockCount += 1;
+    this._applyEditMode();
+  }
+
+  endEditLock() {
+    this._editLockCount = Math.max(0, this._editLockCount - 1);
+    this._applyEditMode();
+  }
+
+  get isEditLocked() {
+    return this._editLockCount > 0;
   }
 
   async saveData({ mutationId, label } = {}) {

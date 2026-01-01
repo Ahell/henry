@@ -16,7 +16,7 @@ router.get("/load", (req, res) => {
 router.post("/save", async (req, res) => {
   try {
     await persistBulkData(req.body);
-    res.json({ success: true });
+    res.json(loadBulkSnapshot());
   } catch (error) {
     console.error("Bulk save error:", error);
     res.status(500).json({

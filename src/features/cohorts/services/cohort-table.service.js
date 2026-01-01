@@ -21,7 +21,7 @@ export class CohortTableService {
     ];
   }
 
-  static renderCell(cohort, column, onEdit, onDelete, onInfo) {
+  static renderCell(cohort, column, onEdit, onDelete, onInfo, isSaving = false) {
     if (!cohort || !column) return html``;
 
     switch (column.key) {
@@ -45,7 +45,7 @@ export class CohortTableService {
             <henry-button
               variant="secondary"
               size="small"
-              ?disabled=${!store.editMode}
+              ?disabled=${!store.editMode || isSaving}
               @click="${() => onEdit?.(cohort.cohort_id)}"
             >
               Redigera
@@ -53,7 +53,7 @@ export class CohortTableService {
             <henry-button
               variant="danger"
               size="small"
-              ?disabled=${!store.editMode}
+              ?disabled=${!store.editMode || isSaving}
               @click="${() => onDelete?.(cohort.cohort_id)}"
             >
               Ta bort

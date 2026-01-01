@@ -18,11 +18,13 @@ export class SchedulingTab extends LitElement {
 
   static properties = {
     isEditing: { type: Boolean },
+    isSaving: { type: Boolean },
   };
 
   constructor() {
     super();
     this.isEditing = !!store.editMode;
+    this.isSaving = false;
     this._dragDropManager = new DragDropManager(this);
     this._dragCourseId = null;
     this._teacherOverlayChipsBySlotDate = new Map();
@@ -40,6 +42,7 @@ export class SchedulingTab extends LitElement {
       if (this.isEditing !== next) {
         this.setEditMode(next);
       }
+      this.isSaving = store.isEditLocked;
       this.requestUpdate();
     });
   }
@@ -308,6 +311,12 @@ export class SchedulingTab extends LitElement {
           <henry-text variant="heading-3">Schemaläggning</henry-text>
           <div class="header-actions">
             <div class="header-buttons">
+              <span
+                class="save-spinner"
+                title="Sparar"
+                ?hidden="${!this.isSaving}"
+                aria-hidden="true"
+              ></span>
               <henry-button
                 variant="primary"
                 @click=${() => this._scrollToToday()}

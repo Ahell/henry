@@ -6,6 +6,14 @@ import { getAvailableCompatibleTeachersForCourseInSlot } from "./teacher-availab
  * Manages course run creation, updates, and teacher assignments
  */
 export class CourseRunManager {
+  static async _persistMutation(mutationId) {
+    store.beginEditLock();
+    try {
+      await store.saveData({ mutationId });
+    } finally {
+      store.endEditLock();
+    }
+  }
   static _runs() {
     return store.getCourseRuns();
   }
@@ -263,7 +271,7 @@ export class CourseRunManager {
         slot_span: spanForCourse,
       });
 
-      await store.saveData({ mutationId });
+      await CourseRunManager._persistMutation(mutationId);
       return { mutationId };
     } catch (error) {
       await store.rollback(mutationId);
@@ -485,7 +493,7 @@ export class CourseRunManager {
         store.teachingDaysManager._ensureCourseSlotDayDefaults();
 
         store.notify();
-        await store.saveData({ mutationId });
+        await CourseRunManager._persistMutation(mutationId);
         return { mutationId };
       } catch (error) {
         await store.rollback(mutationId);
@@ -670,7 +678,7 @@ export class CourseRunManager {
           store.teachingDaysManager._ensureCourseSlotDayDefaults();
 
           store.notify();
-          await store.saveData({ mutationId });
+          await CourseRunManager._persistMutation(mutationId);
           return { mutationId };
         } catch (error) {
           await store.rollback(mutationId);
@@ -714,7 +722,7 @@ export class CourseRunManager {
       store.teachingDaysManager._ensureCourseSlotDayDefaults();
 
       store.notify();
-      await store.saveData({ mutationId });
+      await CourseRunManager._persistMutation(mutationId);
       return { mutationId };
     } catch (error) {
       await store.rollback(mutationId);
@@ -848,7 +856,7 @@ export class CourseRunManager {
 
       store.notify();
 
-      await store.saveData({ mutationId });
+      await CourseRunManager._persistMutation(mutationId);
       return { mutationId };
     } catch (error) {
       await store.rollback(mutationId);
@@ -916,7 +924,7 @@ export class CourseRunManager {
         });
 
         store.notify();
-        await store.saveData({ mutationId });
+        await CourseRunManager._persistMutation(mutationId);
         return { mutationId };
     } catch (error) {
         await store.rollback(mutationId);
@@ -970,7 +978,7 @@ export class CourseRunManager {
       }
 
       store.notify();
-      await store.saveData({ mutationId });
+      await CourseRunManager._persistMutation(mutationId);
       return { mutationId };
     } catch (error) {
       await store.rollback(mutationId);
@@ -1058,7 +1066,7 @@ export class CourseRunManager {
         store.notify();
       }
 
-      await store.saveData({ mutationId });
+      await CourseRunManager._persistMutation(mutationId);
       return { mutationId };
     } catch (error) {
       await store.rollback(mutationId);
@@ -1798,7 +1806,7 @@ export class CourseRunManager {
       }
 
       store.notify();
-      await store.saveData({ mutationId });
+      await CourseRunManager._persistMutation(mutationId);
       return { mutationId };
     } catch (error) {
       await store.rollback(mutationId);

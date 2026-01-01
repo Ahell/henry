@@ -9,12 +9,14 @@ export class ImportExport extends LitElement {
   static properties = {
     message: { type: String },
     messageType: { type: String },
+    isProcessing: { type: Boolean },
   };
 
   constructor() {
     super();
     this.message = "";
     this.messageType = "";
+    this.isProcessing = false;
     this._onStoreChange = () => this.requestUpdate();
   }
 
@@ -52,7 +54,17 @@ export class ImportExport extends LitElement {
                   : ""}
 
                 <div class="button-group">
-                  <henry-button variant="primary" @click="${this.triggerFileInput}">
+                  <span
+                    class="save-spinner"
+                    title="Läser in"
+                    ?hidden="${!this.isProcessing}"
+                    aria-hidden="true"
+                  ></span>
+                  <henry-button
+                    variant="primary"
+                    ?disabled=${this.isProcessing}
+                    @click="${this.triggerFileInput}"
+                  >
                     Välj fil (JSON)
                   </henry-button>
                 </div>
@@ -72,7 +84,11 @@ export class ImportExport extends LitElement {
                   Exportera hela databasen som JSON för redigering och återimport.
                 </p>
                 <div class="button-group">
-                  <henry-button variant="primary" @click="${this.exportAsJson}">
+                  <henry-button
+                    variant="primary"
+                    ?disabled=${this.isProcessing}
+                    @click="${this.exportAsJson}"
+                  >
                     Exportera full databas (JSON)
                   </henry-button>
                 </div>
@@ -99,6 +115,8 @@ export class ImportExport extends LitElement {
     if (!file) return;
 
     try {
+      this.isProcessing = true;
+      store.beginEditLock();
       const content = await file.text();
       let data;
 
@@ -114,6 +132,9 @@ export class ImportExport extends LitElement {
     } catch (err) {
       this.message = `Fel vid import: ${err.message}`;
       this.messageType = "error";
+    } finally {
+      store.endEditLock();
+      this.isProcessing = false;
     }
 
     setTimeout(() => {

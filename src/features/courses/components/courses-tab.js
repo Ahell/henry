@@ -58,19 +58,14 @@ export class CoursesTab extends LitElement {
   }
 
   async _runSave(task) {
-    const shouldRestoreEditMode = !!store.editMode;
     this.isSaving = true;
     store.beginAutoSaveSuspension();
-    if (shouldRestoreEditMode) {
-      store.setEditMode(false);
-    }
+    store.beginEditLock();
 
     try {
       return await task();
     } finally {
-      if (shouldRestoreEditMode) {
-        store.setEditMode(true);
-      }
+      store.endEditLock();
       store.endAutoSaveSuspension();
       this.isSaving = false;
     }
