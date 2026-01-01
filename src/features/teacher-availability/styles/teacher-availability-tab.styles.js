@@ -7,6 +7,20 @@ export const teacherAvailabilityTabStyles = css`
     display: block;
     height: 100%;
     overflow: hidden;
+    --color-success: color-mix(
+      in srgb,
+      var(--color-green) 85%,
+      var(--color-green-light)
+    );
+    --color-success-light: var(--color-green-light);
+    --color-info: var(--color-sky-blue);
+    --color-info-light: var(--color-light-blue);
+    --color-danger: color-mix(
+      in srgb,
+      var(--color-red) 85%,
+      var(--color-red-light)
+    );
+    --color-danger-light: var(--color-red-light);
   }
 
   .panel-header {

@@ -122,7 +122,7 @@ export class CoursesTab extends LitElement {
         : ""}
       <henry-panel full-height>
         <div slot="header" class="panel-header">
-          <henry-text variant="heading-3">Befintliga kurser</henry-text>
+          <henry-text variant="heading-3">Kurser</henry-text>
           <div class="header-actions">
             <span
               class="save-spinner"

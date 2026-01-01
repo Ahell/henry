@@ -116,7 +116,7 @@ export class CohortsTab extends LitElement {
         : ""}
       <henry-panel full-height>
         <div slot="header" class="panel-header">
-          <henry-text variant="heading-3">Befintliga kullar</henry-text>
+          <henry-text variant="heading-3">Kullar</henry-text>
           <div class="header-actions">
             <span
               class="save-spinner"
