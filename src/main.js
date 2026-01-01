@@ -22,14 +22,16 @@ if (window.visualViewport) {
 }
 const setStatus = (message) => {
   if (!statusEl) return;
-  statusEl.textContent = message || "";
-  if (statusEl.textContent) {
-    clearTimeout(setStatus._t);
+  const next = String(message || "").trim() || "OK";
+  statusEl.textContent = next;
+  clearTimeout(setStatus._t);
+  if (next !== "OK") {
     setStatus._t = setTimeout(() => {
-      statusEl.textContent = "";
+      statusEl.textContent = "OK";
     }, 5000);
   }
 };
+setStatus("OK");
 
 const loadBtn = document.getElementById("navLoadTestData");
 const resetBtn = document.getElementById("navResetDatabase");
@@ -66,9 +68,9 @@ if (loadBtn) {
 
     try {
       setBusy(true);
-      setStatus("Laddar testdata…");
+      setStatus("Laddar testdata");
       await store.dataServiceManager.loadSeedDataToDatabase();
-      setStatus("Testdata laddad!");
+      setStatus("Testdata laddad");
     } catch (error) {
       setStatus(`Fel: ${error?.message || String(error)}`);
       console.error("Failed to load seed data:", error);
@@ -91,9 +93,9 @@ if (resetBtn) {
 
     try {
       setBusy(true);
-      setStatus("Återställer databas…");
+      setStatus("Återställer databas");
       await store.dataServiceManager.resetDatabase();
-      setStatus("Databas återställd.");
+      setStatus("Databas återställd");
     } catch (error) {
       setStatus(`Fel: ${error?.message || String(error)}`);
       console.error("Failed to reset database:", error);
@@ -107,7 +109,7 @@ if (commitBtn) {
   commitBtn.addEventListener("click", () => {
     if (changeBusy) return;
     store.commitChanges();
-    setStatus("Ändringar committade.");
+    setStatus("Ändringar committade");
     updateChangeButtons();
   });
 }
@@ -121,10 +123,10 @@ if (revertBtn) {
     }
     changeBusy = true;
     updateChangeButtons();
-    setStatus("Reverterar ändringar…");
+    setStatus("Reverterar ändringar");
     try {
       await store.revertToCommit();
-      setStatus("Ändringar återställda.");
+      setStatus("Ändringar återställda");
     } catch (error) {
       setStatus(`Fel: ${error?.message || String(error)}`);
       console.error("Failed to revert changes:", error);
