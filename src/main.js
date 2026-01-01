@@ -132,6 +132,8 @@ store.subscribe(() => {
 
 updateChangeButtons();
 
+store.init();
+
 // Admin tabs in header (controlled by <admin-panel>)
 const adminTabsEl = document.getElementById("adminTabs");
 

@@ -74,14 +74,6 @@ export class DataStore {
       this.courseRunsManager
     );
 
-    // Load data from backend asynchronously
-    this.dataServiceManager.loadData().catch((error) => {
-      console.error("Data load failed:", error);
-      showAlert(
-        `Kunde inte läsa data från backend: ${error.message}. Kontrollera att backend-servern körs.`
-      );
-    });
-
     this.events.subscribe("course-deleted", (courseId) => {
       // Delegate course run cleanup to CourseRunsManager
       this.courseRunsManager.handleCourseDeleted(courseId);
@@ -129,6 +121,19 @@ export class DataStore {
 
       // Sync course_kursansvarig junction table from course.kursansvarig_teacher_id
       this.coursesManager.syncCourseKursansvarigFromCourses();
+    });
+  }
+
+  async init() {
+    if (this._initialized) return;
+    this._initialized = true;
+
+    // Load data from backend asynchronously
+    return this.loadData().catch((error) => {
+      console.error("Data load failed:", error);
+      showAlert(
+        `Kunde inte läsa data från backend: ${error.message}. Kontrollera att backend-servern körs.`
+      );
     });
   }
 
