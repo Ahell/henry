@@ -118,7 +118,7 @@ export class BusinessLogicTab extends LitElement {
       <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3"
-            >Affärslogik - Prioriteringsordning för auto-fyll</henry-text
+            >Regler för schemaläggning samt prioriteringsordning för auto-fyll</henry-text
           >
           <div class="header-actions">
             <span

@@ -29,11 +29,6 @@ export class AdminPanel extends LitElement {
         component: html`<courses-tab></courses-tab>`,
       },
       {
-        key: "cohorts",
-        label: "Kullar",
-        component: html`<cohorts-tab></cohorts-tab>`,
-      },
-      {
         key: "teachers",
         label: "Lärare",
         component: html`<teachers-tab></teachers-tab>`,
@@ -42,6 +37,11 @@ export class AdminPanel extends LitElement {
         key: "slots",
         label: "Kursperioder",
         component: html`<slots-tab></slots-tab>`,
+      },
+      {
+        key: "cohorts",
+        label: "Kullar",
+        component: html`<cohorts-tab></cohorts-tab>`,
       },
       {
         key: "teacherAvailability",
@@ -55,7 +55,7 @@ export class AdminPanel extends LitElement {
       },
       {
         key: "businessLogic",
-        label: "Affärslogik",
+        label: "Regler",
         component: html`<business-logic-tab></business-logic-tab>`,
       },
       {
