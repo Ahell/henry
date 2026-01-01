@@ -46,6 +46,18 @@ export const documentationTabStyles = css`
     min-height: 0;
   }
 
+  .tabs-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .tab-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
   .section-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

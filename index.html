@@ -62,6 +62,14 @@
         height: 100%;
         min-height: 0;
         gap: var(--space-8);
+      }
+
+      .sidebar-scroll {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-8);
+        min-height: 0;
+        flex: 1;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
@@ -429,44 +437,45 @@
               <p>Admin</p>
             </div>
           </div>
-
-          <div class="sidebar-section">
-            <span class="sidebar-label">Navigering</span>
-            <div id="adminTabs" class="admin-tabs" aria-label="Admin tabs"></div>
-          </div>
-
-          <div class="sidebar-utilities">
-            <div class="sidebar-section" aria-label="Status">
-              <span class="sidebar-label">Status</span>
-              <span id="navStatus" class="nav-status"></span>
+          <div class="sidebar-scroll">
+            <div class="sidebar-section">
+              <span class="sidebar-label">Navigering</span>
+              <div id="adminTabs" class="admin-tabs" aria-label="Admin tabs"></div>
             </div>
-            <div class="sidebar-section" aria-label="Ändringar">
-              <span class="sidebar-label">Ändringar</span>
-              <div class="admin-actions-group">
-                <button id="navRevertChanges" class="admin-tab-btn" type="button">
-                  Revertera
-                </button>
-                <button id="navCommitChanges" class="admin-tab-btn" type="button">
-                  Commit
-                </button>
+
+            <div class="sidebar-utilities">
+              <div class="sidebar-section" aria-label="Status">
+                <span class="sidebar-label">Status</span>
+                <span id="navStatus" class="nav-status"></span>
               </div>
-            </div>
+              <div class="sidebar-section" aria-label="Ändringar">
+                <span class="sidebar-label">Ändringar</span>
+                <div class="admin-actions-group">
+                  <button id="navRevertChanges" class="admin-tab-btn" type="button">
+                    Revertera
+                  </button>
+                  <button id="navCommitChanges" class="admin-tab-btn" type="button">
+                    Commit
+                  </button>
+                </div>
+              </div>
 
-            <div class="sidebar-section" aria-label="Admin">
-              <span class="sidebar-label">Admin</span>
-              <div class="admin-actions-group">
-                <button id="navLoadTestData" class="admin-tab-btn" type="button">
-                  Ladda Testdata
-                </button>
-                <button id="navResetDatabase" class="admin-tab-btn" type="button">
-                  Återställ Databas
-                </button>
-                <henry-switch
-                  id="navEditMode"
-                  class="nav-edit-switch"
-                  label="Redigera"
-                  label-position="left"
-                ></henry-switch>
+              <div class="sidebar-section" aria-label="Admin">
+                <span class="sidebar-label">Admin</span>
+                <div class="admin-actions-group">
+                  <button id="navLoadTestData" class="admin-tab-btn" type="button">
+                    Ladda Testdata
+                  </button>
+                  <button id="navResetDatabase" class="admin-tab-btn" type="button">
+                    Återställ Databas
+                  </button>
+                  <henry-switch
+                    id="navEditMode"
+                    class="nav-edit-switch"
+                    label="Redigera"
+                    label-position="left"
+                  ></henry-switch>
+                </div>
               </div>
             </div>
           </div>
