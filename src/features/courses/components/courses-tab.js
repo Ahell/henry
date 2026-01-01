@@ -6,10 +6,7 @@ import {
 } from "../../admin/utils/admin-helpers.js";
 import { CourseTableService } from "../services/course-table.service.js";
 import { CourseService } from "../services/course.service.js";
-import {
-  showSuccessMessage,
-  showErrorMessage,
-} from "../../../utils/message-helpers.js";
+import { showErrorMessage } from "../../../utils/message-helpers.js";
 import "./course-modal.component.js";
 import "./course-info-modal.component.js";
 import { coursesTabStyles } from "../styles/courses-tab.styles.js";
@@ -21,6 +18,9 @@ export class CoursesTab extends LitElement {
     modalOpen: { type: Boolean },
     infoCourseId: { type: Number },
     infoModalOpen: { type: Boolean },
+    message: { type: String },
+    messageType: { type: String },
+    isSaving: { type: Boolean },
   };
 
   constructor() {
@@ -29,6 +29,7 @@ export class CoursesTab extends LitElement {
     this.modalOpen = false;
     this.infoCourseId = null;
     this.infoModalOpen = false;
+    this.isSaving = false;
     initializeEditState(this, "editingCourseId");
     subscribeToStore(this);
   }
@@ -56,20 +57,43 @@ export class CoursesTab extends LitElement {
     this.infoCourseId = null;
   }
 
-  async _handleModalSave(e) {
-    const { action, courseId, formData } = e.detail;
+  async _runSave(task) {
+    const shouldRestoreEditMode = !!store.editMode;
+    this.isSaving = true;
+    store.beginAutoSaveSuspension();
+    if (shouldRestoreEditMode) {
+      store.setEditMode(false);
+    }
 
     try {
-      if (action === "add") {
-        await CourseService.saveNewCourse(formData);
-        this.modalOpen = false;
-        showSuccessMessage(this, "Kurs tillagd!");
-      } else if (action === "update") {
-        await CourseService.saveUpdatedCourse(courseId, formData);
-        this.modalOpen = false;
-        this.editingCourseId = null;
-        showSuccessMessage(this, "Kurs uppdaterad!");
+      return await task();
+    } finally {
+      if (shouldRestoreEditMode) {
+        store.setEditMode(true);
       }
+      store.endAutoSaveSuspension();
+      this.isSaving = false;
+    }
+  }
+
+  async _handleModalSave(e) {
+    if (this.isSaving) return;
+    const { action, courseId, formData } = e.detail;
+    const isUpdate = action === "update";
+
+    this.modalOpen = false;
+    if (isUpdate) {
+      this.editingCourseId = null;
+    }
+
+    try {
+      await this._runSave(async () => {
+        if (action === "add") {
+          await CourseService.saveNewCourse(formData);
+        } else if (action === "update") {
+          await CourseService.saveUpdatedCourse(courseId, formData);
+        }
+      });
     } catch (err) {
       const actionText = action === "add" ? "lägga till" : "uppdatera";
       showErrorMessage(this, `Kunde inte ${actionText} kurs: ${err.message}`);
@@ -77,7 +101,7 @@ export class CoursesTab extends LitElement {
   }
 
   async _handleDeleteCourse(courseId) {
-    if (!store.editMode) return;
+    if (!store.editMode || this.isSaving) return;
     const course = store.getCourse(courseId);
     if (!course) return;
     if (
@@ -88,10 +112,9 @@ export class CoursesTab extends LitElement {
       return;
     }
     try {
-      const removed = await CourseService.deleteCourseById(courseId);
-      if (removed) {
-        showSuccessMessage(this, "Kurs borttagen.");
-      }
+      await this._runSave(async () => {
+        await CourseService.deleteCourseById(courseId);
+      });
     } catch (err) {
       showErrorMessage(this, err.message || "Kunde inte ta bort kurs.");
     }
@@ -99,15 +122,26 @@ export class CoursesTab extends LitElement {
 
   render() {
     return html`
+      ${this.message
+        ? html`<div class="message ${this.messageType}">${this.message}</div>`
+        : ""}
       <henry-panel full-height>
         <div slot="header" class="panel-header">
           <henry-text variant="heading-3">Befintliga kurser</henry-text>
-          <henry-button
-            variant="primary"
-            ?disabled="${!store.editMode}"
-            @click="${this._openModal}"
-            >Lägg till kurs</henry-button
-          >
+          <div class="header-actions">
+            <span
+              class="save-spinner"
+              title="Sparar"
+              ?hidden="${!this.isSaving}"
+              aria-hidden="true"
+            ></span>
+            <henry-button
+              variant="primary"
+              ?disabled="${!store.editMode || this.isSaving}"
+              @click="${this._openModal}"
+              >Lägg till kurs</henry-button
+            >
+          </div>
         </div>
         <div class="tab-body">
           <div class="tab-scroll">

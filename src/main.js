@@ -128,6 +128,9 @@ if (editSwitch) {
 
 store.subscribe(() => {
   updateChangeButtons();
+  if (editSwitch) {
+    editSwitch.checked = !!store.editMode;
+  }
 });
 
 updateChangeButtons();
