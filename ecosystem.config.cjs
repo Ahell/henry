@@ -1,21 +1,12 @@
 module.exports = {
   apps: [
     {
-      name: "henry-api",
-      cwd: "/home/initium/webapps/henry/server",
-      script: "server.js",
-      env: {
-        HOST: "127.0.0.1",
-        PORT: "3001",
-        NODE_ENV: "production",
-      },
-    },
-    {
-      name: "henry-web",
+      name: "henry",
       cwd: "/home/initium/webapps/henry",
-      script: "npm",
-      args: "run dev:client",
+      script: "server/server.js",
       env: {
+        HOST: "0.0.0.0",
+        PORT: "3002",
         NODE_ENV: "production",
       },
     },

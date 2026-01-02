@@ -10,6 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "cd server && node server.js",
+    "start:prod": "npm run build && HOST=0.0.0.0 PORT=3002 node server/server.js",
     "start": "npm run server",
     "clean": "rm -rf dist node_modules server/node_modules henry.db server/henry.db server/db/henry.db server/var/henry.db",
     "install:server": "cd server && npm install",
