@@ -1,14 +1,15 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  envPrefix: ["VITE_", "PUBLIC_"],
   server: {
-    host: '0.0.0.0',
-    port: 3002,
-    open: true,
+    host: "127.0.0.1",
+    port: 5173,
+    open: false,
     allowedHosts: ["henry.whcg.se"],
     proxy: {
       "/api": {
-        target: "http://localhost:3001",
+        target: process.env.VITE_API_PROXY_TARGET || "http://127.0.0.1:3001",
         changeOrigin: true,
       },
     },

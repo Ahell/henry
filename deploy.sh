@@ -1,45 +1,21 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -Eeuo pipefail
 
-# Henry Course Planner - Deployment Script
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NVM_DIR="/home/initium/.nvm"
+NODE_VERSION="$(tr -d '[:space:]' < "$ROOT_DIR/.nvmrc")"
+NODE_BIN="$NVM_DIR/versions/node/v${NODE_VERSION#v}/bin/node"
+NPM_BIN="$NVM_DIR/versions/node/v${NODE_VERSION#v}/bin/npm"
 
-set -e
+if [[ ! -x "$NODE_BIN" || ! -x "$NPM_BIN" ]]; then
+  echo "Missing Node runtime for Henry: $NODE_VERSION"
+  exit 1
+fi
 
-echo "🚀 Starting deployment process..."
+export PATH="$(dirname "$NODE_BIN"):/usr/local/bin:/usr/bin:/bin:/usr/games"
 
-# 1. Clean previous builds
-echo "📦 Cleaning previous builds..."
-npm run clean
+echo "Deploying Henry with $("$NODE_BIN" -v)"
+"$NPM_BIN" ci
+"$NPM_BIN" run build
 
-# 2. Install dependencies
-echo "📥 Installing dependencies..."
-npm install
-
-# 3. Build frontend
-echo "🏗️  Building frontend..."
-npm run build
-
-# 4. Copy server files to dist
-echo "📂 Preparing server files..."
-mkdir -p dist/server
-cp -r server/*.js dist/server/
-cp server/package.json dist/server/
-cp -r server/node_modules dist/server/ 2>/dev/null || true
-
-# 5. Create production environment file
-echo "⚙️  Creating production config..."
-cat > dist/.env <<EOF
-NODE_ENV=production
-PORT=3001
-EOF
-
-echo "✅ Deployment build complete!"
-echo ""
-echo "📁 Deployment files are in: ./dist"
-echo ""
-echo "To deploy:"
-echo "  1. Upload ./dist folder to your server"
-echo "  2. Run: cd dist/server && npm install --production"
-echo "  3. Run: node server.js"
-echo ""
-echo "Or use a process manager like PM2:"
-echo "  pm2 start dist/server/server.js --name henry-api"
+echo "Henry build complete. Start production with PM2 using ecosystem.config.cjs."

@@ -1,0 +1,45 @@
+{
+  "contractVersion": 1,
+  "appType": "node-webapp",
+  "displayName": "Henry App",
+  "runtime": {
+    "nodeVersionSource": ".nvmrc",
+    "packageManager": "npm"
+  },
+  "deploy": {
+    "ecosystemFile": "ecosystem.config.cjs",
+    "buildScript": "build",
+    "migrateScript": "migrate:deploy",
+    "startScript": "start:prod",
+    "healthCheckScript": "health:check",
+    "healthPath": "/api/health",
+    "healthCodes": [
+      200
+    ]
+  },
+  "env": {
+    "runtimeEnvFileVar": "RUNTIME_ENV_FILE",
+    "portVar": "PORT",
+    "publicBaseUrlVar": "PUBLIC_BASE_URL",
+    "requiredKeys": [
+      "NODE_ENV",
+      "HOST",
+      "PORT",
+      "PUBLIC_BASE_URL",
+      "RUNTIME_ENV_FILE"
+    ],
+    "optionalKeys": [
+      "VITE_API_BASE_URL",
+      "HENRY_DB_PATH"
+    ]
+  },
+  "storage": {
+    "externalData": true,
+    "keys": [
+      "HENRY_DB_PATH"
+    ]
+  },
+  "routing": {
+    "supportsManagedHost": true
+  }
+}

@@ -32,7 +32,12 @@ Thumbs.db
 # Environment
 .env
 .env.local
+.env.*
+!.env.example
+!.env.development.example
+!.env.production.example
 
 # Vite cache
 .vite/
 server/.vite/
+.runtime/

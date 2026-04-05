@@ -1,200 +1,70 @@
-# Henry Course Planner 🎓
+# Henry Course Planner
 
-En fullstack webbapp för kursplanering vid FEI, byggd med Lit 3, Express och SQLite.
+Fullstack Lit + Express-app för kursplanering vid FEI, med SQLite som runtime-databas.
 
-## 🚀 Snabbstart
+## App Contract
 
-```bash
-# Installera alla dependencies
-npm install
+- Node-version styrs av `.nvmrc`
+- PM2 startar `server/server.js` via `ecosystem.config.cjs`
+- `GET /api/health` returnerar `200`
+- `GET /api/runtime` returnerar runtime- och databasstatus
+- produktion ska använda extern `RUNTIME_ENV_FILE`
+- `PUBLIC_BASE_URL` är appens kanoniska publika URL
+- `HENRY_DB_PATH` styr var SQLite-filen ligger
 
-# Starta både frontend och backend
-npm run dev
-```
+## Environment files
 
-Öppna http://localhost:5173 i webbläsaren.
+- `.env.example` är det kanoniska schemat
+- `.env.development.example` är lokal utvecklingsmall
+- `.env.production.example` är produktionsformad mall
+- riktig produktionskonfiguration ska ligga utanför repoet, till exempel `/home/initium/.config/webapps/henry.env`
 
-## 📁 Projektstruktur
+## Local development
 
-```
-henry/
-├── src/                    # Frontend (Lit components)
-│   ├── features/admin/components/admin-panel.js      # Admin-gränssnitt för grunddata
-│   ├── features/import-export/components/import-export.js    # Import/export av data
-│   ├── utils/              # Gemensam logik
-│   │   ├── store.js        # Datahantering och API-integration
-│   │   └── businessRules.js # Affärslogik och valideringsregler
-│   ├── server/data/seedData.js    # Initial testdata
-│   └── main.js             # Entry point
-├── server/                 # Backend (Express + SQLite)
-│   ├── server.js           # API-server och databas
-│   └── henry.db            # SQLite-databas (skapas automatiskt)
-├── index.html              # HTML entry point
-├── vite.config.js          # Vite-konfiguration
-└── package.json            # Projektberoenden
-```
+1. Skapa en lokal `.env` från `.env.example` eller `.env.development.example`
+2. Kör `npm install`
+3. Kör `npm run dev`
 
-## 🛠️ Kommandon
+Lokala standardvärden:
 
-```bash
-# Utveckling
-npm run dev              # Starta frontend + backend samtidigt
-npm run dev:client       # Endast frontend (port 5173)
-npm run dev:server       # Endast backend (port 3001)
+- frontend: `http://127.0.0.1:5173`
+- backend: `http://127.0.0.1:3001`
+- databas: `.runtime/data/henry.db`
 
-# Produktion
-npm run build            # Bygga för produktion
-npm start                # Starta backend-server
-npm run preview          # Förhandsgranska produktionsbygge
+## Production runtime
 
-# Underhåll
-npm run clean            # Rensa alla dependencies och builds
-```
+1. Använd `.env.production.example` endast som mall
+2. Skapa verklig runtimefil utanför repoet
+3. Peka PM2/deploy på filen via `RUNTIME_ENV_FILE`
+4. Låt SQLite-filen ligga utanför repoet via `HENRY_DB_PATH`
 
-## 🎯 Funktioner
+Rekommenderad produktionspath:
 
-### 1. **Import/Export**
+- `RUNTIME_ENV_FILE=/home/initium/.config/webapps/henry.env`
+- `HENRY_DB_PATH=/home/initium/.local/share/webapps/henry/henry.db`
 
-- Ladda data från JSON eller CSV-filer
-- Exportera planen för delning eller backup
-- Exempeldata för snabb start
+## Commands
 
-### 2. **Admin - Grunddata**
+- `npm run dev` startar frontend och backend
+- `npm run build` bygger frontend för produktion
+- `npm run start:prod` startar produktionsservern
+- `npm run health:check` verifierar `GET /api/health`
+- `npm run migrate:deploy` är idag en no-op
+- `npm test` kör runtime-/kontraktstester
 
-- Lägg till och hantera kurser (inkl. juridikkurser)
-- Hantera studentkullar
-- Registrera lärare och deras hemavdelningar
-- Definiera tidsluckor (slots) för undervisning
-- Registrera lärarnas tillgänglighet (busy/free perioder)
+## Runtime endpoints
 
-### 3. **Skapa Kursomgångar**
+- `GET /api/health`
+- `GET /api/runtime`
 
-- Visuell slot-väljare
-- Välj kurs, lärare och kullar som ska delta
-- Automatisk kapacitetsvalidering
-- Föreslå samläsning för befintliga kursomgångar
+## Deployment
 
-## Affärsregler
+Workflow: `.github/workflows/deploy-webservices.yml`
 
-### Juridiska kursberoenden
+GitHub Environment `production` bör innehålla:
 
-- **Juridisk översiktskurs (AI180U)** måste komma före alla andra juridikkurser
-- Rekommenderad ordning: Översikt → Allmän → Speciell → Bostadsrätt/Beskattning/Kvalificerad
-- Varning om ordningen avviker från rekommenderad
-
-### Kapacitet
-
-- **Föredragen max:** 100 studenter per kursomgång
-- **Hårt stopp:** 130 studenter
-- Automatisk varning och validering
-
-### 2-block kurser
-
-- **AI180U (Juridisk översiktskurs):** 15 hp = 2 block
-- **AI184U (Fastighetsförmedling - introduktion):** 15 hp = 2 block
-
-### Tidsluckor
-
-- Fördefinerade slots från FEI (t.o.m. 2027)
-- Slots kan vara "placeholders" (tomma) eller reserverade
-- Stöd för kvällsmönster (tis/tor, mån/fre, etc.)
-
-## Installation
-
-```bash
-# Installera beroenden
-npm install
-
-# Starta dev-server
-npm run dev
-
-# Bygg för produktion
-npm run build
-
-# Förhandsgranska produktion
-npm run preview
-```
-
-## Datastruktur
-
-### Kurser (Course)
-
-```json
-{
-  "course_id": 1,
-  "code": "AI180U",
-  "name": "Juridisk översiktskurs",
-  "hp": 15.0,
-  "is_law_course": true,
-  "law_type": "overview",
-  "default_block_length": 2,
-  "preferred_order_index": 0
-}
-```
-
-### Kullar (Cohort)
-
-```json
-{
-  "cohort_id": 1,
-  "name": "Start 1",
-  "start_date": "2024-06-10",
-  "planned_size": 30
-}
-```
-
-### Kursomgångar (CourseRun)
-
-```json
-{
-  "run_id": 1,
-  "course_id": 1,
-  "slot_id": 1,
-  "teacher_id": 1,
-  "cohorts": [1, 2],
-  "planned_students": 60,
-  "status": "planned"
-}
-```
-
-### Tidsluckor (Slot)
-
-```json
-{
-  "slot_id": 1,
-  "start_date": "2024-06-10",
-  "end_date": "2024-07-05",
-  "evening_pattern": "tis/tor",
-  "is_placeholder": false,
-  "location": "FEI Campus"
-}
-```
-
-## Arkitektur
-
-- **`src/utils/store.js`** - DataStore för global state management
-- **`src/utils/businessRules.js`** - All affärslogik (validering, regler)
-- **`src/features/admin/components/admin-panel.js`** - Lit-komponent för grunddata
-- **`src/course-run-planner.js`** - Lit-komponent för skapande av kursomgångar
-- **`src/features/import-export/components/import-export.js`** - Lit-komponent för import/export
-- **`src/main.js`** - Huvudentry-point och navigation
-
-## Framtida Utökningar
-
-- [ ] Lärarens tidskonflikt-detektor (KTH vs FEI)
-- [ ] Automatisk förslag på kurssekvenser för nya kullar
-- [ ] Röda dagar-handling och kompensationslogik
-- [ ] Drag-and-drop för omplanering av slots
-- [ ] Remiss-workflow för lärare/avdelningschefer
-- [ ] Notifications vid konflikter eller ändringar
-- [ ] Database-integration (Firebase, Supabase, etc.)
-
-## Teknologi
-
-- **Lit 3** - Webkomponenter och reaktiv rendering
-- **Vite** - Build-tool och dev-server
-- **Vanilla JavaScript** - Ingen TypeScript, enkel och direkt
-
-## Licens
-
-MIT
+- `vars.OSBORNE_APP_ID`
+- `secrets.DEPLOY_HOST`
+- `secrets.DEPLOY_USER`
+- `secrets.DEPLOY_PORT`
+- `secrets.DEPLOY_SSH_KEY`

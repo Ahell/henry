@@ -4,13 +4,15 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
-  group: deploy-henry-prod
+  group: deploy-${{ github.repository }}-prod
   cancel-in-progress: false
 
 jobs:
   deploy:
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -26,12 +28,15 @@ jobs:
       - name: Add deploy host key
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.DEPLOY_PORT }}" -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Run remote deploy
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          APP_ID: ${{ vars.OSBORNE_APP_ID }}
         run: |
-          ssh -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "/home/initium/deploy/deploy-app.sh henry ${{ github.sha }}"
+          test -n "${APP_ID}"
+          ssh -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "/home/initium/deploy/deploy-app.sh ${APP_ID} ${{ github.sha }}"
