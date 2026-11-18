@@ -1,4 +1,4 @@
-# Henry Course Planner
+# FEI Kursplanerare
 
 Fullstack Lit + Express-app för kursplanering vid FEI, med SQLite som runtime-databas.
 
@@ -28,7 +28,7 @@ Fullstack Lit + Express-app för kursplanering vid FEI, med SQLite som runtime-d
 Lokala standardvärden:
 
 - frontend: `http://127.0.0.1:5173`
-- backend: `http://127.0.0.1:3001`
+- backend: `http://127.0.0.1:5331`
 - databas: `.runtime/data/henry.db`
 
 ## Production runtime
@@ -49,7 +49,7 @@ Rekommenderad produktionspath:
 - `npm run build` bygger frontend för produktion
 - `npm run start:prod` startar produktionsservern
 - `npm run health:check` verifierar `GET /api/health`
-- `npm run migrate:deploy` är idag en no-op
+- `npm run migrate:deploy` initialiserar saknat schema och grundkonfiguration
 - `npm test` kör runtime-/kontraktstester
 
 ## Runtime endpoints
