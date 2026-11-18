@@ -2,41 +2,50 @@ name: Deploy to initium-webservices
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, staging]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
-  group: deploy-${{ github.repository }}-prod
+  group: deploy-${{ github.repository }}-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   deploy:
-    environment: production
+    if: github.ref_name == 'main' || github.ref_name == 'staging'
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Start SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
-
-      - name: Add deploy host key
+      - name: Configure trusted host key
+        env:
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
+          test -n "$KNOWN_HOSTS"
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ secrets.DEPLOY_PORT }}" -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
-
+          chmod 700 ~/.ssh
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
       - name: Run remote deploy
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           APP_ID: ${{ vars.OSBORNE_APP_ID }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          DEPLOY_SHA: ${{ github.sha }}
         run: |
-          test -n "${APP_ID}"
-          ssh -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "/home/initium/deploy/deploy-app.sh ${APP_ID} ${{ github.sha }}"
+          test -n "$DEPLOY_HOST" && test -n "$DEPLOY_USER" && test -n "$DEPLOY_PORT"
+          case "$BRANCH_NAME:$APP_ID" in
+            main:henry|staging:henry-staging) ;;
+            *) echo "Invalid deployment target for branch" >&2; exit 1 ;;
+          esac
+          case "$DEPLOY_SHA" in *[!0-9a-f]*|'') echo "Invalid SHA" >&2; exit 1 ;; esac
+          ssh -p "$DEPLOY_PORT" -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "/home/initium/deploy/deploy-app.sh $APP_ID $DEPLOY_SHA"
