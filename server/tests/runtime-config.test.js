@@ -44,7 +44,7 @@ test("runtime config resolves external runtime env file and db path", async () =
     assert.equal(config.publicBaseUrl, "https://hej.whcg.se");
     assert.equal(config.port, 3002);
     assert.equal(config.dbPath, "/tmp/henry-test.db");
-    assert.equal(env.distDir, path.resolve(root, "dist"));
+    assert.equal(env.distDir, path.resolve(await fs.realpath(root), "dist"));
   } finally {
     process.chdir(previousCwd);
     process.env = previousEnv;

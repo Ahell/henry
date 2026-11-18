@@ -12,6 +12,7 @@ const MANAGED_ENV_KEYS = [
   "PUBLIC_BASE_URL",
   "VITE_API_BASE_URL",
   "HENRY_DB_PATH",
+  "HENRY_AUTH_DB_PATH",
 ];
 
 function normalizeValue(value) {
@@ -99,6 +100,8 @@ export function loadRuntimeConfig() {
   const publicBaseUrl = normalizeValue(merged.PUBLIC_BASE_URL);
   const apiBaseUrl = normalizeValue(merged.VITE_API_BASE_URL);
   const dbPath = resolveDbPath(merged.HENRY_DB_PATH);
+  const authDbPath = resolveDbPath(normalizeValue(merged.HENRY_AUTH_DB_PATH) || path.join(path.dirname(dbPath), "accounts.sqlite"));
+  if (authDbPath === dbPath) throw new Error("Planning and account databases must be separate files");
 
   return {
     runtimeEnvFile,
@@ -108,5 +111,7 @@ export function loadRuntimeConfig() {
     publicBaseUrl,
     apiBaseUrl,
     dbPath,
+    authDbPath,
+    authRequired: true,
   };
 }
