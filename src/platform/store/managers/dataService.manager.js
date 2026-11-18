@@ -192,7 +192,7 @@ export class DataServiceManager {
     // One-time validation during data load (different from reactive notify() validation)
     // This runs once on startup/reload, whereas EventManager.notify() runs on every mutation
 
-    // Validate and fix teacher assignments (ensure one course per teacher per slot)
+    // Identify existing teacher conflicts without removing assignments
     this.store.validator.validateTeacherAssignments();
 
     // If teachers exist but none have `compatible_courses` defined,

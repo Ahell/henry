@@ -41,7 +41,7 @@ export class EventManager {
    * Notify all subscribers of a data change
    *
    * Reactive Validation Flow (runs on every mutation):
-   * 1. Teacher assignments - ensures one course per teacher per slot
+   * 1. Teacher assignments - identifies conflicts without removing assignments
    * 2. Prerequisites - checks for missing/misordered prerequisites
    *
    * Note: Slot overlap validation happens proactively in slots.manager.js

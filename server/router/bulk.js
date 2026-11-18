@@ -31,9 +31,8 @@ router.post("/save", async (req, res) => {
     res.json({ _delta: true, changed, ...data });
   } catch (error) {
     console.error("Bulk save error:", error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       error: error.message,
-      stack: error.stack,
     });
   }
 });

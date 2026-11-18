@@ -1,3 +1,4 @@
+import { assignmentTransaction } from "../services/teacher-assignment-policy.js";
 import express from "express";
 import {
   computeCourseSlotSpan,
@@ -82,9 +83,12 @@ router.post("/", (req, res) => {
     const insertTeacherLink = db.prepare(
         "INSERT OR IGNORE INTO joint_course_run_teachers (joint_run_id, teacher_id) VALUES (?, ?)"
     );
+  const insertChild = db.prepare(
+    "INSERT INTO cohort_slot_courses (joint_run_id, course_id, slot_id, cohort_id) VALUES (?, ?, ?, ?)"
+  );
   let newRunId;
   
-  db.transaction(() => {
+  assignmentTransaction(() => {
     const result = insertJoint.run(
         payload.course_id,
         payload.slot_id,
@@ -142,7 +146,7 @@ router.put("/:id", (req, res) => {
       "INSERT OR IGNORE INTO joint_course_run_teachers (joint_run_id, teacher_id) VALUES (?, ?)"
   );
 
-  db.transaction(() => {
+  assignmentTransaction(() => {
       updateJoint.run(
           payload.course_id,
           payload.slot_id,
@@ -186,7 +190,7 @@ router.put("/:id", (req, res) => {
 router.delete("/:id", (req, res) => {
   const runId = req.params.id;
   
-  db.transaction(() => {
+  assignmentTransaction(() => {
       db.prepare("DELETE FROM course_run_slots WHERE run_id = ?").run(runId);
       db.prepare("DELETE FROM cohort_slot_courses WHERE joint_run_id = ?").run(runId);
       db.prepare("DELETE FROM joint_course_run_teachers WHERE joint_run_id = ?").run(runId);
