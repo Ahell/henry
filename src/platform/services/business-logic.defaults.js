@@ -42,6 +42,14 @@ const RULES_DEFAULT = [
     locked: true,
   },
   {
+    id: "maxOneCoursePerTeacherPeriod",
+    label: "Högst en kurs per lärare och period",
+    description: "Hard blockerar ny bemanning på en annan kurs i en överlappande period. Soft tillåter med periodvarning. Avstängd tillåter utan periodvarning. Gemensamma undervisningsdagar markeras i alla lägen. Befintlig bemanning bevaras.",
+    enabled: false,
+    kind: "hard",
+    locked: false,
+  },
+  {
     id: "requireAvailableCompatibleTeachers",
     label: "Kräv tillgänglig kompatibel lärare",
     description:

@@ -1033,4 +1033,38 @@ export const schedulingTabStyles = css`
       animation: none !important;
     }
   }
+  .teacher-assignment-error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    color: #7f1d1d;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 6px;
+  }
+  .teacher-assignment-error button {
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .summary-teacher-pill.has-day-overlap {
+    outline: 2px solid #b45309;
+    outline-offset: 1px;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .day-overlap-marker {
+    font-size: 0.65rem;
+    line-height: 1.2;
+    color: #78350f;
+    background: #fef3c7;
+    border-radius: 3px;
+    padding: 2px 4px;
+  }
 `;

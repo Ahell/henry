@@ -1,4 +1,4 @@
-import { db } from "../../../db/index.js";
+import { assignmentTransaction } from "../../teacher-assignment-policy.js";
 import { normalizeBulkPayload } from "./normalizePayload.js";
 import { clearBulkTables, clearTables } from "./db/clearTables.js";
 import { insertCourses } from "./db/insertCourses.js";
@@ -21,7 +21,7 @@ export async function persistBulkData(payload = {}) {
     payload && payload._delta === true && Array.isArray(payload.changed);
   const normalized = normalizeBulkPayload(payload);
 
-  const tx = db.transaction(() => {
+  const tx = assignmentTransaction(() => {
     if (!isDelta) {
       clearBulkTables();
       insertCourses(normalized.dedupedCourses);

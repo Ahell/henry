@@ -99,3 +99,69 @@ test('two installations have separate planning, users and session cookies', asyn
   assert.deepEqual(await (await b.request('/api/courses', withCookie(cookieB))).json(), []);
   assert.equal((await (await a.request('/api/courses', withCookie(cookieA))).json()).length, 1);
 });
+
+
+test('assignment APIs preserve multiple courses and transactionally enforce the Hard rule', async t => {
+  const app = await fixture(t);
+  const cookie = await app.login('anders');
+  const database = new DatabaseSync(app.dbPath);
+  t.after(() => database.close());
+  database.exec(`
+    INSERT INTO courses(course_id,name,code,credits) VALUES (1,'Long course','LONG',15),(2,'Short course','SHORT',7.5);
+    INSERT INTO teachers(teacher_id,name) VALUES (7,'Synthetic teacher');
+    INSERT INTO cohorts(cohort_id,name) VALUES (1,'A'),(2,'B');
+    INSERT INTO slots(slot_id,start_date,end_date) VALUES
+      (1,'2027-01-01','2027-01-31'),(2,'2027-02-01','2027-02-28');
+  `);
+  const saveRule = async (enabled, kind) => {
+    const response = await app.request('/api/bulk/save', withCookie(cookie, json({
+      _delta: true, changed: ['businessLogic'],
+      businessLogic: { scheduling: { rules: [{ id: 'maxOneCoursePerTeacherPeriod', enabled, kind }] } }
+    })));
+    assert.equal(response.status, 200, await response.text());
+  };
+  const create = payload => app.request('/api/course-runs', withCookie(cookie, json(payload)));
+  const firstResponse = await create({ course_id: 1, slot_id: 1, teachers: [7], cohorts: [1], kursansvarig_id: 7 });
+  assert.equal(firstResponse.status, 200, await firstResponse.clone().text());
+  const first = await firstResponse.json();
+  await saveRule(true, 'hard');
+  const blocked = await create({ course_id: 2, slot_id: 2, teachers: [7], cohorts: [2] });
+  assert.equal(blocked.status, 409, await blocked.text());
+  assert.equal(database.prepare('SELECT count(*) AS n FROM joint_course_runs').get().n, 1);
+  assert.equal(database.prepare('SELECT count(*) AS n FROM cohort_slot_courses').get().n, 1);
+  await saveRule(true, 'soft');
+  const allowed = await create({ course_id: 2, slot_id: 2, teachers: [7], cohorts: [2] });
+  assert.equal(allowed.status, 200, await allowed.clone().text());
+  const second = await allowed.json();
+  await saveRule(true, 'hard');
+  assert.equal(database.prepare('SELECT count(*) AS n FROM joint_course_run_teachers').get().n, 2);
+  // Saving the same existing conflict is permitted after enabling Hard.
+  const unchanged = await app.request('/api/course-runs/' + second.run_id, {
+    ...withCookie(cookie, json(second)), method: 'PUT'
+  });
+  assert.equal(unchanged.status, 200, await unchanged.text());
+  const cleared = await app.request('/api/course-runs/' + second.run_id, {
+    ...withCookie(cookie, json({ ...second, teachers: [] })), method: 'PUT'
+  });
+  assert.equal(cleared.status, 200, await cleared.text());
+  // The bulk-save path used by the frontend must reject and roll back the same new conflict.
+  const bulk = await app.request('/api/bulk/save', withCookie(cookie, json({
+    _delta: true, changed: ['courseRuns'],
+    courses: [{ course_id: 1, name: 'Long course', code: 'LONG', credits: 15 },
+      { course_id: 2, name: 'Short course', code: 'SHORT', credits: 7.5 }],
+    slots: [{ slot_id: 1, start_date: '2027-01-01', end_date: '2027-01-31' },
+      { slot_id: 2, start_date: '2027-02-01', end_date: '2027-02-28' }],
+    courseRuns: [first, second]
+  })));
+  assert.equal(bulk.status, 409, await bulk.text());
+  assert.equal(database.prepare('SELECT count(*) AS n FROM joint_course_run_teachers').get().n, 1);
+  assert.equal(database.prepare('SELECT kursansvarig_id FROM joint_course_runs WHERE id=?').get(first.run_id).kursansvarig_id, 7);
+  await saveRule(false, 'hard');
+  const disabled = await app.request('/api/course-runs/' + second.run_id, {
+    ...withCookie(cookie, json(second)), method: 'PUT'
+  });
+  assert.equal(disabled.status, 200, await disabled.text());
+  await app.stop();
+  await app.start();
+  assert.equal(database.prepare('SELECT count(*) AS n FROM joint_course_run_teachers').get().n, 2);
+});

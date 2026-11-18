@@ -1,3 +1,4 @@
+import { teacherPeriodConflicts } from './teacher-assignment-policy.js';
 // Data Validator Service - Handles all data validation logic
 export class DataValidator {
   constructor(store) {
@@ -30,37 +31,7 @@ export class DataValidator {
   }
 
   validateTeacherAssignments() {
-    // Group runs by slot
-    const runsBySlot = new Map();
-    for (const run of this.store.getCourseRuns()) {
-      if (!runsBySlot.has(run.slot_id)) {
-        runsBySlot.set(run.slot_id, []);
-      }
-      runsBySlot.get(run.slot_id).push(run);
-    }
-
-    // For each slot, ensure each teacher only appears in one course
-    for (const [slotId, runsInSlot] of runsBySlot) {
-      const teacherToCourse = new Map(); // teacherId -> courseId
-
-      for (const run of runsInSlot) {
-        if (!run.teachers) continue;
-
-        const validTeachers = [];
-        for (const teacherId of run.teachers) {
-          if (!teacherToCourse.has(teacherId)) {
-            // First time seeing this teacher in this slot - keep them
-            teacherToCourse.set(teacherId, run.course_id);
-            validTeachers.push(teacherId);
-          } else if (teacherToCourse.get(teacherId) === run.course_id) {
-            // Same course (different cohort run) - keep them
-            validTeachers.push(teacherId);
-          }
-          // else: teacher already assigned to different course - skip
-        }
-        run.teachers = validTeachers;
-      }
-    }
+    return teacherPeriodConflicts(this.store.getCourseRuns(), this.store.getSlots(), this.store.getCourses());
   }
 
   getSlotRange(slot) {

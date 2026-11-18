@@ -1,3 +1,4 @@
+import { teacherPeriodRule, teacherPeriodConflicts, teacherDayConflicts } from "../../../platform/services/teacher-assignment-policy.js";
 import { LitElement, html } from "lit";
 import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
 import { DragDropManager } from "../services/drag-drop-manager.service.js";
@@ -19,12 +20,14 @@ export class SchedulingTab extends LitElement {
   static properties = {
     isEditing: { type: Boolean },
     isSaving: { type: Boolean },
+    assignmentError: { state: true },
   };
 
   constructor() {
     super();
     this.isEditing = !!store.editMode;
     this.isSaving = false;
+    this.assignmentError = "";
     this._dragDropManager = new DragDropManager(this);
     this._dragCourseId = null;
     this._teacherOverlayChipsBySlotDate = new Map();
@@ -315,6 +318,11 @@ export class SchedulingTab extends LitElement {
         </div>
 
         <div class="tab-body">
+          ${this.assignmentError ? html`
+            <div class="teacher-assignment-error" role="alert">
+              <span>${this.assignmentError}</span>
+              <button type="button" @click=${() => { this.assignmentError = ""; }}>Stäng</button>
+            </div>` : null}
           <div class="gantt-layout">
             <div class="gantt-scroll-wrapper" tabindex="0">
               <table
@@ -636,7 +644,19 @@ export class SchedulingTab extends LitElement {
       });
     });
 
+    const periodConflicts = teacherPeriodConflicts(runs, slots, courses);
+    const dayConflicts = teacherDayConflicts(periodConflicts, (slotId, courseId) => {
+      const slot = slotById.get(slotId);
+      return (store.getActiveCourseDaysInSlot(slotId, courseId) || []).filter(day =>
+        normalizeDate(day) >= normalizeDate(slot.start_date) &&
+        normalizeDate(day) <= normalizeDate(slot.end_date));
+    });
+    const periodRule = teacherPeriodRule(store.businessLogicManager.getBusinessLogic());
+
     return {
+      periodConflicts,
+      dayConflicts,
+      periodRule,
       slots,
       courses,
       cohorts,
@@ -1291,6 +1311,24 @@ export class SchedulingTab extends LitElement {
 
       out.set(String(slot.start_date), pills);
     }
+
+    const addConflictPill = (conflict, label, kind, dates = []) => {
+      const slot = context.slotById.get(conflict.slotId);
+      if (!slot) return;
+      const teacher = context.teacherById.get(conflict.teacherId);
+      const courses = conflict.courseIds.map(id => context.courseById.get(id)?.code || id);
+      const title = [teacher?.name || conflict.teacherId, ...courses, ...dates].join("\n");
+      const key = String(slot.start_date);
+      const pills = out.get(key) || [];
+      pills.push({ label, kind, title });
+      out.set(key, pills);
+    };
+    if (context.periodRule.enabled) {
+      context.periodConflicts.forEach(conflict =>
+        addConflictPill(conflict, "Flera kurser", context.periodRule.kind));
+    }
+    context.dayConflicts.forEach(conflict =>
+      addConflictPill(conflict, "Dagsöverlapp", "soft", conflict.dates));
 
     return out;
   }
@@ -2519,6 +2557,15 @@ export class SchedulingTab extends LitElement {
                           courseId: course.course_id,
                           context,
                         });
+                      const dayOverlaps = context.dayConflicts.filter(conflict =>
+                        conflict.teacherId === String(teacher.teacher_id) &&
+                        conflict.slotId === String(slot.slot_id) &&
+                        conflict.courseIds.includes(String(course.course_id)));
+                      const overlapTitle = dayOverlaps.map(conflict => {
+                        const otherId = conflict.courseIds.find(id => id !== String(course.course_id));
+                        const otherCourse = context.courseById.get(otherId);
+                        return `${otherCourse?.code || otherId} — ${conflict.dates.join(", ")}`;
+                      }).join("\n");
                       const isKursansvarig =
                         Number(currentKursansvarigId) === teacher.teacher_id;
                       const baseClass = isAssigned
@@ -2534,13 +2581,14 @@ export class SchedulingTab extends LitElement {
                       const pillClassName = [
                         "summary-teacher-pill",
                         isKursansvarig ? "is-kursansvarig" : "",
+                        dayOverlaps.length ? "has-day-overlap" : "",
                       ]
                         .filter(Boolean)
                         .join(" ");
                       return html`
                         <div
                           class="${rowClassName}"
-                          title=${availability.titleText}
+                          title=${[availability.titleText, overlapTitle].filter(Boolean).join("\n")}
                         >
                           <button
                             class="${pillClassName}"
@@ -2563,6 +2611,7 @@ export class SchedulingTab extends LitElement {
                                 : ""}"
                               >${nameInfo.label}</span
                             >
+                            ${dayOverlaps.length ? html`<span class="day-overlap-marker" title=${overlapTitle}>Dagsöverlapp</span>` : null}
                           </button>
                           <div class="summary-kursansvarig-cell">
                             ${isAssigned
@@ -2924,6 +2973,7 @@ export class SchedulingTab extends LitElement {
 
   async _toggleTeacherAssignment({ runs, teacherId, checked, slotDate }) {
     if (!this.isEditing) return;
+    this.assignmentError = "";
     try {
       await CourseRunManager.toggleTeacherAssignment(
         runs,
@@ -2933,6 +2983,7 @@ export class SchedulingTab extends LitElement {
       );
       this.requestUpdate();
     } catch (error) {
+      this.assignmentError = error.message || "Kunde inte uppdatera lärarplacering.";
       console.error("Kunde inte uppdatera lärarplacering:", error);
     }
   }

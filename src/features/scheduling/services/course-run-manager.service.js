@@ -1,3 +1,4 @@
+import { assertTeacherAssignmentChanges } from '../../../platform/services/teacher-assignment-policy.js';
 import { store, DEFAULT_SLOT_LENGTH_DAYS } from "../../../platform/store/DataStore.js";
 import { getAvailableCompatibleTeachersForCourseInSlot } from "./teacher-availability.service.js";
 
@@ -738,6 +739,16 @@ export class CourseRunManager {
    * @param {string} slotDate - Slot date
    */
   static async toggleTeacherAssignment(runs, teacherId, checked, slotDate) {
+    if (checked) {
+      const allRuns = store.getCourseRuns();
+      const targets = new Set(runs);
+      const proposed = allRuns.map(run => targets.has(run)
+        ? { ...run, teachers: [...new Set([...(run.teachers || []), teacherId])] } : run);
+      assertTeacherAssignmentChanges(
+        { runs: allRuns, slots: store.getSlots(), courses: store.getCourses() },
+        proposed, store.businessLogicManager.getBusinessLogic(), store.getSlots(), store.getCourses()
+      );
+    }
     // Capture state for rollback
     const previousState = new Map();
     const slot = store.getSlots().find((s) => s.start_date === slotDate);
@@ -798,27 +809,6 @@ export class CourseRunManager {
     });
 
     try {
-      if (checked) {
-        // When assigning a teacher, remove them from other courses in the same
-        // slot period(s). For spanning runs (e.g. 15hp), this applies to all
-        // covered slot_ids so a teacher can't be double-booked in the tail slot.
-        const targetCourseId = runs.length > 0 ? runs[0].course_id : null;
-        for (const slotId of coveredSlotIds) {
-          const allRunsCoveringSlot = store
-            .getCourseRuns()
-            .filter((r) => runCoversSlotId(r, slotId));
-
-          for (const otherRun of allRunsCoveringSlot) {
-            if (otherRun.course_id !== targetCourseId && otherRun.teachers) {
-              otherRun.teachers = otherRun.teachers.filter((id) => id !== teacherId);
-              if (String(otherRun.kursansvarig_id) === String(teacherId)) {
-                otherRun.kursansvarig_id = null;
-              }
-            }
-          }
-        }
-      }
-
       // Toggle teacher in target runs
       for (const run of runs) {
         if (!run.teachers) {
@@ -826,11 +816,11 @@ export class CourseRunManager {
         }
 
         if (checked) {
-          if (!run.teachers.includes(teacherId)) {
+          if (!run.teachers.some(id => String(id) === String(teacherId))) {
             run.teachers.push(teacherId);
           }
         } else {
-          run.teachers = run.teachers.filter((id) => id !== teacherId);
+          run.teachers = run.teachers.filter((id) => String(id) !== String(teacherId));
           if (String(run.kursansvarig_id) === String(teacherId)) {
             run.kursansvarig_id = null;
           }
