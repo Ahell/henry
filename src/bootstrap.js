@@ -13,7 +13,8 @@ try {
     area.append(panel);
   } else {
     panel.user = auth.user;
-    document.querySelector('.sidebar-scroll').prepend(panel);
+    document.getElementById('signedInUsername').textContent = auth.user.username;
+    document.getElementById('sidebarAccount').append(panel);
     if (auth.user.role !== 'admin') {
       document.getElementById('navResetDatabase')?.setAttribute('hidden', '');
       document.getElementById('navLoadTestData')?.setAttribute('hidden', '');

@@ -169,8 +169,7 @@
         font-size: 0.75rem;
         color: rgba(255, 255, 255, 0.6);
         margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        overflow-wrap: anywhere;
       }
 
       .sidebar-section {
@@ -437,7 +436,7 @@
             <div class="brand-mark">FEI</div>
             <div class="brand-text">
               <h1>FEI Kursplanerare</h1>
-              <p>Admin</p>
+              <p id="signedInUsername"></p>
             </div>
           </div>
           <div class="sidebar-scroll">
@@ -479,6 +478,7 @@
                     label-position="left"
                   ></henry-switch>
                 </div>
+                <div id="sidebarAccount"></div>
               </div>
             </div>
           </div>
