@@ -1,6 +1,7 @@
 import express from "express";
 import { db } from "../db/index.js";
 import { seedData } from "../data/seedData.js";
+import { persistBulkData } from "../services/bulkSaveService.js";
 import { seedBusinessLogic } from "../data/seedBusinessLogic.js";
 
 const router = express.Router();
@@ -85,21 +86,7 @@ router.post("/reset-all", (req, res) => {
 
 router.post("/load-test-data", async (req, res) => {
   try {
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const response = await fetch(`${baseUrl}/api/bulk/save`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(seedData),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Bulk save failed: ${response.status} ${response.statusText} - ${errorText}`
-      );
-    }
-
-    await response.json();
+    await persistBulkData(seedData);
 
     res.json({ success: true, message: "Seed data loaded" });
   } catch (error) {

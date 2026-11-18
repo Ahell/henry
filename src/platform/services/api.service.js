@@ -35,6 +35,7 @@ export class ApiService {
 
   async _getJson(path, errorPrefix) {
     const response = await fetch(`${this.baseUrl}${path}`);
+    if (response.status === 401) window.location.reload();
     if (!response.ok) {
       throw new Error(`${errorPrefix}: ${response.statusText}`);
     }
@@ -47,6 +48,7 @@ export class ApiService {
       headers: { "Content-Type": "application/json" },
       body: body != null ? JSON.stringify(body) : undefined,
     });
+    if (response.status === 401) window.location.reload();
     if (!response.ok) {
       throw new Error(`${errorPrefix}: ${response.statusText}`);
     }

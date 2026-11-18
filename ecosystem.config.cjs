@@ -62,6 +62,7 @@ module.exports = {
         PUBLIC_BASE_URL: envValue("PUBLIC_BASE_URL", ""),
         VITE_API_BASE_URL: envValue("VITE_API_BASE_URL", ""),
         HENRY_DB_PATH: envValue("HENRY_DB_PATH", ""),
+        HENRY_AUTH_DB_PATH: envValue("HENRY_AUTH_DB_PATH", ""),
       },
     },
   ],
