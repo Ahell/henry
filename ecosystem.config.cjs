@@ -67,3 +67,11 @@ module.exports = {
     },
   ],
 };
+
+// The same release runs in both environments, selected by its deployment target.
+for (const app of module.exports.apps) {
+  app.env ||= {};
+  app.env.APP_ENV = app.name.endsWith('-staging') ? 'staging' : 'production';
+  app.env.PM2_APP_NAME = app.name;
+  app.node_args = [app.node_args || '', '--import ./scripts/environment.mjs'].join(' ').trim();
+}
